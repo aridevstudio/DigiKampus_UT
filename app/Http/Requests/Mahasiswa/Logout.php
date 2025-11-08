@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Auth;
+namespace App\Http\Requests\Mahasiswa;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
-class MahasiswaRequest extends FormRequest
+class Logout extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,24 +23,13 @@ class MahasiswaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nim' => ['required', 'string','min:3'],
-            'password' => ['required', 'string','min:3'],
+            //
         ];
     }
-    public function messages(): array
+     public function logout()
     {
-        return [
-            'nim.required' => 'NIM wajib diisi.',
-            'password.required' => 'Password wajib diisi.',
-            'nim.min' => 'NIM minimal :min karakter.',
-            'password.min' => 'Password minimal :min karakter.',
-        ];
-    }
-    public function logout()
-    {
-        Auth::logout();
+        Auth::guard('mahasiswa')->logout(); // kalau pakai guard mahasiswa
         $this->session()->invalidate();
         $this->session()->regenerateToken();
     }
-
 }
