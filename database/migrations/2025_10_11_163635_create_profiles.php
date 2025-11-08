@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
           Schema::create('profiles', function (Blueprint $table) {
-                $table->id('id_profile');
-                $table->unsignedBigInteger('id_user');
+                $table->id('id');
+                $table->unsignedBigInteger('user_id');
                 $table->integer('nim')->nullable();
                 $table->string('tempat_lahir')->nullable();
                 $table->date('tanggal_lahir')->nullable();
@@ -27,7 +27,7 @@ return new class extends Migration
 
                 // Relasi ke tabel users
                 $table->foreign('id_user')->references('id_user')->on('users')->onDelete('cascade');
-            }); 
+            });
     }
 
     /**

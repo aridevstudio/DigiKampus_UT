@@ -10,7 +10,7 @@ class Profile extends Model
 {
     use HasFactory, Notifiable;
     protected $fillable = [
-        'id_user',
+        'user_id',
         'nim',
         'tempat_lahir',
         'tanggal_lahir',
@@ -21,4 +21,9 @@ class Profile extends Model
         'foto_profile',
         'bio',
     ];
+
+    public function user()
+{
+    return $this->belongsTo(User::class, 'user_id');
+}
 }
