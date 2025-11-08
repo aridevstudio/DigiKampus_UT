@@ -3,8 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Profile;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class MahasiswaSeeder extends Seeder
 {
@@ -13,6 +14,16 @@ class MahasiswaSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory(10)->create();
+        User::factory(10)->create([
+            'role' => 'mahasiswa',
+            'password' => Hash::make('password123'),
+        ])->each(function ($user) {
+            Profile::create([
+                'id_user' => $user->id,
+                'nim' => fake()->numerify('23123456'),
+                'alamat' => fake()->address(),
+                'no_hp' => fake()->phoneNumber(),
+            ]);
+        });
     }
 }

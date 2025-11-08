@@ -7,6 +7,5 @@ Route::get('/', function () {
     return view('home');
 });
 
-require __DIR__.'/auth.php';
 require __DIR__.'/mahasiswa.php';
 require __DIR__.'/admin.php';

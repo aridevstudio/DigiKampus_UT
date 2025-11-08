@@ -10,6 +10,7 @@
 
 <body>
     <a href="{{ route('admin') }}">login admin/dosen</a>
+    <a href="{{ route('mahasiswa.login') }}">login mahasiswa</a>
 
 </body>
 
