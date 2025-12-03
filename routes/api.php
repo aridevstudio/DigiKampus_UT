@@ -17,6 +17,9 @@ use App\Http\Controllers\Api\Auth\MahasiswaAuthController;
 // Public routes (no authentication required)
 Route::prefix('auth/mahasiswa')->group(function () {
     Route::post('/login', [MahasiswaAuthController::class, 'login']);
+    Route::post('/forgot-password', [MahasiswaAuthController::class, 'forgotPassword']);
+    Route::post('/verify-otp', [MahasiswaAuthController::class, 'verifyOtp']);
+    Route::post('/reset-password', [MahasiswaAuthController::class, 'resetPassword']);
 });
 
 // Protected routes (requires authentication)

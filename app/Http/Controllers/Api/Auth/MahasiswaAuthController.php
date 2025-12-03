@@ -101,6 +101,169 @@ class MahasiswaAuthController extends Controller
     }
 
     /**
+     * Forgot Password - Send OTP via Email
+     * 
+     * Endpoint untuk request reset password. 
+     * Mengirimkan kode OTP 4 digit ke email mahasiswa.
+     *
+     * @param \App\Http\Requests\Api\ForgotPasswordRequest $request
+     * @return JsonResponse
+     */
+    public function forgotPassword(\App\Http\Requests\Api\ForgotPasswordRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $email = $validated['email'];
+
+        // Generate OTP 4 digit
+        $otp = rand(1000, 9999);
+
+        // Save OTP to database (hashed)
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $email],
+            [
+                'token' => Hash::make($otp),
+                'created_at' => now()
+            ]
+        );
+
+        // Force config SMTP manual (sama seperti route debug yang berhasil)
+        config(['mail.default' => 'smtp']);
+        config(['mail.mailers.smtp.host' => 'sandbox.smtp.mailtrap.io']);
+        config(['mail.mailers.smtp.port' => 2525]);
+        config(['mail.mailers.smtp.username' => 'fb5ca3d8abdef6']);
+        config(['mail.mailers.smtp.password' => '3e13ee66faa387']);
+        config(['mail.mailers.smtp.encryption' => 'tls']);
+
+        // Send Email
+        try {
+            \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\OtpMail($otp));
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim email. Silakan coba lagi nanti.',
+                'error' => $e->getMessage() // Debug only
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kode OTP telah dikirim ke email Anda. Silakan cek inbox/spam.',
+            'data' => [
+                'email' => $email,
+                'expires_in' => '5 minutes'
+            ]
+        ], 200);
+    }
+
+    /**
+     * Verify OTP
+     * 
+     * Endpoint untuk memverifikasi kode OTP yang diterima user.
+     * Jika valid, akan mengembalikan token verifikasi untuk reset password.
+     *
+     * @param \App\Http\Requests\Api\VerifyOtpRequest $request
+     * @return JsonResponse
+     */
+    public function verifyOtp(\App\Http\Requests\Api\VerifyOtpRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $email = $validated['email'];
+        $otp = $validated['otp'];
+
+        // Get OTP record
+        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->first();
+
+        // Check if record exists
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Permintaan reset password tidak ditemukan.'
+            ], 404);
+        }
+
+        // Check expiry (5 minutes)
+        if (\Carbon\Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode OTP telah kadaluarsa. Silakan request ulang.'
+            ], 400);
+        }
+
+        // Verify OTP hash
+        if (!Hash::check($otp, $record->token)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode OTP salah.'
+            ], 400);
+        }
+
+        // Generate verification token for next step
+        $verificationToken = \Illuminate\Support\Str::random(64);
+
+        // Update record with verification token (hashed)
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->update([
+                'token' => Hash::make($verificationToken),
+                'created_at' => now() // Reset expiry for this token
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP valid. Silakan lanjutkan ke reset password.',
+            'data' => [
+                'email' => $email,
+                'token' => $verificationToken // Token ini dipakai untuk reset password
+            ]
+        ], 200);
+    }
+
+    /**
+     * Reset Password
+     * 
+     * Endpoint untuk mengubah password baru menggunakan token verifikasi.
+     *
+     * @param \App\Http\Requests\Api\ResetPasswordRequest $request
+     * @return JsonResponse
+     */
+    public function resetPassword(\App\Http\Requests\Api\ResetPasswordRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $email = $validated['email'];
+        $token = $validated['token'];
+        $password = $validated['password'];
+
+        // Get record
+        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->first();
+
+        if (!$record) {
+            return response()->json(['success' => false, 'message' => 'Request tidak valid.'], 400);
+        }
+
+        // Verify token
+        if (!Hash::check($token, $record->token)) {
+            return response()->json(['success' => false, 'message' => 'Token verifikasi tidak valid.'], 400);
+        }
+
+        // Update User Password
+        $user = User::where('email', $email)->first();
+        $user->password = Hash::make($password);
+        $user->save();
+
+        // Delete token (One-time use)
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil diubah. Silakan login dengan password baru.'
+        ], 200);
+    }
+
+    /**
      * Logout mahasiswa
      * 
      * Endpoint untuk logout dan menghapus token authentication.
