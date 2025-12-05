@@ -126,15 +126,7 @@ class MahasiswaAuthController extends Controller
             ]
         );
 
-        // Force config SMTP manual (sama seperti route debug yang berhasil)
-        config(['mail.default' => 'smtp']);
-        config(['mail.mailers.smtp.host' => 'sandbox.smtp.mailtrap.io']);
-        config(['mail.mailers.smtp.port' => 2525]);
-        config(['mail.mailers.smtp.username' => 'fb5ca3d8abdef6']);
-        config(['mail.mailers.smtp.password' => '3e13ee66faa387']);
-        config(['mail.mailers.smtp.encryption' => 'tls']);
-
-        // Send Email
+        // Send Email (menggunakan konfigurasi dari .env)
         try {
             \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\OtpMail($otp));
         } catch (\Exception $e) {
