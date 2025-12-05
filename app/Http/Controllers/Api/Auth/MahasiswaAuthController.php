@@ -275,4 +275,75 @@ class MahasiswaAuthController extends Controller
             'message' => 'Logout berhasil.'
         ], 200);
     }
+
+    /**
+     * Update profile mahasiswa
+     * 
+     * Endpoint untuk mengubah data profil mahasiswa yang sedang login.
+     * Field yang bisa diupdate: name, email, no_hp, alamat, tanggal_lahir, tempat_lahir, jenis_kelamin, bio, photo.
+     * Photo upload opsional (multipart/form-data).
+     *
+     * @security BearerToken
+     * @param \App\Http\Requests\Api\UpdateProfileRequest $request
+     * @return JsonResponse
+     */
+    public function updateProfile(\App\Http\Requests\Api\UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        // Update user data (name, email)
+        $userData = [];
+        if (isset($validated['name'])) {
+            $userData['name'] = $validated['name'];
+        }
+        if (isset($validated['email'])) {
+            $userData['email'] = $validated['email'];
+        }
+
+        if (!empty($userData)) {
+            $user->update($userData);
+        }
+
+        // Update profile data
+        $profileData = [];
+        $profileFields = ['no_hp', 'alamat', 'tanggal_lahir', 'tempat_lahir', 'jenis_kelamin', 'bio'];
+
+        foreach ($profileFields as $field) {
+            if (isset($validated[$field])) {
+                $profileData[$field] = $validated[$field];
+            }
+        }
+
+        // Handle photo upload
+        if ($request->hasFile('photo')) {
+            // Delete old photo if exists
+            if ($user->profile->foto_profile) {
+                $oldPhotoPath = storage_path('app/public/' . $user->profile->foto_profile);
+                if (file_exists($oldPhotoPath)) {
+                    unlink($oldPhotoPath);
+                }
+            }
+
+            // Store new photo
+            $photo = $request->file('photo');
+            $filename = time() . '_' . $user->id . '.' . $photo->getClientOriginalExtension();
+            $path = $photo->storeAs('profile_photos', $filename, 'public');
+
+            $profileData['foto_profile'] = $path;
+        }
+
+        if (!empty($profileData)) {
+            $user->profile()->update($profileData);
+        }
+
+        // Reload relationships
+        $user->load('profile');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil berhasil diperbarui.',
+            'data' => new MahasiswaResource($user)
+        ], 200);
+    }
 }

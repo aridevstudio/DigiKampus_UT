@@ -29,6 +29,9 @@ class MahasiswaResource extends JsonResource
                 'no_hp' => $this->profile->no_hp ?? null,
                 'id_jurusan' => $this->profile->id_jurusan ?? null,
                 'foto_profile' => $this->profile->foto_profile ?? null,
+                'foto_profile_url' => $this->profile->foto_profile
+                    ? asset('storage/' . $this->profile->foto_profile)
+                    : null,
                 'bio' => $this->profile->bio ?? null,
             ],
             'created_at' => $this->created_at?->toDateTimeString(),
