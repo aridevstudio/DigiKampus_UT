@@ -28,6 +28,15 @@ class MahasiswaResource extends JsonResource
                 'alamat' => $this->profile->alamat ?? null,
                 'no_hp' => $this->profile->no_hp ?? null,
                 'id_jurusan' => $this->profile->id_jurusan ?? null,
+                'jurusan' => $this->profile->jurusan ? [
+                    'kode_jurusan' => $this->profile->jurusan->kode_jurusan,
+                    'nama_jurusan' => $this->profile->jurusan->nama_jurusan,
+                    'fakultas' => $this->profile->jurusan->fakultas,
+                    'jenjang' => $this->profile->jurusan->jenjang,
+                ] : null,
+                'ipk' => $this->profile->ipk ?? null,
+                'total_sks' => $this->profile->total_sks ?? null,
+                'status_akademik' => $this->profile->status_akademik ?? 'Aktif',
                 'foto_profile' => $this->profile->foto_profile ?? null,
                 'foto_profile_url' => $this->profile->foto_profile
                     ? asset('storage/' . $this->profile->foto_profile)

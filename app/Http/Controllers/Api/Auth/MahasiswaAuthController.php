@@ -91,7 +91,7 @@ class MahasiswaAuthController extends Controller
      */
     public function profile(Request $request): JsonResponse
     {
-        $user = $request->user()->load('profile');
+        $user = $request->user()->load(['profile.jurusan']);
 
         return response()->json([
             'success' => true,
@@ -344,6 +344,54 @@ class MahasiswaAuthController extends Controller
             'success' => true,
             'message' => 'Profil berhasil diperbarui.',
             'data' => new MahasiswaResource($user)
+        ], 200);
+    }
+
+    /**
+     * Ubah Password Mahasiswa
+     * 
+     * Endpoint untuk mengubah password mahasiswa yang sedang login.
+     * Hanya memerlukan password baru tanpa verifikasi password lama.
+     * 
+     * **⚠️ WARNING:** This endpoint does NOT verify current password for security.
+     * Implemented per client requirement. NOT RECOMMENDED for production use.
+     * Consider adding current_password verification for better security.
+     * 
+     * @operationId mahasiswaAuth.changePassword
+     * @security BearerToken
+     * 
+     * @bodyContent application/json {
+     *   "new_password": "newpassword123"
+     * }
+     * 
+     * @response 200 {
+     *   "success": true,
+     *   "message": "Password berhasil diubah."
+     * }
+     * 
+     * @response 422 {
+     *   "success": false,
+     *   "message": "Validasi gagal. Periksa kembali data yang Anda masukkan.",
+     *   "errors": {
+     *     "new_password": ["Password baru wajib diisi."]
+     *   }
+     * }
+     *
+     * @param \App\Http\Requests\Api\ChangePasswordRequest $request
+     * @return JsonResponse
+     */
+    public function changePassword(\App\Http\Requests\Api\ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        // Update password directly (NO current password verification)
+        $user->password = Hash::make($validated['new_password']);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil diubah.'
         ], 200);
     }
 }

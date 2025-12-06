@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('mahasiswa')->group(function () {
         Route::get('/profile', [MahasiswaAuthController::class, 'profile']);
         Route::put('/profile', [MahasiswaAuthController::class, 'updateProfile']);
+        Route::put('/change-password', [MahasiswaAuthController::class, 'changePassword']);
         Route::post('/logout', [MahasiswaAuthController::class, 'logout']);
     });
 });
