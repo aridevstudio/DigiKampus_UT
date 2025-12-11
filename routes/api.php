@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\MahasiswaAuthController;
+use App\Http\Controllers\Api\Auth\DosenAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,4 +31,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/change-password', [MahasiswaAuthController::class, 'changePassword']);
         Route::post('/logout', [MahasiswaAuthController::class, 'logout']);
     });
+
+    Route::prefix('dosen')->group(function () {
+        Route::get('/profile', [DosenAuthController::class, 'profile']);
+        Route::post('/logout', [DosenAuthController::class, 'logout']);
+    });
+});
+
+// Dosen public routes
+Route::prefix('auth/dosen')->group(function () {
+    Route::post('/register', [DosenAuthController::class, 'register']);
+    Route::post('/login', [DosenAuthController::class, 'login']);
+    Route::get('/google', [DosenAuthController::class, 'redirectToGoogle']);
+    Route::get('/google/callback', [DosenAuthController::class, 'handleGoogleCallback']);
 });
