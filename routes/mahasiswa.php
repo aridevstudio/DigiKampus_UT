@@ -11,6 +11,10 @@ Route::prefix('mahasiswa')
     ->group(function () {
         Route::get('/login/mahasiswa', [MahasiswaController::class, 'showLoginForm'])->name('mahasiswa.login');
         Route::post('/login/mahasiswa', [MahasiswaController::class, 'showLoginFormPost'])->name('mahasiswa.post');
+        Route::get('/forgot-password', [MahasiswaController::class, 'showForgotPasswordForm'])->name('mahasiswa.forgot-password');
+        Route::post('/forgot-password', [MahasiswaController::class, 'sendResetLinkEmail'])->name('mahasiswa.forgot-password.post');
+        Route::get('/verify-otp', [MahasiswaController::class, 'showVerifyOtpForm'])->name('mahasiswa.verify-otp');
+        Route::get('/reset-password', [MahasiswaController::class, 'showResetPasswordForm'])->name('mahasiswa.reset-password');
     });
 
 // Route untuk dashboard (hanya bisa diakses jika sudah login)

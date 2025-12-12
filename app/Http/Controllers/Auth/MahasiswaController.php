@@ -15,6 +15,37 @@ class MahasiswaController extends Controller
     public function showLoginForm() {
         return view ('Auth.mahasiswa.login');
     }
+
+    // controller show forgot password
+    public function showForgotPasswordForm() {
+        return view ('Auth.mahasiswa.forgot-password');
+    }
+
+    // controller show verify otp
+    public function showVerifyOtpForm() {
+        return view ('Auth.mahasiswa.verify-otp');
+    }
+
+    // controller show reset password
+    public function showResetPasswordForm() {
+        return view ('Auth.mahasiswa.reset-password');
+    }
+
+    // controller send reset link email
+    public function sendResetLinkEmail(\Illuminate\Http\Request $request) {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $status = \Illuminate\Support\Facades\Password::sendResetLink(
+            $request->only('email')
+        );
+
+        return $status == \Illuminate\Support\Facades\Password::RESET_LINK_SENT
+            ? back()->with('status', __($status))
+            : back()->withInput($request->only('email'))
+                ->withErrors(['email' => __($status)]);
+    }
     // controller post login
      public function showLoginFormPost(MahasiswaRequest $request) {
         $validated = $request->validated();
