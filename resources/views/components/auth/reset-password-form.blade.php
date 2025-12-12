@@ -33,13 +33,24 @@
                     </p>
                 </div>
 
-                {{-- Success Message --}}
-                <div id="success-message" class="hidden w-full mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <p class="text-xs sm:text-sm text-green-600">Password berhasil diubah!</p>
-                </div>
+                {{-- Session Status --}}
+                @if (session('status'))
+                    <div class="w-full mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-xs sm:text-sm text-green-600">{{ session('status') }}</p>
+                    </div>
+                @endif
+
+                {{-- Error Messages --}}
+                @if ($errors->any())
+                    <div class="w-full mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                        @foreach ($errors->all() as $error)
+                            <p class="text-xs sm:text-sm text-red-600">{{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
 
                 {{-- Form --}}
-                <form id="reset-form" method="POST" action="#" onsubmit="return validatePassword(event);" class="w-full space-y-4 sm:space-y-5">
+                <form id="reset-form" method="POST" action="{{ route('mahasiswa.reset-password.post') }}" onsubmit="return validatePassword(event);" class="w-full space-y-4 sm:space-y-5">
                     @csrf
 
                     {{-- New Password Input --}}
@@ -186,11 +197,8 @@
     }
     
     function validatePassword(event) {
-        event.preventDefault();
-        
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('password_confirmation').value;
-        const successMessage = document.getElementById('success-message');
         
         // Check all requirements
         const hasLength = password.length >= 8;
@@ -209,16 +217,16 @@
             if (!hasLower) {
                 document.getElementById('req-lower').classList.add('text-red-500');
             }
+            event.preventDefault();
             return false;
         }
         
         if (!passwordsMatch) {
+            event.preventDefault();
             return false;
         }
         
-        // If all validations pass, show success
-        successMessage.classList.remove('hidden');
-        
-        return false;
+        // All validations passed, allow form to submit to backend
+        return true;
     }
 </script>

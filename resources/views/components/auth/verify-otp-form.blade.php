@@ -33,9 +33,28 @@
                     </p>
                 </div>
 
+                {{-- Session Status --}}
+                @if (session('status'))
+                    <div class="w-full mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-xs sm:text-sm text-green-600">{{ session('status') }}</p>
+                    </div>
+                @endif
+
+                {{-- Error Messages --}}
+                @if ($errors->any())
+                    <div class="w-full mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                        @foreach ($errors->all() as $error)
+                            <p class="text-xs sm:text-sm text-red-600">{{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
+
                 {{-- Form --}}
-                <form method="POST" action="#" onsubmit="event.preventDefault(); window.location.href='{{ route('mahasiswa.reset-password') }}';" class="w-full space-y-4 sm:space-y-6">
+                <form id="otp-form" method="POST" action="{{ route('mahasiswa.verify-otp.post') }}" class="w-full space-y-4 sm:space-y-6">
                     @csrf
+                    
+                    {{-- Hidden OTP field that will be populated by JS --}}
+                    <input type="hidden" name="otp" id="otp-combined">
 
                     {{-- OTP Input Boxes --}}
                     <div class="flex justify-center gap-2 sm:gap-3 md:gap-4">
@@ -76,7 +95,7 @@
                     {{-- Timer --}}
                     <div class="text-center">
                         <p class="text-gray-600 text-sm sm:text-base">
-                            Code expires in : <span id="countdown" class="font-bold text-gray-900">03.00</span>
+                            Code expires in : <span id="countdown" class="font-bold text-gray-900">05.00</span>
                         </p>
                     </div>
 
@@ -105,6 +124,7 @@
         if (input.value.length === 1 && index < 4) {
             document.getElementById('otp' + (index + 1)).focus();
         }
+        updateCombinedOtp();
     }
 
     function handleOtpKeydown(event, index) {
@@ -113,9 +133,23 @@
         }
     }
 
-    // Countdown Timer
+    // Combine OTP values into hidden field before submit
+    function updateCombinedOtp() {
+        const otp1 = document.getElementById('otp1').value;
+        const otp2 = document.getElementById('otp2').value;
+        const otp3 = document.getElementById('otp3').value;
+        const otp4 = document.getElementById('otp4').value;
+        document.getElementById('otp-combined').value = otp1 + otp2 + otp3 + otp4;
+    }
+
+    // Update combined OTP before form submit
+    document.getElementById('otp-form').addEventListener('submit', function(e) {
+        updateCombinedOtp();
+    });
+
+    // Countdown Timer (5 minutes to match backend expiry)
     (function() {
-        let minutes = 3;
+        let minutes = 5;
         let seconds = 0;
         const countdownEl = document.getElementById('countdown');
 

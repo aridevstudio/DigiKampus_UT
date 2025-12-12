@@ -1,83 +1,154 @@
-<section class="container font-inter card-login ">
-    <div class="card flex flex-col justify-center items-center p-8 gap-5">
-        <div class="card-head">
-            <h1 class="card-title text-center mb-1 font-bold text-[36px]">Sign In Mahasiswa</h1>
-            <h3 class="text-center font-normal text-[18px]">Send, spend and save smarter</h3>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="" x-data="{ show: false }">
-                @csrf
-
-                {{-- NIM Input --}}
-                <div class="mb-4 relative">
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M16 12a4 4 0 01-8 0m8 0a4 4 0 00-8 0m8 0v1a4 4 0 01-8 0v-1m8 0H8"></path>
-                            </svg>
-                        </span>
-                        <input type="text" name="nim" required
-                            class="w-full border border-gray-300 rounded-[8px] px-10 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="NIM Mahasiswa">
-                    </div>
+<section class="min-h-screen flex flex-col items-center justify-center bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8 font-inter">
+    {{-- Main Container --}}
+    <div class="w-full max-w-6xl flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-16 mx-auto">
+        
+        {{-- Left Side - Form --}}
+        <div class="flex-1 w-full max-w-sm sm:max-w-md px-2 sm:px-0 order-2 lg:order-1">
+            <div class="flex flex-col items-center">
+                {{-- Header --}}
+                <div class="text-center mb-6 sm:mb-8">
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+                        Sign In Mahasiswa
+                    </h1>
+                    <p class="text-gray-500 text-sm sm:text-base">
+                        Send, spend and save smarter
+                    </p>
                 </div>
 
-                {{-- Password Input --}}
-                <div class="mb-4 relative">
+                {{-- Session Status --}}
+                @if (session('status'))
+                    <div class="w-full mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-xs sm:text-sm text-green-600">{{ session('status') }}</p>
+                    </div>
+                @endif
+
+                {{-- Alert Messages --}}
+                @if (session('alert'))
+                    <div class="w-full mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <p class="text-xs sm:text-sm text-red-600">{{ session('alert') }}</p>
+                    </div>
+                @endif
+
+                {{-- Error Messages --}}
+                @if ($errors->any())
+                    <div class="w-full mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                        @foreach ($errors->all() as $error)
+                            <p class="text-xs sm:text-sm text-red-600">{{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Form --}}
+                <form method="POST" action="{{ route('mahasiswa.post') }}" class="w-full space-y-4 sm:space-y-5">
+                    @csrf
+
+                    {{-- NIM Input --}}
                     <div class="relative">
-                        <input :type="show ? 'text' : 'password'" name="password" required
-                            class="w-full border border-gray-300 rounded-[8px] px-10 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Password Mahasiswa">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 4.5c-4.5 0-8.5 3.5-8.5 7.5s4 7.5 8.5 7.5 8.5-3.5 8.5-7.5-4-7.5-8.5-7.5z">
-                                </path>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4 text-gray-400">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" 
+                                    d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                             </svg>
                         </span>
-                        <button type="button" @click="show = !show"
-                            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 focus:outline-none">
-                            <svg x-show="!show" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                                </path>
+                        <input 
+                            type="text" 
+                            name="nim" 
+                            value="{{ old('nim') }}"
+                            required 
+                            autofocus
+                            class="w-full border border-gray-300 rounded-lg pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            placeholder="Nim Mahasiswa"
+                        >
+                    </div>
+
+                    {{-- Password Input --}}
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="password"
+                            required 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 sm:py-3 pr-12 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            placeholder="Password"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="togglePassword()"
+                            class="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-400 hover:text-gray-600"
+                        >
+                            <svg id="eye-open" class="w-4 h-4 sm:w-5 sm:h-5 hidden" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
-                            <svg x-show="show" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a10.05 10.05 0 012.517-4.263M6.634 6.634A9.965 9.965 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.965 9.965 0 01-1.257 2.592M15 12a3 3 0 00-3-3m0 0a3 3 0 00-3 3m6 0a3 3 0 01-3 3m0 0a3 3 0 01-3-3">
-                                </path>
+                            <svg id="eye-closed" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                             </svg>
                         </button>
                     </div>
-                </div>
 
-                {{-- Remember & Forgot --}}
-                <div class="flex items-center justify-between mb-6">
-                    <label class="flex items-center text-sm">
-                        <input type="checkbox" name="remember" class="mr-2"> Remember me
-                    </label>
-                    <a href="" class="text-sm text-blue-600 hover:underline">Forgot
-                        Password?</a>
-                </div>
+                    {{-- Remember Me & Forgot Password --}}
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center text-xs sm:text-sm text-gray-600 cursor-pointer">
+                            <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2">
+                            Remember me
+                        </label>
+                        <a href="{{ route('mahasiswa.forgot-password') }}" class="text-xs sm:text-sm text-blue-500 hover:text-blue-600 hover:underline">
+                            Forgot Password?
+                        </a>
+                    </div>
 
-                {{-- Submit --}}
-                <button type="submit"
-                    class="w-full bg-blue-600 text-white py-2 rounded-[8px] hover:bg-blue-700 transition">
-                    Sign In
-                </button>
+                    {{-- Submit Button --}}
+                    <button 
+                        type="submit"
+                        class="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-medium py-2.5 sm:py-3 px-4 rounded-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm sm:text-base"
+                    >
+                        Sign In
+                    </button>
+                </form>
 
                 {{-- Footer --}}
-                <div class="mt-6 text-center text-xs text-gray-400">
-                    <a href="#" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
+                <div class="w-full mt-6 sm:mt-8 flex items-center justify-between text-[10px] sm:text-xs text-gray-400">
+                    <a href="#" class="hover:underline">Privacy Policy</a>
+                    <span>2025 © Universitas Terbuka</span>
                 </div>
-            </form>
+            </div>
+        </div>
+
+        {{-- Right Side - Illustration with Logo (Hidden on mobile, shown on lg screens) --}}
+        <div class="hidden lg:flex flex-1 justify-center items-center order-1 lg:order-2">
+            <img 
+                src="{{ asset('assets/image/auth/Illustration 1 Login Mahasiswa.png') }}" 
+                alt="Login Illustration" 
+                class="w-full max-w-sm xl:max-w-md 2xl:max-w-lg object-contain"
+            >
+        </div>
+
+        {{-- Mobile Logo (Shown only on mobile/tablet) --}}
+        <div class="lg:hidden w-full flex justify-center mb-4 order-1">
+            <img 
+                src="{{ asset('assets/image/auth/Illustration 1 Login Mahasiswa.png') }}" 
+                alt="Login Illustration" 
+                class="w-48 sm:w-64 md:w-80 object-contain"
+            >
         </div>
     </div>
 </section>
+
+{{-- Password Toggle Script --}}
+<script>
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const eyeOpen = document.getElementById('eye-open');
+        const eyeClosed = document.getElementById('eye-closed');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            eyeOpen.classList.remove('hidden');
+            eyeClosed.classList.add('hidden');
+        } else {
+            passwordInput.type = 'password';
+            eyeOpen.classList.add('hidden');
+            eyeClosed.classList.remove('hidden');
+        }
+    }
+</script>

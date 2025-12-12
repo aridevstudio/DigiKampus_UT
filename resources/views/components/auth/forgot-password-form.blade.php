@@ -50,7 +50,7 @@
                 @endif
 
                 {{-- Form --}}
-                <form method="POST" action="#" onsubmit="event.preventDefault(); window.location.href='{{ route('mahasiswa.verify-otp') }}';" class="w-full space-y-4 sm:space-y-6">
+                <form method="POST" action="{{ route('mahasiswa.forgot-password.post') }}" class="w-full space-y-4 sm:space-y-6">
                     @csrf
 
                     {{-- Email Input --}}
