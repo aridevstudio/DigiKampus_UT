@@ -17,7 +17,7 @@ class MahasiswaAuthController extends Controller
 {
     /**
      * Login mahasiswa dengan NIM dan password
-     * 
+     *
      * Endpoint untuk login mahasiswa menggunakan NIM dan password.
      * Akan mengembalikan token authentication jika berhasil.
      *
@@ -81,7 +81,7 @@ class MahasiswaAuthController extends Controller
 
     /**
      * Get profile mahasiswa yang sedang login
-     * 
+     *
      * Endpoint untuk mendapatkan data profile mahasiswa yang sedang login.
      * Memerlukan Bearer token di header Authorization.
      *
@@ -102,8 +102,8 @@ class MahasiswaAuthController extends Controller
 
     /**
      * Forgot Password - Send OTP via Email
-     * 
-     * Endpoint untuk request reset password. 
+     *
+     * Endpoint untuk request reset password.
      * Mengirimkan kode OTP 4 digit ke email mahasiswa.
      *
      * @param \App\Http\Requests\Api\ForgotPasswordRequest $request
@@ -149,7 +149,7 @@ class MahasiswaAuthController extends Controller
 
     /**
      * Verify OTP
-     * 
+     *
      * Endpoint untuk memverifikasi kode OTP yang diterima user.
      * Jika valid, akan mengembalikan token verifikasi untuk reset password.
      *
@@ -214,7 +214,7 @@ class MahasiswaAuthController extends Controller
 
     /**
      * Reset Password
-     * 
+     *
      * Endpoint untuk mengubah password baru menggunakan token verifikasi.
      *
      * @param \App\Http\Requests\Api\ResetPasswordRequest $request
@@ -257,7 +257,7 @@ class MahasiswaAuthController extends Controller
 
     /**
      * Logout mahasiswa
-     * 
+     *
      * Endpoint untuk logout dan menghapus token authentication.
      * Memerlukan Bearer token di header Authorization.
      *
@@ -278,7 +278,7 @@ class MahasiswaAuthController extends Controller
 
     /**
      * Update profile mahasiswa
-     * 
+     *
      * Endpoint untuk mengubah data profil mahasiswa yang sedang login.
      * Field yang bisa diupdate: name, email, no_hp, alamat, tanggal_lahir, tempat_lahir, jenis_kelamin, bio, photo.
      * Photo upload opsional (multipart/form-data).
@@ -349,26 +349,26 @@ class MahasiswaAuthController extends Controller
 
     /**
      * Ubah Password Mahasiswa
-     * 
+     *
      * Endpoint untuk mengubah password mahasiswa yang sedang login.
      * Hanya memerlukan password baru tanpa verifikasi password lama.
-     * 
+     *
      * **⚠️ WARNING:** This endpoint does NOT verify current password for security.
      * Implemented per client requirement. NOT RECOMMENDED for production use.
      * Consider adding current_password verification for better security.
-     * 
+     *
      * @operationId mahasiswaAuth.changePassword
      * @security BearerToken
-     * 
+     *
      * @bodyContent application/json {
      *   "new_password": "newpassword123"
      * }
-     * 
+     *
      * @response 200 {
      *   "success": true,
      *   "message": "Password berhasil diubah."
      * }
-     * 
+     *
      * @response 422 {
      *   "success": false,
      *   "message": "Validasi gagal. Periksa kembali data yang Anda masukkan.",
