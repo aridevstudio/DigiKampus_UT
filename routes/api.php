@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\MahasiswaAuthController;
 use App\Http\Controllers\Api\Auth\DosenAuthController;
+use App\Http\Controllers\Api\Auth\AdminAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +43,23 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::prefix('auth/dosen')->group(function () {
     Route::post('/register', [DosenAuthController::class, 'register']);
     Route::post('/login', [DosenAuthController::class, 'login']);
+    Route::post('/forgot-password', [DosenAuthController::class, 'forgotPassword']);
+    Route::post('/verify-otp', [DosenAuthController::class, 'verifyOtp']);
+    Route::post('/reset-password', [DosenAuthController::class, 'resetPassword']);
     Route::get('/google', [DosenAuthController::class, 'redirectToGoogle']);
     Route::get('/google/callback', [DosenAuthController::class, 'handleGoogleCallback']);
+});
+
+// Admin public routes
+Route::prefix('auth/admin')->group(function () {
+    Route::post('/login', [AdminAuthController::class, 'login']);
+    Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
+    Route::post('/verify-otp', [AdminAuthController::class, 'verifyOtp']);
+    Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
+});
+
+// Admin protected routes
+Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+    Route::get('/profile', [AdminAuthController::class, 'profile']);
+    Route::post('/logout', [AdminAuthController::class, 'logout']);
 });

@@ -3,179 +3,82 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\DosenLoginRequest;
-use App\Http\Requests\Api\DosenRegisterRequest;
-use App\Http\Resources\DosenResource;
+use App\Http\Requests\Api\AdminLoginRequest;
+use App\Http\Resources\AdminResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Socialite\Facades\Socialite;
 
-class DosenAuthController extends Controller
+/**
+ * @tags Admin Authentication
+ */
+class AdminAuthController extends Controller
 {
     /**
-     * Register Dosen (Regular)
+     * Login Admin (Email & Password)
      * 
-     * @operationId dosenAuth.register
-     * @bodyContent application/json {
-     *   "name": "Dr. John Doe",
-     *   "email": "john.doe@ut.ac.id",
-     *   "password": "password123"
-     * }
-     * @response 201
+     * Endpoint untuk login admin menggunakan email dan password.
+     * Akan mengembalikan token authentication jika berhasil.
+     *
+     * @operationId adminAuth.login
+     * @param AdminLoginRequest $request
+     * @return JsonResponse
      */
-    public function register(DosenRegisterRequest $request): JsonResponse
+    public function login(AdminLoginRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'dosen',
-            'provider' => 'email',
-            'status' => 'aktif',
-        ]);
-
-        $token = $user->createToken('dosen-token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Registrasi berhasil.',
-            'data' => [
-                'user' => new DosenResource($user),
-                'token' => $token
-            ]
-        ], 201);
-    }
-
-    /**
-     * Login Dosen (Regular)
-     * 
-     * @operationId dosenAuth.login
-     * @bodyContent application/json {
-     *   "email": "john.doe@ut.ac.id",
-     *   "password": "password123"
-     * }
-     * @response 200
-     */
-    public function login(DosenLoginRequest $request): JsonResponse
-    {
-        $validated = $request->validated();
-
+        // Cari user berdasarkan email dengan role admin
         $user = User::where('email', $validated['email'])
-            ->where('role', 'dosen')
+            ->where('role', 'admin')
             ->first();
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
+        // Validasi user exists
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Email atau password salah.'
+                'message' => 'Email tidak terdaftar sebagai admin.'
+            ], 404);
+        }
+
+        // Validasi password
+        if (!Hash::check($validated['password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password salah. Silakan coba lagi.'
             ], 401);
         }
 
+        // Validasi status aktif
         if ($user->status !== 'aktif') {
             return response()->json([
                 'success' => false,
-                'message' => 'Akun Anda tidak aktif.'
+                'message' => 'Akun Anda sedang tidak aktif. Hubungi super admin untuk informasi lebih lanjut.'
             ], 403);
         }
 
-        $token = $user->createToken('dosen-token')->plainTextToken;
+        // Generate API token
+        $token = $user->createToken('admin-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil.',
             'data' => [
-                'user' => new DosenResource($user),
-                'token' => $token
+                'user' => new AdminResource($user),
+                'token' => $token,
+                'token_type' => 'Bearer'
             ]
         ], 200);
     }
 
     /**
-     * Redirect to Google OAuth
+     * Forgot Password - Send OTP via Email (Admin)
      * 
-     * @operationId dosenAuth.googleRedirect
-     * @response 302
-     */
-    public function redirectToGoogle(): JsonResponse
-    {
-        $url = Socialite::driver('google')
-            ->stateless()
-            ->redirect()
-            ->getTargetUrl();
-
-        return response()->json([
-            'success' => true,
-            'redirect_url' => $url
-        ]);
-    }
-
-    /**
-     * Handle Google OAuth Callback
-     * 
-     * @operationId dosenAuth.googleCallback
-     * @response 200
-     */
-    public function handleGoogleCallback(): JsonResponse
-    {
-        try {
-            $googleUser = Socialite::driver('google')->stateless()->user();
-
-            // Find or create user
-            $user = User::where('google_id', $googleUser->id)
-                ->orWhere('email', $googleUser->email)
-                ->first();
-
-            if ($user) {
-                // Update existing user
-                $user->update([
-                    'google_id' => $googleUser->id,
-                    'provider' => 'google',
-                    'name' => $googleUser->name ?? $user->name,
-                ]);
-            } else {
-                // Create new user
-                $user = User::create([
-                    'name' => $googleUser->name,
-                    'email' => $googleUser->email,
-                    'google_id' => $googleUser->id,
-                    'provider' => 'google',
-                    'role' => 'dosen',
-                    'status' => 'aktif',
-                    'password' => null, // OAuth users don't have password
-                ]);
-            }
-
-            $token = $user->createToken('dosen-token')->plainTextToken;
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Login dengan Google berhasil.',
-                'data' => [
-                    'user' => new DosenResource($user),
-                    'token' => $token
-                ]
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal login dengan Google.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Forgot Password - Send OTP via Email (Dosen)
-     * 
-     * Endpoint untuk request reset password dosen. 
-     * Mengirimkan kode OTP 4 digit ke email dosen.
+     * Endpoint untuk request reset password admin. 
+     * Mengirimkan kode OTP 4 digit ke email admin.
      *
-     * @operationId dosenAuth.forgotPassword
+     * @operationId adminAuth.forgotPassword
      * @param \App\Http\Requests\Api\ForgotPasswordRequest $request
      * @return JsonResponse
      */
@@ -184,12 +87,12 @@ class DosenAuthController extends Controller
         $validated = $request->validated();
         $email = $validated['email'];
 
-        // Validate email belongs to a Dosen
-        $user = User::where('email', $email)->where('role', 'dosen')->first();
+        // Validate email belongs to an Admin
+        $user = User::where('email', $email)->where('role', 'admin')->first();
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Email tidak terdaftar sebagai dosen.'
+                'message' => 'Email tidak terdaftar sebagai admin.'
             ], 404);
         }
 
@@ -227,12 +130,12 @@ class DosenAuthController extends Controller
     }
 
     /**
-     * Verify OTP (Dosen)
+     * Verify OTP (Admin)
      * 
-     * Endpoint untuk memverifikasi kode OTP yang diterima dosen.
+     * Endpoint untuk memverifikasi kode OTP yang diterima admin.
      * Jika valid, akan mengembalikan token verifikasi untuk reset password.
      *
-     * @operationId dosenAuth.verifyOtp
+     * @operationId adminAuth.verifyOtp
      * @param \App\Http\Requests\Api\VerifyOtpRequest $request
      * @return JsonResponse
      */
@@ -293,11 +196,11 @@ class DosenAuthController extends Controller
     }
 
     /**
-     * Reset Password (Dosen)
+     * Reset Password (Admin)
      * 
-     * Endpoint untuk mengubah password baru dosen menggunakan token verifikasi.
+     * Endpoint untuk mengubah password baru admin menggunakan token verifikasi.
      *
-     * @operationId dosenAuth.resetPassword
+     * @operationId adminAuth.resetPassword
      * @param \App\Http\Requests\Api\ResetPasswordRequest $request
      * @return JsonResponse
      */
@@ -323,7 +226,7 @@ class DosenAuthController extends Controller
         }
 
         // Update User Password
-        $user = User::where('email', $email)->where('role', 'dosen')->first();
+        $user = User::where('email', $email)->where('role', 'admin')->first();
 
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
@@ -342,11 +245,15 @@ class DosenAuthController extends Controller
     }
 
     /**
-     * Get Dosen Profile
+     * Get Admin Profile
      * 
+     * Endpoint untuk mendapatkan data profile admin yang sedang login.
+     * Memerlukan Bearer token di header Authorization.
+     *
      * @security BearerToken
-     * @operationId dosenAuth.profile
-     * @response 200
+     * @operationId adminAuth.profile
+     * @param Request $request
+     * @return JsonResponse
      */
     public function profile(Request $request): JsonResponse
     {
@@ -355,19 +262,24 @@ class DosenAuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Data profile berhasil diambil.',
-            'data' => new DosenResource($user)
+            'data' => new AdminResource($user)
         ], 200);
     }
 
     /**
-     * Logout Dosen
+     * Logout Admin
      * 
+     * Endpoint untuk logout dan menghapus token authentication.
+     * Memerlukan Bearer token di header Authorization.
+     *
      * @security BearerToken
-     * @operationId dosenAuth.logout
-     * @response 200
+     * @operationId adminAuth.logout
+     * @param Request $request
+     * @return JsonResponse
      */
     public function logout(Request $request): JsonResponse
     {
+        // Delete current access token
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
