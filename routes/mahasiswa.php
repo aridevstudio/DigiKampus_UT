@@ -25,6 +25,7 @@ Route::prefix('mahasiswa')
     ->group(function () {
         // get
         Route::get('/mahasiswa/dashboard', [MahasiswaController::class, 'showDashboard'])->name('mahasiswa.dashboard');
+        Route::get('/mahasiswa/calendar', [MahasiswaController::class, 'showCalendar'])->name('mahasiswa.calendar');
 
         // post
         Route::post('/mahasiswa/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');

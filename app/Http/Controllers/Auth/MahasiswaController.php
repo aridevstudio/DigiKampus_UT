@@ -222,6 +222,11 @@ class MahasiswaController extends Controller
         return view ('pages.mahasiswa.dashboard');
     }
 
+    // controller show calendar
+    public function showCalendar() {
+        return view ('pages.mahasiswa.calendar');
+    }
+
     // controller logout account
     public function logout(Logout $request) {
           $request->logout();
