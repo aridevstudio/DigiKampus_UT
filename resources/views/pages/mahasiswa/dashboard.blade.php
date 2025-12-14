@@ -71,18 +71,18 @@ $events = [
 <div id="dashboard-content">
 
 {{-- Welcome Section --}}
-<div class="mb-4 sm:mb-6">
+<div class="mb-4 sm:mb-6 animate-fade-in-up">
     <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Selamat datang, {{ $firstName }} 👋</h1>
 </div>
 
 {{-- Perkembangan Belajarmu Section --}}
-<div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50 mb-4 sm:mb-6">
+<div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50 mb-4 sm:mb-6 animate-fade-in-up delay-100 hover-lift">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div>
             <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">Perkembangan Belajarmu</h2>
             <p class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">Pantau sejauh mana progres belajar kamu di SALUT.</p>
         </div>
-        <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg font-medium text-xs sm:text-sm transition w-full sm:w-auto">
+        <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg font-medium text-xs sm:text-sm transition w-full sm:w-auto btn-pulse">
             Lanjutkan Belajar
         </button>
     </div>
@@ -131,12 +131,12 @@ $events = [
 </div>
 
 {{-- Kursus yang Sedang Kamu Ikuti Section --}}
-<div class="mb-4 sm:mb-6">
+<div class="mb-4 sm:mb-6 animate-fade-in-up delay-200">
     <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4">Kursus yang Sedang Kamu Ikuti</h2>
     
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        @foreach($courses as $course)
-        <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700/50">
+        @foreach($courses as $index => $course)
+        <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700/50 hover-lift animate-scale-in" style="animation-delay: {{ ($index + 1) * 100 }}ms;">
             <div class="h-32 sm:h-36 bg-gradient-to-br {{ $course['gradient'] }} flex items-center justify-center p-4">
                 <div class="text-white text-center">
                     @foreach($course['display'] as $text)
@@ -150,9 +150,9 @@ $events = [
                 <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-1 text-sm sm:text-base">{{ $course['name'] }}</h3>
                 <p class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-3">{{ $course['status'] }} − {{ $course['progress'] }}%</p>
                 <div class="w-full h-2 rounded-full overflow-hidden mb-4 bg-blue-100 dark:bg-blue-500/20">
-                    <div class="h-full rounded-full bg-blue-500" style="width: {{ $course['progress'] }}%;"></div>
+                    <div class="h-full rounded-full bg-blue-500 animate-progress" style="width: {{ $course['progress'] }}%;"></div>
                 </div>
-                <button class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium border border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition">
+                <button class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium border border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition hover-scale">
                     Lanjutkan Kursus
                 </button>
             </div>
@@ -162,17 +162,17 @@ $events = [
 </div>
 
 {{-- Bottom Section: News & Calendar --}}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 animate-fade-in-up delay-300">
     {{-- Berita dan Pengumuman --}}
-    <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50">
+    <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50 hover-lift">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100">Berita dan Pengumuman 📢</h2>
-            <a href="#" class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium transition">Lihat Semua</a>
+            <a href="#" class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium transition hover-scale">Lihat Semua</a>
         </div>
         
         <div class="space-y-4">
             @foreach($news as $item)
-            <div class="flex items-start gap-3">
+            <div class="flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 -mx-2 px-2 py-2 rounded-lg transition cursor-pointer">
                 <div class="w-10 h-10 rounded-lg bg-{{ $item['color'] }}-100 dark:bg-{{ $item['color'] }}-500/20 flex items-center justify-center flex-shrink-0">
                     @if($item['icon'] === 'alert')
                     <svg class="w-5 h-5 text-{{ $item['color'] }}-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -198,10 +198,10 @@ $events = [
     </div>
 
     {{-- Agenda Kegiatan Kamu --}}
-    <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50">
+    <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50 hover-lift">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100">Agenda Kegiatan Kamu</h2>
-            <button onclick="toggleCalendarView()" class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium transition">Lihat Semua Jadwal</button>
+            <button onclick="toggleCalendarView()" class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium transition hover-scale">Lihat Semua Jadwal</button>
         </div>
         
         {{-- Mini Calendar (default view) --}}

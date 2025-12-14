@@ -20,6 +20,158 @@
         .dark .card-soft {
             background: linear-gradient(145deg, #1f2937 0%, #1a1f2e 100%);
         }
+
+        /* === GACOR ANIMATIONS === */
+        
+        /* Fade In Up Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Fade In Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Scale In Animation */
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        /* Slide In Left Animation */
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Pulse Glow Animation */
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.2); }
+        }
+        
+        /* Bounce Animation */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        /* Animation Classes */
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        
+        .animate-scale-in {
+            animation: scaleIn 0.4s ease-out forwards;
+        }
+        
+        .animate-slide-in-left {
+            animation: slideInLeft 0.4s ease-out forwards;
+        }
+        
+        /* Stagger Delay Classes */
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+        
+        /* Hover Lift Effect */
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.15);
+        }
+        .dark .hover-lift:hover {
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Hover Scale Effect */
+        .hover-scale {
+            transition: transform 0.2s ease;
+        }
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+        
+        /* Hover Glow Effect */
+        .hover-glow {
+            transition: box-shadow 0.3s ease;
+        }
+        .hover-glow:hover {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Button Pulse on Hover */
+        .btn-pulse:hover {
+            animation: pulseGlow 1.5s infinite;
+        }
+        
+        /* Icon Bounce on Hover */
+        .icon-bounce:hover {
+            animation: bounce 0.6s ease infinite;
+        }
+        
+        /* Progress Bar Animation */
+        @keyframes progressFill {
+            from { width: 0; }
+        }
+        .animate-progress {
+            animation: progressFill 1s ease-out forwards;
+        }
+        
+        /* Shimmer Loading Effect */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        /* Card appear animation on scroll */
+        .card-animate {
+            opacity: 0;
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        
+        /* Notification dot pulse */
+        @keyframes notifPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+        .notif-pulse {
+            animation: notifPulse 2s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#111827]">
