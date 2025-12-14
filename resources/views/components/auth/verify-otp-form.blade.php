@@ -60,34 +60,46 @@
                     <div class="flex justify-center gap-2 sm:gap-3 md:gap-4">
                         <input 
                             type="text" 
+                            inputmode="numeric"
+                            pattern="[0-9]"
                             maxlength="1" 
                             id="otp1"
                             oninput="handleOtpInput(this, 1)"
                             onkeydown="handleOtpKeydown(event, 1)"
+                            onkeypress="return isNumberKey(event)"
                             class="w-14 h-14 sm:w-16 sm:h-16 md:w-[72px] md:h-[72px] border-2 border-blue-300 rounded-xl text-center text-xl sm:text-2xl font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                         >
                         <input 
                             type="text" 
+                            inputmode="numeric"
+                            pattern="[0-9]"
                             maxlength="1" 
                             id="otp2"
                             oninput="handleOtpInput(this, 2)"
                             onkeydown="handleOtpKeydown(event, 2)"
+                            onkeypress="return isNumberKey(event)"
                             class="w-14 h-14 sm:w-16 sm:h-16 md:w-[72px] md:h-[72px] border-2 border-blue-300 rounded-xl text-center text-xl sm:text-2xl font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                         >
                         <input 
                             type="text" 
+                            inputmode="numeric"
+                            pattern="[0-9]"
                             maxlength="1" 
                             id="otp3"
                             oninput="handleOtpInput(this, 3)"
                             onkeydown="handleOtpKeydown(event, 3)"
+                            onkeypress="return isNumberKey(event)"
                             class="w-14 h-14 sm:w-16 sm:h-16 md:w-[72px] md:h-[72px] border-2 border-blue-300 rounded-xl text-center text-xl sm:text-2xl font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                         >
                         <input 
                             type="text" 
+                            inputmode="numeric"
+                            pattern="[0-9]"
                             maxlength="1" 
                             id="otp4"
                             oninput="handleOtpInput(this, 4)"
                             onkeydown="handleOtpKeydown(event, 4)"
+                            onkeypress="return isNumberKey(event)"
                             class="w-14 h-14 sm:w-16 sm:h-16 md:w-[72px] md:h-[72px] border-2 border-blue-300 rounded-xl text-center text-xl sm:text-2xl font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                         >
                     </div>
@@ -124,8 +136,21 @@
 
 {{-- Vanilla JavaScript --}}
 <script>
+    // Only allow number keys
+    function isNumberKey(evt) {
+        const charCode = (evt.which) ? evt.which : evt.keyCode;
+        // Allow digits 0-9 (keycodes 48-57)
+        if (charCode < 48 || charCode > 57) {
+            return false;
+        }
+        return true;
+    }
+
     // OTP Input Handler
     function handleOtpInput(input, index) {
+        // Remove any non-numeric characters
+        input.value = input.value.replace(/[^0-9]/g, '');
+        
         if (input.value.length === 1 && index < 4) {
             document.getElementById('otp' + (index + 1)).focus();
         }
