@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Forgot Password Admin - SALUT</title>
+    <title>Forgot Password Dosen - SALUT</title>
     @vite('resources/css/app.css')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -36,9 +36,9 @@
         <div class="flex-1 flex items-center justify-center px-16 py-12">
             <div class="w-full max-w-md">
                 {{-- Header --}}
-                <div class="text-center mb-8 animate-hidden animate-fade-in-down">
+                <div class="text-center mb-8">
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                        Lupa Password Admin
+                        Lupa Password Dosen
                     </h1>
                     <p class="text-gray-500 text-base">
                         Masukkan email Anda untuk menerima kode OTP reset password.
@@ -69,11 +69,11 @@
                 @endif
 
                 {{-- Form --}}
-                <form method="POST" action="{{ route('admin.forgot-password.post') }}" class="space-y-6">
+                <form method="POST" action="{{ route('dosen.forgot-password.post') }}" class="space-y-6">
                     @csrf
 
                     {{-- Email Input --}}
-                    <div class="relative animate-hidden animate-fade-in-up stagger-1">
+                    <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" 
@@ -87,7 +87,7 @@
                             required 
                             autofocus
                             class="w-full border border-gray-300 rounded-lg pl-12 pr-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                            placeholder="nama.admin@ut.ac.id"
+                            placeholder="nama.dosen@ut.ac.id"
                         >
                     </div>
 
@@ -107,7 +107,7 @@
 
                 {{-- Back to Login --}}
                 <div class="mt-6 text-center">
-                    <a href="{{ route('admin.login') }}" class="text-sm text-blue-500 hover:text-blue-600 hover:underline">
+                    <a href="{{ route('dosen.login') }}" class="text-sm text-blue-500 hover:text-blue-600 hover:underline">
                         ← Kembali ke Login
                     </a>
                 </div>
@@ -138,7 +138,7 @@
             {{-- Header --}}
             <div class="text-center mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
-                    Lupa Password Admin
+                    Lupa Password Dosen
                 </h1>
                 <p class="text-gray-500 text-sm px-4">
                     Masukkan email Anda untuk menerima kode OTP reset password.
@@ -169,7 +169,7 @@
             @endif
 
             {{-- Form --}}
-            <form method="POST" action="{{ route('admin.forgot-password.post') }}" class="w-full space-y-5">
+            <form method="POST" action="{{ route('dosen.forgot-password.post') }}" class="w-full space-y-5">
                 @csrf
 
                 {{-- Email Input --}}
@@ -206,7 +206,7 @@
 
             {{-- Back to Login --}}
             <div class="mt-4 text-center">
-                <a href="{{ route('admin.login') }}" class="text-sm text-blue-500 hover:text-blue-600 hover:underline">
+                <a href="{{ route('dosen.login') }}" class="text-sm text-blue-500 hover:text-blue-600 hover:underline">
                     ← Kembali ke Login
                 </a>
             </div>

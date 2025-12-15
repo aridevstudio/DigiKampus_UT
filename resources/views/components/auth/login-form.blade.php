@@ -6,7 +6,7 @@
         <div class="flex-1 w-full max-w-sm sm:max-w-md px-2 sm:px-0 order-2 lg:order-1">
             <div class="flex flex-col items-center">
                 {{-- Header --}}
-                <div class="text-center mb-6 sm:mb-8">
+                <div class="text-center mb-6 sm:mb-8 animate-hidden animate-fade-in-down">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
                         Sign In Mahasiswa
                     </h1>
@@ -43,7 +43,7 @@
                     @csrf
 
                     {{-- NIM Input --}}
-                    <div class="relative">
+                    <div class="relative animate-hidden animate-fade-in-up stagger-1">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4 text-gray-400">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" 
@@ -56,25 +56,25 @@
                             value="{{ old('nim') }}"
                             required 
                             autofocus
-                            class="w-full border border-gray-300 rounded-lg pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            class="w-full border border-gray-300 rounded-lg pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
                             placeholder="Nim Mahasiswa"
                         >
                     </div>
 
                     {{-- Password Input --}}
-                    <div class="relative">
+                    <div class="relative animate-hidden animate-fade-in-up stagger-2">
                         <input 
                             type="password" 
                             name="password" 
                             id="password"
                             required 
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 sm:py-3 pr-12 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 sm:py-3 pr-12 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
                             placeholder="Password"
                         >
                         <button 
                             type="button" 
                             onclick="togglePassword()"
-                            class="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-400 hover:text-gray-600"
+                            class="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-400 hover:text-gray-600 password-toggle"
                         >
                             <svg id="eye-open" class="w-4 h-4 sm:w-5 sm:h-5 hidden" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -87,12 +87,12 @@
                     </div>
 
                     {{-- Remember Me & Forgot Password --}}
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between animate-hidden animate-fade-in-up stagger-3">
                         <label class="flex items-center text-xs sm:text-sm text-gray-600 cursor-pointer">
-                            <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2">
+                            <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2 checkbox-animate">
                             Remember me
                         </label>
-                        <a href="{{ route('mahasiswa.forgot-password') }}" class="text-xs sm:text-sm text-blue-500 hover:text-blue-600 hover:underline">
+                        <a href="{{ route('mahasiswa.forgot-password') }}" class="text-xs sm:text-sm text-blue-500 hover:text-blue-600 link-animate">
                             Forgot Password?
                         </a>
                     </div>
@@ -101,7 +101,7 @@
                     <button 
                         type="submit"
                         id="submit-btn"
-                        class="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-medium py-2.5 sm:py-3 px-4 rounded-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                        class="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-medium py-2.5 sm:py-3 px-4 rounded-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed btn-animate animate-hidden animate-fade-in-up stagger-4"
                     >
                         <svg id="loading-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -112,7 +112,7 @@
                 </form>
 
                 {{-- Footer --}}
-                <div class="w-full mt-6 sm:mt-8 flex items-center justify-between text-[10px] sm:text-xs text-gray-400">
+                <div class="w-full mt-6 sm:mt-8 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 footer-animate">
                     <a href="#" class="hover:underline">Privacy Policy</a>
                     <span>2025 © Universitas Terbuka</span>
                 </div>
@@ -120,20 +120,20 @@
         </div>
 
         {{-- Right Side - Illustration with Logo (Hidden on mobile, shown on lg screens) --}}
-        <div class="hidden lg:flex flex-1 justify-center items-center order-1 lg:order-2">
+        <div class="hidden lg:flex flex-1 justify-center items-center order-1 lg:order-2 animate-slide-in-right">
             <img 
                 src="{{ asset('assets/image/auth/Illustration 1 Login Mahasiswa.png') }}" 
                 alt="Login Illustration" 
-                class="w-full max-w-sm xl:max-w-md 2xl:max-w-lg object-contain"
+                class="w-full max-w-sm xl:max-w-md 2xl:max-w-lg object-contain illustration-animate"
             >
         </div>
 
         {{-- Mobile Logo (Shown only on mobile/tablet) --}}
-        <div class="lg:hidden w-full flex justify-center mb-4 order-1">
+        <div class="lg:hidden w-full flex justify-center mb-4 order-1 animate-fade-in-down">
             <img 
                 src="{{ asset('assets/image/auth/Illustration 1 Login Mahasiswa.png') }}" 
                 alt="Login Illustration" 
-                class="w-48 sm:w-64 md:w-80 object-contain"
+                class="w-48 sm:w-64 md:w-80 object-contain illustration-animate"
             >
         </div>
     </div>

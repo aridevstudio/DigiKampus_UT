@@ -9,7 +9,8 @@
 </head>
 
 <body>
-    <a href="{{ route('admin.login') }}">login admin/dosen</a>
+    <a href="{{ route('admin.login') }}">login admin</a>
+    <a href="{{ route('dosen.login') }}">login dosen</a>
     <a href="{{ route('mahasiswa.login') }}">login mahasiswa</a>
 
 </body>

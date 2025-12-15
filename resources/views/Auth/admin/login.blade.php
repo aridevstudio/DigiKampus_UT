@@ -17,16 +17,16 @@
         {{-- Left Side - Illustration with Blue Circles --}}
         <div class="w-1/2 relative overflow-hidden flex items-center justify-center" style="background: linear-gradient(to bottom, #EFF6FF, #DBEAFE);">
             {{-- Decorative Blue Circles --}}
-            <div class="absolute top-[-80px] left-1/2 transform -translate-x-1/2 w-[300px] h-[300px] rounded-full border-[40px] border-[#A8D4F0]/40"></div>
-            <div class="absolute bottom-[-100px] right-[-50px] w-[250px] h-[250px] rounded-full border-[35px] border-[#A8D4F0]/30"></div>
-            <div class="absolute bottom-[20%] left-[-80px] w-[200px] h-[200px] rounded-full border-[30px] border-[#A8D4F0]/25"></div>
+            <div class="absolute top-[-80px] left-1/2 transform -translate-x-1/2 w-[300px] h-[300px] rounded-full border-[40px] border-[#A8D4F0]/40 circle-animate-1"></div>
+            <div class="absolute bottom-[-100px] right-[-50px] w-[250px] h-[250px] rounded-full border-[35px] border-[#A8D4F0]/30 circle-animate-2"></div>
+            <div class="absolute bottom-[20%] left-[-80px] w-[200px] h-[200px] rounded-full border-[30px] border-[#A8D4F0]/25 circle-animate-3"></div>
             
             {{-- Illustration --}}
-            <div class="relative z-10 px-8">
+            <div class="relative z-10 px-8 animate-slide-in-left">
                 <img 
                     src="{{ asset('assets/image/auth/Ilustrasi Login Admin.png') }}" 
                     alt="Admin Login Illustration" 
-                    class="w-full max-w-md xl:max-w-lg object-contain"
+                    class="w-full max-w-md xl:max-w-lg object-contain illustration-animate"
                     style="filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));"
                 >
             </div>
@@ -36,7 +36,7 @@
         <div class="flex-1 flex items-center justify-center px-16 py-12">
             <div class="w-full max-w-md">
                 {{-- Header --}}
-                <div class="text-center mb-8">
+                <div class="text-center mb-8 animate-hidden animate-fade-in-down">
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">
                         Masuk sebagai Admin
                     </h1>
@@ -73,7 +73,7 @@
                     @csrf
 
                     {{-- Email Input --}}
-                    <div class="relative">
+                    <div class="relative animate-hidden animate-fade-in-up stagger-1">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" 
@@ -86,25 +86,25 @@
                             value="{{ old('email') }}"
                             required 
                             autofocus
-                            class="w-full border border-gray-300 rounded-lg pl-12 pr-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            class="w-full border border-gray-300 rounded-lg pl-12 pr-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
                             placeholder="nama.admin@ut.ac.id"
                         >
                     </div>
 
                     {{-- Password Input --}}
-                    <div class="relative">
+                    <div class="relative animate-hidden animate-fade-in-up stagger-2">
                         <input 
                             type="password" 
                             name="password" 
                             id="password-desktop"
                             required 
-                            class="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            class="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
                             placeholder="Password"
                         >
                         <button 
                             type="button" 
                             onclick="togglePasswordDesktop()"
-                            class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600"
+                            class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 password-toggle"
                         >
                             <svg id="eye-open-desktop" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -117,12 +117,12 @@
                     </div>
 
                     {{-- Remember Me & Forgot Password --}}
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between animate-hidden animate-fade-in-up stagger-3">
                         <label class="flex items-center text-sm text-gray-600 cursor-pointer">
-                            <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2">
+                            <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2 checkbox-animate">
                             Ingat saya
                         </label>
-                        <a href="{{ route('admin.forgot-password') }}" class="text-sm text-blue-500 hover:text-blue-600 hover:underline">
+                        <a href="{{ route('admin.forgot-password') }}" class="text-sm text-blue-500 hover:text-blue-600 link-animate">
                             Forgot Password?
                         </a>
                     </div>
@@ -130,14 +130,14 @@
                     {{-- Submit Button --}}
                     <button 
                         type="submit"
-                        class="w-full bg-[#3B9BD9] hover:bg-[#2d8bc7] active:bg-[#257db5] text-white font-medium py-3 px-4 rounded-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                        class="w-full bg-[#3B9BD9] hover:bg-[#2d8bc7] active:bg-[#257db5] text-white font-medium py-3 px-4 rounded-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed btn-animate animate-hidden animate-fade-in-up stagger-4"
                     >
                         <span>Masuk Sekarang</span>
                     </button>
                 </form>
 
                 {{-- Footer --}}
-                <div class="mt-8 flex items-center justify-between text-xs text-gray-400">
+                <div class="mt-8 flex items-center justify-between text-xs text-gray-400 footer-animate">
                     <a href="#" class="hover:underline">Privacy Policy</a>
                     <span>2025 © Universitas Terbuka</span>
                 </div>
