@@ -243,6 +243,29 @@
                 if (darkIcon) darkIcon.classList.add('hidden');
             }
         })();
+
+        // Notification toggle - placeholder for pages without notification view
+        function toggleNotificationView() {
+            const notificationView = document.getElementById('notification-view');
+            if (notificationView) {
+                // If notification view exists (dashboard), toggle it
+                const dashboardContent = document.getElementById('dashboard-content');
+                const calendarView = document.getElementById('calendar-view');
+                
+                if (calendarView) calendarView.classList.add('hidden');
+                
+                if (notificationView.classList.contains('hidden')) {
+                    if (dashboardContent) dashboardContent.classList.add('hidden');
+                    notificationView.classList.remove('hidden');
+                } else {
+                    if (dashboardContent) dashboardContent.classList.remove('hidden');
+                    notificationView.classList.add('hidden');
+                }
+            } else {
+                // If no notification view, redirect to dashboard with notification open
+                window.location.href = '{{ route("mahasiswa.dashboard") }}?view=notifications';
+            }
+        }
     </script>
     
     @stack('scripts')

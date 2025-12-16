@@ -227,6 +227,16 @@ class MahasiswaController extends Controller
         return view ('pages.mahasiswa.calendar');
     }
 
+    // controller show profile
+    public function showProfile() {
+        return view ('pages.mahasiswa.profile');
+    }
+
+    // controller show notification
+    public function showNotification() {
+        return view ('pages.mahasiswa.notification');
+    }
+
     // controller logout account
     public function logout(Logout $request) {
           $request->logout();

@@ -1,6 +1,32 @@
 @php
-$user = Auth::guard('mahasiswa')->user();
+// Detect which user type is logged in and set appropriate routes
+$userType = null;
+$user = null;
+
+if (Auth::guard('mahasiswa')->check()) {
+    $userType = 'mahasiswa';
+    $user = Auth::guard('mahasiswa')->user();
+} elseif (Auth::guard('dosen')->check()) {
+    $userType = 'dosen';
+    $user = Auth::guard('dosen')->user();
+} elseif (Auth::guard('admin')->check()) {
+    $userType = 'admin';
+    $user = Auth::guard('admin')->user();
+}
+
 $userName = $user?->name ?? 'User';
+
+// Define routes based on user type
+$routes = [
+    'dashboard' => $userType ? route($userType . '.dashboard') : '#',
+    'profile' => $userType ? route($userType . '.profile', [], false) : '#',
+    'notification' => $userType && Route::has($userType . '.notification') ? route($userType . '.notification') : '#',
+    'logout' => $userType ? route($userType . '.logout') : '#',
+];
+
+// Check if routes exist
+$hasNotificationRoute = $userType && Route::has($userType . '.notification');
+$hasProfileRoute = $userType && Route::has($userType . '.profile');
 @endphp
 
 <header class="sticky top-0 z-30 bg-white dark:bg-[#1f2937] border-b border-gray-100 dark:border-gray-700/50 px-4 sm:px-6 py-3">
@@ -40,12 +66,21 @@ $userName = $user?->name ?? 'User';
                 </button>
 
                 {{-- Notifications --}}
-                <button onclick="toggleNotificationView()" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition relative icon-bounce">
+                @if($hasNotificationRoute)
+                <a href="{{ $routes['notification'] }}" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition relative icon-bounce">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full notif-pulse"></span>
+                </a>
+                @else
+                <button class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition relative">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     </svg>
                     <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full notif-pulse"></span>
                 </button>
+                @endif
 
                 {{-- Messages (hidden on small mobile) --}}
                 <button class="hidden sm:flex p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
@@ -76,10 +111,12 @@ $userName = $user?->name ?? 'User';
                 {{-- Dropdown Menu --}}
                 <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1f2937] rounded-lg shadow-lg border border-gray-100 dark:border-gray-700/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                     <div class="py-2">
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Profile</a>
+                        @if($hasProfileRoute)
+                        <a href="{{ route($userType . '.profile') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Profile</a>
+                        @endif
                         <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Settings</a>
                         <hr class="my-1 border-gray-100 dark:border-gray-700/50">
-                        <form action="{{ route('mahasiswa.logout') }}" method="POST">
+                        <form action="{{ $routes['logout'] }}" method="POST">
                             @csrf
                             <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
                                 Logout
@@ -91,3 +128,4 @@ $userName = $user?->name ?? 'User';
         </div>
     </div>
 </header>
+

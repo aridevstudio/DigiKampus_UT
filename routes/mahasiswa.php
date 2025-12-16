@@ -26,6 +26,8 @@ Route::prefix('mahasiswa')
         // get
         Route::get('/dashboard', [MahasiswaController::class, 'showDashboard'])->name('mahasiswa.dashboard');
         Route::get('/calendar', [MahasiswaController::class, 'showCalendar'])->name('mahasiswa.calendar');
+        Route::get('/profile', [MahasiswaController::class, 'showProfile'])->name('mahasiswa.profile');
+        Route::get('/notification', [MahasiswaController::class, 'showNotification'])->name('mahasiswa.notification');
 
         // post
         Route::post('/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');
