@@ -237,6 +237,90 @@ class MahasiswaController extends Controller
         return view ('pages.mahasiswa.notification');
     }
 
+    // controller show edit profile form
+    public function showEditProfile() {
+        return view ('pages.mahasiswa.edit-profile');
+    }
+
+    // controller show get courses
+    public function showGetCourses() {
+        return view ('pages.mahasiswa.get-courses');
+    }
+
+    // controller show course detail
+    public function showCourseDetail($id) {
+        return view ('pages.mahasiswa.course-detail', ['id' => $id]);
+    }
+
+    // controller show checkout
+    public function showCheckout() {
+        return view ('pages.mahasiswa.checkout');
+    }
+
+    // controller show payment
+    public function showPayment() {
+        return view ('pages.mahasiswa.payment');
+    }
+
+    // controller show payment success
+    public function showPaymentSuccess() {
+        return view ('pages.mahasiswa.payment-success');
+    }
+
+    // controller update profile
+    public function updateProfile(Request $request) {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'jenis_kelamin' => ['nullable', 'in:L,P'],
+            'alamat' => ['nullable', 'string', 'max:500'],
+            'no_hp' => ['nullable', 'string', 'max:20'],
+            'foto_profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z]).+$/'],
+        ], [
+            'password.regex' => 'Kata sandi harus mengandung huruf besar dan huruf kecil.',
+        ]);
+
+        $user = Auth::guard('mahasiswa')->user();
+        
+        // Update user name
+        $user->name = $request->name;
+        
+        // Update password if provided
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+        
+        $user->save();
+
+        // Update or create profile
+        $profileData = [
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'alamat' => $request->alamat,
+            'no_hp' => $request->no_hp,
+            'visibilitas' => $request->has('visibilitas') ? 1 : 0,
+        ];
+
+        // Handle foto upload
+        if ($request->hasFile('foto_profile')) {
+            $file = $request->file('foto_profile');
+            $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('profiles', $filename, 'public');
+            $profileData['foto_profile'] = $path;
+        }
+
+        if ($user->profile) {
+            $user->profile->update($profileData);
+        } else {
+            $profileData['user_id'] = $user->id;
+            \App\Models\Profile::create($profileData);
+        }
+
+        return redirect()->route('mahasiswa.profile')
+            ->with('success', 'Profil berhasil diperbarui!');
+    }
+
     // controller logout account
     public function logout(Logout $request) {
           $request->logout();

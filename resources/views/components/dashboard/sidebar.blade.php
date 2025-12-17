@@ -3,7 +3,7 @@
 @php
 $menuItems = [
     ['name' => 'Home', 'icon' => 'home', 'route' => 'mahasiswa.dashboard', 'key' => 'home'],
-    ['name' => 'Get Courses', 'icon' => 'grid', 'route' => '#', 'key' => 'get-courses'],
+    ['name' => 'Get Courses', 'icon' => 'grid', 'route' => 'mahasiswa.get-courses', 'key' => 'get-courses'],
     ['name' => 'Courses', 'icon' => 'play', 'route' => '#', 'key' => 'courses'],
     ['name' => 'Forum', 'icon' => 'chat-bubble', 'route' => '#', 'key' => 'forum'],
     ['name' => 'Chat', 'icon' => 'message', 'route' => '#', 'key' => 'chat'],

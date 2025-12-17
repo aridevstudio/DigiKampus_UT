@@ -13,7 +13,8 @@
     $noHp = $profile?->no_hp ?? '+62 812-3456-7890';
     $alamat = $profile?->alamat ?? 'Alamat belum diisi';
     $tanggalLahir = $profile?->tanggal_lahir ? \Carbon\Carbon::parse($profile->tanggal_lahir)->translatedFormat('d F Y') : '1 Januari 2000';
-    $jenisKelamin = $profile?->jenis_kelamin ?? 'Laki-laki';
+    $jenisKelaminRaw = $profile?->jenis_kelamin ?? 'L';
+    $jenisKelamin = $jenisKelaminRaw === 'L' ? 'Laki-laki' : ($jenisKelaminRaw === 'P' ? 'Perempuan' : $jenisKelaminRaw);
     $ipk = $profile?->ipk ?? '0.00';
     $totalSks = $profile?->total_sks ?? 0;
     $maxSks = 144;
@@ -45,12 +46,12 @@
         <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Lihat informasi pribadi dan status akademik kamu di Universitas Terbuka.</p>
     </div>
     <div class="flex items-center gap-3">
-        <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm transition flex items-center gap-2 btn-pulse">
+        <a href="{{ route('mahasiswa.profile.edit') }}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm transition flex items-center gap-2 btn-pulse">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
             Edit Profil
-        </button>
+        </a>
         <a href="{{ route('mahasiswa.dashboard') }}" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 text-sm flex items-center gap-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />

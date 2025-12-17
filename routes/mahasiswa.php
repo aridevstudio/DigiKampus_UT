@@ -28,7 +28,14 @@ Route::prefix('mahasiswa')
         Route::get('/calendar', [MahasiswaController::class, 'showCalendar'])->name('mahasiswa.calendar');
         Route::get('/profile', [MahasiswaController::class, 'showProfile'])->name('mahasiswa.profile');
         Route::get('/notification', [MahasiswaController::class, 'showNotification'])->name('mahasiswa.notification');
+        Route::get('/profile/edit', [MahasiswaController::class, 'showEditProfile'])->name('mahasiswa.profile.edit');
+        Route::get('/get-courses', [MahasiswaController::class, 'showGetCourses'])->name('mahasiswa.get-courses');
+        Route::get('/course/{id}', [MahasiswaController::class, 'showCourseDetail'])->name('mahasiswa.course-detail');
+        Route::get('/checkout', [MahasiswaController::class, 'showCheckout'])->name('mahasiswa.checkout');
+        Route::get('/payment', [MahasiswaController::class, 'showPayment'])->name('mahasiswa.payment');
+        Route::get('/payment-success', [MahasiswaController::class, 'showPaymentSuccess'])->name('mahasiswa.payment-success');
 
         // post
         Route::post('/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');
+        Route::put('/profile/update', [MahasiswaController::class, 'updateProfile'])->name('mahasiswa.profile.update');
     });
