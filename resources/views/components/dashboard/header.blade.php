@@ -15,6 +15,7 @@ if (Auth::guard('mahasiswa')->check()) {
 }
 
 $userName = $user?->name ?? 'User';
+$userProfilePicture = $user?->profile?->foto_profile;
 
 // Define routes based on user type
 $routes = [
@@ -119,9 +120,15 @@ $hasProfileRoute = $userType && Route::has($userType . '.profile');
 
             {{-- User Avatar --}}
             <div class="relative group">
+                @if($userProfilePicture)
+                <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden">
+                    <img src="{{ asset('storage/' . $userProfilePicture) }}" alt="{{ $userName }}" class="w-full h-full object-cover">
+                </button>
+                @else
                 <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
                     {{ strtoupper(substr($userName, 0, 2)) }}
                 </button>
+                @endif
                 
                 {{-- Dropdown Menu --}}
                 <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1f2937] rounded-lg shadow-lg border border-gray-100 dark:border-gray-700/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">

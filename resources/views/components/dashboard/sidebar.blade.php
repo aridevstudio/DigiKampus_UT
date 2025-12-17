@@ -8,14 +8,16 @@ $menuItems = [
     ['name' => 'Forum', 'icon' => 'chat-bubble', 'route' => '#', 'key' => 'forum'],
     ['name' => 'Chat', 'icon' => 'message', 'route' => '#', 'key' => 'chat'],
     ['name' => 'Apps', 'icon' => 'apps', 'route' => '#', 'key' => 'apps'],
-    ['name' => 'Calendar', 'icon' => 'calendar', 'route' => '#', 'key' => 'calendar'],
+    ['name' => 'Calendar', 'icon' => 'calendar', 'route' => 'mahasiswa.calendar', 'key' => 'calendar'],
     ['name' => 'Finance', 'icon' => 'wallet', 'route' => '#', 'key' => 'finance'],
     ['name' => 'Learning Goals', 'icon' => 'target', 'route' => '#', 'key' => 'learning-goals'],
     ['name' => 'News', 'icon' => 'newspaper', 'route' => '#', 'key' => 'news'],
 ];
 
 $user = Auth::guard('mahasiswa')->user();
+$profile = $user?->profile;
 $userName = $user?->name ?? 'Mahasiswa';
+$userProfilePicture = $profile?->foto_profile;
 @endphp
 
 {{-- Sidebar - Soft Dark Mode --}}
@@ -38,9 +40,13 @@ $userName = $user?->name ?? 'Mahasiswa';
     {{-- User Profile --}}
     <div class="p-4 border-b border-gray-100 dark:border-gray-700/50">
         <div class="flex items-center gap-3">
+            @if($userProfilePicture)
+            <img src="{{ asset('storage/' . $userProfilePicture) }}" alt="{{ $userName }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+            @else
             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                 {{ strtoupper(substr($userName, 0, 2)) }}
             </div>
+            @endif
             <div class="min-w-0">
                 <p class="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">{{ $userName }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Mahasiswa</p>
