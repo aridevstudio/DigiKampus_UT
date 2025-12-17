@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\MahasiswaAuthController;
 use App\Http\Controllers\Api\Auth\DosenAuthController;
 use App\Http\Controllers\Api\Auth\AdminAuthController;
+use App\Http\Controllers\Api\Mahasiswa\MahasiswaDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +32,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/profile', [MahasiswaAuthController::class, 'updateProfile']);
         Route::put('/change-password', [MahasiswaAuthController::class, 'changePassword']);
         Route::post('/logout', [MahasiswaAuthController::class, 'logout']);
+
+        // Dashboard routes
+        Route::get('/dashboard', [MahasiswaDashboardController::class, 'index']);
+        Route::get('/dashboard/progress', [MahasiswaDashboardController::class, 'progress']);
+        Route::get('/dashboard/courses', [MahasiswaDashboardController::class, 'enrolledCourses']);
+        Route::get('/dashboard/news', [MahasiswaDashboardController::class, 'news']);
+        Route::get('/dashboard/agenda', [MahasiswaDashboardController::class, 'agenda']);
     });
 
     Route::prefix('dosen')->group(function () {
