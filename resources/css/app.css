@@ -1,3 +1,306 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "tailwindcss";
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+/* ============================================
+   LOGIN PAGE ANIMATIONS - SALUT UT
+   Smooth & Subtle Version
+   ============================================ */
+
+@layer components {
+
+    /* Smooth fade animations - more subtle */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Subtle float for illustration */
+    @keyframes gentleFloat {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-6px);
+        }
+    }
+
+    /* Animation Classes - Smooth & Subtle */
+    .animate-fade-in {
+        animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    .animate-fade-in-down {
+        animation: fadeInDown 0.5s ease-out forwards;
+    }
+
+    .animate-slide-in-left {
+        animation: slideInLeft 0.5s ease-out forwards;
+    }
+
+    .animate-slide-in-right {
+        animation: slideInRight 0.5s ease-out forwards;
+    }
+
+    /* Initially hidden for animation */
+    .animate-hidden {
+        opacity: 0;
+    }
+
+    /* Stagger delays - shorter for smoother feel */
+    .stagger-1 {
+        animation-delay: 0.05s;
+    }
+
+    .stagger-2 {
+        animation-delay: 0.1s;
+    }
+
+    .stagger-3 {
+        animation-delay: 0.15s;
+    }
+
+    .stagger-4 {
+        animation-delay: 0.2s;
+    }
+
+    .stagger-5 {
+        animation-delay: 0.25s;
+    }
+
+    .stagger-6 {
+        animation-delay: 0.3s;
+    }
+
+    .stagger-7 {
+        animation-delay: 0.35s;
+    }
+
+    /* Illustration - gentle floating */
+    .illustration-animate {
+        animation: gentleFloat 5s ease-in-out infinite;
+    }
+
+    /* Decorative circles - very subtle movement */
+    .circle-animate-1,
+    .circle-animate-2,
+    .circle-animate-3 {
+        animation: none;
+        /* Disable circle animation for cleaner look */
+    }
+
+    /* Button - smooth hover */
+    .btn-animate {
+        transition: all 0.2s ease;
+    }
+
+    .btn-animate:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-animate:active {
+        transform: translateY(0);
+    }
+
+    /* Input - subtle focus effect */
+    .input-animate {
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .input-animate:focus {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Link - simple underline on hover */
+    .link-animate {
+        transition: color 0.2s ease;
+    }
+
+    .link-animate:hover {
+        text-decoration: underline;
+    }
+
+    /* Google button - smooth hover */
+    .google-btn-animate {
+        transition: all 0.2s ease;
+    }
+
+    .google-btn-animate:hover {
+        background-color: #f8f9fa;
+        border-color: #dadce0;
+    }
+
+    /* Password toggle - subtle scale */
+    .password-toggle {
+        transition: transform 0.15s ease;
+    }
+
+    .password-toggle:hover {
+        transform: scale(1.05);
+    }
+
+    /* Checkbox - smooth transition */
+    .checkbox-animate {
+        transition: all 0.15s ease;
+    }
+
+    /* Footer - simple fade */
+    .footer-animate {
+        animation: fadeIn 0.6s ease-out forwards;
+        animation-delay: 0.4s;
+        opacity: 0;
+    }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
+   AUTO-APPLY ANIMATIONS TO ALL AUTH PAGES
+   ============================================ */
+
+/* Global page fade-in */
+body {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Form containers auto-animate */
+form {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+/* All main headings */
+h1 {
+    animation: fadeInDown 0.4s ease-out;
+}
+
+/* All form inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+    transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* All buttons smooth hover */
+button[type="submit"],
+button.btn-animate,
+a.btn-animate {
+    transition: all 0.2s ease;
+}
+
+button[type="submit"]:hover,
+button.btn-animate:hover,
+a.btn-animate:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.2);
+}
+
+button[type="submit"]:active,
+button.btn-animate:active,
+a.btn-animate:active {
+    transform: translateY(0);
+}
+
+/* All links smooth transition */
+a {
+    transition: color 0.2s ease;
+}
+
+/* Images in auth pages - subtle hover */
+img {
+    transition: transform 0.3s ease;
+}
+
+/* Illustration float - auto-apply to auth page images */
+.lg\:flex img,
+section img {
+    animation: gentleFloat 5s ease-in-out infinite;
+}
