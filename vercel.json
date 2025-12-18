@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/index.php": {
-       "runtime": "vercel-php@0.7.4"
+      "runtime": "vercel-php@0.7.4"
     }
   },
   "routes": [
@@ -18,5 +18,8 @@
     "DB_DATABASE": "YOUR_DB_NAME_HERE",
     "DB_USERNAME": "YOUR_DB_USERNAME_HERE",
     "DB_PASSWORD": "YOUR_DB_PASSWORD_HERE"
+  },
+  "build": {
+    "outputDirectory": "public"
   }
 }
