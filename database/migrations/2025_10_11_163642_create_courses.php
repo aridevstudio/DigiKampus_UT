@@ -34,6 +34,9 @@ return new class extends Migration {
      */
     public function down(): void
     {
+        Schema::table('assignments', function (Blueprint $table) {
+        $table->dropForeign(['id_course']); // nama kolom FK di assignments
+        });
         Schema::dropIfExists('courses');
     }
 };
