@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Auth\MahasiswaAuthController;
 use App\Http\Controllers\Api\Auth\DosenAuthController;
 use App\Http\Controllers\Api\Auth\AdminAuthController;
 use App\Http\Controllers\Api\Mahasiswa\MahasiswaDashboardController;
+use App\Http\Controllers\Api\Mahasiswa\CourseController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +40,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/courses', [MahasiswaDashboardController::class, 'enrolledCourses']);
         Route::get('/dashboard/news', [MahasiswaDashboardController::class, 'news']);
         Route::get('/dashboard/agenda', [MahasiswaDashboardController::class, 'agenda']);
+
+        // Course routes
+        Route::get('/courses', [CourseController::class, 'index']);
+        Route::get('/courses/webinar', [CourseController::class, 'webinar']);
+        Route::get('/courses/tiket', [CourseController::class, 'tiket']);
+        Route::get('/courses/kursus', [CourseController::class, 'kursus']);
+        Route::get('/courses/{id}', [CourseController::class, 'show']);
+        Route::post('/courses/{id}/rate', [CourseController::class, 'rate']);
     });
 
     Route::prefix('dosen')->group(function () {
