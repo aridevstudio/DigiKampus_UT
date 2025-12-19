@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\DosenAuthController;
 use App\Http\Controllers\Api\Auth\AdminAuthController;
 use App\Http\Controllers\Api\Mahasiswa\MahasiswaDashboardController;
 use App\Http\Controllers\Api\Mahasiswa\CourseController;
+use App\Http\Controllers\Api\Mahasiswa\MyCourseController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,13 +42,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/news', [MahasiswaDashboardController::class, 'news']);
         Route::get('/dashboard/agenda', [MahasiswaDashboardController::class, 'agenda']);
 
-        // Course routes
+        // Course routes (Get Courses - for browsing)
         Route::get('/courses', [CourseController::class, 'index']);
         Route::get('/courses/webinar', [CourseController::class, 'webinar']);
         Route::get('/courses/tiket', [CourseController::class, 'tiket']);
         Route::get('/courses/kursus', [CourseController::class, 'kursus']);
         Route::get('/courses/{id}', [CourseController::class, 'show']);
         Route::post('/courses/{id}/rate', [CourseController::class, 'rate']);
+
+        // My Courses routes (Kursus Saya - enrolled courses for learning)
+        Route::get('/my-courses', [MyCourseController::class, 'index']);
+        Route::get('/my-courses/weekly-target', [MyCourseController::class, 'weeklyTarget']);
+        Route::get('/my-courses/recommendations', [MyCourseController::class, 'recommendations']);
+        Route::get('/my-courses/{id}', [MyCourseController::class, 'show']);
+        Route::post('/my-courses/{courseId}/materials/{materialId}/complete', [MyCourseController::class, 'completeMaterial']);
     });
 
     Route::prefix('dosen')->group(function () {
