@@ -68,7 +68,7 @@ class ProfileController extends Controller
             'visibilitas' => $request->has('visibilitas') ? 1 : 0,
         ];
 
-        // Handle foto upload
+        // Handle foto upload - simpan ke local storage
         if ($request->hasFile('foto_profile')) {
             $file = $request->file('foto_profile');
             $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();

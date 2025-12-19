@@ -75,19 +75,15 @@ class DashboardController extends Controller
         $month = request('month', now()->month);
         $year = request('year', now()->year);
         
-        // Get agenda for selected month
+        // Get agenda for selected month (for calendar markers)
         $agenda = Agenda::where('id_mahasiswa', $user->id)
             ->whereMonth('tanggal', $month)
             ->whereYear('tanggal', $year)
             ->orderBy('tanggal', 'asc')
             ->get();
         
-        // Get all agenda for upcoming events list
-        $upcomingAgenda = Agenda::where('id_mahasiswa', $user->id)
-            ->where('tanggal', '>=', now()->startOfDay())
-            ->orderBy('tanggal', 'asc')
-            ->take(10)
-            ->get();
+        // Get same agenda for sidebar list (all events for the month, same as dashboard)
+        $upcomingAgenda = $agenda;
         
         return view('pages.mahasiswa.calendar', [
             'agenda' => $agenda,

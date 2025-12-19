@@ -32,4 +32,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Profile::class);
     }
+
+    public function agenda()
+    {
+        return $this->hasMany(Agenda::class, 'id_mahasiswa', 'id');
+    }
 }

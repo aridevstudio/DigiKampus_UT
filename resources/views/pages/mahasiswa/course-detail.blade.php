@@ -1,190 +1,127 @@
 <x-layouts.dashboard :active="'get-courses'">
 @php
-    // Get course ID from URL or default to 1
-    $courseId = request()->route('id') ?? 1;
+    // Use data from controller - $course is passed from CourseController@show
+    // Default image if thumbnail is empty
+    $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop';
+    $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
     
-    // Dummy course data
-    $courses = [
-        1 => [
-            'id' => 1,
-            'code' => 'STIN4101',
-            'title' => 'Dasar-dasar Desain UI/UX',
-            'description' => 'Pelajari prinsip fundamental desain antarmuka pengguna dan pengalaman pengguna untuk membuat produk digital yang menarik.',
-            'type' => 'Webinar',
-            'price' => 150000,
-            'rating' => 4.5,
-            'reviews' => 1250,
-            'image' => 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=250&fit=crop',
-            'duration' => '8 minggu (1 semester)',
-            'method' => 'Online learning dengan tutorial tatap muka',
-            'objectives' => 'Memahami prinsip-prinsip desain UI/UX, membuat wireframe dan prototype, serta menguji usability produk digital.',
-            'creator' => 'Universitas Terbuka',
-            'prerequisites' => [
-                ['code' => 'STIN4100', 'name' => 'Pengantar Teknologi Informasi'],
-                ['code' => 'MATA4110', 'name' => 'Matematika Dasar'],
-            ],
-            'modules' => [
-                [
-                    'title' => 'Modul 1: Pengantar UI/UX Design', 
-                    'items' => 5,
-                    'contents' => [
-                        ['type' => 'video', 'title' => 'Apa itu UI/UX Design?', 'duration' => '12:30'],
-                        ['type' => 'video', 'title' => 'Perbedaan UI dan UX', 'duration' => '08:45'],
-                        ['type' => 'document', 'title' => 'Modul PDF - Pengantar', 'duration' => ''],
-                        ['type' => 'quiz', 'title' => 'Quiz: Pengantar UI/UX', 'duration' => '10 soal'],
-                        ['type' => 'assignment', 'title' => 'Tugas: Analisis Desain', 'duration' => ''],
-                    ]
-                ],
-                [
-                    'title' => 'Modul 2: User Research', 
-                    'items' => 4,
-                    'contents' => [
-                        ['type' => 'video', 'title' => 'Metode User Research', 'duration' => '15:20'],
-                        ['type' => 'video', 'title' => 'Interview dan Survey', 'duration' => '11:10'],
-                        ['type' => 'document', 'title' => 'Template Survey', 'duration' => ''],
-                        ['type' => 'quiz', 'title' => 'Quiz: User Research', 'duration' => '8 soal'],
-                    ]
-                ],
-                [
-                    'title' => 'Modul 3: Wireframing & Prototyping', 
-                    'items' => 6,
-                    'contents' => [
-                        ['type' => 'video', 'title' => 'Pengantar Wireframing', 'duration' => '10:00'],
-                        ['type' => 'video', 'title' => 'Tools untuk Prototyping', 'duration' => '18:30'],
-                        ['type' => 'video', 'title' => 'Membuat Prototype dengan Figma', 'duration' => '25:00'],
-                        ['type' => 'document', 'title' => 'Template Wireframe', 'duration' => ''],
-                        ['type' => 'assignment', 'title' => 'Tugas: Buat Wireframe', 'duration' => ''],
-                        ['type' => 'quiz', 'title' => 'Quiz: Prototyping', 'duration' => '12 soal'],
-                    ]
-                ],
-                [
-                    'title' => 'Modul 4: Usability Testing', 
-                    'items' => 3,
-                    'contents' => [
-                        ['type' => 'video', 'title' => 'Metode Usability Testing', 'duration' => '14:00'],
-                        ['type' => 'document', 'title' => 'Checklist Testing', 'duration' => ''],
-                        ['type' => 'assignment', 'title' => 'Tugas Akhir: Usability Report', 'duration' => ''],
-                    ]
-                ],
-            ],
-        ],
-        4 => [
-            'id' => 4,
-            'code' => 'STIN4113',
-            'title' => 'Analisis Data dengan Python',
-            'description' => 'Dari pemula hingga mahir, pelajari cara mengolah dan menganalisis data menggunakan Python dan library populer.',
-            'type' => 'Kursus',
-            'price' => 199000,
-            'rating' => 4,
-            'reviews' => 980,
-            'image' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
-            'duration' => '16 minggu (1 semester)',
-            'method' => 'Online learning dengan tutorial tatap muka',
-            'objectives' => 'Memahami konsep dasar sistem informasi, komponen-komponennya, dan penerapannya dalam organisasi.',
-            'creator' => 'Universitas Terbuka',
-            'prerequisites' => [
-                ['code' => 'STIN4101', 'name' => 'Pengantar Teknologi Informasi'],
-                ['code' => 'MATA4110', 'name' => 'Matematika Dasar'],
-            ],
-            'modules' => [
-                [
-                    'title' => 'Modul 1: Konsep Dasar Analisis Data', 
-                    'items' => 5,
-                    'contents' => [
-                        ['type' => 'video', 'title' => 'Pengantar Data Science', 'duration' => '15:00'],
-                        ['type' => 'video', 'title' => 'Tipe Data dan Struktur', 'duration' => '12:30'],
-                        ['type' => 'video', 'title' => 'Data Cleaning Dasar', 'duration' => '18:00'],
-                        ['type' => 'document', 'title' => 'Modul PDF - Konsep Dasar', 'duration' => ''],
-                        ['type' => 'quiz', 'title' => 'Quiz: Konsep Dasar', 'duration' => '10 soal'],
-                    ]
-                ],
-                [
-                    'title' => 'Modul 2: Database dan Manajemen Data', 
-                    'items' => 4,
-                    'contents' => [
-                        ['type' => 'video', 'title' => 'Pengantar SQL', 'duration' => '20:00'],
-                        ['type' => 'video', 'title' => 'Query Data dengan Python', 'duration' => '16:45'],
-                        ['type' => 'assignment', 'title' => 'Praktik SQL', 'duration' => ''],
-                        ['type' => 'quiz', 'title' => 'Quiz: Database', 'duration' => '8 soal'],
-                    ]
-                ],
-                [
-                    'title' => 'Modul 3: Python untuk Data Science', 
-                    'items' => 6,
-                    'contents' => [
-                        ['type' => 'video', 'title' => 'Pandas Dasar', 'duration' => '22:00'],
-                        ['type' => 'video', 'title' => 'NumPy Fundamentals', 'duration' => '18:30'],
-                        ['type' => 'video', 'title' => 'Data Manipulation', 'duration' => '25:00'],
-                        ['type' => 'document', 'title' => 'Cheatsheet Pandas', 'duration' => ''],
-                        ['type' => 'assignment', 'title' => 'Tugas: Analisis Dataset', 'duration' => ''],
-                        ['type' => 'quiz', 'title' => 'Quiz: Python', 'duration' => '15 soal'],
-                    ]
-                ],
-                [
-                    'title' => 'Modul 4: Visualisasi Data', 
-                    'items' => 4,
-                    'contents' => [
-                        ['type' => 'video', 'title' => 'Matplotlib & Seaborn', 'duration' => '20:00'],
-                        ['type' => 'video', 'title' => 'Interactive Charts', 'duration' => '15:00'],
-                        ['type' => 'assignment', 'title' => 'Tugas Akhir: Dashboard', 'duration' => ''],
-                        ['type' => 'quiz', 'title' => 'Quiz: Visualisasi', 'duration' => '10 soal'],
-                    ]
-                ],
-            ],
-        ],
+    // Map course data for easy access in view
+    $courseData = [
+        'id' => $course->id_course,
+        'code' => $course->kode_course,
+        'title' => $course->nama_course,
+        'description' => $course->deskripsi ?? 'Tidak ada deskripsi tersedia',
+        'type' => ucfirst($course->tipe ?? 'kursus'),
+        'price' => floatval($course->harga ?? 0),
+        'rating' => floatval($course->rating ?? 0),
+        'reviews' => intval($course->jumlah_ulasan ?? 0),
+        'image' => $courseImage,
+        'duration' => '16 minggu (1 semester)', // Could be added to course model later
+        'method' => 'Online learning dengan tutorial tatap muka',
+        'objectives' => $course->deskripsi ?? 'Memahami konsep dasar dan penerapannya.',
+        'creator' => $course->dosen ? $course->dosen->name : 'Universitas Terbuka',
     ];
     
-    // Get course or default
-    $course = $courses[$courseId] ?? $courses[4];
+    // Build modules from course materials
+    $modules = [];
+    if ($course->materials && $course->materials->count() > 0) {
+        // Group materials by module (urutan or create single module)
+        $currentModule = [
+            'title' => 'Modul 1: Materi Pembelajaran',
+            'items' => $course->materials->count(),
+            'contents' => []
+        ];
+        
+        foreach ($course->materials as $material) {
+            $currentModule['contents'][] = [
+                'type' => $material->tipe ?? 'document', // video, file, text
+                'title' => $material->judul_material,
+                'duration' => '',
+            ];
+        }
+        
+        $modules[] = $currentModule;
+    }
     
-    // Dummy reviews data
+    // Add assignments as separate module
+    if ($course->assignments && $course->assignments->count() > 0) {
+        $assignmentModule = [
+            'title' => 'Tugas & Penilaian',
+            'items' => $course->assignments->count(),
+            'contents' => []
+        ];
+        
+        foreach ($course->assignments as $assignment) {
+            $assignmentModule['contents'][] = [
+                'type' => 'assignment',
+                'title' => $assignment->judul,
+                'duration' => $assignment->deadline ? $assignment->deadline->format('d M Y') : '',
+            ];
+        }
+        
+        $modules[] = $assignmentModule;
+    }
+    
+    // If no modules, add placeholder
+    if (empty($modules)) {
+        $modules[] = [
+            'title' => 'Modul Belum Tersedia',
+            'items' => 0,
+            'contents' => []
+        ];
+    }
+    
+    // Prerequisites (could be added to course model later)
+    $prerequisites = [
+        ['code' => 'STIN4101', 'name' => 'Pengantar Teknologi Informasi'],
+    ];
+    
+    // Get reviews from course ratings - calculate real breakdown
+    $allRatings = $course->ratings ?? collect();
+    $totalReviews = $allRatings->count();
+    $avgRating = $totalReviews > 0 ? $allRatings->avg('rating') : 0;
+    
     $reviewStats = [
-        'average' => 4.7,
-        'total' => 245,
+        'average' => round($avgRating, 1),
+        'total' => $totalReviews,
         'breakdown' => [
-            5 => 191,
-            4 => 37,
-            3 => 12,
-            2 => 3,
-            1 => 2,
+            5 => $allRatings->where('rating', 5)->count(),
+            4 => $allRatings->where('rating', 4)->count(),
+            3 => $allRatings->where('rating', 3)->count(),
+            2 => $allRatings->where('rating', 2)->count(),
+            1 => $allRatings->where('rating', 1)->count(),
         ]
     ];
     
-    $reviews = [
-        [
-            'name' => 'Ahmad Rizki',
-            'avatar' => 'https://ui-avatars.com/api/?name=Ahmad+Rizki&background=3b82f6&color=fff',
-            'rating' => 5,
-            'date' => '2 hari yang lalu',
-            'comment' => 'Kursus ini sangat membantu dalam memahami konsep dasar statistika. Materi dijelaskan dengan sangat detail dan mudah dipahami. Dosen pengajar juga responsif dalam menjawab pertanyaan di forum diskusi.',
-        ],
-        [
-            'name' => 'Maya Sari',
-            'avatar' => 'https://ui-avatars.com/api/?name=Maya+Sari&background=ec4899&color=fff',
-            'rating' => 4,
-            'date' => '5 hari yang lalu',
-            'comment' => 'Materi kursus lengkap dan terstruktur dengan baik. Video pembelajaran berkualitas tinggi. Hanya saja beberapa quiz agak sulit, tapi overall sangat recommended untuk yang ingin belajar statistika dari dasar.',
-        ],
-        [
-            'name' => 'Budi Santoso',
-            'avatar' => 'https://ui-avatars.com/api/?name=Budi+Santoso&background=10b981&color=fff',
-            'rating' => 5,
-            'date' => '1 minggu yang lalu',
-            'comment' => 'Excellent course! Saya sudah mencoba beberapa kursus online lainnya, tapi ini yang paling komprehensif. Tugas-tugasnya relevan dengan dunia kerja.',
-        ],
-        [
-            'name' => 'Siti Nurhaliza',
-            'avatar' => 'https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=f59e0b&color=fff',
-            'rating' => 4,
-            'date' => '2 minggu yang lalu',
-            'comment' => 'Bagus untuk pemula. Penjelasannya step by step dan tidak terlalu cepat. Recommended!',
-        ],
-    ];
+    // Get sample reviews from database
+    $reviews = [];
+    if ($allRatings->count() > 0) {
+        foreach ($allRatings->sortByDesc('created_at')->take(10) as $rating) {
+            // Get profile photo or fallback to ui-avatars
+            $profilePhoto = null;
+            if ($rating->mahasiswa && $rating->mahasiswa->profile && $rating->mahasiswa->profile->foto_profile) {
+                $profilePhoto = asset('storage/' . $rating->mahasiswa->profile->foto_profile);
+            } else {
+                $profilePhoto = 'https://ui-avatars.com/api/?name=' . urlencode($rating->mahasiswa ? $rating->mahasiswa->name : 'A') . '&background=3b82f6&color=fff';
+            }
+            
+            $reviews[] = [
+                'name' => $rating->mahasiswa ? $rating->mahasiswa->name : 'Anonymous',
+                'avatar' => $profilePhoto,
+                'rating' => $rating->rating,
+                'date' => $rating->created_at ? $rating->created_at->diffForHumans() : 'Baru saja',
+                'comment' => $rating->ulasan ?? 'Kursus yang bagus!',
+            ];
+        }
+    }
     
     $typeColors = [
         'Webinar' => 'bg-blue-500',
         'Kursus' => 'bg-green-500',
         'Tiket' => 'bg-rose-500',
+        'webinar' => 'bg-blue-500',
+        'kursus' => 'bg-green-500',
+        'tiket' => 'bg-rose-500',
     ];
 @endphp
 
@@ -197,8 +134,8 @@
             </svg>
         </a>
         <div>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $course['title'] }}</h1>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $course['code'] }}</p>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $courseData['title'] }}</h1>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $courseData['code'] }}</p>
         </div>
     </div>
 </div>
@@ -234,7 +171,7 @@
                 <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Konten Kursus</h2>
                 
                 <div class="space-y-3">
-                    @foreach($course['modules'] as $moduleIndex => $module)
+                    @foreach($modules as $moduleIndex => $module)
                     <div class="border border-gray-200 dark:border-gray-700/50 rounded-xl overflow-hidden">
                         <button onclick="toggleModule(this)" class="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
                             <div class="flex items-center gap-3">
@@ -298,7 +235,7 @@
                 </h2>
                 
                 <div class="space-y-2">
-                    @foreach($course['prerequisites'] as $prereq)
+                    @foreach($prerequisites as $prereq)
                     <div class="flex items-center gap-2 text-sm">
                         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -321,7 +258,7 @@
                         </svg>
                         <div>
                             <p class="font-medium text-gray-800 dark:text-gray-100 text-sm">Durasi</p>
-                            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $course['duration'] }}</p>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $courseData['duration'] }}</p>
                         </div>
                     </div>
                     
@@ -332,7 +269,7 @@
                         </svg>
                         <div>
                             <p class="font-medium text-gray-800 dark:text-gray-100 text-sm">Metode</p>
-                            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $course['method'] }}</p>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $courseData['method'] }}</p>
                         </div>
                     </div>
                     
@@ -343,7 +280,7 @@
                         </svg>
                         <div>
                             <p class="font-medium text-gray-800 dark:text-gray-100 text-sm">Tujuan Pembelajaran</p>
-                            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $course['objectives'] }}</p>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $courseData['objectives'] }}</p>
                         </div>
                     </div>
                 </div>
@@ -355,11 +292,11 @@
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">Konten Kursus Lengkap</h2>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ count($course['modules']) }} Modul • {{ collect($course['modules'])->sum('items') }} Item</span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ count($modules) }} Modul • {{ collect($modules)->sum('items') }} Item</span>
                 </div>
                 
                 <div class="space-y-4">
-                    @foreach($course['modules'] as $moduleIndex => $module)
+                    @foreach($modules as $moduleIndex => $module)
                     <div class="border border-gray-200 dark:border-gray-700/50 rounded-xl overflow-hidden">
                         {{-- Module Header --}}
                         <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50">
@@ -441,7 +378,7 @@
         <div id="tab-prasyarat" class="tab-content hidden">
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
                 <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Prasyarat Detail</h2>
-                @foreach($course['prerequisites'] as $prereq)
+                @foreach($prerequisites as $prereq)
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl mb-3">
                     <p class="font-medium text-gray-800 dark:text-gray-100">{{ $prereq['name'] }}</p>
                     <p class="text-gray-500 dark:text-gray-400 text-sm">Kode: {{ $prereq['code'] }}</p>
@@ -454,8 +391,8 @@
         <div id="tab-deskripsi" class="tab-content hidden">
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
                 <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Deskripsi Lengkap</h2>
-                <p class="text-gray-600 dark:text-gray-300">{{ $course['description'] }}</p>
-                <p class="text-gray-500 dark:text-gray-400 text-sm mt-4">{{ $course['objectives'] }}</p>
+                <p class="text-gray-600 dark:text-gray-300">{{ $courseData['description'] }}</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mt-4">{{ $courseData['objectives'] }}</p>
             </div>
         </div>
         
@@ -487,7 +424,7 @@
                     <div class="flex-1 space-y-2">
                         @foreach($reviewStats['breakdown'] as $star => $count)
                         @php
-                            $percentage = ($count / $reviewStats['total']) * 100;
+                            $percentage = $reviewStats['total'] > 0 ? ($count / $reviewStats['total']) * 100 : 0;
                         @endphp
                         <div class="flex items-center gap-3">
                             <span class="text-sm text-gray-600 dark:text-gray-400 w-6">{{ $star }}★</span>
@@ -558,21 +495,21 @@
         <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden sticky top-24 animate-fade-in-up delay-200 hover-lift">
             {{-- Course Image --}}
             <div class="relative h-44 overflow-hidden">
-                <img src="{{ $course['image'] }}" alt="{{ $course['title'] }}" class="w-full h-full object-cover">
-                <span class="absolute top-3 right-3 {{ $typeColors[$course['type']] }} text-white text-xs font-medium px-3 py-1 rounded-full">
-                    {{ $course['type'] }}
+                <img src="{{ $courseData['image'] }}" alt="{{ $courseData['title'] }}" class="w-full h-full object-cover">
+                <span class="absolute top-3 right-3 {{ $typeColors[$courseData['type']] ?? 'bg-green-500' }} text-white text-xs font-medium px-3 py-1 rounded-full">
+                    {{ $courseData['type'] }}
                 </span>
             </div>
             
             {{-- Course Info --}}
             <div class="p-5">
-                <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-2">{{ $course['title'] }}</h3>
-                <p class="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{{ $course['description'] }}</p>
+                <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-2">{{ $courseData['title'] }}</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{{ $courseData['description'] }}</p>
                 
                 {{-- Rating --}}
                 <div class="flex items-center gap-1 mb-3">
                     @for($i = 1; $i <= 5; $i++)
-                        @if($i <= floor($course['rating']))
+                        @if($i <= floor($courseData['rating']))
                         <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
@@ -582,12 +519,16 @@
                         </svg>
                         @endif
                     @endfor
-                    <span class="text-gray-400 text-xs ml-1">({{ number_format($course['reviews']) }} ulasan)</span>
+                    <span class="text-gray-400 text-xs ml-1">({{ number_format($courseData['reviews']) }} ulasan)</span>
                 </div>
                 
                 {{-- Price --}}
                 <p class="text-blue-600 dark:text-blue-400 font-bold text-xl mb-4">
-                    Rp {{ number_format($course['price'], 0, ',', '.') }}
+                    @if($courseData['price'] > 0)
+                        Rp {{ number_format($courseData['price'], 0, ',', '.') }}
+                    @else
+                        Gratis
+                    @endif
                 </p>
                 
                 {{-- Buttons --}}
@@ -607,7 +548,7 @@
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <span class="text-gray-500 dark:text-gray-400 text-sm">Created by {{ $course['creator'] }}</span>
+                    <span class="text-gray-500 dark:text-gray-400 text-sm">Created by {{ $courseData['creator'] }}</span>
                 </div>
             </div>
         </div>

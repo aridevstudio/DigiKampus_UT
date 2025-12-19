@@ -29,17 +29,103 @@
     $fakultas = $jurusan?->fakultas ?? 'Fakultas';
     $jenjang = $jurusan?->jenjang ?? 'S1';
     
-    // Dummy data for features not in backend
-    $tahunMasuk = '2021';
-    $semesterProgress = 70;
-    $kursusAktif = 4;
-    $tugasDiselesaikan = 12;
+    // Calculate real progress data from backend
+    // Get user's enrollments
+    $userEnrollments = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->get();
     
-    $kegiatanTerakhir = [
-        ['icon' => 'check', 'text' => 'Menyelesaikan Modul 3 – Etika Profesi', 'color' => 'green'],
-        ['icon' => 'chat', 'text' => 'Membalas diskusi di Forum Data Science', 'color' => 'blue'],
-        ['icon' => 'calendar', 'text' => 'Mengikuti Webinar Manajemen, 10 Juni 2025', 'color' => 'rose'],
-    ];
+    // Kursus aktif = enrollments with status 'aktif' or in progress
+    $kursusAktif = $userEnrollments->whereIn('status', ['aktif', 'in_progress'])->count();
+    if ($kursusAktif == 0) {
+        $kursusAktif = $userEnrollments->count(); // Count all if no specific status
+    }
+    
+    // Tugas diselesaikan = completed assignments or enrollment progress indicator  
+    $tugasDiselesaikan = $userEnrollments->where('progress', '>=', 100)->count();
+    if ($tugasDiselesaikan == 0) {
+        // Calculate from total progress across all enrollments
+        $tugasDiselesaikan = intval($userEnrollments->sum('progress') / 10); // Rough estimate
+    }
+    
+    // Semester progress = average progress of all enrollments
+    $semesterProgress = 0;
+    if ($userEnrollments->count() > 0) {
+        $semesterProgress = intval($userEnrollments->avg('progress') ?? 0);
+    }
+    
+    // Tahun masuk from profile or estimate
+    $tahunMasuk = $profile?->created_at?->format('Y') ?? '2021';
+    
+    // Get recent activities from various sources
+    $kegiatanTerakhir = collect();
+    
+    // 1. Recent agenda items (upcoming/past events)
+    $recentAgenda = $user->agenda()
+        ->orderBy('tanggal', 'desc')
+        ->limit(3)
+        ->get();
+    
+    foreach ($recentAgenda as $agenda) {
+        $iconMap = [
+            'webinar' => ['icon' => 'calendar', 'color' => 'blue'],
+            'workshop' => ['icon' => 'calendar', 'color' => 'green'],
+            'deadline' => ['icon' => 'alert', 'color' => 'rose'],
+            'quiz' => ['icon' => 'quiz', 'color' => 'yellow'],
+        ];
+        $iconData = $iconMap[$agenda->tipe] ?? ['icon' => 'calendar', 'color' => 'gray'];
+        
+        $kegiatanTerakhir->push([
+            'icon' => $iconData['icon'],
+            'text' => $agenda->judul . ', ' . \Carbon\Carbon::parse($agenda->tanggal)->translatedFormat('d F Y'),
+            'color' => $iconData['color'],
+            'date' => $agenda->tanggal,
+        ]);
+    }
+    
+    // 2. Recent enrollments (enrolled courses)
+    $recentEnrollments = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+        ->with('course')
+        ->orderBy('created_at', 'desc')
+        ->limit(2)
+        ->get();
+    
+    foreach ($recentEnrollments as $enrollment) {
+        if ($enrollment->course) {
+            $kegiatanTerakhir->push([
+                'icon' => 'check',
+                'text' => 'Mendaftar kursus ' . $enrollment->course->nama_course,
+                'color' => 'green',
+                'date' => $enrollment->created_at,
+            ]);
+        }
+    }
+    
+    // 3. Recent course ratings (reviews submitted)
+    $recentRatings = \App\Models\CourseRating::where('id_mahasiswa', $user->id)
+        ->with('course')
+        ->orderBy('created_at', 'desc')
+        ->limit(2)
+        ->get();
+    
+    foreach ($recentRatings as $rating) {
+        if ($rating->course) {
+            $kegiatanTerakhir->push([
+                'icon' => 'chat',
+                'text' => 'Memberikan ulasan untuk ' . $rating->course->nama_course,
+                'color' => 'blue',
+                'date' => $rating->created_at,
+            ]);
+        }
+    }
+    
+    // Sort by date and take latest 5
+    $kegiatanTerakhir = $kegiatanTerakhir->sortByDesc('date')->take(5)->values()->toArray();
+    
+    // If empty, show placeholder
+    if (empty($kegiatanTerakhir)) {
+        $kegiatanTerakhir = [
+            ['icon' => 'info', 'text' => 'Belum ada kegiatan terbaru', 'color' => 'gray'],
+        ];
+    }
 @endphp
 
 {{-- Page Header --}}

@@ -45,8 +45,8 @@ $eventDays = collect($events)->pluck('day')->toArray();
 $eventColors = [
     'webinar' => 'blue',
     'workshop' => 'green',
-    'deadline' => 'yellow',
-    'quiz' => 'purple',
+    'deadline' => 'rose',
+    'quiz' => 'yellow',
 ];
 @endphp
 
@@ -162,15 +162,15 @@ $eventColors = [
                 <span class="text-sm text-gray-600 dark:text-gray-400">Workshop</span>
             </div>
             <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                <span class="text-sm text-gray-600 dark:text-gray-400">Deadline Kelas</span>
+                <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                <span class="text-sm text-gray-600 dark:text-gray-400">Deadline</span>
             </div>
         </div>
     </div>
 
     {{-- Upcoming Events Section --}}
     <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50 h-fit">
-        <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Kegiatan yang Akan Datang</h2>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Kegiatan Bulan Ini</h2>
         
         <div class="space-y-3">
             @forelse($upcomingEvents as $index => $event)
@@ -189,7 +189,7 @@ $eventColors = [
                 </div>
                 @endif
             @empty
-                <p class="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">Belum ada kegiatan yang akan datang.</p>
+                <p class="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">Belum ada kegiatan bulan ini.</p>
             @endforelse
 
             {{-- Hidden extra events (shown on click) --}}

@@ -226,7 +226,7 @@ if (isset($agenda) && count($agenda) > 0) {
     <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50 hover-lift">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100">Agenda Kegiatan Kamu</h2>
-            <button onclick="toggleCalendarView()" class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium transition hover-scale">Lihat Semua Jadwal</button>
+            <a href="{{ route('mahasiswa.calendar') }}" class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium transition hover-scale">Lihat Semua Jadwal</a>
         </div>
         
         {{-- Mini Calendar (default view) --}}

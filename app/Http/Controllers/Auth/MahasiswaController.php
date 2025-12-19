@@ -40,6 +40,14 @@ class MahasiswaController extends Controller
                 ->withInput()
                 ->with('alert', 'NIM tidak ditemukan. Pastikan NIM Anda sudah terdaftar.');
         }
+        
+        // Check if user role is mahasiswa
+        if ($user->role !== 'mahasiswa') {
+            return back()
+                ->withInput()
+                ->with('alert', 'Akun ini bukan akun mahasiswa. Silakan login di portal yang sesuai.');
+        }
+        
         if (!Hash::check($validated['password'], $user->password)) {
                 return back()
                     ->withInput()
