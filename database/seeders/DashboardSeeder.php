@@ -17,10 +17,10 @@ class DashboardSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get a mahasiswa user (role = 'mahasiswa')
-        $mahasiswa = User::where('role', 'mahasiswa')->first();
+        // Get ALL mahasiswa users (role = 'mahasiswa')
+        $allMahasiswa = User::where('role', 'mahasiswa')->get();
 
-        if (!$mahasiswa) {
+        if ($allMahasiswa->isEmpty()) {
             $this->command->info('No mahasiswa found. Please create a mahasiswa user first.');
             return;
         }
@@ -91,8 +91,8 @@ class DashboardSeeder extends Seeder
             $createdCourses[] = $course;
         }
 
-        // Create enrollments for mahasiswa
-        $enrollments = [
+        // Create enrollments for ALL mahasiswa
+        $enrollmentTemplates = [
             ['course_index' => 0, 'progress' => 45, 'status' => 'aktif'],
             ['course_index' => 1, 'progress' => 78, 'status' => 'aktif'],
             ['course_index' => 2, 'progress' => 32, 'status' => 'aktif'],
@@ -100,18 +100,22 @@ class DashboardSeeder extends Seeder
             ['course_index' => 4, 'progress' => 100, 'status' => 'selesai'],
         ];
 
-        foreach ($enrollments as $enrollData) {
-            Enrollment::updateOrCreate(
-                [
-                    'id_mahasiswa' => $mahasiswa->id,
-                    'id_course' => $createdCourses[$enrollData['course_index']]->id_course,
-                ],
-                [
-                    'tanggal_daftar' => Carbon::now()->subDays(rand(10, 60)),
-                    'progress' => $enrollData['progress'],
-                    'status' => $enrollData['status'],
-                ]
-            );
+        $enrollmentCount = 0;
+        foreach ($allMahasiswa as $mahasiswa) {
+            foreach ($enrollmentTemplates as $enrollData) {
+                Enrollment::updateOrCreate(
+                    [
+                        'id_mahasiswa' => $mahasiswa->id,
+                        'id_course' => $createdCourses[$enrollData['course_index']]->id_course,
+                    ],
+                    [
+                        'tanggal_daftar' => Carbon::now()->subDays(rand(10, 60)),
+                        'progress' => $enrollData['progress'],
+                        'status' => $enrollData['status'],
+                    ]
+                );
+                $enrollmentCount++;
+            }
         }
 
         // Create news/announcements
@@ -177,21 +181,27 @@ class DashboardSeeder extends Seeder
             ],
         ];
 
-        foreach ($agendaData as $agenda) {
-            Agenda::updateOrCreate(
-                [
-                    'id_mahasiswa' => $mahasiswa->id,
-                    'judul' => $agenda['judul'],
-                ],
-                $agenda
-            );
+        $agendaCount = 0;
+        foreach ($allMahasiswa as $mahasiswa) {
+            foreach ($agendaData as $agenda) {
+                Agenda::updateOrCreate(
+                    [
+                        'id_mahasiswa' => $mahasiswa->id,
+                        'judul' => $agenda['judul'],
+                    ],
+                    $agenda
+                );
+                $agendaCount++;
+            }
         }
 
+        $mahasiswaCount = $allMahasiswa->count();
         $this->command->info('Dashboard seeder completed successfully!');
         $this->command->info("Created/Updated:");
         $this->command->info("- 5 Courses");
-        $this->command->info("- 5 Enrollments for mahasiswa ID: {$mahasiswa->id}");
+        $this->command->info("- {$enrollmentCount} Enrollments for {$mahasiswaCount} mahasiswa");
         $this->command->info("- 3 News items");
-        $this->command->info("- 3 Agenda items");
+        $this->command->info("- {$agendaCount} Agenda items for {$mahasiswaCount} mahasiswa");
     }
 }
+

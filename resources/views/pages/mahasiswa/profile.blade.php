@@ -12,7 +12,9 @@
     $nim = $profile?->nim ?? '0000000000';
     $noHp = $profile?->no_hp ?? '+62 812-3456-7890';
     $alamat = $profile?->alamat ?? 'Alamat belum diisi';
+    $tempatLahir = $profile?->tempat_lahir ?? 'Tempat lahir';
     $tanggalLahir = $profile?->tanggal_lahir ? \Carbon\Carbon::parse($profile->tanggal_lahir)->translatedFormat('d F Y') : '1 Januari 2000';
+    $ttl = $tempatLahir . ', ' . $tanggalLahir; // Tempat, Tanggal Lahir
     $jenisKelaminRaw = $profile?->jenis_kelamin ?? 'L';
     $jenisKelamin = $jenisKelaminRaw === 'L' ? 'Laki-laki' : ($jenisKelaminRaw === 'P' ? 'Perempuan' : $jenisKelaminRaw);
     $ipk = $profile?->ipk ?? '0.00';
@@ -20,6 +22,7 @@
     $maxSks = 144;
     $statusAkademik = $profile?->status_akademik ?? 'Aktif';
     $fotoProfile = $profile?->foto_profile ? asset('storage/' . $profile->foto_profile) : asset('assets/image/default-avatar.png');
+    $bio = $profile?->bio ?? 'Bio belum diisi';
     
     // Jurusan data
     $programStudi = $jurusan?->nama_jurusan ?? 'Program Studi';
@@ -149,8 +152,8 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Tanggal Lahir</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $tanggalLahir }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Tempat, Tanggal Lahir</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $ttl }}</p>
                     </div>
                 </div>
                 
@@ -166,6 +169,21 @@
                         <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $jenisKelamin }}</p>
                     </div>
                 </div>
+
+                {{-- Bio --}}
+                @if($bio && $bio !== 'Bio belum diisi')
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Bio</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $bio }}</p>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>

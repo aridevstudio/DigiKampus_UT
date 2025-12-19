@@ -1,11 +1,17 @@
 <?php
 
 use App\Http\Controllers\Auth\MahasiswaController;
+use App\Http\Controllers\Mahasiswa\DashboardController;
+use App\Http\Controllers\Mahasiswa\ProfileController;
+use App\Http\Controllers\Mahasiswa\CourseController;
+use App\Http\Controllers\Mahasiswa\CheckoutController;
 use App\Http\Middleware\EnsureAuthenticatedMahasiswa;
 use App\Http\Middleware\RedirectIfAuthenticatedMahasiswa;
 use Illuminate\Support\Facades\Route;
 
-// Route untuk login (hanya bisa diakses jika belum login)
+// ============================================
+// AUTH ROUTES (hanya bisa diakses jika belum login)
+// ============================================
 Route::prefix('mahasiswa')
     ->middleware(RedirectIfAuthenticatedMahasiswa::class)
     ->group(function () {
@@ -19,23 +25,32 @@ Route::prefix('mahasiswa')
         Route::post('/reset-password', [MahasiswaController::class, 'resetPassword'])->name('mahasiswa.reset-password.post');
     });
 
-// Route untuk dashboard (hanya bisa diakses jika sudah login)
+// ============================================
+// PROTECTED ROUTES (hanya bisa diakses jika sudah login)
+// ============================================
 Route::prefix('mahasiswa')
     ->middleware(EnsureAuthenticatedMahasiswa::class)
     ->group(function () {
-        // get
-        Route::get('/dashboard', [MahasiswaController::class, 'showDashboard'])->name('mahasiswa.dashboard');
-        Route::get('/calendar', [MahasiswaController::class, 'showCalendar'])->name('mahasiswa.calendar');
-        Route::get('/profile', [MahasiswaController::class, 'showProfile'])->name('mahasiswa.profile');
-        Route::get('/notification', [MahasiswaController::class, 'showNotification'])->name('mahasiswa.notification');
-        Route::get('/profile/edit', [MahasiswaController::class, 'showEditProfile'])->name('mahasiswa.profile.edit');
-        Route::get('/get-courses', [MahasiswaController::class, 'showGetCourses'])->name('mahasiswa.get-courses');
-        Route::get('/course/{id}', [MahasiswaController::class, 'showCourseDetail'])->name('mahasiswa.course-detail');
-        Route::get('/checkout', [MahasiswaController::class, 'showCheckout'])->name('mahasiswa.checkout');
-        Route::get('/payment', [MahasiswaController::class, 'showPayment'])->name('mahasiswa.payment');
-        Route::get('/payment-success', [MahasiswaController::class, 'showPaymentSuccess'])->name('mahasiswa.payment-success');
-
-        // post
+        
+        // Dashboard & Calendar
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('mahasiswa.dashboard');
+        Route::get('/calendar', [DashboardController::class, 'calendar'])->name('mahasiswa.calendar');
+        Route::get('/notification', [DashboardController::class, 'notification'])->name('mahasiswa.notification');
+        
+        // Profile
+        Route::get('/profile', [ProfileController::class, 'index'])->name('mahasiswa.profile');
+        Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('mahasiswa.profile.edit');
+        Route::put('/profile/update', [ProfileController::class, 'update'])->name('mahasiswa.profile.update');
+        
+        // Courses
+        Route::get('/get-courses', [CourseController::class, 'index'])->name('mahasiswa.get-courses');
+        Route::get('/course/{id}', [CourseController::class, 'show'])->name('mahasiswa.course-detail');
+        
+        // Checkout & Payment
+        Route::get('/checkout', [CheckoutController::class, 'index'])->name('mahasiswa.checkout');
+        Route::get('/payment', [CheckoutController::class, 'payment'])->name('mahasiswa.payment');
+        Route::get('/payment-success', [CheckoutController::class, 'success'])->name('mahasiswa.payment-success');
+        
+        // Logout
         Route::post('/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');
-        Route::put('/profile/update', [MahasiswaController::class, 'updateProfile'])->name('mahasiswa.profile.update');
     });

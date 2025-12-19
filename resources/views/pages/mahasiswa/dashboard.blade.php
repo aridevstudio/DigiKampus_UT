@@ -4,67 +4,75 @@ $user = Auth::guard('mahasiswa')->user();
 $userName = $user?->name ?? 'Mahasiswa';
 $firstName = explode(' ', $userName)[0];
 
-// Dummy Data for Preview
-$totalProgress = 65;
-$activeCoursesCount = 5;
-$completedCoursesCount = 3;
-$pendingCoursesCount = 2;
+// Use data from controller (with fallback to 0 if not set)
+$totalProgressValue = $totalProgress ?? 0;
+$activeCoursesCount = $kursusAktif ?? 0;
+$completedCoursesCount = $kursusSelesai ?? 0;
+$pendingCoursesCount = $kursusTertunda ?? 0;
 
-$courses = [
-    [
-        'name' => 'Manajemen (EKMA4116)',
-        'progress' => 45,
-        'status' => 'Sedang Berlangsung',
-        'color' => 'purple',
-        'gradient' => 'from-purple-600 to-purple-400',
-        'display' => ['Business', 'Management', 'Course']
-    ],
-    [
-        'name' => 'Akuntansi (EKMA4115)',
-        'progress' => 78,
-        'status' => 'Sedang Berlangsung',
-        'color' => 'teal',
-        'gradient' => 'from-teal-500 to-cyan-400',
-        'display' => ['FINANCE', '', '']
-    ],
-    [
-        'name' => 'Statistika (MATA4101)',
-        'progress' => 32,
-        'status' => 'Sedang Berlangsung',
-        'color' => 'yellow',
-        'gradient' => 'from-yellow-400 to-orange-400',
-        'display' => ['Statistics', 'Data', 'Analysis']
-    ],
+// Gradients for course cards
+$gradients = [
+    'from-purple-600 to-purple-400',
+    'from-teal-500 to-cyan-400',
+    'from-yellow-400 to-orange-400',
+    'from-rose-500 to-pink-400',
+    'from-indigo-500 to-blue-400',
 ];
 
-$news = [
-    [
-        'title' => 'Reminder Deadline Submission Modul Manajemen',
-        'time' => '2 jam yang lalu',
-        'icon' => 'alert',
-        'color' => 'rose'
-    ],
-    [
-        'title' => 'Webinar Manajemen dibuka minggu ini',
-        'time' => '5 jam yang lalu',
-        'icon' => 'calendar',
-        'color' => 'blue'
-    ],
-    [
-        'title' => 'Nilai UTS Statistika sudah keluar',
-        'time' => '1 hari yang lalu',
-        'icon' => 'document',
-        'color' => 'green'
-    ],
-];
+// Build courses array from enrolledCourses (from controller)
+$courses = [];
+if (isset($enrolledCourses) && count($enrolledCourses) > 0) {
+    foreach ($enrolledCourses as $index => $enrollment) {
+        $course = $enrollment->course;
+        $courses[] = [
+            'name' => $course->nama_course ?? 'Kursus',
+            'code' => $course->kode_course ?? '',
+            'progress' => $enrollment->progress ?? 0,
+            'status' => 'Sedang Berlangsung',
+            'gradient' => $gradients[$index % count($gradients)],
+            'dosen' => $course->dosen->name ?? 'Dosen',
+            'thumbnail' => $course->thumbnail ?? null,
+        ];
+    }
+}
 
-$events = [
-    ['day' => 10, 'color' => 'blue', 'label' => 'Webinar'],
-    ['day' => 12, 'color' => 'green', 'label' => 'Quiz'],
-    ['day' => 15, 'color' => 'rose', 'label' => 'Deadline'],
-    ['day' => 18, 'color' => 'green', 'label' => 'Workshop'],
-    ['day' => 22, 'color' => 'blue', 'label' => 'Webinar DKV'],
-];
+// Build news array from controller data
+$newsItems = [];
+if (isset($news) && count($news) > 0) {
+    foreach ($news as $item) {
+        $newsItems[] = [
+            'title' => $item->judul,
+            'time' => $item->tanggal_publish->diffForHumans(),
+            'icon' => match($item->kategori ?? 'info') {
+                'deadline' => 'alert',
+                'event', 'webinar' => 'calendar',
+                default => 'document'
+            },
+            'color' => match($item->kategori ?? 'info') {
+                'deadline' => 'rose',
+                'event', 'webinar' => 'blue',
+                default => 'green'
+            },
+        ];
+    }
+}
+
+// Build events array from agenda (from controller)
+$events = [];
+if (isset($agenda) && count($agenda) > 0) {
+    foreach ($agenda as $item) {
+        $events[] = [
+            'day' => $item->tanggal->day,
+            'color' => match($item->tipe ?? 'webinar') {
+                'deadline' => 'rose',
+                'workshop' => 'green',
+                'quiz' => 'yellow',
+                default => 'blue'
+            },
+            'label' => $item->judul,
+        ];
+    }
+}
 @endphp
 
 {{-- Main Dashboard Content --}}
@@ -104,10 +112,10 @@ $events = [
             <div>
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-gray-600 dark:text-gray-300 text-sm">Total kemajuan</span>
-                    <span class="text-blue-500 font-bold">{{ $totalProgress }}%</span>
+                    <span class="text-blue-500 font-bold">{{ $totalProgressValue }}%</span>
                 </div>
                 <div class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                    <div class="h-full bg-blue-500 rounded-full" style="width: {{ $totalProgress }}%"></div>
+                    <div class="h-full bg-blue-500 rounded-full" style="width: {{ $totalProgressValue }}%"></div>
                 </div>
             </div>
 
@@ -134,21 +142,25 @@ $events = [
 <div class="mb-4 sm:mb-6 animate-fade-in-up delay-200">
     <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4">Kursus yang Sedang Kamu Ikuti</h2>
     
+    @if(count($courses) > 0)
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         @foreach($courses as $index => $course)
         <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700/50 hover-lift animate-scale-in" style="animation-delay: {{ ($index + 1) * 100 }}ms;">
             <div class="h-32 sm:h-36 bg-gradient-to-br {{ $course['gradient'] }} flex items-center justify-center p-4">
+                @if($course['thumbnail'])
+                <img src="{{ asset('storage/' . $course['thumbnail']) }}" alt="{{ $course['name'] }}" class="w-full h-full object-cover">
+                @else
                 <div class="text-white text-center">
-                    @foreach($course['display'] as $text)
-                        @if($text)
-                        <p class="text-base sm:text-lg font-bold">{{ $text }}</p>
-                        @endif
-                    @endforeach
+                    <p class="text-base sm:text-lg font-bold">{{ $course['name'] }}</p>
+                    @if($course['code'])
+                    <p class="text-sm opacity-80">{{ $course['code'] }}</p>
+                    @endif
                 </div>
+                @endif
             </div>
             <div class="p-4">
                 <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-1 text-sm sm:text-base">{{ $course['name'] }}</h3>
-                <p class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-3">{{ $course['status'] }} − {{ $course['progress'] }}%</p>
+                <p class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-3">{{ $course['status'] }} − {{ round($course['progress']) }}%</p>
                 <div class="w-full h-2 rounded-full overflow-hidden mb-4 bg-blue-100 dark:bg-blue-500/20">
                     <div class="h-full rounded-full bg-blue-500 animate-progress" style="width: {{ $course['progress'] }}%;"></div>
                 </div>
@@ -159,6 +171,17 @@ $events = [
         </div>
         @endforeach
     </div>
+    @else
+    <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-8 text-center border border-gray-100 dark:border-gray-700/50">
+        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Kamu belum mengikuti kursus apapun.</p>
+        <a href="{{ route('mahasiswa.get-courses') }}" class="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition">
+            Jelajahi Kursus
+        </a>
+    </div>
+    @endif
 </div>
 
 {{-- Bottom Section: News & Calendar --}}
@@ -171,7 +194,7 @@ $events = [
         </div>
         
         <div class="space-y-4">
-            @foreach($news as $item)
+            @forelse($newsItems as $item)
             <div class="flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 -mx-2 px-2 py-2 rounded-lg transition cursor-pointer">
                 <div class="w-10 h-10 rounded-lg bg-{{ $item['color'] }}-100 dark:bg-{{ $item['color'] }}-500/20 flex items-center justify-center flex-shrink-0">
                     @if($item['icon'] === 'alert')
@@ -193,7 +216,9 @@ $events = [
                     <p class="text-gray-400 dark:text-gray-500 text-xs">{{ $item['time'] }}</p>
                 </div>
             </div>
-            @endforeach
+            @empty
+            <p class="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">Belum ada berita terbaru.</p>
+            @endforelse
         </div>
     </div>
 
@@ -672,7 +697,7 @@ $events = [
 
 @push('scripts')
 <script>
-    // Donut Chart with dummy data
+    // Donut Chart with real data from backend
     const ctx = document.getElementById('progressChart').getContext('2d');
     const isDark = document.documentElement.classList.contains('dark');
     
@@ -681,7 +706,7 @@ $events = [
         data: {
             labels: ['Selesai', 'Dalam Progress'],
             datasets: [{
-                data: [{{ $totalProgress }}, {{ 100 - $totalProgress }}],
+                data: [{{ $totalProgressValue }}, {{ 100 - $totalProgressValue }}],
                 backgroundColor: [
                     '#3B82F6', // Blue
                     isDark ? '#374151' : '#E5E7EB'

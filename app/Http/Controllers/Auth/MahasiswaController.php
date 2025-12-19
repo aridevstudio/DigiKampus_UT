@@ -15,34 +15,53 @@ use Illuminate\Support\Str;
 
 class MahasiswaController extends Controller
 {
-    // controller show login
+    // ============================================
+    // LOGIN
+    // ============================================
+    
+    /**
+     * Show login form
+     */
     public function showLoginForm() {
         return view ('Auth.mahasiswa.login');
     }
 
-    // controller show forgot password
+    /**
+     * Handle login form submission
+     */
+    public function showLoginFormPost(MahasiswaRequest $request) {
+        $validated = $request->validated();
+        $user = User::whereHas('profile', function($q) use ($validated) {
+            $q->where('nim', $validated['nim']);
+        })->first();
+
+        if (!$user) {
+            return back()
+                ->withInput()
+                ->with('alert', 'NIM tidak ditemukan. Pastikan NIM Anda sudah terdaftar.');
+        }
+        if (!Hash::check($validated['password'], $user->password)) {
+                return back()
+                    ->withInput()
+                    ->with('alert', 'Password salah. Silakan coba lagi.');
+        }
+
+        if ($user && Hash::check($validated['password'], $user->password)) {
+             Auth::guard('mahasiswa')->login($user);
+            return redirect()->route('mahasiswa.dashboard');
+        }
+        return back()->withErrors(['mahasiswa.login' => 'NIS atau password salah.']);
+    }
+
+    // ============================================
+    // FORGOT PASSWORD & OTP
+    // ============================================
+
+    /**
+     * Show forgot password form
+     */
     public function showForgotPasswordForm() {
         return view ('Auth.mahasiswa.forgot-password');
-    }
-
-    // controller show verify otp
-    public function showVerifyOtpForm() {
-        // Check if email is in session
-        if (!session('reset_email')) {
-            return redirect()->route('mahasiswa.forgot-password')
-                ->with('error', 'Silakan masukkan email terlebih dahulu.');
-        }
-        return view ('Auth.mahasiswa.verify-otp');
-    }
-
-    // controller show reset password
-    public function showResetPasswordForm() {
-        // Check if verification token is in session
-        if (!session('reset_token') || !session('reset_email')) {
-            return redirect()->route('mahasiswa.forgot-password')
-                ->with('error', 'Silakan verifikasi OTP terlebih dahulu.');
-        }
-        return view ('Auth.mahasiswa.reset-password');
     }
 
     /**
@@ -89,6 +108,18 @@ class MahasiswaController extends Controller
 
         return redirect()->route('mahasiswa.verify-otp')
             ->with('status', 'Kode OTP telah dikirim ke email Anda.');
+    }
+
+    /**
+     * Show verify OTP form
+     */
+    public function showVerifyOtpForm() {
+        // Check if email is in session
+        if (!session('reset_email')) {
+            return redirect()->route('mahasiswa.forgot-password')
+                ->with('error', 'Silakan masukkan email terlebih dahulu.');
+        }
+        return view ('Auth.mahasiswa.verify-otp');
     }
 
     /**
@@ -145,6 +176,22 @@ class MahasiswaController extends Controller
             ->with('status', 'OTP valid. Silakan masukkan password baru.');
     }
 
+    // ============================================
+    // RESET PASSWORD
+    // ============================================
+
+    /**
+     * Show reset password form
+     */
+    public function showResetPasswordForm() {
+        // Check if verification token is in session
+        if (!session('reset_token') || !session('reset_email')) {
+            return redirect()->route('mahasiswa.forgot-password')
+                ->with('error', 'Silakan verifikasi OTP terlebih dahulu.');
+        }
+        return view ('Auth.mahasiswa.reset-password');
+    }
+
     /**
      * Reset password with verification token
      */
@@ -192,136 +239,13 @@ class MahasiswaController extends Controller
             ->with('status', 'Password berhasil diubah. Silakan login dengan password baru.');
     }
 
-    // controller post login
-    public function showLoginFormPost(MahasiswaRequest $request) {
-        $validated = $request->validated();
-        $user = User::whereHas('profile', function($q) use ($validated) {
-            $q->where('nim', $validated['nim']);
-        })->first();
+    // ============================================
+    // LOGOUT
+    // ============================================
 
-        if (!$user) {
-            return back()
-                ->withInput()
-                ->with('alert', 'NIM tidak ditemukan. Pastikan NIM Anda sudah terdaftar.');
-        }
-        if (!Hash::check($validated['password'], $user->password)) {
-                return back()
-                    ->withInput()
-                    ->with('alert', 'Password salah. Silakan coba lagi.');
-        }
-
-        if ($user && Hash::check($validated['password'], $user->password)) {
-             Auth::guard('mahasiswa')->login($user);
-            return redirect()->route('mahasiswa.dashboard');
-        }
-        return back()->withErrors(['mahasiswa.login' => 'NIS atau password salah.']);
-    }
-
-    // controller show dashboard
-    public function showDashboard() {
-        return view ('pages.mahasiswa.dashboard');
-    }
-
-    // controller show calendar
-    public function showCalendar() {
-        return view ('pages.mahasiswa.calendar');
-    }
-
-    // controller show profile
-    public function showProfile() {
-        return view ('pages.mahasiswa.profile');
-    }
-
-    // controller show notification
-    public function showNotification() {
-        return view ('pages.mahasiswa.notification');
-    }
-
-    // controller show edit profile form
-    public function showEditProfile() {
-        return view ('pages.mahasiswa.edit-profile');
-    }
-
-    // controller show get courses
-    public function showGetCourses() {
-        return view ('pages.mahasiswa.get-courses');
-    }
-
-    // controller show course detail
-    public function showCourseDetail($id) {
-        return view ('pages.mahasiswa.course-detail', ['id' => $id]);
-    }
-
-    // controller show checkout
-    public function showCheckout() {
-        return view ('pages.mahasiswa.checkout');
-    }
-
-    // controller show payment
-    public function showPayment() {
-        return view ('pages.mahasiswa.payment');
-    }
-
-    // controller show payment success
-    public function showPaymentSuccess() {
-        return view ('pages.mahasiswa.payment-success');
-    }
-
-    // controller update profile
-    public function updateProfile(Request $request) {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'tanggal_lahir' => ['nullable', 'date'],
-            'jenis_kelamin' => ['nullable', 'in:L,P'],
-            'alamat' => ['nullable', 'string', 'max:500'],
-            'no_hp' => ['nullable', 'string', 'max:20'],
-            'foto_profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z]).+$/'],
-        ], [
-            'password.regex' => 'Kata sandi harus mengandung huruf besar dan huruf kecil.',
-        ]);
-
-        $user = Auth::guard('mahasiswa')->user();
-        
-        // Update user name
-        $user->name = $request->name;
-        
-        // Update password if provided
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
-        }
-        
-        $user->save();
-
-        // Update or create profile
-        $profileData = [
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'alamat' => $request->alamat,
-            'no_hp' => $request->no_hp,
-            'visibilitas' => $request->has('visibilitas') ? 1 : 0,
-        ];
-
-        // Handle foto upload
-        if ($request->hasFile('foto_profile')) {
-            $file = $request->file('foto_profile');
-            $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('profiles', $filename, 'public');
-            $profileData['foto_profile'] = $path;
-        }
-
-        if ($user->profile) {
-            $user->profile->update($profileData);
-        } else {
-            $profileData['user_id'] = $user->id;
-            \App\Models\Profile::create($profileData);
-        }
-
-        return redirect()->route('mahasiswa.profile')
-            ->with('success', 'Profil berhasil diperbarui!');
-    }
-
-    // controller logout account
+    /**
+     * Handle logout
+     */
     public function logout(Logout $request) {
           $request->logout();
           return redirect()->route('mahasiswa.login');

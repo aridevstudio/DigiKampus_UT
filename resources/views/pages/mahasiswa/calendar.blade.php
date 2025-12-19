@@ -3,21 +3,42 @@
 $user = Auth::guard('mahasiswa')->user();
 $userName = $user?->name ?? 'Mahasiswa';
 
-// Current month data
-$currentMonth = now()->month;
-$currentYear = now()->year;
-$monthName = now()->translatedFormat('F Y');
+// Use data from controller or default to current month
+$month = $currentMonth ?? now()->month;
+$year = $currentYear ?? now()->year;
+$monthDate = \Carbon\Carbon::createFromDate($year, $month, 1);
+$monthName = $monthDate->translatedFormat('F Y');
 $today = now()->day;
-$daysInMonth = now()->daysInMonth;
-$firstDayOfWeek = now()->startOfMonth()->dayOfWeek;
+$daysInMonth = $monthDate->daysInMonth;
+$firstDayOfWeek = $monthDate->startOfMonth()->dayOfWeek;
 
-// Dummy events data
-$events = [
-    ['day' => 4, 'type' => 'webinar', 'title' => 'Webinar Akuntansi', 'date' => '10 Juni', 'time' => '10.00 WIB'],
-    ['day' => 16, 'type' => 'workshop', 'title' => 'Workshop DKV', 'date' => '11 Desember', 'time' => '10.00 WIB'],
-    ['day' => 18, 'type' => 'workshop', 'title' => 'Workshop Python', 'date' => '18 Desember', 'time' => '14.00 WIB'],
-    ['day' => 22, 'type' => 'deadline', 'title' => 'Deadline Kelas Python', 'date' => '15 Desember', 'time' => '09.00 WIB'],
-];
+// Build events from agenda (from controller)
+$events = [];
+if (isset($agenda) && count($agenda) > 0) {
+    foreach ($agenda as $item) {
+        $events[] = [
+            'day' => $item->tanggal->day,
+            'type' => $item->tipe ?? 'webinar',
+            'title' => $item->judul,
+            'date' => $item->tanggal->translatedFormat('d F'),
+            'time' => $item->waktu_mulai ?? '09.00 WIB',
+        ];
+    }
+}
+
+// Build upcoming events from controller
+$upcomingEvents = [];
+if (isset($upcomingAgenda) && count($upcomingAgenda) > 0) {
+    foreach ($upcomingAgenda as $item) {
+        $upcomingEvents[] = [
+            'day' => $item->tanggal->day,
+            'type' => $item->tipe ?? 'webinar',
+            'title' => $item->judul,
+            'date' => $item->tanggal->translatedFormat('d F'),
+            'time' => $item->waktu_mulai ?? '09.00 WIB',
+        ];
+    }
+}
 
 $eventDays = collect($events)->pluck('day')->toArray();
 
@@ -25,6 +46,7 @@ $eventColors = [
     'webinar' => 'blue',
     'workshop' => 'green',
     'deadline' => 'yellow',
+    'quiz' => 'purple',
 ];
 @endphp
 
@@ -47,28 +69,31 @@ $eventColors = [
     {{-- Calendar Section --}}
     <div class="lg:col-span-2 bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50">
         {{-- Calendar Header --}}
+        @php
+            $prevMonth = $month == 1 ? 12 : $month - 1;
+            $prevYear = $month == 1 ? $year - 1 : $year;
+            $nextMonth = $month == 12 ? 1 : $month + 1;
+            $nextYear = $month == 12 ? $year + 1 : $year;
+        @endphp
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-2">
-                <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
+                <a href="{{ route('mahasiswa.calendar', ['month' => $prevMonth, 'year' => $prevYear]) }}" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
                     <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
-                </button>
+                </a>
                 <div class="flex items-center gap-1">
                     <span class="font-semibold text-gray-800 dark:text-gray-100">{{ $monthName }}</span>
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                    </svg>
                 </div>
-                <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
+                <a href="{{ route('mahasiswa.calendar', ['month' => $nextMonth, 'year' => $nextYear]) }}" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
                     <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                     </svg>
-                </button>
+                </a>
             </div>
-            <button class="px-4 py-2 bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition">
+            <a href="{{ route('mahasiswa.calendar') }}" class="px-4 py-2 bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition">
                 Hari Ini
-            </button>
+            </a>
         </div>
 
         {{-- Calendar Grid --}}
@@ -148,26 +173,35 @@ $eventColors = [
         <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Kegiatan yang Akan Datang</h2>
         
         <div class="space-y-3">
-            {{-- First 3 events (always visible) --}}
-            @foreach(collect($events)->take(3) as $event)
-            <div class="p-3 rounded-xl bg-{{ $eventColors[$event['type']] }}-50 dark:bg-{{ $eventColors[$event['type']] }}-500/10 border border-{{ $eventColors[$event['type']] }}-100 dark:border-{{ $eventColors[$event['type']] }}-500/20">
-                <div class="flex items-start gap-3">
-                    <span class="w-2.5 h-2.5 rounded-full bg-{{ $eventColors[$event['type']] }}-500 mt-1.5 flex-shrink-0"></span>
-                    <div class="min-w-0">
-                        <p class="font-semibold text-gray-800 dark:text-gray-100 text-sm">{{ $event['title'] }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $event['date'] }} - {{ $event['time'] }}</p>
+            @forelse($upcomingEvents as $index => $event)
+                @php
+                    $color = $eventColors[$event['type']] ?? 'blue';
+                @endphp
+                @if($index < 3)
+                <div class="p-3 rounded-xl bg-{{ $color }}-50 dark:bg-{{ $color }}-500/10 border border-{{ $color }}-100 dark:border-{{ $color }}-500/20">
+                    <div class="flex items-start gap-3">
+                        <span class="w-2.5 h-2.5 rounded-full bg-{{ $color }}-500 mt-1.5 flex-shrink-0"></span>
+                        <div class="min-w-0">
+                            <p class="font-semibold text-gray-800 dark:text-gray-100 text-sm">{{ $event['title'] }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $event['date'] }} - {{ $event['time'] }}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            @endforeach
+                @endif
+            @empty
+                <p class="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">Belum ada kegiatan yang akan datang.</p>
+            @endforelse
 
             {{-- Hidden extra events (shown on click) --}}
-            @if(count($events) > 3)
+            @if(count($upcomingEvents) > 3)
             <div id="extra-events" class="hidden space-y-3">
-                @foreach(collect($events)->skip(3) as $event)
-                <div class="p-3 rounded-xl bg-{{ $eventColors[$event['type']] }}-50 dark:bg-{{ $eventColors[$event['type']] }}-500/10 border border-{{ $eventColors[$event['type']] }}-100 dark:border-{{ $eventColors[$event['type']] }}-500/20">
+                @foreach(collect($upcomingEvents)->skip(3) as $event)
+                    @php
+                        $color = $eventColors[$event['type']] ?? 'blue';
+                    @endphp
+                <div class="p-3 rounded-xl bg-{{ $color }}-50 dark:bg-{{ $color }}-500/10 border border-{{ $color }}-100 dark:border-{{ $color }}-500/20">
                     <div class="flex items-start gap-3">
-                        <span class="w-2.5 h-2.5 rounded-full bg-{{ $eventColors[$event['type']] }}-500 mt-1.5 flex-shrink-0"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-{{ $color }}-500 mt-1.5 flex-shrink-0"></span>
                         <div class="min-w-0">
                             <p class="font-semibold text-gray-800 dark:text-gray-100 text-sm">{{ $event['title'] }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $event['date'] }} - {{ $event['time'] }}</p>
@@ -179,7 +213,7 @@ $eventColors = [
             @endif
         </div>
 
-        @if(count($events) > 3)
+        @if(count($upcomingEvents) > 3)
         <button onclick="toggleExtraEvents()" id="toggle-events-btn" class="block w-full text-center text-blue-500 hover:text-blue-600 text-sm font-medium mt-4 transition">
             Lihat Semua
         </button>
@@ -202,3 +236,4 @@ $eventColors = [
 </div>
 
 </x-layouts.dashboard>
+
