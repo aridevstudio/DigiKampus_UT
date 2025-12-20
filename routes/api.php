@@ -7,6 +7,10 @@ use App\Http\Controllers\Api\Auth\AdminAuthController;
 use App\Http\Controllers\Api\Mahasiswa\MahasiswaDashboardController;
 use App\Http\Controllers\Api\Mahasiswa\CourseController;
 use App\Http\Controllers\Api\Mahasiswa\MyCourseController;
+use App\Http\Controllers\Api\Mahasiswa\CartController;
+use App\Http\Controllers\Api\Mahasiswa\FavoriteController;
+use App\Http\Controllers\Api\Mahasiswa\NotificationController;
+use App\Http\Controllers\Api\Mahasiswa\StatusController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,6 +60,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-courses/recommendations', [MyCourseController::class, 'recommendations']);
         Route::get('/my-courses/{id}', [MyCourseController::class, 'show']);
         Route::post('/my-courses/{courseId}/materials/{materialId}/complete', [MyCourseController::class, 'completeMaterial']);
+
+        // Cart routes (Keranjang)
+        Route::get('/cart', [CartController::class, 'index']);
+        Route::post('/cart/add', [CartController::class, 'add']);
+        Route::delete('/cart/{id}', [CartController::class, 'remove']);
+        Route::delete('/cart', [CartController::class, 'clear']);
+
+        // Favorites routes (Simpan)
+        Route::get('/favorites', [FavoriteController::class, 'index']);
+        Route::post('/favorites/add', [FavoriteController::class, 'add']);
+        Route::delete('/favorites/{id}', [FavoriteController::class, 'remove']);
+        Route::post('/favorites/toggle/{courseId}', [FavoriteController::class, 'toggle']);
+
+        // Notifications routes (Notifikasi)
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+        // Status routes (Online/Offline)
+        Route::get('/status', [StatusController::class, 'getStatus']);
+        Route::post('/status/online', [StatusController::class, 'setOnline']);
+        Route::post('/status/offline', [StatusController::class, 'setOffline']);
+        Route::post('/status/heartbeat', [StatusController::class, 'heartbeat']);
     });
 
     Route::prefix('dosen')->group(function () {
