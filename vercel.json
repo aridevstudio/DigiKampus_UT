@@ -1,18 +1,24 @@
 {
   "version": 2,
   "functions": {
-    "api/index.php": { "runtime": "vercel-php@0.7.4" }
+    "public/index.php": { "runtime": "vercel-php@0.7.4" }
   },
+  "builds": [
+    { "src": "vite.config.js", "use": "@vercel/static-build" },
+    { "src": "public/index.php", "use": "@vercel/php" }
+  ],
   "routes": [
     { "src": "/build/(.*)", "dest": "/public/build/$1" },
     { "src": "/assets/(.*)", "dest": "/public/assets/$1" },
     { "src": "/storage/(.*)", "dest": "/public/storage/$1" },
-    { "src": "/(.*)", "dest": "/api/index.php" }
+    { "src": "/(.*)", "dest": "/public/index.php" }
   ],
   "env": {
     "APP_ENV": "production",
     "APP_DEBUG": "false",
     "APP_URL": "https://digi-kampus-ut.vercel.app",
+
+    "APP_KEY": "base64:ISI_KEY_DARI_ENV_LOCAL",
 
     "APP_CONFIG_CACHE": "/tmp/config.php",
     "APP_EVENTS_CACHE": "/tmp/events.php",
