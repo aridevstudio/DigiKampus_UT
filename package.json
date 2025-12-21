@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "vercel": "npm ci && npm run build && composer update --no-dev --optimize-autoloader"
+        "vercel": "npm ci && npm run build && composer update --no-dev --optimize-autoloader && npm run dev"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.2",
