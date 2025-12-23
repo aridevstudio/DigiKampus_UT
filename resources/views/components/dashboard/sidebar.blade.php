@@ -4,7 +4,7 @@
 $menuItems = [
     ['name' => 'Home', 'icon' => 'home', 'route' => 'mahasiswa.dashboard', 'key' => 'home'],
     ['name' => 'Get Courses', 'icon' => 'grid', 'route' => 'mahasiswa.get-courses', 'key' => 'get-courses'],
-    ['name' => 'Courses', 'icon' => 'play', 'route' => '#', 'key' => 'courses'],
+    ['name' => 'Courses', 'icon' => 'play', 'route' => 'mahasiswa.courses', 'key' => 'courses'],
     ['name' => 'Forum', 'icon' => 'chat-bubble', 'route' => '#', 'key' => 'forum'],
     ['name' => 'Chat', 'icon' => 'message', 'route' => '#', 'key' => 'chat'],
     ['name' => 'Apps', 'icon' => 'apps', 'route' => '#', 'key' => 'apps'],

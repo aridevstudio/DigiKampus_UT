@@ -43,6 +43,7 @@ Route::prefix('mahasiswa')
         Route::put('/profile/update', [ProfileController::class, 'update'])->name('mahasiswa.profile.update');
         
         // Courses
+        Route::get('/courses', [CourseController::class, 'myCourses'])->name('mahasiswa.courses');
         Route::get('/get-courses', [CourseController::class, 'index'])->name('mahasiswa.get-courses');
         Route::get('/course/{id}', [CourseController::class, 'show'])->name('mahasiswa.course-detail');
         
