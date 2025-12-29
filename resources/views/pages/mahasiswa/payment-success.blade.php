@@ -1,16 +1,4 @@
 <x-layouts.dashboard :active="'get-courses'">
-@php
-    $order = [
-        'id' => 'TRX-UT-240930-001',
-        'course' => [
-            'title' => 'Analisis Data Dengan Python',
-            'code' => 'STIN4113',
-        ],
-        'date' => '30 Sep 2025, 19:33',
-        'payment_method' => 'BCA Virtual Account',
-        'total' => 204000,
-    ];
-@endphp
 
 {{-- Step Indicator --}}
 <div class="flex items-center justify-center gap-4 mb-8 animate-fade-in-up">
@@ -59,23 +47,29 @@
             <div class="space-y-4">
                 <div class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-700/50">
                     <span class="text-gray-600 dark:text-gray-400">Nama Kursus</span>
-                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $order['course']['title'] }}</span>
+                    <span class="font-medium text-gray-800 dark:text-gray-100 text-right">
+                        @if($transaction['course_count'] > 1)
+                            {{ $transaction['course_count'] }} kursus
+                        @else
+                            {{ $transaction['course_names'][0] ?? 'Kursus' }}
+                        @endif
+                    </span>
                 </div>
                 <div class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-700/50">
                     <span class="text-gray-600 dark:text-gray-400">Kode Transaksi</span>
-                    <span class="font-mono font-medium text-gray-800 dark:text-gray-100">{{ $order['id'] }}</span>
+                    <span class="font-mono font-medium text-gray-800 dark:text-gray-100">{{ $transaction['id'] }}</span>
                 </div>
                 <div class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-700/50">
                     <span class="text-gray-600 dark:text-gray-400">Tanggal & Waktu</span>
-                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $order['date'] }}</span>
+                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $transaction['date'] }}</span>
                 </div>
                 <div class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-700/50">
                     <span class="text-gray-600 dark:text-gray-400">Metode Pembayaran</span>
-                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $order['payment_method'] }}</span>
+                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $transaction['payment_method'] }}</span>
                 </div>
                 <div class="flex justify-between py-3">
                     <span class="text-gray-600 dark:text-gray-400">Total Pembayaran</span>
-                    <span class="font-bold text-xl text-green-600 dark:text-green-400">Rp {{ number_format($order['total'], 0, ',', '.') }}</span>
+                    <span class="font-bold text-xl text-green-600 dark:text-green-400">Rp {{ number_format($transaction['total'], 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>

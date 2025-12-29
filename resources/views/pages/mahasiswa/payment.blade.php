@@ -1,26 +1,6 @@
 <x-layouts.dashboard :active="'get-courses'">
 @php
-    // Dummy order data (in real app, this would come from session/database)
-    $order = [
-        'id' => 'ORD-2024-0001',
-        'course' => [
-            'id' => 4,
-            'code' => 'STIN4113',
-            'title' => 'Analisis Data Dengan Python',
-            'items' => 1,
-            'price' => 199000,
-            'image' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&h=100&fit=crop',
-        ],
-        'harga_kursus' => 199000,
-        'biaya_layanan' => 5000,
-        'total' => 204000,
-        'payment_method' => [
-            'id' => 'bca',
-            'name' => 'Bank BCA',
-            'type' => 'Virtual Account',
-            'va_number' => '8901234567890123',
-        ],
-    ];
+    $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop';
 @endphp
 
 {{-- Step Indicator --}}
@@ -54,7 +34,12 @@
         <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 animate-fade-in-up delay-100">
             <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Ringkasan Order</h2>
             
-            {{-- Course Item --}}
+            {{-- Course Items --}}
+            @foreach($cartItems as $item)
+            @php
+                $course = $item->course;
+                $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
+            @endphp
             <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl mb-4">
                 <div class="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,28 +47,29 @@
                     </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <h3 class="font-medium text-gray-800 dark:text-gray-100">{{ $order['course']['title'] }}</h3>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $order['course']['code'] }}</p>
-                    <p class="text-gray-400 dark:text-gray-500 text-xs">{{ $order['course']['items'] }} item</p>
+                    <h3 class="font-medium text-gray-800 dark:text-gray-100">{{ $course->nama_course }}</h3>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $course->kode_course }}</p>
+                    <p class="text-gray-400 dark:text-gray-500 text-xs">1 item</p>
                 </div>
                 <div class="text-right">
-                    <p class="font-bold text-gray-800 dark:text-gray-100">Rp {{ number_format($order['course']['price'], 0, ',', '.') }}</p>
+                    <p class="font-bold text-gray-800 dark:text-gray-100">Rp {{ number_format($course->harga ?? 0, 0, ',', '.') }}</p>
                 </div>
             </div>
+            @endforeach
             
             {{-- Price Breakdown --}}
             <div class="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700/50">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600 dark:text-gray-400">Harga Kursus</span>
-                    <span class="text-gray-800 dark:text-gray-200">Rp {{ number_format($order['harga_kursus'], 0, ',', '.') }}</span>
+                    <span class="text-gray-800 dark:text-gray-200">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600 dark:text-gray-400">Biaya Layanan</span>
-                    <span class="text-gray-800 dark:text-gray-200">Rp {{ number_format($order['biaya_layanan'], 0, ',', '.') }}</span>
+                    <span class="text-gray-800 dark:text-gray-200">Rp {{ number_format($serviceFee, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between items-center pt-3 mt-3 border-t border-gray-200 dark:border-gray-700/50">
                     <span class="font-medium text-gray-800 dark:text-gray-100">Total Pembayaran</span>
-                    <span class="text-xl font-bold text-blue-600 dark:text-blue-400">Rp {{ number_format($order['total'], 0, ',', '.') }}</span>
+                    <span class="text-xl font-bold text-blue-600 dark:text-blue-400">Rp {{ number_format($total, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>
@@ -93,15 +79,15 @@
             <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Metode Pembayaran yang Dipilih</h2>
             
             <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
-                <div class="w-14 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span class="text-white text-xs font-bold">{{ strtoupper(substr($order['payment_method']['id'], 0, 3)) }}</span>
+                <div class="w-14 h-10 {{ $selectedPayment['color'] ?? 'bg-blue-600' }} rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-white text-xs font-bold">{{ strtoupper(substr($selectedPayment['id'], 0, 3)) }}</span>
                 </div>
                 <div class="flex-1">
-                    <h3 class="font-medium text-gray-800 dark:text-gray-100">{{ $order['payment_method']['name'] }}</h3>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $order['payment_method']['type'] }}</p>
+                    <h3 class="font-medium text-gray-800 dark:text-gray-100">{{ $selectedPayment['name'] }}</h3>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $selectedPayment['type'] }}</p>
                     <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">
                         Nomor Virtual Account: 
-                        <span class="font-mono font-medium text-gray-800 dark:text-gray-200">{{ $order['payment_method']['va_number'] }}</span>
+                        <span class="font-mono font-medium text-gray-800 dark:text-gray-200">{{ $selectedPayment['va_number'] }}</span>
                     </p>
                 </div>
                 <div class="flex-shrink-0">
@@ -136,7 +122,7 @@
         
         {{-- Action Buttons --}}
         <div class="flex flex-col sm:flex-row gap-3 animate-fade-in-up delay-400">
-            <a href="{{ route('mahasiswa.payment-success') }}" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2">
+            <a href="{{ route('mahasiswa.payment-success', ['payment' => $selectedPayment['id']]) }}" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2">
                 Lanjutkan Bayar
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />

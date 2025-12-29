@@ -119,7 +119,7 @@
                 
                 {{-- Action Button --}}
                 <div class="px-4 pb-4">
-                    <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" 
+                    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" 
                        class="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-xl font-medium text-sm transition">
                         {{ $progress >= 100 ? 'Lihat Kursus' : 'Lanjutkan Belajar' }}
                     </a>

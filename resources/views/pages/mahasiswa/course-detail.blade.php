@@ -532,16 +532,27 @@
                 </p>
                 
                 {{-- Buttons --}}
-                <a href="{{ route('mahasiswa.checkout') }}" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition mb-3 btn-pulse block text-center">
-                    Checkout Sekarang
-                </a>
+                <form action="{{ route('mahasiswa.cart.add') }}" method="POST" class="mb-3">
+                    @csrf
+                    <input type="hidden" name="course_id" value="{{ $course->id_course }}">
+                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition btn-pulse flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Tambah ke Keranjang
+                    </button>
+                </form>
                 
-                <button class="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700/50 transition flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5 text-rose-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                    </svg>
-                    Simpan ke Favorit
-                </button>
+                <form action="{{ route('mahasiswa.favorite.add') }}" method="POST" class="w-full">
+                    @csrf
+                    <input type="hidden" name="id_course" value="{{ $course->id_course }}">
+                    <button type="submit" class="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700/50 transition flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5 text-rose-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                        </svg>
+                        Simpan ke Favorit
+                    </button>
+                </form>
                 
                 {{-- Creator --}}
                 <div class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/50">

@@ -56,6 +56,7 @@ class MahasiswaController extends Controller
 
         if ($user && Hash::check($validated['password'], $user->password)) {
              Auth::guard('mahasiswa')->login($user);
+             $user->setOnline(); // Set user online status
             return redirect()->route('mahasiswa.dashboard');
         }
         return back()->withErrors(['mahasiswa.login' => 'NIS atau password salah.']);
@@ -255,6 +256,10 @@ class MahasiswaController extends Controller
      * Handle logout
      */
     public function logout(Logout $request) {
+          $user = Auth::guard('mahasiswa')->user();
+          if ($user) {
+              $user->setOffline(); // Set user offline status
+          }
           $request->logout();
           return redirect()->route('mahasiswa.login');
     }

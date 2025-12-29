@@ -53,6 +53,11 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class, 'id_mahasiswa', 'id');
     }
 
+    public function agenda()
+    {
+        return $this->hasMany(Agenda::class, 'id_mahasiswa', 'id');
+    }
+
     /**
      * Update online status.
      */

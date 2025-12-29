@@ -46,9 +46,18 @@ Route::prefix('mahasiswa')
         Route::get('/courses', [CourseController::class, 'myCourses'])->name('mahasiswa.courses');
         Route::get('/get-courses', [CourseController::class, 'index'])->name('mahasiswa.get-courses');
         Route::get('/course/{id}', [CourseController::class, 'show'])->name('mahasiswa.course-detail');
+        Route::get('/course/{id}/learn', [CourseController::class, 'learn'])->name('mahasiswa.course-learn');
+        Route::post('/course/material/{id}/complete', [CourseController::class, 'completeMaterial'])->name('mahasiswa.material.complete');
+        
+        // Favorites
+        Route::get('/favorites', [CourseController::class, 'favorites'])->name('mahasiswa.favorites');
+        Route::post('/favorite/add', [CourseController::class, 'addToFavorite'])->name('mahasiswa.favorite.add');
+        Route::delete('/favorite/{id}', [CourseController::class, 'removeFromFavorite'])->name('mahasiswa.favorite.remove');
         
         // Checkout & Payment
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('mahasiswa.checkout');
+        Route::post('/cart/add', [CheckoutController::class, 'addToCart'])->name('mahasiswa.cart.add');
+        Route::delete('/cart/{id}', [CheckoutController::class, 'removeFromCart'])->name('mahasiswa.cart.remove');
         Route::get('/payment', [CheckoutController::class, 'payment'])->name('mahasiswa.payment');
         Route::get('/payment-success', [CheckoutController::class, 'success'])->name('mahasiswa.payment-success');
         

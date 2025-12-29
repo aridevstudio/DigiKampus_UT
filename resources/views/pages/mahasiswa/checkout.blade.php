@@ -1,37 +1,19 @@
 <x-layouts.dashboard :active="'get-courses'">
 @php
-    // Dummy cart items (in real app, this would come from session/database)
-    $cartItems = [
-        [
-            'id' => 1,
-            'code' => 'EKMA4159',
-            'title' => 'Matematika Ekonomi dan Bisnis',
-            'instructor' => 'Dr. Siti Nurhaliza, M.Pd',
-            'price' => 450000,
-            'image' => 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=100&h=100&fit=crop',
-            'type' => 'Kursus',
-        ],
-        [
-            'id' => 4,
-            'code' => 'STIN4113',
-            'title' => 'Analisis Data Dengan Python',
-            'instructor' => 'Prof. Ahmad Dahlan',
-            'price' => 199000,
-            'image' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&h=100&fit=crop',
-            'type' => 'Kursus',
-        ],
-    ];
-    
-    $subtotal = collect($cartItems)->sum('price');
-    $serviceFee = 5000;
-    $total = $subtotal + $serviceFee;
-    
-    $paymentMethods = [
-        ['id' => 'bca', 'name' => 'Transfer Bank BCA', 'icon' => 'bank'],
-        ['id' => 'ovo', 'name' => 'OVO', 'icon' => 'ovo'],
-        ['id' => 'gopay', 'name' => 'GoPay', 'icon' => 'gopay'],
-    ];
+    $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop';
 @endphp
+
+{{-- Flash Messages --}}
+@if(session('success'))
+<div class="mb-4 p-4 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 rounded-xl animate-fade-in-up">
+    {{ session('success') }}
+</div>
+@endif
+@if(session('error'))
+<div class="mb-4 p-4 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 rounded-xl animate-fade-in-up">
+    {{ session('error') }}
+</div>
+@endif
 
 {{-- Step Indicator --}}
 <div class="flex items-center justify-center gap-4 mb-8 animate-fade-in-up">
@@ -61,48 +43,66 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100">Keranjang Anda</h1>
+            <span class="ml-auto text-sm text-gray-500 dark:text-gray-400">{{ $cartItems->count() }} item</span>
         </div>
         
         {{-- Cart Items --}}
         <div class="space-y-4 animate-fade-in-up delay-200">
-            @foreach($cartItems as $item)
+            @forelse($cartItems as $item)
+            @php
+                $course = $item->course;
+                $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
+            @endphp
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4">
                 <div class="flex gap-4">
                     {{-- Course Image --}}
-                    <img src="{{ $item['image'] }}" alt="{{ $item['title'] }}" class="w-20 h-20 rounded-xl object-cover flex-shrink-0">
+                    <img src="{{ $courseImage }}" alt="{{ $course->nama_course }}" class="w-20 h-20 rounded-xl object-cover flex-shrink-0">
                     
                     {{-- Course Info --}}
                     <div class="flex-1 min-w-0">
-                        <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-1">{{ $item['title'] }}</h3>
-                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-1">Kode: {{ $item['code'] }}</p>
-                        <p class="text-gray-400 dark:text-gray-500 text-xs">{{ $item['instructor'] ?? '' }}</p>
+                        <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-1">{{ $course->nama_course }}</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-1">Kode: {{ $course->kode_course }}</p>
+                        <p class="text-gray-400 dark:text-gray-500 text-xs">{{ $course->dosen->name ?? 'Instructor' }}</p>
                         
                         {{-- Price --}}
                         <p class="text-blue-600 dark:text-blue-400 font-bold text-lg mt-2">
-                            Rp {{ number_format($item['price'], 0, ',', '.') }}
+                            Rp {{ number_format($course->harga ?? 0, 0, ',', '.') }}
                         </p>
                     </div>
                     
                     {{-- Actions --}}
                     <div class="flex flex-col items-end justify-between">
                         <div class="flex items-center gap-3">
-                            <button class="flex items-center gap-1 text-rose-500 hover:text-rose-600 text-sm transition">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                                </svg>
-                                Simpan
-                            </button>
-                            <button class="flex items-center gap-1 text-gray-400 hover:text-red-500 text-sm transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Hapus
-                            </button>
+                            <form action="{{ route('mahasiswa.cart.remove', $item->id_cart) }}" method="POST" onsubmit="return confirm('Hapus dari keranjang?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="flex items-center gap-1 text-gray-400 hover:text-red-500 text-sm transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Hapus
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
-            @endforeach
+            @empty
+            {{-- Empty Cart --}}
+            <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-8 text-center">
+                <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Keranjang Kosong</h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">Belum ada kursus di keranjang Anda</p>
+                <a href="{{ route('mahasiswa.get-courses') }}" class="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-xl font-medium text-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Jelajahi Kursus
+                </a>
+            </div>
+            @endforelse
         </div>
         
         {{-- Voucher Input --}}
@@ -180,12 +180,15 @@
             </div>
             
             {{-- Pay Button --}}
-            <a href="{{ route('mahasiswa.payment') }}" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 mb-4">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-                Bayar Sekarang
-            </a>
+            <form id="payment-form" action="{{ route('mahasiswa.payment') }}" method="GET">
+                <input type="hidden" name="payment" id="selected-payment" value="bca">
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 mb-4">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    Bayar Sekarang
+                </button>
+            </form>
             
             {{-- Security Info --}}
             <div class="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-xs mb-4">
@@ -208,5 +211,28 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Sync payment method selection with hidden form input
+    document.querySelectorAll('input[name="payment"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.getElementById('selected-payment').value = this.value;
+            
+            // Update visual selection
+            document.querySelectorAll('input[name="payment"]').forEach(r => {
+                const label = r.closest('label');
+                if (r.checked) {
+                    label.classList.remove('border-gray-200', 'dark:border-gray-700');
+                    label.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-500/10');
+                } else {
+                    label.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-500/10');
+                    label.classList.add('border-gray-200', 'dark:border-gray-700');
+                }
+            });
+        });
+    });
+</script>
+@endpush
 
 </x-layouts.dashboard>

@@ -52,9 +52,10 @@ $hasProfileRoute = $userType && Route::has($userType . '.profile');
         {{-- Right Side --}}
         <div class="flex items-center gap-2 sm:gap-4">
             {{-- Online Status (hidden on small mobile) --}}
+            @php $isOnline = $user?->is_online ?? false; @endphp
             <div class="hidden sm:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span>Online</span>
+                <span class="w-2 h-2 {{ $isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400' }} rounded-full"></span>
+                <span>{{ $isOnline ? 'Online' : 'Offline' }}</span>
             </div>
 
             {{-- Action Icons --}}

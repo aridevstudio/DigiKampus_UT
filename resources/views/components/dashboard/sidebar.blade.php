@@ -5,6 +5,7 @@ $menuItems = [
     ['name' => 'Home', 'icon' => 'home', 'route' => 'mahasiswa.dashboard', 'key' => 'home'],
     ['name' => 'Get Courses', 'icon' => 'grid', 'route' => 'mahasiswa.get-courses', 'key' => 'get-courses'],
     ['name' => 'Courses', 'icon' => 'play', 'route' => 'mahasiswa.courses', 'key' => 'courses'],
+    ['name' => 'Favorites', 'icon' => 'heart', 'route' => 'mahasiswa.favorites', 'key' => 'favorites'],
     ['name' => 'Forum', 'icon' => 'chat-bubble', 'route' => '#', 'key' => 'forum'],
     ['name' => 'Chat', 'icon' => 'message', 'route' => '#', 'key' => 'chat'],
     ['name' => 'Apps', 'icon' => 'apps', 'route' => '#', 'key' => 'apps'],
@@ -80,6 +81,11 @@ $userProfilePicture = $profile?->foto_profile;
                             @case('play')
                                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                                </svg>
+                                @break
+                            @case('heart')
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                                 </svg>
                                 @break
                             @case('chat-bubble')
