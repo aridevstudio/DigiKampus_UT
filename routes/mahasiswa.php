@@ -75,6 +75,13 @@ Route::prefix('mahasiswa')
         Route::get('/finance', [CheckoutController::class, 'finance'])->name('mahasiswa.finance');
         Route::get('/finance/transaction/{id}', [CheckoutController::class, 'transactionDetail'])->name('mahasiswa.transaction-detail');
         
+        // Coming Soon Pages
+        Route::view('/forum', 'pages.mahasiswa.coming-soon', ['active' => 'forum', 'title' => 'Forum'])->name('mahasiswa.forum');
+        Route::view('/chat', 'pages.mahasiswa.coming-soon', ['active' => 'chat', 'title' => 'Chat'])->name('mahasiswa.chat');
+        Route::view('/apps', 'pages.mahasiswa.coming-soon', ['active' => 'apps', 'title' => 'Apps'])->name('mahasiswa.apps');
+        Route::view('/learning-goals', 'pages.mahasiswa.coming-soon', ['active' => 'learning-goals', 'title' => 'Learning Goals'])->name('mahasiswa.learning-goals');
+        Route::view('/news', 'pages.mahasiswa.coming-soon', ['active' => 'news', 'title' => 'News'])->name('mahasiswa.news');
+        
         // Logout
         Route::post('/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');
     });
