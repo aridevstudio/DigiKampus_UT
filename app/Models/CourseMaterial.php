@@ -19,7 +19,8 @@ class CourseMaterial extends Model
         'konten',
         'video_url',
         'urutan',
-        'durasi'
+        'durasi',
+        'id_module'
     ];
 
     protected $casts = [
@@ -35,6 +36,14 @@ class CourseMaterial extends Model
     public function course()
     {
         return $this->belongsTo(Course::class, 'id_course', 'id_course');
+    }
+
+    /**
+     * Get the module that owns the material.
+     */
+    public function module()
+    {
+        return $this->belongsTo(CourseModule::class, 'id_module', 'id_module');
     }
 
     /**

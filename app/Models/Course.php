@@ -23,7 +23,10 @@ class Course extends Model
         'tipe',
         'harga',
         'rating',
-        'jumlah_ulasan'
+        'jumlah_ulasan',
+        'estimasi_waktu',
+        'durasi_satuan',
+        'level'
     ];
 
     protected $casts = [
@@ -64,6 +67,14 @@ class Course extends Model
     public function materials()
     {
         return $this->hasMany(CourseMaterial::class, 'id_course', 'id_course');
+    }
+
+    /**
+     * Get modules for the course.
+     */
+    public function modules()
+    {
+        return $this->hasMany(CourseModule::class, 'id_course', 'id_course')->orderBy('urutan');
     }
 
     /**

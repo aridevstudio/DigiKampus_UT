@@ -183,16 +183,61 @@
             {{-- Video/Content Area --}}
             <div class="bg-gray-900 rounded-2xl overflow-hidden relative" style="aspect-ratio: 16/9;">
                 @if($currentMaterial)
-                <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=450&fit=crop" alt="Video Content" class="w-full h-full object-cover opacity-80">
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center cursor-pointer hover:bg-white/30 transition">
-                        <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </div>
+                    @if($currentMaterial['type'] == 'video' && !empty($currentMaterial['video_url']))
+                        @php
+                            $videoUrl = $currentMaterial['video_url'];
+                            $embedUrl = '';
+                            if (str_contains($videoUrl, 'youtube.com/watch?v=')) {
+                                parse_str(parse_url($videoUrl, PHP_URL_QUERY), $params);
+                                $videoId = $params['v'] ?? '';
+                                $embedUrl = "https://www.youtube.com/embed/{$videoId}";
+                            } elseif (str_contains($videoUrl, 'youtu.be/')) {
+                                $videoId = basename(parse_url($videoUrl, PHP_URL_PATH));
+                                $embedUrl = "https://www.youtube.com/embed/{$videoId}";
+                            }
+                        @endphp
+
+                        @if($embedUrl)
+                            <iframe src="{{ $embedUrl }}" title="Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe>
+                        @else
+                            {{-- Fallback for non-YouTube or direct files --}}
+                            <video controls class="w-full h-full">
+                                <source src="{{ $videoUrl }}" type="video/mp4">
+                                Browser Anda tidak mendukung tag video.
+                            </video>
+                        @endif
+                    @elseif($currentMaterial['type'] == 'video')
+                         <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
+                            <div class="text-center">
+                                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                                <p>Video tidak tersedia</p>
+                            </div>
+                        </div>
+                    @elseif($currentMaterial['type'] == 'bacaan')
+                        <div class="absolute inset-0 p-8 overflow-y-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                             <div class="prose dark:prose-invert max-w-none">
+                                {!! nl2br(e($currentMaterial['content'])) !!}
+                             </div>
+                        </div>
+                    @elseif($currentMaterial['type'] == 'quiz')
+                         <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
+                            <div class="text-center">
+                                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                                <p>Ini adalah materi Kuis</p>
+                                <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => 1]) }}" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Mulai Kuis</a>
+                            </div>
+                        </div>
+                    @else
+                         <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
+                            <p>Tipe konten tidak didukung</p>
+                        </div>
+                    @endif
                 @else
-                <div class="absolute inset-0 flex items-center justify-center text-gray-400">
+                <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
                     <div class="text-center">
                         <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />

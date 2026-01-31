@@ -56,7 +56,7 @@
     <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-gray-900 dark:text-white">Kursus yang Kamu Kelola</h2>
-            <a href="#" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">
+            <a href="{{ route('dosen.kursus.buat') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -92,12 +92,15 @@
                         <div class="h-full bg-gradient-to-r {{ $colorSet[0] }} {{ $colorSet[1] }} rounded-full" style="width: {{ $course['progress_avg'] }}%"></div>
                     </div>
                     
-                    <div class="flex gap-2">
-                        <a href="#" class="flex-1 py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg text-center transition">
-                            Lihat Detail
+                    <div class="mt-4 flex gap-2">
+                        <a href="{{ route('dosen.kursus.edit', $course['id']) }}" class="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-center">
+                            Kelola Kursus & Modul
                         </a>
-                        <a href="#" class="flex-1 py-2 px-3 border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium rounded-lg text-center transition">
-                            Kelola Modul
+                        <a href="{{ route('dosen.kursus.preview', $course['id']) }}" class="px-3 py-2 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" title="Lihat Detail">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
                         </a>
                     </div>
                 </div>
@@ -108,7 +111,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 <p class="text-gray-500 dark:text-gray-400">Belum ada kursus yang Anda kelola</p>
-                <a href="#" class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">
+                <a href="{{ route('dosen.kursus.buat') }}" class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -165,7 +168,7 @@
             </div>
             
             @if(count($recentProgress ?? []) > 0)
-            <a href="#" class="inline-flex items-center gap-2 mt-4 text-blue-500 hover:text-blue-600 text-sm font-medium">
+            <a href="{{ route('dosen.progres') }}" class="inline-flex items-center gap-2 mt-4 text-blue-500 hover:text-blue-600 text-sm font-medium">
                 Lihat Semua Progres
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -199,7 +202,7 @@
                             </svg>
                             {{ $schedule['waktu'] }}
                         </div>
-                        <a href="#" class="inline-flex items-center gap-1 mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium">
+                        <a href="{{ route('dosen.coming-soon') }}" class="inline-flex items-center gap-1 mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium">
                             Lihat Detail Jadwal
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

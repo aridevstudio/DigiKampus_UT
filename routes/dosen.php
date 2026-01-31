@@ -25,13 +25,43 @@ Route::prefix('dosen')
         Route::post('/reset-password', [DosenController::class, 'resetPassword'])->name('dosen.reset-password.post');
     });
 
-// Route untuk dashboard (hanya bisa diakses jika sudah login)
 Route::prefix('dosen')
     ->middleware(EnsureAuthenticatedDosen::class)
     ->group(function () {
-        // get
+        // Dashboard
         Route::get('/dashboard', [DosenController::class, 'showDashboard'])->name('dosen.dashboard');
+        
+        // Kursus Management
+        Route::get('/kursus', [DosenController::class, 'showKursusSaya'])->name('dosen.kursus');
+        Route::get('/kursus/buat', [DosenController::class, 'showBuatKursus'])->name('dosen.kursus.buat');
+        Route::post('/kursus/buat', [DosenController::class, 'storeCourse'])->name('dosen.kursus.store');
+        Route::get('/kursus/{id}', [DosenController::class, 'getKursusDetail'])->name('dosen.kursus.detail');
+        Route::get('/kursus/{id}/edit', [DosenController::class, 'showEditKursus'])->name('dosen.kursus.edit');
+        Route::put('/kursus/{id}', [DosenController::class, 'updateCourse'])->name('dosen.kursus.update');
+        Route::get('/kursus/{id}/preview', [DosenController::class, 'previewKursus'])->name('dosen.kursus.preview');
+        Route::get('/kursus/{id}/progres', [DosenController::class, 'showProgresKursus'])->name('dosen.kursus.progres');
+        
+        // Modul Management
+        // Module Management (Hierarchy)
+        Route::post('/kursus/{id}/module', [DosenController::class, 'storeModule'])->name('dosen.module.store');
+        Route::put('/kursus/{id}/module/reorder', [DosenController::class, 'reorderModules'])->name('dosen.module.reorder');
+        Route::put('/kursus/{id}/module/{moduleId}', [DosenController::class, 'updateModule'])->name('dosen.module.update');
+        Route::delete('/kursus/{id}/module/{moduleId}', [DosenController::class, 'deleteModule'])->name('dosen.module.delete');
 
-        // post
+        // Material Management (Content)
+        Route::get('/kursus/{id}/material/{materialId}', [DosenController::class, 'getMaterialDetail'])->name('dosen.material.detail');
+        Route::post('/kursus/{id}/material', [DosenController::class, 'storeMaterial'])->name('dosen.material.store');
+        Route::put('/kursus/{id}/material/reorder', [DosenController::class, 'reorderMaterials'])->name('dosen.material.reorder');
+        Route::put('/kursus/{id}/material/{materialId}', [DosenController::class, 'updateMaterial'])->name('dosen.material.update');
+        Route::delete('/kursus/{id}/material/{materialId}', [DosenController::class, 'deleteMaterial'])->name('dosen.material.delete');
+        Route::post('/kursus/{id}/publish', [DosenController::class, 'publishCourse'])->name('dosen.kursus.publish');
+        
+        // Progres Mahasiswa (all courses)
+        Route::get('/progres-mahasiswa', [DosenController::class, 'showProgresMahasiswa'])->name('dosen.progres');
+        
+        // Auth
         Route::post('/logout', [DosenController::class, 'logout'])->name('dosen.logout');
+        
+        // Fallback for unimplemented features
+        Route::view('/fitur-belum-tersedia', 'Auth.dosen.coming-soon')->name('dosen.coming-soon');
     });
