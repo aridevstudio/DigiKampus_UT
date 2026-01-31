@@ -116,8 +116,86 @@ class DosenController extends Controller
     {
         $dosen = Auth::guard('dosen')->user();
 
+        // Get courses taught by this dosen
+        $courses = \App\Models\Course::where('id_dosen', $dosen->id)
+            ->with(['enrollments', 'jurusan'])
+            ->get();
+        
+        $totalCourses = $courses->count();
+        
+        // Calculate total enrolled students
+        $totalMahasiswa = 0;
+        $totalProgress = 0;
+        $progressCount = 0;
+        
+        $coursesData = [];
+        foreach ($courses as $course) {
+            $enrollmentCount = $course->enrollments->count();
+            $avgProgress = $course->enrollments->avg('progress') ?? 0;
+            
+            $totalMahasiswa += $enrollmentCount;
+            if ($enrollmentCount > 0) {
+                $totalProgress += $avgProgress;
+                $progressCount++;
+            }
+            
+            $coursesData[] = [
+                'id' => $course->id_course,
+                'nama' => $course->nama_course,
+                'kode' => $course->kode_course,
+                'thumbnail' => $course->thumbnail,
+                'mahasiswa_count' => $enrollmentCount,
+                'progress_avg' => round($avgProgress),
+                'status' => $course->status,
+            ];
+        }
+        
+        $avgTotalProgress = $progressCount > 0 ? round($totalProgress / $progressCount) : 0;
+        
+        // Get recent student progress
+        $recentProgress = \App\Models\Enrollment::whereIn('id_course', $courses->pluck('id_course'))
+            ->with(['mahasiswa.profile', 'course'])
+            ->orderBy('updated_at', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function($enrollment) {
+                return [
+                    'nama' => $enrollment->mahasiswa?->name ?? 'Unknown',
+                    'foto' => $enrollment->mahasiswa?->profile?->foto_profile,
+                    'course' => $enrollment->course?->nama_course ?? '-',
+                    'progress' => round($enrollment->progress ?? 0),
+                    'updated' => $enrollment->updated_at?->diffForHumans() ?? '-',
+                ];
+            });
+        
+        // Get upcoming schedules (placeholder - using Agenda model if exists)
+        $upcomingSchedules = [];
+        try {
+            $schedules = \App\Models\Agenda::where('id_dosen', $dosen->id)
+                ->where('tanggal', '>=', now())
+                ->orderBy('tanggal')
+                ->take(3)
+                ->get();
+            
+            foreach ($schedules as $schedule) {
+                $upcomingSchedules[] = [
+                    'course' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Kursus',
+                    'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
+                    'waktu' => ($schedule->jam_mulai ?? '09:00') . ' - ' . ($schedule->jam_selesai ?? '11:00') . ' WIB',
+                ];
+            }
+        } catch (\Exception $e) {
+            // Agenda model might not have these fields
+        }
+
         return view('Auth.dosen.dashboard', [
-            'dosen' => $dosen
+            'dosen' => $dosen,
+            'totalCourses' => $totalCourses,
+            'totalMahasiswa' => $totalMahasiswa,
+            'avgProgress' => $avgTotalProgress,
+            'coursesData' => array_slice($coursesData, 0, 3),
+            'recentProgress' => $recentProgress,
+            'upcomingSchedules' => $upcomingSchedules,
         ]);
     }
 

@@ -10,7 +10,7 @@ $menuItems = [
     ['name' => 'Chat', 'icon' => 'message', 'route' => '#', 'key' => 'chat'],
     ['name' => 'Apps', 'icon' => 'apps', 'route' => '#', 'key' => 'apps'],
     ['name' => 'Calendar', 'icon' => 'calendar', 'route' => 'mahasiswa.calendar', 'key' => 'calendar'],
-    ['name' => 'Finance', 'icon' => 'wallet', 'route' => '#', 'key' => 'finance'],
+    ['name' => 'Finance', 'icon' => 'wallet', 'route' => 'mahasiswa.finance', 'key' => 'finance'],
     ['name' => 'Learning Goals', 'icon' => 'target', 'route' => '#', 'key' => 'learning-goals'],
     ['name' => 'News', 'icon' => 'newspaper', 'route' => '#', 'key' => 'news'],
 ];

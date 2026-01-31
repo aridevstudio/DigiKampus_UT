@@ -48,6 +48,16 @@ Route::prefix('mahasiswa')
         Route::get('/course/{id}', [CourseController::class, 'show'])->name('mahasiswa.course-detail');
         Route::get('/course/{id}/learn', [CourseController::class, 'learn'])->name('mahasiswa.course-learn');
         Route::post('/course/material/{id}/complete', [CourseController::class, 'completeMaterial'])->name('mahasiswa.material.complete');
+        Route::get('/course/{courseId}/quiz/{quizId}', [CourseController::class, 'quiz'])->name('mahasiswa.course-quiz');
+        Route::post('/course/{courseId}/quiz/{quizId}/answer', [CourseController::class, 'saveQuizAnswer'])->name('mahasiswa.quiz-answer');
+        Route::post('/course/{courseId}/quiz/{quizId}/flag', [CourseController::class, 'toggleQuizFlag'])->name('mahasiswa.quiz-flag');
+        Route::post('/course/{courseId}/quiz/{quizId}/reset', [CourseController::class, 'resetQuiz'])->name('mahasiswa.quiz-reset');
+        Route::get('/course/{courseId}/quiz/{quizId}/result', [CourseController::class, 'quizResult'])->name('mahasiswa.quiz-result');
+        Route::get('/course/{courseId}/assignment/{assignmentId}', [CourseController::class, 'assignmentDetail'])->name('mahasiswa.assignment-detail');
+        Route::get('/course/{courseId}/assignment/{assignmentId}/submit', [CourseController::class, 'assignmentSubmission'])->name('mahasiswa.assignment-submission');
+        Route::get('/course/{courseId}/assignment/{assignmentId}/status', [CourseController::class, 'assignmentStatus'])->name('mahasiswa.assignment-status');
+        Route::post('/course/{courseId}/assignment/{assignmentId}/submit', [CourseController::class, 'submitAssignment'])->name('mahasiswa.submit-assignment');
+        Route::get('/course/{courseId}/module/{moduleId}/feedback', [CourseController::class, 'moduleFeedback'])->name('mahasiswa.module-feedback');
         
         // Favorites
         Route::get('/favorites', [CourseController::class, 'favorites'])->name('mahasiswa.favorites');
@@ -60,6 +70,10 @@ Route::prefix('mahasiswa')
         Route::delete('/cart/{id}', [CheckoutController::class, 'removeFromCart'])->name('mahasiswa.cart.remove');
         Route::get('/payment', [CheckoutController::class, 'payment'])->name('mahasiswa.payment');
         Route::get('/payment-success', [CheckoutController::class, 'success'])->name('mahasiswa.payment-success');
+        
+        // Finance
+        Route::get('/finance', [CheckoutController::class, 'finance'])->name('mahasiswa.finance');
+        Route::get('/finance/transaction/{id}', [CheckoutController::class, 'transactionDetail'])->name('mahasiswa.transaction-detail');
         
         // Logout
         Route::post('/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');

@@ -25,7 +25,28 @@ Route::prefix('admin')
     ->group(function () {
         // get
         Route::get('/dashboard', [AdminController::class, 'showDashboard'])->name('admin.dashboard');
+        Route::get('/dosen', [AdminController::class, 'showDosen'])->name('admin.dosen');
+        Route::get('/mahasiswa', [AdminController::class, 'showMahasiswa'])->name('admin.mahasiswa');
 
         // post
         Route::post('/logout', [AdminController::class, 'logout'])->name('admin.logout');
+        
+        // Dosen CRUD
+        Route::post('/dosen', [AdminController::class, 'storeDosen'])->name('admin.dosen.store');
+        Route::get('/dosen/{id}', [AdminController::class, 'getDosen'])->name('admin.dosen.get');
+        Route::put('/dosen/{id}', [AdminController::class, 'updateDosen'])->name('admin.dosen.update');
+        Route::delete('/dosen/{id}', [AdminController::class, 'deleteDosen'])->name('admin.dosen.delete');
+        
+        // Mahasiswa CRUD
+        Route::post('/mahasiswa', [AdminController::class, 'storeMahasiswa'])->name('admin.mahasiswa.store');
+        Route::get('/mahasiswa/{id}', [AdminController::class, 'getMahasiswa'])->name('admin.mahasiswa.get');
+        Route::put('/mahasiswa/{id}', [AdminController::class, 'updateMahasiswa'])->name('admin.mahasiswa.update');
+        Route::delete('/mahasiswa/{id}', [AdminController::class, 'deleteMahasiswa'])->name('admin.mahasiswa.delete');
+        
+        // Kursus Management
+        Route::get('/kursus', [AdminController::class, 'showKursus'])->name('admin.kursus');
+        Route::post('/kursus', [AdminController::class, 'storeKursus'])->name('admin.kursus.store');
+        Route::get('/kursus/{id}', [AdminController::class, 'getKursus'])->name('admin.kursus.get');
+        Route::put('/kursus/{id}', [AdminController::class, 'updateKursus'])->name('admin.kursus.update');
+        Route::delete('/kursus/{id}', [AdminController::class, 'deleteKursus'])->name('admin.kursus.delete');
     });
