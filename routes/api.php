@@ -11,6 +11,10 @@ use App\Http\Controllers\Api\Mahasiswa\CartController;
 use App\Http\Controllers\Api\Mahasiswa\FavoriteController;
 use App\Http\Controllers\Api\Mahasiswa\NotificationController;
 use App\Http\Controllers\Api\Mahasiswa\StatusController;
+use App\Http\Controllers\Api\Dosen\DosenDashboardController;
+use App\Http\Controllers\Api\Dosen\DosenCourseController;
+use App\Http\Controllers\Api\Dosen\DosenStudentProgressController;
+use App\Http\Controllers\Api\Dosen\DosenMessageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -87,8 +91,35 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('dosen')->group(function () {
+        // Auth routes
         Route::get('/profile', [DosenAuthController::class, 'profile']);
         Route::post('/logout', [DosenAuthController::class, 'logout']);
+
+        // Dashboard routes
+        Route::get('/dashboard', [DosenDashboardController::class, 'index']);
+
+        // Courses routes (Kursus Saya)
+        Route::get('/courses', [DosenCourseController::class, 'index']);
+        Route::get('/courses/{id}', [DosenCourseController::class, 'show']);
+        Route::post('/courses', [DosenCourseController::class, 'store']);
+        Route::put('/courses/{id}', [DosenCourseController::class, 'update']);
+        Route::delete('/courses/{id}', [DosenCourseController::class, 'destroy']);
+
+        // Module management
+        Route::post('/courses/{courseId}/modules', [DosenCourseController::class, 'addModule']);
+        Route::put('/courses/{courseId}/modules/{moduleId}', [DosenCourseController::class, 'updateModule']);
+        Route::delete('/courses/{courseId}/modules/{moduleId}', [DosenCourseController::class, 'deleteModule']);
+
+        // Student Progress routes
+        Route::get('/students/progress', [DosenStudentProgressController::class, 'index']);
+        Route::get('/students/progress/{enrollmentId}', [DosenStudentProgressController::class, 'show']);
+
+        // Messages routes
+        Route::get('/messages', [DosenMessageController::class, 'index']);
+        Route::get('/messages/unread-count', [DosenMessageController::class, 'unreadCount']);
+        Route::get('/messages/{studentId}', [DosenMessageController::class, 'show']);
+        Route::post('/messages', [DosenMessageController::class, 'send']);
+        Route::post('/messages/broadcast', [DosenMessageController::class, 'broadcast']);
     });
 });
 
