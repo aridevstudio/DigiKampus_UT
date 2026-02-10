@@ -1,286 +1,365 @@
 <x-layouts.dosen title="Pesan" active="pesan">
-    <div class="mb-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Pesan</h1>
-        <p class="text-gray-500 dark:text-gray-400 mt-1">Komunikasi dengan mahasiswa dalam satu tempat.</p>
-    </div>
+    {{-- Main Content with Alpine.js Data --}}
+    <div x-data="chatSystem()" x-init="initChat()" class="h-[calc(100vh-120px)] flex flex-col">
+        {{-- Header & Introduction (Visible only on desktop/large screens) --}}
+        <div class="mb-4 flex-shrink-0 hidden md:block">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Pesan</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Komunikasi dengan mahasiswa dalam satu tempat.</p>
+        </div>
 
-    {{-- Chat Container - 3 Column Layout --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden" style="height: calc(100vh - 200px); min-height: 500px;">
-        <div class="flex h-full">
+        {{-- Chat Container --}}
+        <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden flex">
             
             {{-- Left Sidebar - Conversation List --}}
-            <div class="w-72 border-r border-gray-100 dark:border-gray-700 flex flex-col">
+            <div class="w-full md:w-80 border-r border-gray-100 dark:border-gray-700 flex flex-col" 
+                 :class="{'hidden md:flex': activeConversation, 'flex': !activeConversation}">
+                
                 {{-- Search --}}
                 <div class="p-3 border-b border-gray-100 dark:border-gray-700">
                     <div class="relative">
-                        <input type="text" placeholder="Cari pesan..." class="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                        <input x-model="searchQuery" @input.debounce.500ms="fetchConversations()" type="text" placeholder="Cari mahasiswa..." class="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                         <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
                 </div>
                 
+                {{-- Loading State --}}
+                <div x-show="isLoadingConversations" class="flex-1 flex items-center justify-center">
+                    <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+
+                {{-- Empty State --}}
+                <div x-show="!isLoadingConversations && conversations.length === 0" class="flex-1 flex flex-col items-center justify-center p-4 text-center">
+                    <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">Belum ada pesan</p>
+                </div>
+
                 {{-- Conversation List --}}
-                <div class="flex-1 overflow-y-auto">
-                    {{-- Active Conversation --}}
-                    <div class="px-3 py-3 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 cursor-pointer">
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <img src="https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=6366f1&color=fff" class="w-10 h-10 rounded-full">
-                                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between">
-                                    <p class="font-semibold text-gray-900 dark:text-white text-sm truncate">Siti Nurhaliza</p>
-                                    <span class="text-xs text-gray-400">Online</span>
+                <div x-show="!isLoadingConversations && conversations.length > 0" class="flex-1 overflow-y-auto">
+                    <template x-for="conv in conversations" :key="conv.student_id">
+                        <div @click="selectConversation(conv)" 
+                             class="px-3 py-3 cursor-pointer transition border-l-4"
+                             :class="activeConversation && activeConversation.student_id === conv.student_id ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-transparent'">
+                            <div class="flex items-center gap-3">
+                                <div class="relative flex-shrink-0">
+                                    <img :src="conv.student_avatar" :alt="conv.student_name" class="w-10 h-10 rounded-full object-cover bg-gray-200">
+                                    <span x-show="conv.unread_count > 0" class="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800" x-text="conv.unread_count"></span>
                                 </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Terima kasih Bu, atas penjelasannya...</p>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <p class="font-semibold text-gray-900 dark:text-white text-sm truncate" x-text="conv.student_name"></p>
+                                        <span class="text-xs text-gray-400" x-text="formatTime(conv.last_message_time)"></span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="conv.last_message"></p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    {{-- Other Conversations --}}
-                    <div class="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition border-l-4 border-transparent">
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <img src="https://ui-avatars.com/api/?name=Ahmad+Fauzi&background=10b981&color=fff" class="w-10 h-10 rounded-full">
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between">
-                                    <p class="font-medium text-gray-900 dark:text-white text-sm truncate">Ahmad Fauzi</p>
-                                    <span class="text-xs text-gray-400">2 jam</span>
-                                </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Baik Bu, saya akan perbaiki...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition border-l-4 border-transparent">
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <img src="https://ui-avatars.com/api/?name=Dewi+Lestari&background=f59e0b&color=fff" class="w-10 h-10 rounded-full">
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between">
-                                    <p class="font-medium text-gray-900 dark:text-white text-sm truncate">Dewi Lestari</p>
-                                    <span class="text-xs text-gray-400">1 hari</span>
-                                </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Selamat siang Bu, saya mau...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition border-l-4 border-transparent">
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=ef4444&color=fff" class="w-10 h-10 rounded-full">
-                                <span class="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs font-medium rounded-full flex items-center justify-center">3</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between">
-                                    <p class="font-semibold text-gray-900 dark:text-white text-sm truncate">Budi Santoso</p>
-                                    <span class="text-xs text-gray-400">2 hari</span>
-                                </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Kapan batas pengumpulan tugas...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition border-l-4 border-transparent">
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <img src="https://ui-avatars.com/api/?name=Rina+Wijaya&background=8b5cf6&color=fff" class="w-10 h-10 rounded-full">
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between">
-                                    <p class="font-medium text-gray-900 dark:text-white text-sm truncate">Rina Wijaya</p>
-                                    <span class="text-xs text-gray-400">3 hari</span>
-                                </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Mohon maaf Bu, saya ingin bertanya...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition border-l-4 border-transparent">
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <img src="https://ui-avatars.com/api/?name=Gunawan&background=06b6d4&color=fff" class="w-10 h-10 rounded-full">
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between">
-                                    <p class="font-medium text-gray-900 dark:text-white text-sm truncate">Gunawan</p>
-                                    <span class="text-xs text-gray-400">5 hari</span>
-                                </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Pengumpulan Web sudah selesai...</p>
-                            </div>
-                        </div>
-                    </div>
+                    </template>
                 </div>
             </div>
 
             {{-- Center - Chat Area --}}
-            <div class="flex-1 flex flex-col">
-                {{-- Chat Header --}}
-                <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <img src="https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=6366f1&color=fff" class="w-10 h-10 rounded-full">
-                        <div>
-                            <p class="font-semibold text-gray-900 dark:text-white">Siti Nurhaliza</p>
-                            <p class="text-xs text-green-500">Online</p>
-                        </div>
+            <div class="flex-1 flex flex-col bg-gray-50/30 dark:bg-gray-900/10" 
+                 :class="{'flex': activeConversation, 'hidden md:flex': !activeConversation}">
+                
+                {{-- No Conversation Selected --}}
+                <div x-show="!activeConversation" class="flex-1 flex flex-col items-center justify-center text-center p-8">
+                    <div class="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </button>
-                        <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                        </button>
-                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Pilih Percakapan</h3>
+                    <p class="text-gray-500 dark:text-gray-400 max-w-sm">Pilih mahasiswa dari daftar di sebelah kiri untuk mulai mengirim pesan.</p>
                 </div>
 
-                {{-- Messages Area --}}
-                <div class="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
-                    {{-- Date Separator --}}
-                    <div class="flex items-center justify-center">
-                        <span class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full">Hari ini</span>
-                    </div>
-
-                    {{-- Received Message --}}
-                    <div class="flex items-end gap-2 max-w-[75%]">
-                        <img src="https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=6366f1&color=fff" class="w-8 h-8 rounded-full">
-                        <div>
-                            <div class="bg-white dark:bg-gray-800 rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm">
-                                <p class="text-sm text-gray-700 dark:text-gray-300">Selamat pagi Bu, saya ingin bertanya tentang materi minggu ini mengenai struktur kontrol (branching). Apakah bisa dijelaskan lebih detail?</p>
+                {{-- Active Chat Interface --}}
+                <div x-show="activeConversation" class="flex-1 flex flex-col h-full overflow-hidden">
+                    {{-- Chat Header --}}
+                    <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            {{-- Back Button (Mobile) --}}
+                            <button @click="activeConversation = null" class="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            </button>
+                            
+                            <img :src="activeConversation?.student_avatar" class="w-10 h-10 rounded-full object-cover bg-gray-200">
+                            <div>
+                                <p class="font-semibold text-gray-900 dark:text-white" x-text="activeConversation?.student_name"></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="activeConversation?.student_nim"></p>
                             </div>
-                            <span class="text-xs text-gray-400 mt-1 block">09:15</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="showStudentProfile = !showStudentProfile" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition" title="Lihat Profil">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </button>
                         </div>
                     </div>
 
-                    {{-- Sent Message --}}
-                    <div class="flex items-end gap-2 max-w-[75%] ml-auto flex-row-reverse">
-                        <div>
-                            <div class="bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
-                                <p class="text-sm">Selamat pagi Bu, tentu. Struktur kontrol branching adalah konsep untuk mengambil keputusan dalam pemrograman, mencakup if-else, Nested-condition, dan Switch case. Biasanya ada penjelasan lebih lengkap di slide ya.</p>
-                            </div>
-                            <span class="text-xs text-gray-400 mt-1 block text-right">09:18</span>
+                    {{-- Messages List --}}
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/50 dark:bg-gray-900/30 scroll-smooth">
+                        <div x-show="isLoadingMessages" class="flex justify-center py-4">
+                            <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
                         </div>
+                        
+                        <template x-for="(msg, index) in messages" :key="msg.id">
+                            <div class="flex flex-col">
+                                {{-- Date Separator (Optional logic could go here) --}}
+                                
+                                <div class="flex items-end gap-2 max-w-[85%] md:max-w-[75%]" 
+                                     :class="msg.sender_type === 'dosen' ? 'ml-auto flex-row-reverse' : ''">
+                                    
+                                    <template x-if="msg.sender_type !== 'dosen'">
+                                        <img :src="activeConversation?.student_avatar" class="w-8 h-8 rounded-full object-cover">
+                                    </template>
+                                    
+                                    <div>
+                                        <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm break-words"
+                                             :class="msg.sender_type === 'dosen' 
+                                                ? 'bg-blue-500 text-white rounded-br-sm' 
+                                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-bl-sm'">
+                                            <p x-text="msg.content" class="whitespace-pre-wrap"></p>
+                                        </div>
+                                        <span class="text-[10px] text-gray-400 mt-1 block" 
+                                              :class="msg.sender_type === 'dosen' ? 'text-right' : 'text-left'"
+                                              x-text="formatTime(msg.created_at)"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
-                    {{-- Received Message --}}
-                    <div class="flex items-end gap-2 max-w-[75%]">
-                        <img src="https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=6366f1&color=fff" class="w-8 h-8 rounded-full">
-                        <div>
-                            <div class="bg-white dark:bg-gray-800 rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm">
-                                <p class="text-sm text-gray-700 dark:text-gray-300">Saya masih bingung Bu dengan penggunaan cara mengimplementasikan penyelesaian case tersebut, dan bagaimana sistem penilaian portofolio?</p>
+                    {{-- Message Input --}}
+                    <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+                        <form @submit.prevent="sendMessage" class="flex items-end gap-3">
+                            <div class="flex-1 relative">
+                                <textarea x-model="newMessage" 
+                                          @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
+                                          placeholder="Ketik pesan..." 
+                                          rows="1"
+                                          class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-0 rounded-xl text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 resize-none max-h-32"
+                                          style="min-height: 44px;"></textarea>
                             </div>
-                            <span class="text-xs text-gray-400 mt-1 block">09:20</span>
-                        </div>
-                    </div>
-
-                    {{-- Sent Message --}}
-                    <div class="flex items-end gap-2 max-w-[75%] ml-auto flex-row-reverse">
-                        <div>
-                            <div class="bg-blue-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
-                                <p class="text-sm">Baik, saya jelaskan ya. Biasanya ada pembuatan mini project yang terdiri, dan langkah-langkah penyelesaiannya yang, pencarian sumber yang mengutamakan, dan hasilnya tingkatkan lagi!!</p>
-                            </div>
-                            <span class="text-xs text-gray-400 mt-1 block text-right">09:25</span>
-                        </div>
-                    </div>
-
-                    {{-- Received Message --}}
-                    <div class="flex items-end gap-2 max-w-[75%]">
-                        <img src="https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=6366f1&color=fff" class="w-8 h-8 rounded-full">
-                        <div>
-                            <div class="bg-white dark:bg-gray-800 rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm">
-                                <p class="text-sm text-gray-700 dark:text-gray-300">Terima kasih Bu atas penjelasannya!! Semakin saya lebih memahami dengan materi ini. Apakah ada referensi tambahan yang lebih akurat? 🙏</p>
-                            </div>
-                            <span class="text-xs text-gray-400 mt-1 block">09:28</span>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Message Input --}}
-                <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
-                    <div class="flex items-center gap-3">
-                        <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                        </button>
-                        <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </button>
-                        <input type="text" placeholder="Ketik pesan untuk mahasiswa..." class="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-xl text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                        <button class="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                        </button>
+                            <button type="submit" 
+                                    :disabled="!newMessage.trim() || isSending"
+                                    class="p-3 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition shadow-sm mb-0.5">
+                                <svg x-show="!isSending" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                <svg x-show="isSending" class="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
 
             {{-- Right Sidebar - Profile Details --}}
-            <div class="w-72 border-l border-gray-100 dark:border-gray-700 overflow-y-auto">
-                {{-- Profile Header --}}
-                <div class="p-5 text-center border-b border-gray-100 dark:border-gray-700">
-                    <img src="https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=6366f1&color=fff&size=80" class="w-20 h-20 rounded-full mx-auto mb-3">
-                    <h3 class="font-bold text-gray-900 dark:text-white">Siti Nurhaliza</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">NIM: 1.202100.045</p>
+            <div x-show="activeConversation && showStudentProfile" 
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 translate-x-full"
+                 x-transition:enter-end="opacity-100 translate-x-0"
+                 class="w-80 border-l border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto absolute md:relative right-0 h-full z-10 shadow-xl md:shadow-none"
+                 style="display: none;">
+                
+                <div class="p-4 flex justify-end md:hidden">
+                    <button @click="showStudentProfile = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
 
-                {{-- Profile Info --}}
+                <div class="p-5 text-center border-b border-gray-100 dark:border-gray-700">
+                    <img :src="activeConversation?.student_avatar" class="w-20 h-20 rounded-full mx-auto mb-3 bg-gray-200 object-cover">
+                    <h3 class="font-bold text-gray-900 dark:text-white" x-text="activeConversation?.student_name"></h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400" x-text="'NIM: ' + activeConversation?.student_nim"></p>
+                </div>
+
                 <div class="p-5 space-y-4">
-                    {{-- Status --}}
-                    <div>
-                        <p class="text-xs text-gray-400 uppercase font-medium mb-1">Status</p>
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                            <span class="text-sm text-gray-700 dark:text-gray-300">Mata kuliah sedang diikuti</span>
-                        </div>
-                    </div>
-
-                    {{-- Progress --}}
-                    <div>
-                        <p class="text-xs text-gray-400 uppercase font-medium mb-2">Progress Belajar</p>
-                        <div class="flex items-center gap-3">
-                            <div class="relative w-14 h-14">
-                                <svg class="w-14 h-14 transform -rotate-90">
-                                    <circle cx="28" cy="28" r="24" stroke="currentColor" stroke-width="4" fill="none" class="text-gray-200 dark:text-gray-700"></circle>
-                                    <circle cx="28" cy="28" r="24" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="150.8" stroke-dashoffset="22.62" stroke-linecap="round" class="text-blue-500"></circle>
-                                </svg>
-                                <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-900 dark:text-white">85%</span>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-900 dark:text-white">Progress baik</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">Sudah menyelesaikan 17/20 materi</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Email --}}
                     <div>
                         <p class="text-xs text-gray-400 uppercase font-medium mb-1">Email</p>
-                        <p class="text-sm text-blue-500">sitinurhaliza@univ.ac.id</p>
-                    </div>
-
-                    {{-- Bergabung Sejak --}}
-                    <div>
-                        <p class="text-xs text-gray-400 uppercase font-medium mb-1">Bergabung Sejak</p>
-                        <p class="text-sm text-gray-700 dark:text-gray-300">Agustus 2023</p>
-                    </div>
-
-                    {{-- Kursus yang Diikuti --}}
-                    <div>
-                        <p class="text-xs text-gray-400 uppercase font-medium mb-2">Kursus yang Diikuti</p>
-                        <div class="space-y-2">
-                            <div class="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">P</div>
-                                <span class="text-sm text-gray-700 dark:text-gray-300">Pemrograman Web</span>
-                            </div>
-                            <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">B</div>
-                                <span class="text-sm text-gray-700 dark:text-gray-300">Basis Data</span>
-                            </div>
-                        </div>
+                        <p class="text-sm text-blue-500 truncate" x-text="activeConversation?.student_email"></p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('chatSystem', () => ({
+                conversations: [],
+                messages: [],
+                activeConversation: null,
+                searchQuery: '',
+                newMessage: '',
+                isLoadingConversations: false,
+                isLoadingMessages: false,
+                isSending: false,
+                showStudentProfile: false,
+                pollingInterval: null,
+
+                initChat() {
+                    this.fetchConversations();
+                    // Poll for new messages every 10 seconds
+                    this.pollingInterval = setInterval(() => {
+                        this.fetchConversations(false); // Silent update for list
+                        if (this.activeConversation) {
+                            this.fetchMessages(true); // Silent update for chat
+                        }
+                    }, 10000);
+                },
+
+                async fetchConversations(showLoading = true) {
+                    if (showLoading) this.isLoadingConversations = true;
+                    try {
+                        const response = await fetch(`/api/dosen/messages?search=${this.searchQuery}`, {
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                                'Accept': 'application/json'
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.conversations = data.data.map(conv => ({
+                                student_id: conv.student_id,
+                                student_name: conv.student_name,
+                                student_nim: conv.student_nim || '-',
+                                student_email: conv.student_email || '-',
+                                student_avatar: conv.student_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.student_name)}&background=random`,
+                                last_message: conv.last_message,
+                                last_message_time: conv.last_message_time,
+                                unread_count: conv.unread_count
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Error fetching conversations:', error);
+                    } finally {
+                        if (showLoading) this.isLoadingConversations = false;
+                    }
+                },
+
+                async selectConversation(conv) {
+                    this.activeConversation = conv;
+                    this.showStudentProfile = false;
+                    this.fetchMessages();
+                    
+                    // Mark locally as read
+                    const convIndex = this.conversations.findIndex(c => c.student_id === conv.student_id);
+                    if (convIndex !== -1) {
+                        this.conversations[convIndex].unread_count = 0;
+                    }
+                },
+
+                async fetchMessages(isPolling = false) {
+                    if (!this.activeConversation) return;
+                    if (!isPolling) {
+                        this.isLoadingMessages = true;
+                        this.messages = [];
+                    }
+
+                    try {
+                        const response = await fetch(`/api/dosen/messages/${this.activeConversation.student_id}`, {
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                                'Accept': 'application/json'
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            // If polling, only append new messages or replace if structure allows
+                            // For simplicity, we assume replacing is fine for now, but in prod we'd merge
+                            this.messages = data.data; 
+                            
+                            if (!isPolling) {
+                                this.$nextTick(() => {
+                                    this.scrollToBottom();
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error fetching messages:', error);
+                    } finally {
+                        if (!isPolling) this.isLoadingMessages = false;
+                    }
+                },
+
+                async sendMessage() {
+                    if (!this.newMessage.trim() || !this.activeConversation) return;
+
+                    this.isSending = true;
+                    const tempMessage = {
+                        id: 'temp-' + Date.now(),
+                        content: this.newMessage,
+                        sender_type: 'dosen',
+                        created_at: new Date().toISOString(),
+                        is_sending: true
+                    };
+
+                    // Optimistic UI update
+                    this.messages.push(tempMessage);
+                    const messageToSend = this.newMessage;
+                    this.newMessage = '';
+                    this.$nextTick(() => this.scrollToBottom());
+
+                    try {
+                        const response = await fetch('/api/dosen/messages', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({
+                                student_id: this.activeConversation.student_id,
+                                content: messageToSend
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Replace temp message with real one or just refetch
+                            this.fetchMessages(true);
+                            this.fetchConversations(false); // Update last message in sidebar
+                        } else {
+                            // Revert on failure
+                            this.messages = this.messages.filter(m => m.id !== tempMessage.id);
+                            this.newMessage = messageToSend; // Restore text
+                            alert('Gagal mengirim pesan: ' + data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error sending message:', error);
+                        this.messages = this.messages.filter(m => m.id !== tempMessage.id);
+                        this.newMessage = messageToSend;
+                    } finally {
+                        this.isSending = false;
+                    }
+                },
+
+                scrollToBottom() {
+                    const container = document.getElementById('messages-container');
+                    if (container) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                },
+
+                formatTime(dateString) {
+                    if (!dateString) return '';
+                    const date = new Date(dateString);
+                    const now = new Date();
+                    const isToday = date.toDateString() === now.toDateString();
+                    
+                    if (isToday) {
+                        return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    }
+                    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                }
+            }));
+        });
+    </script>
+    @endpush
 </x-layouts.dosen>
