@@ -36,6 +36,8 @@ Route::prefix('mahasiswa')
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('mahasiswa.dashboard');
         Route::get('/calendar', [DashboardController::class, 'calendar'])->name('mahasiswa.calendar');
         Route::get('/notification', [DashboardController::class, 'notification'])->name('mahasiswa.notification');
+        Route::post('/notification/{id}/read', [DashboardController::class, 'markNotificationRead'])->name('mahasiswa.notification.read');
+        Route::post('/notification/read-all', [DashboardController::class, 'markAllNotificationsRead'])->name('mahasiswa.notification.read-all');
         
         // Profile
         Route::get('/profile', [ProfileController::class, 'index'])->name('mahasiswa.profile');
@@ -80,7 +82,7 @@ Route::prefix('mahasiswa')
         Route::view('/chat', 'pages.mahasiswa.coming-soon', ['active' => 'chat', 'title' => 'Chat'])->name('mahasiswa.chat');
         Route::view('/apps', 'pages.mahasiswa.coming-soon', ['active' => 'apps', 'title' => 'Apps'])->name('mahasiswa.apps');
         Route::view('/learning-goals', 'pages.mahasiswa.coming-soon', ['active' => 'learning-goals', 'title' => 'Learning Goals'])->name('mahasiswa.learning-goals');
-        Route::view('/news', 'pages.mahasiswa.coming-soon', ['active' => 'news', 'title' => 'News'])->name('mahasiswa.news');
+        Route::view('/news', 'pages.mahasiswa.news', ['active' => 'news', 'title' => 'News'])->name('mahasiswa.news');
         
         // Logout
         Route::post('/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');

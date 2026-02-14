@@ -25,7 +25,7 @@ class CheckoutController extends Controller
         $subtotal = $cartItems->sum(function ($item) {
             return $item->course->harga ?? 0;
         });
-        $serviceFee = 5000;
+        $serviceFee = $cartItems->isNotEmpty() ? 5000 : 0;
         $total = $subtotal + $serviceFee;
         
         // Payment methods

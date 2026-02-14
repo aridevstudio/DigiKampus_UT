@@ -144,7 +144,7 @@
                             </button>
 
                             {{-- Messages --}}
-                            <a href="{{ route('dosen.coming-soon') }}" class="hidden sm:flex p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
+                            <a href="{{ route('dosen.pesan') }}" class="hidden sm:flex p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
                                 </svg>
@@ -174,8 +174,8 @@
                             {{-- Dropdown Menu --}}
                             <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1f2937] rounded-lg shadow-lg border border-gray-100 dark:border-gray-700/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                                 <div class="py-2">
-                                    <a href="{{ route('dosen.coming-soon') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Profile</a>
-                                    <a href="{{ route('dosen.coming-soon') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Settings</a>
+                                    <span class="block px-4 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed" title="Segera hadir">Profile <span class="text-xs">(Segera Hadir)</span></span>
+                                    <span class="block px-4 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed" title="Segera hadir">Settings <span class="text-xs">(Segera Hadir)</span></span>
                                     <hr class="my-1 border-gray-100 dark:border-gray-700/50">
                                     <form action="{{ route('dosen.logout') }}" method="POST">
                                         @csrf

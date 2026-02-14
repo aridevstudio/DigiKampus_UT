@@ -105,7 +105,8 @@
             @endforelse
         </div>
         
-        {{-- Voucher Input --}}
+        {{-- Voucher Input (only show if cart has items) --}}
+        @if($cartItems->count() > 0)
         <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 animate-fade-in-up delay-300">
             <div class="flex items-center gap-3">
                 <svg class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
@@ -121,6 +122,7 @@
                 </button>
             </div>
         </div>
+        @endif
     </div>
     
     {{-- Right: Order Summary --}}
@@ -134,10 +136,12 @@
                     <span class="text-gray-600 dark:text-gray-400">Subtotal ({{ count($cartItems) }} kursus)</span>
                     <span class="text-gray-800 dark:text-gray-200">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                 </div>
+                @if($cartItems->count() > 0)
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600 dark:text-gray-400">Biaya Layanan</span>
                     <span class="text-gray-800 dark:text-gray-200">Rp {{ number_format($serviceFee, 0, ',', '.') }}</span>
                 </div>
+                @endif
             </div>
             
             {{-- Total --}}
@@ -146,6 +150,7 @@
                 <span class="text-xl font-bold text-blue-600 dark:text-blue-400">Rp. {{ number_format($total, 0, ',', '.') }}</span>
             </div>
             
+            @if($cartItems->count() > 0)
             {{-- Payment Methods --}}
             <div class="mb-6">
                 <h3 class="font-medium text-gray-800 dark:text-gray-100 mb-3">Metode Pembayaran</h3>
@@ -208,6 +213,18 @@
                 </div>
                 <p class="text-green-600 dark:text-green-400 text-xs">Dalam 7 hari setelah pembelian</p>
             </div>
+            @else
+            {{-- Empty cart message in summary --}}
+            <div class="text-center py-4">
+                <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">Tambahkan kursus ke keranjang untuk melanjutkan pembayaran</p>
+                <a href="{{ route('mahasiswa.get-courses') }}" class="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Jelajahi Kursus
+                </a>
+            </div>
+            @endif
         </div>
     </div>
 </div>
