@@ -6,13 +6,13 @@ $menuItems = [
     ['name' => 'Get Courses', 'icon' => 'grid', 'route' => 'mahasiswa.get-courses', 'key' => 'get-courses'],
     ['name' => 'Courses', 'icon' => 'play', 'route' => 'mahasiswa.courses', 'key' => 'courses'],
     ['name' => 'Favorites', 'icon' => 'heart', 'route' => 'mahasiswa.favorites', 'key' => 'favorites'],
-    ['name' => 'Forum', 'icon' => 'chat-bubble', 'route' => '#', 'key' => 'forum'],
-    ['name' => 'Chat', 'icon' => 'message', 'route' => '#', 'key' => 'chat'],
-    ['name' => 'Apps', 'icon' => 'apps', 'route' => '#', 'key' => 'apps'],
+    ['name' => 'Forum', 'icon' => 'chat-bubble', 'route' => 'mahasiswa.forum', 'key' => 'forum'],
+    ['name' => 'Chat', 'icon' => 'message', 'route' => 'mahasiswa.chat', 'key' => 'chat'],
+    ['name' => 'Apps', 'icon' => 'apps', 'route' => 'mahasiswa.apps', 'key' => 'apps'],
     ['name' => 'Calendar', 'icon' => 'calendar', 'route' => 'mahasiswa.calendar', 'key' => 'calendar'],
-    ['name' => 'Finance', 'icon' => 'wallet', 'route' => '#', 'key' => 'finance'],
-    ['name' => 'Learning Goals', 'icon' => 'target', 'route' => '#', 'key' => 'learning-goals'],
-    ['name' => 'News', 'icon' => 'newspaper', 'route' => '#', 'key' => 'news'],
+    ['name' => 'Finance', 'icon' => 'wallet', 'route' => 'mahasiswa.finance', 'key' => 'finance'],
+    ['name' => 'Learning Goals', 'icon' => 'target', 'route' => 'mahasiswa.learning-goals', 'key' => 'learning-goals'],
+    ['name' => 'News', 'icon' => 'newspaper', 'route' => 'mahasiswa.news', 'key' => 'news'],
 ];
 
 $user = Auth::guard('mahasiswa')->user();

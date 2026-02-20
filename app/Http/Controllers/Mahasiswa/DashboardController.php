@@ -98,6 +98,50 @@ class DashboardController extends Controller
      */
     public function notification()
     {
-        return view('pages.mahasiswa.notification');
+        $user = Auth::guard('mahasiswa')->user();
+        
+        $notifications = \App\Models\Notification::where('id_mahasiswa', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        $unreadCount = $notifications->where('is_read', false)->count();
+        
+        return view('pages.mahasiswa.notification', [
+            'notifications' => $notifications,
+            'unreadCount' => $unreadCount,
+        ]);
+    }
+
+    /**
+     * Mark a single notification as read
+     */
+    public function markNotificationRead($id)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        
+        $notification = \App\Models\Notification::where('id_mahasiswa', $user->id)
+            ->where('id_notification', $id)
+            ->first();
+
+        if ($notification) {
+            $notification->is_read = true;
+            $notification->save();
+        }
+
+        return redirect()->route('mahasiswa.notification')->with('success', 'Notifikasi ditandai sudah dibaca');
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function markAllNotificationsRead()
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        
+        \App\Models\Notification::where('id_mahasiswa', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return redirect()->route('mahasiswa.notification')->with('success', 'Semua notifikasi ditandai sudah dibaca');
     }
 }

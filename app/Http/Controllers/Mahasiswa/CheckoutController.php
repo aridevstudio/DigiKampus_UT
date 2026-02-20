@@ -25,7 +25,7 @@ class CheckoutController extends Controller
         $subtotal = $cartItems->sum(function ($item) {
             return $item->course->harga ?? 0;
         });
-        $serviceFee = 5000;
+        $serviceFee = $cartItems->isNotEmpty() ? 5000 : 0;
         $total = $subtotal + $serviceFee;
         
         // Payment methods
@@ -215,6 +215,102 @@ class CheckoutController extends Controller
         
         return view('pages.mahasiswa.payment-success', [
             'transaction' => $transactionData,
+        ]);
+    }
+    
+    /**
+     * Show finance/transaction history page
+     */
+    public function finance()
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        $search = request('search');
+        $status = request('status');
+        $date = request('date');
+        
+        // Get enrollments as transactions (simulating payment history)
+        $query = \App\Models\Enrollment::with(['course'])
+            ->where('id_mahasiswa', $user->id)
+            ->orderBy('created_at', 'desc');
+        
+        // Apply search filter
+        if ($search) {
+            $query->whereHas('course', function ($q) use ($search) {
+                $q->where('nama_course', 'like', '%' . $search . '%');
+            });
+        }
+        
+        // Apply status filter
+        if ($status && $status !== 'semua') {
+            $query->where('status', $status);
+        }
+        
+        $transactions = $query->paginate(10);
+        
+        // Calculate stats
+        $allEnrollments = \App\Models\Enrollment::with(['course'])
+            ->where('id_mahasiswa', $user->id)
+            ->get();
+        
+        $totalPayment = $allEnrollments->sum(function ($item) {
+            return $item->course->harga ?? 0;
+        });
+        
+        $successCount = $allEnrollments->where('status', 'aktif')->count();
+        $pendingCount = $allEnrollments->where('status', 'pending')->count();
+        $failedCount = $allEnrollments->where('status', 'gagal')->count();
+        
+        return view('pages.mahasiswa.finance', [
+            'transactions' => $transactions,
+            'totalPayment' => $totalPayment,
+            'successCount' => $successCount,
+            'pendingCount' => $pendingCount,
+            'failedCount' => $failedCount,
+            'selectedStatus' => $status ?? 'semua',
+            'searchQuery' => $search,
+        ]);
+    }
+    
+    /**
+     * Show transaction detail page
+     */
+    public function transactionDetail($id)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        
+        // Get enrollment by ID
+        $enrollment = \App\Models\Enrollment::with(['course', 'course.dosen'])
+            ->where('id_mahasiswa', $user->id)
+            ->where('id_enroll', $id)
+            ->firstOrFail();
+        
+        // Payment method (simulated)
+        $paymentMethods = [
+            'va_bca' => ['name' => 'Bank Central Asia (BCA)', 'type' => 'Virtual Account BCA'],
+            'va_bni' => ['name' => 'Bank Negara Indonesia (BNI)', 'type' => 'Virtual Account BNI'],
+            'ewallet' => ['name' => 'E-Wallet', 'type' => 'E-Wallet'],
+        ];
+        $selectedMethod = array_rand($paymentMethods);
+        
+        // Build transaction data
+        $transaction = [
+            'id' => 'TRX-' . date('Y', strtotime($enrollment->created_at)) . '-' . str_pad($enrollment->id_enroll, 6, '0', STR_PAD_LEFT),
+            'date' => $enrollment->created_at,
+            'course_name' => $enrollment->course->nama_course ?? 'Unknown',
+            'course_id' => $enrollment->id_course,
+            'method' => $paymentMethods[$selectedMethod]['type'],
+            'bank_name' => $paymentMethods[$selectedMethod]['name'],
+            'va_number' => '1234567890' . str_pad($enrollment->id_enroll, 6, '0', STR_PAD_LEFT),
+            'amount' => $enrollment->course->harga ?? 0,
+            'admin_fee' => 1000,
+            'total' => ($enrollment->course->harga ?? 0) + 1000,
+            'status' => $enrollment->status,
+            'deadline' => $enrollment->created_at->addDays(1),
+            'enrollment_id' => $enrollment->id_enroll,
+        ];
+        
+        return view('pages.mahasiswa.transaction-detail', [
+            'transaction' => $transaction,
         ]);
     }
 }

@@ -116,8 +116,86 @@ class DosenController extends Controller
     {
         $dosen = Auth::guard('dosen')->user();
 
+        // Get courses taught by this dosen
+        $courses = \App\Models\Course::where('id_dosen', $dosen->id)
+            ->with(['enrollments', 'jurusan'])
+            ->get();
+        
+        $totalCourses = $courses->count();
+        
+        // Calculate total enrolled students
+        $totalMahasiswa = 0;
+        $totalProgress = 0;
+        $progressCount = 0;
+        
+        $coursesData = [];
+        foreach ($courses as $course) {
+            $enrollmentCount = $course->enrollments->count();
+            $avgProgress = $course->enrollments->avg('progress') ?? 0;
+            
+            $totalMahasiswa += $enrollmentCount;
+            if ($enrollmentCount > 0) {
+                $totalProgress += $avgProgress;
+                $progressCount++;
+            }
+            
+            $coursesData[] = [
+                'id' => $course->id_course,
+                'nama' => $course->nama_course,
+                'kode' => $course->kode_course,
+                'thumbnail' => $course->thumbnail,
+                'mahasiswa_count' => $enrollmentCount,
+                'progress_avg' => round($avgProgress),
+                'status' => $course->status,
+            ];
+        }
+        
+        $avgTotalProgress = $progressCount > 0 ? round($totalProgress / $progressCount) : 0;
+        
+        // Get recent student progress
+        $recentProgress = \App\Models\Enrollment::whereIn('id_course', $courses->pluck('id_course'))
+            ->with(['mahasiswa.profile', 'course'])
+            ->orderBy('updated_at', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function($enrollment) {
+                return [
+                    'nama' => $enrollment->mahasiswa?->name ?? 'Unknown',
+                    'foto' => $enrollment->mahasiswa?->profile?->foto_profile,
+                    'course' => $enrollment->course?->nama_course ?? '-',
+                    'progress' => round($enrollment->progress ?? 0),
+                    'updated' => $enrollment->updated_at?->diffForHumans() ?? '-',
+                ];
+            });
+        
+        // Get upcoming schedules (placeholder - using Agenda model if exists)
+        $upcomingSchedules = [];
+        try {
+            $schedules = \App\Models\Agenda::where('id_dosen', $dosen->id)
+                ->where('tanggal', '>=', now())
+                ->orderBy('tanggal')
+                ->take(3)
+                ->get();
+            
+            foreach ($schedules as $schedule) {
+                $upcomingSchedules[] = [
+                    'course' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Kursus',
+                    'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
+                    'waktu' => ($schedule->jam_mulai ?? '09:00') . ' - ' . ($schedule->jam_selesai ?? '11:00') . ' WIB',
+                ];
+            }
+        } catch (\Exception $e) {
+            // Agenda model might not have these fields
+        }
+
         return view('Auth.dosen.dashboard', [
-            'dosen' => $dosen
+            'dosen' => $dosen,
+            'totalCourses' => $totalCourses,
+            'totalMahasiswa' => $totalMahasiswa,
+            'avgProgress' => $avgTotalProgress,
+            'coursesData' => array_slice($coursesData, 0, 3),
+            'recentProgress' => $recentProgress,
+            'upcomingSchedules' => $upcomingSchedules,
         ]);
     }
 
@@ -133,6 +211,692 @@ class DosenController extends Controller
 
         return redirect()->route('dosen.login')
             ->with('status', 'Logout berhasil.');
+    }
+
+    /**
+     * Show Kursus Saya page
+     */
+    public function showKursusSaya(Request $request)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $search = $request->input('search');
+        $statusFilter = $request->input('status', 'all');
+        $sortBy = $request->input('sort', 'terbaru');
+        $perPage = 6;
+
+        $query = \App\Models\Course::where('id_dosen', $dosen->id)
+            ->with(['enrollments', 'jurusan']);
+
+        // Search filter
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama_course', 'like', "%{$search}%")
+                  ->orWhere('kode_course', 'like', "%{$search}%")
+                  ->orWhere('deskripsi', 'like', "%{$search}%");
+            });
+        }
+
+        // Status filter
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        }
+
+        // Sorting
+        switch ($sortBy) {
+            case 'terlama':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'nama':
+                $query->orderBy('nama_course', 'asc');
+                break;
+            case 'mahasiswa':
+                $query->withCount('enrollments')->orderBy('enrollments_count', 'desc');
+                break;
+            default: // terbaru
+                $query->orderBy('created_at', 'desc');
+        }
+
+        $coursesPaginated = $query->paginate($perPage)->withQueryString();
+
+        $coursesData = $coursesPaginated->map(function($course) {
+            $enrollmentCount = $course->enrollments->count();
+            $avgProgress = $course->enrollments->avg('progress') ?? 0;
+            
+            return [
+                'id' => $course->id_course,
+                'nama' => $course->nama_course,
+                'kode' => $course->kode_course,
+                'deskripsi' => \Str::limit($course->deskripsi, 60),
+                'thumbnail' => $course->thumbnail,
+                'mahasiswa_count' => $enrollmentCount,
+                'progress_avg' => round($avgProgress),
+                'status' => $course->status,
+            ];
+        });
+
+        return view('Auth.dosen.kursus-saya', [
+            'dosen' => $dosen,
+            'coursesData' => $coursesData,
+            'coursesPaginated' => $coursesPaginated,
+            'totalCourses' => \App\Models\Course::where('id_dosen', $dosen->id)->count(),
+            'search' => $search,
+            'statusFilter' => $statusFilter,
+            'sortBy' => $sortBy,
+        ]);
+    }
+
+    /**
+     * Get Kursus detail for API
+     */
+    public function getKursusDetail($id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->with(['enrollments.mahasiswa.profile', 'materials', 'jurusan'])
+            ->first();
+
+        if (!$course) {
+            return response()->json(['error' => 'Kursus tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'id_course' => $course->id_course,
+            'nama_course' => $course->nama_course,
+            'kode_course' => $course->kode_course,
+            'deskripsi' => $course->deskripsi,
+            'thumbnail' => $course->thumbnail,
+            'status' => $course->status,
+            'tipe' => $course->tipe,
+            'harga' => $course->harga,
+            'jurusan' => $course->jurusan?->nama_jurusan,
+            'mahasiswa_count' => $course->enrollments->count(),
+            'progress_avg' => round($course->enrollments->avg('progress') ?? 0),
+            'materials_count' => $course->materials?->count() ?? 0,
+        ]);
+    }
+
+    /**
+     * Show Kelola Modul page
+     */
+    public function showKelolaModul($id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->with(['enrollments', 'materials' => function($q) {
+                $q->orderBy('urutan', 'asc');
+            }])
+            ->first();
+
+        if (!$course) {
+            return redirect()->route('dosen.kursus')->with('error', 'Kursus tidak ditemukan');
+        }
+
+        // Group materials by section (using first digit of urutan as section number)
+        $materials = $course->materials->map(function($material) {
+            return [
+                'id' => $material->id_material,
+                'judul' => $material->judul_material,
+                'tipe' => $material->tipe,
+                'konten' => $material->konten,
+                'video_url' => $material->video_url,
+                'urutan' => $material->urutan,
+                'durasi' => $material->durasi,
+            ];
+        });
+
+        return view('Auth.dosen.kelola-modul', [
+            'dosen' => $dosen,
+            'course' => [
+                'id' => $course->id_course,
+                'nama' => $course->nama_course,
+                'kode' => $course->kode_course,
+                'status' => $course->status,
+                'mahasiswa_count' => $course->enrollments->count(),
+            ],
+            'materials' => $materials,
+        ]);
+    }
+
+    /**
+     * Get Modul/Material detail
+     */
+    public function getMaterialDetail($courseId, $materialId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $material = \App\Models\CourseMaterial::where('id_material', $materialId)
+            ->whereHas('course', function($q) use ($dosen, $courseId) {
+                $q->where('id_dosen', $dosen->id)->where('id_course', $courseId);
+            })
+            ->first();
+
+        if (!$material) {
+            return response()->json(['error' => 'Material tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'id_material' => $material->id_material,
+            'judul_material' => $material->judul_material,
+            'tipe' => $material->tipe,
+            'konten' => $material->konten,
+            'video_url' => $material->video_url,
+            'urutan' => $material->urutan,
+            'durasi' => $material->durasi,
+        ]);
+    }
+
+    /**
+     * Store new module
+     */
+    public function storeModule(Request $request, $id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return back()->with('error', 'Kursus tidak ditemukan');
+        }
+
+        $request->validate([
+            'judul_module' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        $lastOrder = \App\Models\CourseModule::where('id_course', $id)->max('urutan') ?? 0;
+
+        \App\Models\CourseModule::create([
+            'id_course' => $id,
+            'judul_module' => $request->judul_module,
+            'deskripsi' => $request->deskripsi,
+            'urutan' => $lastOrder + 1,
+        ]);
+
+        return back()->with('success', 'Modul berhasil ditambahkan');
+    }
+
+    /**
+     * Update module
+     */
+    public function updateModule(Request $request, $courseId, $moduleId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $module = \App\Models\CourseModule::where('id_module', $moduleId)
+            ->where('id_course', $courseId)
+            ->whereHas('course', function($q) use ($dosen) {
+                $q->where('id_dosen', $dosen->id);
+            })
+            ->first();
+
+        if (!$module) {
+            return back()->with('error', 'Modul tidak ditemukan');
+        }
+
+        $request->validate([
+            'judul_module' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        $module->update([
+            'judul_module' => $request->judul_module,
+            'deskripsi' => $request->deskripsi,
+        ]);
+
+        return back()->with('success', 'Modul berhasil diperbarui');
+    }
+
+    /**
+     * Delete module
+     */
+    public function deleteModule($courseId, $moduleId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $module = \App\Models\CourseModule::where('id_module', $moduleId)
+            ->where('id_course', $courseId)
+            ->whereHas('course', function($q) use ($dosen) {
+                $q->where('id_dosen', $dosen->id);
+            })
+            ->first();
+
+        if (!$module) {
+            return back()->with('error', 'Modul tidak ditemukan');
+        }
+
+        $module->delete();
+
+        return back()->with('success', 'Modul berhasil dihapus');
+    }
+
+     /**
+     * Reorder modules
+     */
+    public function reorderModules(Request $request, $courseId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        // Verify course belongs to dosen
+        $course = \App\Models\Course::where('id_course', $courseId)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $order = $request->input('order');
+        
+        if (!is_array($order)) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+
+        foreach ($order as $index => $moduleId) {
+            \App\Models\CourseModule::where('id_module', $moduleId)
+                ->where('id_course', $courseId)
+                ->update(['urutan' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Store new material
+     */
+    public function storeMaterial(Request $request, $id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return back()->with('error', 'Kursus tidak ditemukan');
+        }
+
+        $request->validate([
+            'judul_material' => 'required|string|max:255',
+            'tipe' => 'required|in:video,bacaan,kuis,tugas',
+            'konten' => 'nullable|string',
+            'video_url' => 'nullable|url',
+            'durasi' => 'nullable|integer|min:0',
+            'id_module' => 'required|exists:course_modules,id_module',
+        ]);
+
+        $lastOrder = \App\Models\CourseMaterial::where('id_module', $request->id_module)->max('urutan') ?? 0;
+
+        \App\Models\CourseMaterial::create([
+            'id_course' => $id,
+            'id_module' => $request->id_module,
+            'judul_material' => $request->judul_material,
+            'tipe' => $request->tipe,
+            'konten' => $request->konten,
+            'video_url' => $request->video_url,
+            'urutan' => $lastOrder + 1,
+            'durasi' => $request->durasi ?? 0,
+        ]);
+
+        return back()->with('success', 'Material berhasil ditambahkan');
+    }
+
+    /**
+     * Update material
+     */
+    public function updateMaterial(Request $request, $courseId, $materialId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $material = \App\Models\CourseMaterial::where('id_material', $materialId)
+            ->whereHas('course', function($q) use ($dosen, $courseId) {
+                $q->where('id_dosen', $dosen->id)->where('id_course', $courseId);
+            })
+            ->first();
+
+        if (!$material) {
+            return back()->with('error', 'Material tidak ditemukan');
+        }
+
+        $request->validate([
+            'judul_material' => 'required|string|max:255',
+            'tipe' => 'required|in:video,bacaan,kuis,tugas',
+            'konten' => 'nullable|string',
+            'video_url' => 'nullable|url',
+            'durasi' => 'nullable|integer|min:0',
+        ]);
+
+        $material->update([
+            'judul_material' => $request->judul_material,
+            'tipe' => $request->tipe,
+            'konten' => $request->konten,
+            'video_url' => $request->video_url,
+            'durasi' => $request->durasi ?? $material->durasi,
+        ]);
+
+        return back()->with('success', 'Material berhasil diperbarui');
+    }
+
+    /**
+     * Reorder materials
+     */
+    public function reorderMaterials(Request $request, $courseId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        // Verify course belongs to dosen
+        $course = \App\Models\Course::where('id_course', $courseId)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $order = $request->input('order');
+        
+        if (!is_array($order)) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+
+        foreach ($order as $index => $materialId) {
+            \App\Models\CourseMaterial::where('id_material', $materialId)
+                ->where('id_course', $courseId)
+                ->update(['urutan' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Delete material
+     */
+    public function deleteMaterial($courseId, $materialId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $material = \App\Models\CourseMaterial::where('id_material', $materialId)
+            ->whereHas('course', function($q) use ($dosen, $courseId) {
+                $q->where('id_dosen', $dosen->id)->where('id_course', $courseId);
+            })
+            ->first();
+
+        if (!$material) {
+            return back()->with('error', 'Material tidak ditemukan');
+        }
+
+        $material->delete();
+
+        return back()->with('success', 'Material berhasil dihapus');
+    }
+
+    /**
+     * Publish course (change status to aktif)
+     */
+    public function publishCourse($id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return back()->with('error', 'Kursus tidak ditemukan');
+        }
+
+        // Check if course has at least one material
+        $materialsCount = \App\Models\CourseMaterial::where('id_course', $id)->count();
+        if ($materialsCount === 0) {
+            return back()->with('error', 'Tambahkan minimal 1 modul sebelum mempublikasikan kursus');
+        }
+
+        $course->status = 'aktif';
+        $course->save();
+
+        return back()->with('success', 'Kursus berhasil dipublikasikan!');
+    }
+
+    /**
+     * Show Buat Kursus page
+     */
+    public function showBuatKursus()
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $jurusans = \App\Models\Jurusan::all();
+        
+        return view('Auth.dosen.buat-kursus', [
+            'dosen' => $dosen,
+            'jurusans' => $jurusans,
+        ]);
+    }
+
+    /**
+     * Store new course
+     */
+    public function storeCourse(Request $request)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $request->validate([
+            'nama_course' => 'required|string|max:255',
+            'kode_course' => 'required|string|max:50|unique:courses,kode_course',
+            'deskripsi' => 'nullable|string',
+            'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',
+            'tipe' => 'required|in:gratis,berbayar',
+            'harga' => 'nullable|numeric|min:0',
+            'thumbnail' => 'nullable|image|max:2048',
+            'level' => 'nullable|in:Pemula,Menengah,Mahir',
+            'estimasi_waktu' => 'nullable|integer|min:0',
+            'diskon' => 'nullable|integer|min:0|max:100',
+        ]);
+
+        $thumbnailPath = null;
+        if ($request->hasFile('thumbnail')) {
+            $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
+        }
+
+        $course = \App\Models\Course::create([
+            'id_dosen' => $dosen->id,
+            'nama_course' => $request->nama_course,
+            'kode_course' => $request->kode_course,
+            'deskripsi' => $request->deskripsi,
+            'id_jurusan' => $request->id_jurusan,
+            'tipe' => $request->tipe,
+            'harga' => $request->tipe === 'berbayar' ? $request->harga : 0,
+            'thumbnail' => $thumbnailPath,
+            'status' => $request->status ?? 'draft',
+            'level' => $request->level,
+            'estimasi_waktu' => $request->estimasi_waktu,
+            'sertifikat' => $request->boolean('sertifikat'),
+            'akses_publik' => $request->boolean('akses_publik'),
+            'diskon' => $request->diskon ?? 0,
+        ]);
+
+        return redirect()->route('dosen.kursus.modul', $course->id_course)
+            ->with('success', 'Kursus berhasil dibuat! Silakan tambahkan modul.');
+    }
+
+    /**
+     * Show Edit Kursus page
+     */
+    public function showEditKursus($id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->with(['modules.materials' => function($q) {
+                $q->orderBy('urutan');
+            }])
+            ->firstOrFail();
+            
+        $jurusans = \App\Models\Jurusan::all();
+        // $materials = $course->materials()->orderBy('urutan')->get(); // No longer needed as primary source?
+        
+        return view('Auth.dosen.edit-kursus', compact('course', 'jurusans'));
+    }
+
+    /**
+     * Update course
+     */
+    public function updateCourse(Request $request, $id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return back()->with('error', 'Kursus tidak ditemukan');
+        }
+
+        $request->validate([
+            'nama_course' => 'required|string|max:255',
+            'kode_course' => 'required|string|max:50|unique:courses,kode_course,' . $id . ',id_course',
+            'deskripsi' => 'nullable|string',
+            'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',
+            'tipe' => 'required|in:gratis,berbayar',
+            'harga' => 'nullable|numeric|min:0',
+            'status' => 'required|in:draft,aktif,nonaktif',
+            'thumbnail' => 'nullable|image|max:2048',
+            'estimasi_waktu' => 'nullable|integer|min:0',
+            'durasi_satuan' => 'nullable|in:Minggu,Jam',
+            'level' => 'nullable|in:Pemula,Menengah,Mahir',
+            'diskon' => 'nullable|integer|min:0|max:100',
+        ]);
+
+        if ($request->hasFile('thumbnail')) {
+            // Delete old thumbnail
+            if ($course->thumbnail) {
+                \Storage::disk('public')->delete($course->thumbnail);
+            }
+            $course->thumbnail = $request->file('thumbnail')->store('course-thumbnails', 'public');
+        }
+
+        $course->update([
+            'nama_course' => $request->nama_course,
+            'kode_course' => $request->kode_course,
+            'deskripsi' => $request->deskripsi,
+            'id_jurusan' => $request->id_jurusan,
+            'tipe' => $request->tipe,
+            'harga' => $request->tipe === 'berbayar' ? $request->harga : 0,
+            'status' => $request->status,
+            'estimasi_waktu' => $request->estimasi_waktu,
+            'durasi_satuan' => $request->durasi_satuan,
+            'level' => $request->level,
+            'sertifikat' => $request->boolean('sertifikat'),
+            'akses_publik' => $request->boolean('akses_publik'),
+            'diskon' => $request->diskon ?? 0,
+        ]);
+
+        return back()->with('success', 'Kursus berhasil diperbarui!');
+    }
+
+    /**
+     * Preview course (public view)
+     */
+    public function previewKursus($id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->with(['materials' => function($q) {
+                $q->orderBy('urutan');
+            }, 'enrollments', 'jurusan'])
+            ->first();
+
+        if (!$course) {
+            return redirect()->route('dosen.kursus')->with('error', 'Kursus tidak ditemukan');
+        }
+
+        return view('Auth.dosen.preview-kursus', [
+            'dosen' => $dosen,
+            'course' => $course,
+        ]);
+    }
+
+    /**
+     * Show progress for a specific course
+     */
+    public function showProgresKursus($id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $course = \App\Models\Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return redirect()->route('dosen.kursus')->with('error', 'Kursus tidak ditemukan');
+        }
+
+        $enrollments = \App\Models\Enrollment::where('id_course', $id)
+            ->with(['mahasiswa.profile'])
+            ->orderBy('progress', 'desc')
+            ->get()
+            ->map(function($enrollment) {
+                return [
+                    'id' => $enrollment->id_enroll,
+                    'nama' => $enrollment->mahasiswa?->name ?? 'Unknown',
+                    'foto' => $enrollment->mahasiswa?->profile?->foto_profile,
+                    'progress' => round($enrollment->progress ?? 0),
+                    'status' => $enrollment->status,
+                    'tanggal_daftar' => $enrollment->tanggal_daftar?->format('d M Y') ?? '-',
+                ];
+            });
+
+        return view('Auth.dosen.progres-kursus', [
+            'dosen' => $dosen,
+            'course' => $course,
+            'enrollments' => $enrollments,
+        ]);
+    }
+
+    /**
+     * Show all student progress (across all courses)
+     */
+    public function showProgresMahasiswa(Request $request)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $courses = \App\Models\Course::where('id_dosen', $dosen->id)->pluck('id_course');
+        
+        $search = $request->input('search');
+        $courseFilter = $request->input('course', 'all');
+        
+        $query = \App\Models\Enrollment::whereIn('id_course', $courses)
+            ->with(['mahasiswa.profile', 'course']);
+        
+        if ($search) {
+            $query->whereHas('mahasiswa', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            });
+        }
+        
+        if ($courseFilter !== 'all') {
+            $query->where('id_course', $courseFilter);
+        }
+        
+        $enrollments = $query->orderBy('updated_at', 'desc')->paginate(10)->withQueryString();
+        
+        $coursesForFilter = \App\Models\Course::where('id_dosen', $dosen->id)
+            ->select('id_course', 'nama_course')
+            ->get();
+
+        return view('Auth.dosen.progres-mahasiswa', [
+            'dosen' => $dosen,
+            'enrollments' => $enrollments,
+            'coursesForFilter' => $coursesForFilter,
+            'search' => $search,
+            'courseFilter' => $courseFilter,
+        ]);
     }
 
     /**

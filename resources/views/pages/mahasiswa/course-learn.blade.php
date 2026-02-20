@@ -92,6 +92,68 @@
                             </div>
                         </a>
                         @endforeach
+                        
+                        {{-- Quiz Link --}}
+                        <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $moduleIndex]) }}" 
+                           class="flex items-center gap-3 p-3 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition bg-yellow-50/50 dark:bg-yellow-500/5 border-t border-yellow-200 dark:border-yellow-700/30">
+                            <div class="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-400">Kuis Akhir Modul</p>
+                                <p class="text-xs text-yellow-600 dark:text-yellow-500">10 Soal • 30 Menit</p>
+                            </div>
+                            <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                        
+                        {{-- Assignment Link --}}
+                        <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $moduleIndex]) }}" 
+                           class="flex items-center gap-3 p-3 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition bg-orange-50/50 dark:bg-orange-500/5 border-t border-orange-200 dark:border-orange-700/30">
+                            <div class="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-orange-700 dark:text-orange-400">Tugas Akhir Modul</p>
+                                <p class="text-xs text-orange-600 dark:text-orange-500">Deadline: 7 Hari</p>
+                            </div>
+                            <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                        
+                        {{-- Feedback & Nilai Link - Only show if module is complete (materials, quiz, assignment) --}}
+                        @php
+                            $completedMaterials = collect($module['materials'])->where('is_completed', true)->count();
+                            $totalMaterials = count($module['materials']);
+                            $materialsComplete = $totalMaterials > 0 && $completedMaterials == $totalMaterials;
+                            // Check if quiz and assignment are completed (from module data or default to false)
+                            $quizComplete = $module['quiz_completed'] ?? false;
+                            $assignmentComplete = $module['assignment_completed'] ?? false;
+                            $isModuleComplete = $materialsComplete && $quizComplete && $assignmentComplete;
+                        @endphp
+                        @if($isModuleComplete)
+                        <a href="{{ route('mahasiswa.module-feedback', ['courseId' => $course->id_course, 'moduleId' => $moduleIndex]) }}" 
+                           class="flex items-center gap-3 p-3 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition bg-indigo-50/50 dark:bg-indigo-500/5 border-t border-indigo-200 dark:border-indigo-700/30">
+                            <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-indigo-700 dark:text-indigo-400">Feedback & Nilai</p>
+                                <p class="text-xs text-indigo-600 dark:text-indigo-500">Lihat hasil evaluasi</p>
+                            </div>
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                        @endif
                     </div>
                 </div>
                 @empty
@@ -121,16 +183,61 @@
             {{-- Video/Content Area --}}
             <div class="bg-gray-900 rounded-2xl overflow-hidden relative" style="aspect-ratio: 16/9;">
                 @if($currentMaterial)
-                <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=450&fit=crop" alt="Video Content" class="w-full h-full object-cover opacity-80">
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center cursor-pointer hover:bg-white/30 transition">
-                        <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </div>
+                    @if($currentMaterial['type'] == 'video' && !empty($currentMaterial['video_url']))
+                        @php
+                            $videoUrl = $currentMaterial['video_url'];
+                            $embedUrl = '';
+                            if (str_contains($videoUrl, 'youtube.com/watch?v=')) {
+                                parse_str(parse_url($videoUrl, PHP_URL_QUERY), $params);
+                                $videoId = $params['v'] ?? '';
+                                $embedUrl = "https://www.youtube.com/embed/{$videoId}";
+                            } elseif (str_contains($videoUrl, 'youtu.be/')) {
+                                $videoId = basename(parse_url($videoUrl, PHP_URL_PATH));
+                                $embedUrl = "https://www.youtube.com/embed/{$videoId}";
+                            }
+                        @endphp
+
+                        @if($embedUrl)
+                            <iframe src="{{ $embedUrl }}" title="Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe>
+                        @else
+                            {{-- Fallback for non-YouTube or direct files --}}
+                            <video controls class="w-full h-full">
+                                <source src="{{ $videoUrl }}" type="video/mp4">
+                                Browser Anda tidak mendukung tag video.
+                            </video>
+                        @endif
+                    @elseif($currentMaterial['type'] == 'video')
+                         <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
+                            <div class="text-center">
+                                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                                <p>Video tidak tersedia</p>
+                            </div>
+                        </div>
+                    @elseif($currentMaterial['type'] == 'bacaan')
+                        <div class="absolute inset-0 p-8 overflow-y-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                             <div class="prose dark:prose-invert max-w-none">
+                                {!! nl2br(e($currentMaterial['content'])) !!}
+                             </div>
+                        </div>
+                    @elseif($currentMaterial['type'] == 'quiz')
+                         <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
+                            <div class="text-center">
+                                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                                <p>Ini adalah materi Kuis</p>
+                                <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => 1]) }}" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Mulai Kuis</a>
+                            </div>
+                        </div>
+                    @else
+                         <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
+                            <p>Tipe konten tidak didukung</p>
+                        </div>
+                    @endif
                 @else
-                <div class="absolute inset-0 flex items-center justify-center text-gray-400">
+                <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
                     <div class="text-center">
                         <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
