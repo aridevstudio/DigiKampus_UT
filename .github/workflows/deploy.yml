@@ -2,7 +2,7 @@ name: Deploy DigiKampusUT to VPS
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ Develop ]
   workflow_dispatch:
     inputs:
       deployment_type:
