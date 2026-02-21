@@ -22,7 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 2  # Get last 2 commits for diff..
+        fetch-depth: 2  # Get last 2 commits for diff.
 
     - name: Determine deployment mode
       id: deploy_mode
