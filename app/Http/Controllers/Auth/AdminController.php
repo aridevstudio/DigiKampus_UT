@@ -444,29 +444,6 @@ class AdminController extends Controller
             'password' => Hash::make($defaultPassword),
             'role' => 'dosen',
             'status' => $request->status,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
         ]);
 
         // Handle photo upload
@@ -1597,6 +1574,157 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal generate template: ' . $e->getMessage());
         }
+    }
+
+    // ========================
+    // News/Pengumuman Management
+    // ========================
+
+    /**
+     * Show Pengumuman page
+     */
+    public function showPengumuman(Request $request)
+    {
+        $query = \App\Models\News::query();
+
+        // Filter by kategori
+        $kategoriFilter = $request->get('kategori', 'all');
+        if ($kategoriFilter !== 'all') {
+            $query->where('kategori', $kategoriFilter);
+        }
+
+        // Filter by status
+        $statusFilter = $request->get('status', 'all');
+        if ($statusFilter === 'aktif') {
+            $query->where('is_active', true);
+        } elseif ($statusFilter === 'nonaktif') {
+            $query->where('is_active', false);
+        }
+
+        // Search
+        $search = $request->get('search');
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('judul', 'like', "%{$search}%")
+                  ->orWhere('konten', 'like', "%{$search}%");
+            });
+        }
+
+        $newsPaginated = $query->orderByDesc('tanggal_publish')->paginate(10)->withQueryString();
+
+        return view('Auth.admin.pengumuman', [
+            'newsList' => $newsPaginated,
+            'totalNews' => \App\Models\News::count(),
+            'kategoriFilter' => $kategoriFilter,
+            'statusFilter' => $statusFilter,
+            'search' => $search,
+        ]);
+    }
+
+    /**
+     * Store new pengumuman
+     */
+    public function storePengumuman(Request $request)
+    {
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'konten' => 'required|string',
+            'kategori' => 'required|in:pengumuman,berita,event',
+            'tanggal_publish' => 'required|date',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'is_active' => 'nullable',
+        ], [
+            'judul.required' => 'Judul pengumuman wajib diisi.',
+            'konten.required' => 'Konten wajib diisi.',
+            'kategori.required' => 'Kategori wajib dipilih.',
+            'tanggal_publish.required' => 'Tanggal publish wajib diisi.',
+            'thumbnail.max' => 'Ukuran thumbnail maksimal 2MB.',
+        ]);
+
+        $data = [
+            'judul' => $request->judul,
+            'konten' => $request->konten,
+            'kategori' => $request->kategori,
+            'tanggal_publish' => $request->tanggal_publish,
+            'is_active' => $request->has('is_active'),
+        ];
+
+        if ($request->hasFile('thumbnail')) {
+            $data['thumbnail'] = $request->file('thumbnail')->store('news-thumbnails', 'public');
+        }
+
+        \App\Models\News::create($data);
+
+        return redirect()->route('admin.pengumuman')->with('success', 'Pengumuman berhasil ditambahkan.');
+    }
+
+    /**
+     * Get pengumuman data (JSON)
+     */
+    public function getPengumuman($id)
+    {
+        $news = \App\Models\News::findOrFail($id);
+        return response()->json([
+            'id' => $news->id_news,
+            'judul' => $news->judul,
+            'konten' => $news->konten,
+            'kategori' => $news->kategori,
+            'tanggal_publish' => $news->tanggal_publish->format('Y-m-d\TH:i'),
+            'thumbnail' => $news->thumbnail,
+            'is_active' => $news->is_active,
+        ]);
+    }
+
+    /**
+     * Update pengumuman
+     */
+    public function updatePengumuman(Request $request, $id)
+    {
+        $news = \App\Models\News::findOrFail($id);
+
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'konten' => 'required|string',
+            'kategori' => 'required|in:pengumuman,berita,event',
+            'tanggal_publish' => 'required|date',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'is_active' => 'nullable',
+        ]);
+
+        $news->judul = $request->judul;
+        $news->konten = $request->konten;
+        $news->kategori = $request->kategori;
+        $news->tanggal_publish = $request->tanggal_publish;
+        $news->is_active = $request->has('is_active');
+
+        if ($request->hasFile('thumbnail')) {
+            // Delete old thumbnail
+            if ($news->thumbnail && Storage::disk('public')->exists($news->thumbnail)) {
+                Storage::disk('public')->delete($news->thumbnail);
+            }
+            $news->thumbnail = $request->file('thumbnail')->store('news-thumbnails', 'public');
+        }
+
+        $news->save();
+
+        return redirect()->route('admin.pengumuman')->with('success', 'Pengumuman berhasil diperbarui.');
+    }
+
+    /**
+     * Delete pengumuman
+     */
+    public function deletePengumuman($id)
+    {
+        $news = \App\Models\News::findOrFail($id);
+
+        // Delete thumbnail if exists
+        if ($news->thumbnail && Storage::disk('public')->exists($news->thumbnail)) {
+            Storage::disk('public')->delete($news->thumbnail);
+        }
+
+        $news->delete();
+
+        return redirect()->route('admin.pengumuman')->with('success', 'Pengumuman berhasil dihapus.');
     }
 
     /**

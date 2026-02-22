@@ -100,7 +100,7 @@
     <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Pengumuman Admin</h2>
-            <a href="{{ route('admin.notifications') }}" class="text-blue-600 hover:text-blue-700 text-sm">Lihat Semua</a>
+            <a href="{{ route('admin.pengumuman') }}" class="text-blue-600 hover:text-blue-700 text-sm">Lihat Semua</a>
         </div>
         <div class="space-y-4">
             @forelse($recentNews as $news)

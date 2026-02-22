@@ -62,6 +62,13 @@ Route::prefix('admin')
         Route::post('/notifications/{id}/read', [AdminController::class, 'markNotificationRead'])->name('admin.notifications.read');
         Route::post('/notifications/read-all', [AdminController::class, 'markAllNotificationsRead'])->name('admin.notifications.readAll');
 
+        // News/Pengumuman Management
+        Route::get('/pengumuman', [AdminController::class, 'showPengumuman'])->name('admin.pengumuman');
+        Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('admin.pengumuman.store');
+        Route::get('/pengumuman/{id}', [AdminController::class, 'getPengumuman'])->name('admin.pengumuman.get');
+        Route::put('/pengumuman/{id}', [AdminController::class, 'updatePengumuman'])->name('admin.pengumuman.update');
+        Route::delete('/pengumuman/{id}', [AdminController::class, 'deletePengumuman'])->name('admin.pengumuman.delete');
+
         // YouTube Playlist Sync
         Route::post('/kursus/{id}/sync-playlist', [AdminController::class, 'syncYoutubePlaylist'])->name('admin.kursus.syncPlaylist');
         Route::get('/kursus/{id}/youtube-videos', [AdminController::class, 'getYoutubeVideos'])->name('admin.kursus.youtubeVideos');
