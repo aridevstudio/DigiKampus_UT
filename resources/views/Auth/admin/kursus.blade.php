@@ -316,6 +316,7 @@
                 
                 <form action="{{ route('admin.kursus.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
                     @csrf
+                    <input type="hidden" name="_modal" value="add">
                     
                     <div class="mb-4">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Kursus</h3>
@@ -361,11 +362,11 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nama Kursus</label>
-                                    <input type="text" name="nama_course" required placeholder="Masukkan nama kursus" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" name="nama_course" required placeholder="Masukkan nama kursus" value="{{ old('_modal') === 'add' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus</label>
-                                    <input type="text" name="kode_course" required placeholder="Contoh: CS101" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" name="kode_course" required placeholder="Contoh: CS101" value="{{ old('_modal') === 'add' ? old('kode_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                                 </div>
                             </div>
                             
@@ -488,6 +489,8 @@
                 <form id="editKursusForm" method="POST" enctype="multipart/form-data" class="p-6">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="_modal" value="edit">
+                    <input type="hidden" name="_id" id="edit_kursus_id" value="{{ old('_id') }}">
                     
                     <div class="mb-4">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Kursus</h3>
@@ -776,6 +779,7 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('editKursusForm').action = '/admin/kursus/' + id;
+                    document.getElementById('edit_kursus_id').value = id;
                     document.getElementById('edit_nama_course').value = data.nama_course || '';
                     document.getElementById('edit_kode_course').value = data.kode_course || '';
                     document.getElementById('edit_deskripsi').value = data.deskripsi || '';
@@ -919,6 +923,22 @@
                     }
                 });
         }
+
+        // Auto-reopen modal on validation error
+        @if($errors->any() && old('_modal') === 'add')
+        document.addEventListener('DOMContentLoaded', () => openAddModal());
+        @elseif($errors->any() && old('_modal') === 'edit')
+        document.addEventListener('DOMContentLoaded', () => {
+            const editForm = document.getElementById('editKursusForm');
+            const editId = '{{ old('_id') }}';
+            if (editId) {
+                editForm.action = '/admin/kursus/' + editId;
+                document.getElementById('edit_kursus_id').value = editId;
+            }
+            document.getElementById('editKursusModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        @endif
     </script>
     @endpush
 </x-layouts.admin>

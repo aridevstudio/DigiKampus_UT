@@ -59,6 +59,9 @@
                     <input type="file" id="foto_profile" name="foto_profile" class="hidden" accept="image/*" onchange="previewImage(this)">
                 </div>
                 <label for="foto_profile" class="text-blue-500 hover:text-blue-600 text-sm font-medium cursor-pointer">Ganti Foto</label>
+                @error('foto_profile')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
             
             {{-- Nama Lengkap --}}

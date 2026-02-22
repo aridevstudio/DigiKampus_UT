@@ -283,6 +283,7 @@
                 
                 <form action="{{ route('admin.mahasiswa.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
                     @csrf
+                    <input type="hidden" name="_modal" value="add">
                     
                     <div class="mb-4">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Mahasiswa</h3>
@@ -327,12 +328,12 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nama Lengkap</label>
-                                <input type="text" name="name" required placeholder="Masukkan nama lengkap" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <input type="text" name="name" required placeholder="Masukkan nama lengkap" value="{{ old('_modal') === 'add' ? old('name') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                             
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">NIM</label>
-                                <input type="text" name="nim" required placeholder="Masukkan NIM" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <input type="text" name="nim" required placeholder="Masukkan NIM" value="{{ old('_modal') === 'add' ? old('nim') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                             
                             <div>
@@ -341,7 +342,7 @@
                                     <select name="id_jurusan" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                         <option value="" class="text-gray-400">Pilih program studi</option>
                                         @foreach($jurusanList as $jurusan)
-                                        <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->nama_jurusan }}</option>
+                                        <option value="{{ $jurusan->id_jurusan }}" {{ old('_modal') === 'add' && old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
                                         @endforeach
                                     </select>
                                     <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -352,12 +353,12 @@
                             
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Email</label>
-                                <input type="email" name="email" required placeholder="email@university.ac.id" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <input type="email" name="email" required placeholder="email@university.ac.id" value="{{ old('_modal') === 'add' ? old('email') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                             
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nomor Telepon</label>
-                                <input type="tel" name="no_hp" placeholder="+62 812 3456 7890" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <input type="tel" name="no_hp" placeholder="+62 812 3456 7890" value="{{ old('_modal') === 'add' ? old('no_hp') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                         </div>
                     </div>
@@ -420,6 +421,8 @@
                 <form id="editMahasiswaForm" method="POST" enctype="multipart/form-data" class="p-6">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="_modal" value="edit">
+                    <input type="hidden" name="_id" id="edit_mhs_id" value="{{ old('_id') }}">
                     
                     <div class="mb-4">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Data Mahasiswa</h3>
@@ -713,6 +716,7 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('editMahasiswaForm').action = '/admin/mahasiswa/' + id;
+                    document.getElementById('edit_mhs_id').value = id;
                     document.getElementById('edit_name').value = data.name || '';
                     document.getElementById('edit_email').value = data.email || '';
                     document.getElementById('edit_nim').value = data.nim || '';
@@ -946,6 +950,26 @@
             });
         }
         
+        // Auto-reopen modal on validation error
+        @if($errors->any() && old('_modal') === 'add')
+        document.addEventListener('DOMContentLoaded', () => openAddModal());
+        @elseif($errors->any() && old('_modal') === 'edit')
+        document.addEventListener('DOMContentLoaded', () => {
+            const editForm = document.getElementById('editMahasiswaForm');
+            const editId = '{{ old('_id') }}';
+            if (editId) {
+                editForm.action = '/admin/mahasiswa/' + editId;
+                document.getElementById('edit_name').value = '{{ old('name') }}';
+                document.getElementById('edit_nim').value = '{{ old('nim') }}';
+                document.getElementById('edit_email').value = '{{ old('email') }}';
+                document.getElementById('edit_no_hp').value = '{{ old('no_hp') }}';
+                document.getElementById('edit_id_jurusan').value = '{{ old('id_jurusan') }}';
+                document.getElementById('edit_status').checked = '{{ old('status') }}' === 'aktif';
+            }
+            document.getElementById('editMahasiswaModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        @endif
     </script>
     @endpush
 </x-layouts.admin>

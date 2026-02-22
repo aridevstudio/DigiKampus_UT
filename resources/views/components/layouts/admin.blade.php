@@ -192,6 +192,52 @@
 
             {{-- Page Content --}}
             <main class="flex-1 p-4 sm:p-6">
+                {{-- Global Flash Messages --}}
+                @if($errors->any())
+                <div id="globalValidationAlert" class="fixed top-4 right-4 z-[60] max-w-md bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        <div class="flex-1">
+                            <p class="font-semibold text-sm mb-1">Data gagal disimpan:</p>
+                            <ul class="text-xs space-y-0.5 list-disc list-inside">
+                                @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <button onclick="this.closest('#globalValidationAlert').remove()" class="ml-2 shrink-0">&times;</button>
+                    </div>
+                </div>
+                <script>setTimeout(() => document.getElementById('globalValidationAlert')?.remove(), 8000);</script>
+                @endif
+
+                @if(session('success'))
+                <div id="globalSuccessAlert" class="fixed top-4 right-4 z-[60] bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                    {{ session('success') }}
+                    <button onclick="this.parentElement.remove()" class="ml-2">&times;</button>
+                </div>
+                <script>setTimeout(() => document.getElementById('globalSuccessAlert')?.remove(), 5000);</script>
+                @endif
+
+                @if(session('error'))
+                <div id="globalErrorAlert" class="fixed top-4 right-4 z-[60] bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    {{ session('error') }}
+                    <button onclick="this.parentElement.remove()" class="ml-2">&times;</button>
+                </div>
+                <script>setTimeout(() => document.getElementById('globalErrorAlert')?.remove(), 5000);</script>
+                @endif
+
+                @if(session('info'))
+                <div id="globalInfoAlert" class="fixed top-4 right-4 z-[60] bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {{ session('info') }}
+                    <button onclick="this.parentElement.remove()" class="ml-2">&times;</button>
+                </div>
+                <script>setTimeout(() => document.getElementById('globalInfoAlert')?.remove(), 5000);</script>
+                @endif
+
                 {{ $slot }}
             </main>
         </div>

@@ -725,6 +725,18 @@ class CourseController extends Controller
      */
     public function submitAssignment(Request $request, $courseId, $assignmentId)
     {
+        // Store uploaded file if present
+        if ($request->hasFile('file')) {
+            $request->validate([
+                'file' => 'required|file|max:10240|mimes:pdf,docx,doc,zip',
+            ]);
+
+            $file = $request->file('file');
+            $userId = auth('mahasiswa')->id();
+            $fileName = "assignment_{$courseId}_{$assignmentId}_{$userId}_" . time() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('assignments', $fileName, 'public');
+        }
+
         // Mark assignment as completed in session
         $completedAssignments = session('completed_assignments', []);
         $key = $courseId . '_' . $assignmentId;

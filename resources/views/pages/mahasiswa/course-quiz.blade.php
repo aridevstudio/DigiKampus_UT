@@ -223,7 +223,10 @@ function selectOption(label, key) {
             answer: key
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Server error: ' + response.status);
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Update progress indicator for current question
@@ -233,6 +236,10 @@ function selectOption(label, key) {
                 progressItem.style.color = '#2563eb';
             }
         }
+    })
+    .catch(error => {
+        console.error('Error saving answer:', error);
+        alert('Gagal menyimpan jawaban. Periksa koneksi internet Anda.');
     });
 }
 
@@ -247,7 +254,10 @@ function toggleFlag() {
             question: {{ $currentQuestion }}
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Server error: ' + response.status);
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             const btn = document.getElementById('flagBtn');
@@ -277,12 +287,15 @@ function toggleFlag() {
                 }
             }
         }
+    })
+    .catch(error => {
+        console.error('Error toggling flag:', error);
+        alert('Gagal menandai soal. Periksa koneksi internet Anda.');
     });
 }
 
 function confirmSubmit() {
     if (confirm('Apakah Anda yakin ingin menyelesaikan kuis?')) {
-        alert('Kuis berhasil diselesaikan!');
         window.location.href = '{{ route('mahasiswa.quiz-result', ['courseId' => $course->id_course, 'quizId' => $quiz['id']]) }}';
     }
 }

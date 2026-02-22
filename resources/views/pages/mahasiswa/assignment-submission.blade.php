@@ -136,21 +136,51 @@ function submitAssignment() {
         alert('Pilih file terlebih dahulu!');
         return;
     }
-    
-    // Submit via AJAX to mark as completed
+
+    const submitBtn = document.querySelector('button[onclick="submitAssignment()"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Mengunggah...';
+    submitBtn.style.opacity = '0.7';
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('_token', '{{ csrf_token() }}');
+
+    const notesTextarea = document.querySelector('textarea');
+    if (notesTextarea && notesTextarea.value.trim()) {
+        formData.append('catatan', notesTextarea.value.trim());
+    }
+
     fetch('{{ route('mahasiswa.submit-assignment', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Server error: ' + response.status);
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             alert('Tugas berhasil disubmit!');
             window.location.href = data.redirect;
+        } else {
+            alert(data.message || 'Gagal mengirim tugas. Silakan coba lagi.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            submitBtn.style.opacity = '1';
         }
+    })
+    .catch(error => {
+        console.error('Submit error:', error);
+        alert('Terjadi kesalahan saat mengirim tugas. Periksa koneksi dan coba lagi.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        submitBtn.style.opacity = '1';
     });
 }
 </script>
