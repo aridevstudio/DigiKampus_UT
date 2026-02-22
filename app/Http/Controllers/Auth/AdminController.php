@@ -562,6 +562,12 @@ class AdminController extends Controller
         // Get active courses for enrollment dropdown
         $courseList = \App\Models\Course::where('status', 'aktif')->get();
 
+        // Stats
+        $totalAll = User::where('role', 'mahasiswa')->count();
+        $totalAktif = User::where('role', 'mahasiswa')->where('status', 'aktif')->count();
+        $totalNonaktif = User::where('role', 'mahasiswa')->where('status', 'nonaktif')->count();
+        $totalBaru = User::where('role', 'mahasiswa')->where('created_at', '>=', now()->subDays(30))->count();
+
         return view('Auth.admin.mahasiswa', [
             'admin' => $admin,
             'mahasiswaList' => $mahasiswaList,
@@ -573,6 +579,10 @@ class AdminController extends Controller
             'statusFilter' => $request->status ?? 'all',
             'jurusanList' => $jurusanList,
             'courseList' => $courseList,
+            'totalAll' => $totalAll,
+            'totalAktif' => $totalAktif,
+            'totalNonaktif' => $totalNonaktif,
+            'totalBaru' => $totalBaru,
         ]);
     }
 
