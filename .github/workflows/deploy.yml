@@ -118,7 +118,8 @@ jobs:
           cd /var/www/digikampusut
 
           echo "📦 Installing/updating Composer dependencies..."
-          sudo composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-gd --working-dir=/var/www/digikampusut 2>&1 || echo "⚠️ Composer install had issues, check logs"
+          export COMPOSER_ALLOW_SUPERUSER=1
+          sudo -E composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --working-dir=/var/www/digikampusut 2>&1 || echo "⚠️ Composer install had issues, check logs"
 
           echo "🔧 Setting proper permissions..."
 
