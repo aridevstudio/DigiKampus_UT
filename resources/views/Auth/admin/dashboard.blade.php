@@ -66,7 +66,7 @@
     {{-- Chart --}}
     <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Grafik Pendaftaran Kursus</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Pendaftaran Kursus Mingguan</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Pendaftaran Kursus Minggu Ini ({{ now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('d M') }} - {{ now()->endOfWeek(\Carbon\Carbon::SUNDAY)->format('d M Y') }})</p>
         <div style="height: 250px; position: relative;">
             <canvas id="enrollmentChart"></canvas>
         </div>
@@ -76,38 +76,20 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Aktivitas Terbaru</h2>
         <div class="space-y-4">
+            @forelse($recentActivities as $activity)
             <div class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">DS</div>
-                <div>
-                    <p class="text-sm font-medium text-gray-800 dark:text-white">Dosen baru bergabung</p>
-                    <p class="text-xs text-gray-500">Dr. Ahmad Susanto - Fakultas FMIPA</p>
-                    <p class="text-xs text-gray-400 mt-1">2 jam lalu</p>
+                <div class="w-8 h-8 rounded-full {{ $activity['icon_color'] }} flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{{ $activity['initials'] }}</div>
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-gray-800 dark:text-white">{{ $activity['title'] }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ $activity['description'] }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ $activity['time']->diffForHumans() }}</p>
                 </div>
             </div>
-            <div class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">MK</div>
-                <div>
-                    <p class="text-sm font-medium text-gray-800 dark:text-white">Mahasiswa mendaftar kursus</p>
-                    <p class="text-xs text-gray-500">45 mahasiswa baru - Statistika Dasar</p>
-                    <p class="text-xs text-gray-400 mt-1">3 jam lalu</p>
-                </div>
+            @empty
+            <div class="text-center py-4">
+                <p class="text-sm text-gray-400">Belum ada aktivitas</p>
             </div>
-            <div class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">KB</div>
-                <div>
-                    <p class="text-sm font-medium text-gray-800 dark:text-white">Kursus baru dibuat</p>
-                    <p class="text-xs text-gray-500">Pemrograman Web Lanjutan</p>
-                    <p class="text-xs text-gray-400 mt-1">1 hari lalu</p>
-                </div>
-            </div>
-            <div class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">UD</div>
-                <div>
-                    <p class="text-sm font-medium text-gray-800 dark:text-white">Update data sistem</p>
-                    <p class="text-xs text-gray-500">Database mahasiswa diperbarui</p>
-                    <p class="text-xs text-gray-400 mt-1">2 hari lalu</p>
-                </div>
-            </div>
+            @endforelse
         </div>
     </div>
 </div>
@@ -121,30 +103,20 @@
             <a href="{{ route('admin.notifications') }}" class="text-blue-600 hover:text-blue-700 text-sm">Lihat Semua</a>
         </div>
         <div class="space-y-4">
+            @forelse($recentNews as $news)
             <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-lg">
                 <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-medium text-gray-800 dark:text-white">Update Sistem Akademik v2.1</h3>
-                    <span class="text-xs text-gray-400">15 Nov 2024</span>
+                    <h3 class="font-medium text-gray-800 dark:text-white">{{ $news->judul }}</h3>
+                    <span class="text-xs text-gray-400 whitespace-nowrap ml-2">{{ $news->tanggal_publish->format('d M Y') }}</span>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Sistem akademik telah diperbarui dengan fitur baru untuk manajemen nilai dan absensi mahasiswa.</p>
-                <span class="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs rounded">Sistem</span>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{{ Str::limit(strip_tags($news->konten), 120) }}</p>
+                <span class="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs rounded">{{ $news->kategori ?? 'Umum' }}</span>
             </div>
-            <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-lg">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-medium text-gray-800 dark:text-white">Jadwal Maintenance Server</h3>
-                    <span class="text-xs text-gray-400">12 Nov 2024</span>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Maintenance server terjadwal pada tanggal 20 November 2024, pukul 02:00-05:00 WIB.</p>
-                <span class="inline-block px-2 py-1 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 text-xs rounded">Penting</span>
+            @empty
+            <div class="text-center py-8">
+                <p class="text-sm text-gray-400">Belum ada pengumuman</p>
             </div>
-            <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-lg">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-medium text-gray-800 dark:text-white">Pelatihan Sistem Baru untuk Dosen</h3>
-                    <span class="text-xs text-gray-400">10 Nov 2024</span>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Diadakan pelatihan penggunaan sistem baru untuk seluruh dosen pada tanggal 25 November 2024.</p>
-                <span class="inline-block px-2 py-1 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 text-xs rounded">Pelatihan</span>
-            </div>
+            @endforelse
         </div>
     </div>
     
@@ -184,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
             datasets: [{
                 label: 'Pendaftaran',
-                data: [120, 150, 180, 200, 170, 90, 60],
+                data: @json($chartData),
                 backgroundColor: '#3b82f6',
                 borderRadius: 6,
                 barThickness: 40

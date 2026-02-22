@@ -248,6 +248,92 @@ class AdminController extends Controller
             ->whereYear('tanggal_daftar', now()->year)
             ->count();
 
+        // Weekly enrollment data for chart (last 7 days, grouped by day)
+        $startOfWeek = now()->startOfWeek(\Carbon\Carbon::MONDAY);
+        $endOfWeek = now()->endOfWeek(\Carbon\Carbon::SUNDAY);
+        $weeklyEnrollments = \App\Models\Enrollment::selectRaw('DAYOFWEEK(tanggal_daftar) as day_num, COUNT(*) as total')
+            ->whereBetween('tanggal_daftar', [$startOfWeek, $endOfWeek])
+            ->groupByRaw('DAYOFWEEK(tanggal_daftar)')
+            ->pluck('total', 'day_num')
+            ->toArray();
+
+        // DAYOFWEEK: 1=Sunday, 2=Monday, ..., 7=Saturday
+        // Map to [Sen, Sel, Rab, Kam, Jum, Sab, Min]
+        $chartData = [
+            $weeklyEnrollments[2] ?? 0, // Sen (Monday)
+            $weeklyEnrollments[3] ?? 0, // Sel (Tuesday)
+            $weeklyEnrollments[4] ?? 0, // Rab (Wednesday)
+            $weeklyEnrollments[5] ?? 0, // Kam (Thursday)
+            $weeklyEnrollments[6] ?? 0, // Jum (Friday)
+            $weeklyEnrollments[7] ?? 0, // Sab (Saturday)
+            $weeklyEnrollments[1] ?? 0, // Min (Sunday)
+        ];
+
+        // Recent activities from real data
+        $recentActivities = collect();
+
+        // Recent enrollments
+        $recentEnrollments = \App\Models\Enrollment::with(['mahasiswa', 'course'])
+            ->orderByDesc('tanggal_daftar')
+            ->limit(5)
+            ->get()
+            ->map(function ($enrollment) {
+                return [
+                    'type' => 'enrollment',
+                    'icon_color' => 'bg-green-500',
+                    'initials' => strtoupper(substr($enrollment->mahasiswa->name ?? 'M', 0, 2)),
+                    'title' => 'Mahasiswa mendaftar kursus',
+                    'description' => ($enrollment->mahasiswa->name ?? 'Mahasiswa') . ' - ' . ($enrollment->course->nama_course ?? 'Kursus'),
+                    'time' => $enrollment->tanggal_daftar,
+                ];
+            });
+        $recentActivities = $recentActivities->merge($recentEnrollments);
+
+        // Recent new users (dosen & mahasiswa)
+        $recentUsers = User::whereIn('role', ['dosen', 'mahasiswa'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(function ($user) {
+                $color = $user->role === 'dosen' ? 'bg-blue-500' : 'bg-indigo-500';
+                $label = $user->role === 'dosen' ? 'Dosen baru bergabung' : 'Mahasiswa baru bergabung';
+                return [
+                    'type' => 'new_user',
+                    'icon_color' => $color,
+                    'initials' => strtoupper(substr($user->name ?? 'U', 0, 2)),
+                    'title' => $label,
+                    'description' => $user->name . ' - ' . $user->email,
+                    'time' => $user->created_at,
+                ];
+            });
+        $recentActivities = $recentActivities->merge($recentUsers);
+
+        // Recent courses created
+        $recentCourses = \App\Models\Course::with('dosen')
+            ->orderByDesc('created_at')
+            ->limit(3)
+            ->get()
+            ->map(function ($course) {
+                return [
+                    'type' => 'new_course',
+                    'icon_color' => 'bg-purple-500',
+                    'initials' => strtoupper(substr($course->nama_course ?? 'K', 0, 2)),
+                    'title' => 'Kursus baru dibuat',
+                    'description' => $course->nama_course . ($course->dosen ? ' - ' . $course->dosen->name : ''),
+                    'time' => $course->created_at,
+                ];
+            });
+        $recentActivities = $recentActivities->merge($recentCourses);
+
+        // Sort all activities by time descending, take latest 6
+        $recentActivities = $recentActivities->sortByDesc('time')->take(6)->values();
+
+        // Recent announcements/news
+        $recentNews = \App\Models\News::where('is_active', true)
+            ->orderByDesc('tanggal_publish')
+            ->limit(3)
+            ->get();
+
         // Unread notification count for badge
         $unreadNotifCount = AdminNotification::where('admin_id', $admin->id)->unread()->count();
 
@@ -258,6 +344,9 @@ class AdminController extends Controller
             'kursusAktif' => $kursusAktif,
             'totalKursus' => $totalKursus,
             'pendaftaranBulanIni' => $pendaftaranBulanIni,
+            'chartData' => $chartData,
+            'recentActivities' => $recentActivities,
+            'recentNews' => $recentNews,
             'unreadNotifCount' => $unreadNotifCount,
         ]);
     }
