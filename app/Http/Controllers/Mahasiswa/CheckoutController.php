@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
+use App\Models\DosenNotification;
 use Illuminate\Support\Facades\Auth;
 
 class CheckoutController extends Controller
@@ -188,6 +189,18 @@ class CheckoutController extends Controller
                     'status' => 'aktif',
                     'progress' => 0,
                 ]);
+
+                // Notify dosen about new enrollment
+                if ($item->course && $item->course->id_dosen) {
+                    DosenNotification::notifyDosen(
+                        $item->course->id_dosen,
+                        'Mahasiswa Baru Mendaftar',
+                        ($user->name ?? 'Mahasiswa') . ' mendaftar di kursus ' . ($item->course->nama_course ?? 'Kursus'),
+                        'enrollment',
+                        'enrollment',
+                        '/dosen/kursus/' . $item->id_course
+                    );
+                }
             }
             
             $courseNames[] = $item->course->nama_course;

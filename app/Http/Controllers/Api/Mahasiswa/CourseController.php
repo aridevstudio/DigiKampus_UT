@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use App\Models\CourseRating;
+use App\Models\DosenNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -202,6 +203,19 @@ class CourseController extends Controller
             'rating' => $request->rating,
             'ulasan' => $request->ulasan,
         ]);
+
+        // Notify dosen about new rating
+        if ($course->id_dosen) {
+            $stars = str_repeat('⭐', $request->rating);
+            DosenNotification::notifyDosen(
+                $course->id_dosen,
+                'Rating Baru: ' . $stars,
+                ($user->name ?? 'Mahasiswa') . ' memberikan rating ' . $request->rating . '/5 untuk ' . ($course->nama_course ?? 'kursus'),
+                'kursus',
+                'kursus',
+                '/dosen/kursus/' . $course->id_course
+            );
+        }
 
         // Recalculate course rating
         $course->recalculateRating();

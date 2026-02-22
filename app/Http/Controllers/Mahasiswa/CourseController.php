@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseMaterial;
 use App\Models\Assignment;
+use App\Models\DosenNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
@@ -743,6 +744,20 @@ class CourseController extends Controller
         if (!in_array($key, $completedAssignments)) {
             $completedAssignments[] = $key;
             session(['completed_assignments' => $completedAssignments]);
+        }
+
+        // Notify dosen about assignment submission
+        $course = Course::find($courseId);
+        if ($course && $course->id_dosen) {
+            $mahasiswa = auth('mahasiswa')->user();
+            DosenNotification::notifyDosen(
+                $course->id_dosen,
+                'Tugas Dikumpulkan',
+                ($mahasiswa->name ?? 'Mahasiswa') . ' mengumpulkan tugas di kursus ' . ($course->nama_course ?? 'Kursus'),
+                'tugas',
+                'tugas',
+                '/dosen/kursus/' . $courseId
+            );
         }
         
         return response()->json([
