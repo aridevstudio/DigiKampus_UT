@@ -121,7 +121,7 @@ jobs:
           export COMPOSER_ALLOW_SUPERUSER=1
           sudo -E composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --working-dir=/var/www/digikampusut 2>&1 || echo "⚠️ Composer install had issues, check logs"
 
-          echo "🔧 Setting proper permissions..."
+          echo "🔧 Setting proper permissions..." 
 
           # Set proper permissions AFTER composer install
           sudo chown -R www-data:www-data /var/www/digikampusut

@@ -934,10 +934,19 @@ class AdminController extends Controller
             'tipe' => 'required|in:gratis,berbayar',
             'kategori' => 'required|in:webinar,tiket,kursus',
             'harga' => 'nullable|numeric|min:0',
+            'diskon' => 'nullable|numeric|min:0|max:100',
             'status' => 'required|in:aktif,draft,nonaktif',
+            'level' => 'nullable|in:Pemula,Menengah,Mahir',
+            'estimasi_waktu' => 'nullable|numeric|min:0',
             'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'youtube_playlist' => 'nullable|url|max:500',
         ]);
+
+        // Handle status from button or toggle
+        $status = $request->status;
+        if ($request->has('add_status_btn')) {
+            $status = $request->add_status_btn;
+        }
 
         // Handle thumbnail upload
         $thumbnailPath = null;
@@ -954,7 +963,9 @@ class AdminController extends Controller
             'tipe' => $request->tipe,
             'kategori' => $request->kategori,
             'harga' => $request->tipe === 'berbayar' ? ($request->harga ?? 0) : 0,
-            'status' => $request->status,
+            'status' => $status,
+            'level' => $request->level,
+            'estimasi_waktu' => $request->estimasi_waktu,
             'thumbnail' => $thumbnailPath,
             'youtube_playlist' => $request->youtube_playlist,
             'rating' => 0,
@@ -986,7 +997,10 @@ class AdminController extends Controller
             'tipe' => $kursus->tipe,
             'kategori' => $kursus->kategori,
             'harga' => $kursus->harga,
+            'diskon' => $kursus->diskon ?? 0,
             'status' => $kursus->status,
+            'level' => $kursus->level,
+            'estimasi_waktu' => $kursus->estimasi_waktu,
             'thumbnail' => $kursus->thumbnail,
             'youtube_playlist' => $kursus->youtube_playlist,
         ]);
@@ -1013,7 +1027,10 @@ class AdminController extends Controller
             'tipe' => 'required|in:gratis,berbayar',
             'kategori' => 'required|in:webinar,tiket,kursus',
             'harga' => 'nullable|numeric|min:0',
+            'diskon' => 'nullable|numeric|min:0|max:100',
             'status' => 'required|in:aktif,draft,nonaktif',
+            'level' => 'nullable|in:Pemula,Menengah,Mahir',
+            'estimasi_waktu' => 'nullable|numeric|min:0',
             'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'youtube_playlist' => 'nullable|url|max:500',
         ]);
@@ -1037,6 +1054,8 @@ class AdminController extends Controller
             'kategori' => $request->kategori,
             'harga' => $request->tipe === 'berbayar' ? ($request->harga ?? 0) : 0,
             'status' => $request->status,
+            'level' => $request->level,
+            'estimasi_waktu' => $request->estimasi_waktu,
             'youtube_playlist' => $request->youtube_playlist,
         ]);
 

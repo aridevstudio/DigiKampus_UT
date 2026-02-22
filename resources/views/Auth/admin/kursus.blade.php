@@ -308,7 +308,7 @@
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeAddModal()"></div>
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all my-auto">
-                <button onclick="closeAddModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                <button onclick="closeAddModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition z-10">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -318,154 +318,223 @@
                     @csrf
                     <input type="hidden" name="_modal" value="add">
                     
+                    {{-- Modal Header --}}
                     <div class="mb-4">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Kursus</h3>
-                        <p class="text-sm text-blue-500">Isi informasi kursus baru dengan lengkap.</p>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Kursus Baru</h3>
+                        <p class="text-sm text-blue-500">Lengkapi informasi berikut untuk membuat kursus baru.</p>
                     </div>
                     
+                    {{-- Buttons --}}
                     <div class="flex items-center justify-end gap-2 mb-6">
                         <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
                             Batal
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">
-                            Simpan
+                        <button type="submit" name="add_status_btn" value="draft" class="px-4 py-2 bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
+                            Simpan Draft
+                        </button>
+                        <button type="submit" name="add_status_btn" value="aktif" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition shadow-sm shadow-blue-500/25">
+                            Buat Kursus
                         </button>
                     </div>
                     
-                    {{-- Thumbnail --}}
-                    <div class="mb-6">
-                        <label class="block text-sm text-gray-600 dark:text-gray-400 mb-3">Thumbnail</label>
-                        <div class="flex items-center gap-4">
-                            <div id="thumbnailPreview" class="w-24 h-16 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center gap-2 px-3 py-1.5 border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium rounded-lg cursor-pointer transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                    </svg>
-                                    Upload Thumbnail
-                                    <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewThumbnail(this)">
-                                </label>
-                                <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG</p>
+                    <div class="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+                        {{-- 1. Informasi Dasar Kursus --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center">1</span>
+                                Informasi Dasar Kursus
+                            </h4>
+                            
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
+                                        <input type="text" name="nama_course" required placeholder="Masukkan judul kursus" value="{{ old('_modal') === 'add' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
+                                        <input type="text" name="kode_course" required placeholder="Contoh: CS101" value="{{ old('_modal') === 'add' ? old('kode_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Kursus</label>
+                                    <textarea name="deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('_modal') === 'add' ? old('deskripsi') : '' }}</textarea>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
+                                        <div class="relative">
+                                            <select name="id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">Pilih Dosen</option>
+                                                @foreach($dosenList as $dosen)
+                                                <option value="{{ $dosen->id }}" {{ old('_modal') === 'add' && old('id_dosen') == $dosen->id ? 'selected' : '' }}>{{ $dosen->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
+                                        <div class="relative">
+                                            <select name="id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">Pilih Jurusan</option>
+                                                @foreach($jurusanList as $jurusan)
+                                                <option value="{{ $jurusan->id_jurusan }}" {{ old('_modal') === 'add' && old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
+                                                @endforeach
+                                            </select>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan</label>
+                                        <div class="relative">
+                                            <select name="level" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">Pilih Tingkat</option>
+                                                <option value="Pemula" {{ old('_modal') === 'add' && old('level') == 'Pemula' ? 'selected' : '' }}>Pemula</option>
+                                                <option value="Menengah" {{ old('_modal') === 'add' && old('level') == 'Menengah' ? 'selected' : '' }}>Menengah</option>
+                                                <option value="Mahir" {{ old('_modal') === 'add' && old('level') == 'Mahir' ? 'selected' : '' }}>Mahir</option>
+                                            </select>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar (Jam)</label>
+                                        <input type="number" name="estimasi_waktu" min="0" placeholder="20" value="{{ old('_modal') === 'add' ? old('estimasi_waktu', 20) : 20 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                </div>
+                                
+                                {{-- Thumbnail --}}
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Kursus</label>
+                                    <div class="flex items-center gap-4">
+                                        <div id="thumbnailPreview" class="w-20 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
+                                            <svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <label class="inline-flex items-center gap-2 px-3 py-1.5 border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium rounded-lg cursor-pointer transition">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                                </svg>
+                                                Upload Thumbnail
+                                                <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewThumbnail(this)">
+                                            </label>
+                                            <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    {{-- Informasi Kursus --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-4">
-                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Informasi Kursus</h4>
                         
-                        <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nama Kursus</label>
-                                    <input type="text" name="nama_course" required placeholder="Masukkan nama kursus" value="{{ old('_modal') === 'add' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus</label>
-                                    <input type="text" name="kode_course" required placeholder="Contoh: CS101" value="{{ old('_modal') === 'add' ? old('kode_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                                </div>
-                            </div>
-                            
+                        {{-- 2. Konten Video --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center justify-center">2</span>
+                                Konten Video
+                            </h4>
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi</label>
-                                <textarea name="deskripsi" rows="3" placeholder="Deskripsi kursus..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
-                                    <div class="relative">
-                                        <select name="id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="">Pilih Dosen</option>
-                                            @foreach($dosenList as $dosen)
-                                            <option value="{{ $dosen->id }}">{{ $dosen->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jurusan</label>
-                                    <div class="relative">
-                                        <select name="id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="">Pilih Jurusan</option>
-                                            @foreach($jurusanList as $jurusan)
-                                            <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->nama_jurusan }}</option>
-                                            @endforeach
-                                        </select>
-                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
-                                </div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
+                                <input type="url" name="youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('_modal') === 'add' ? old('youtube_playlist') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube untuk kursus ini.</p>
                             </div>
                         </div>
-                    </div>
-                    
-                    {{-- YouTube Playlist --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-4">
-                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Konten Video</h4>
-                        <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
-                            <input type="url" name="youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                            <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube untuk kursus ini.</p>
-                        </div>
-                    </div>
-                    
-                    {{-- Pengaturan Kursus --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Pengaturan Kursus</h4>
                         
-                        <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori</label>
-                                    <div class="relative">
-                                        <select name="kategori" id="add_kategori" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="kursus">Kursus</option>
-                                            <option value="webinar">Webinar</option>
-                                            <option value="tiket">Tiket</option>
-                                        </select>
-                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tipe Harga</label>
-                                    <div class="relative">
-                                        <select name="tipe" id="add_tipe" required onchange="toggleHarga('add')" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="gratis">Gratis</option>
-                                            <option value="berbayar">Berbayar</option>
-                                        </select>
-                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="add_harga_container" class="hidden">
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
-                                <input type="number" name="harga" id="add_harga" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                            </div>
+                        {{-- 3. Pengaturan Kursus --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold flex items-center justify-center">3</span>
+                                Pengaturan Kursus
+                            </h4>
                             
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Status Publikasi</label>
-                                <div class="relative">
-                                    <select name="status" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                        <option value="draft">Draft</option>
-                                        <option value="aktif">Aktif</option>
-                                        <option value="nonaktif">Nonaktif</option>
-                                    </select>
-                                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    {{-- Status Kursus Toggle --}}
+                                    <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                        <div>
+                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">Status Kursus</h5>
+                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Aktif atau simpan draft</p>
+                                        </div>
+                                        <input type="hidden" name="status" id="add_status_input" value="{{ old('_modal') === 'add' ? old('status', 'draft') : 'draft' }}">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="add_status_toggle" class="sr-only peer" {{ old('_modal') === 'add' && old('status') === 'aktif' ? 'checked' : '' }}>
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                        </label>
+                                    </div>
+
+                                    {{-- Akses Publik Toggle --}}
+                                    <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                        <div>
+                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">Akses Publik</h5>
+                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Tampil untuk semua</p>
+                                        </div>
+                                        <input type="hidden" name="akses_publik" value="0">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="akses_publik" value="1" class="sr-only peer" {{ old('_modal') === 'add' ? (old('akses_publik') ? 'checked' : '') : 'checked' }}>
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {{-- Sertifikat Toggle --}}
+                                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                    <div>
+                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
+                                    </div>
+                                    <input type="hidden" name="sertifikat" value="0">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="sertifikat" value="1" class="sr-only peer" {{ old('_modal') === 'add' && old('sertifikat') ? 'checked' : '' }}>
+                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{-- 4. Pricing & Akses Kursus --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center">4</span>
+                                Pricing & Akses Kursus
+                            </h4>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
+                                    <div class="relative">
+                                        <select name="kategori" id="add_kategori" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="kursus" {{ old('_modal') === 'add' && old('kategori') === 'kursus' ? 'selected' : '' }}>Kursus</option>
+                                            <option value="webinar" {{ old('_modal') === 'add' && old('kategori') === 'webinar' ? 'selected' : '' }}>Webinar</option>
+                                            <option value="tiket" {{ old('_modal') === 'add' && old('kategori') === 'tiket' ? 'selected' : '' }}>Tiket</option>
+                                        </select>
+                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-3 gap-3 items-end">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
+                                        <input type="number" name="harga" id="add_harga" min="0" placeholder="0" value="{{ old('_modal') === 'add' ? old('harga', 0) : 0 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Diskon (%)</label>
+                                        <input type="number" name="diskon" id="add_diskon" min="0" max="100" placeholder="0" value="{{ old('_modal') === 'add' ? old('diskon', 0) : 0 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div class="flex items-center gap-2 py-2.5">
+                                        <input type="hidden" name="tipe" id="add_tipe_input" value="{{ old('_modal') === 'add' ? old('tipe', 'berbayar') : 'berbayar' }}">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="add_gratis_toggle" class="sr-only peer" {{ old('_modal') === 'add' && old('tipe') === 'gratis' ? 'checked' : '' }}>
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                        </label>
+                                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Gratis</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -480,7 +549,7 @@
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeEditModal()"></div>
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all my-auto">
-                <button onclick="closeEditModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                <button onclick="closeEditModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition z-10">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -492,169 +561,233 @@
                     <input type="hidden" name="_modal" value="edit">
                     <input type="hidden" name="_id" id="edit_kursus_id" value="{{ old('_id') }}">
                     
+                    {{-- Modal Header --}}
                     <div class="mb-4">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Kursus</h3>
-                        <p class="text-sm text-blue-500">Ubah informasi kursus.</p>
+                        <p class="text-sm text-blue-500">Ubah informasi kursus yang ada.</p>
                     </div>
                     
+                    {{-- Buttons --}}
                     <div class="flex items-center justify-end gap-2 mb-6">
                         <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
                             Batal
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">
-                            Simpan
+                        <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition shadow-sm shadow-blue-500/25">
+                            Simpan Perubahan
                         </button>
                     </div>
                     
-                    {{-- Thumbnail --}}
-                    <div class="mb-6">
-                        <label class="block text-sm text-gray-600 dark:text-gray-400 mb-3">Thumbnail</label>
-                        <div class="flex items-center gap-4">
-                            <div id="editThumbnailPreview" class="w-24 h-16 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center gap-2 px-3 py-1.5 border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium rounded-lg cursor-pointer transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                    </svg>
-                                    Upload Thumbnail
-                                    <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewEditThumbnail(this)">
-                                </label>
-                                <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {{-- Informasi Kursus --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-4">
-                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Informasi Kursus</h4>
-                        
-                        <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nama Kursus</label>
-                                    <input type="text" name="nama_course" id="edit_nama_course" required placeholder="Masukkan nama kursus" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus</label>
-                                    <input type="text" name="kode_course" id="edit_kode_course" required placeholder="Contoh: CS101" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                                </div>
-                            </div>
+                    <div class="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+                        {{-- 1. Informasi Dasar Kursus --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center">1</span>
+                                Informasi Dasar Kursus
+                            </h4>
                             
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi</label>
-                                <textarea name="deskripsi" id="edit_deskripsi" rows="3" placeholder="Deskripsi kursus..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
-                                    <div class="relative">
-                                        <select name="id_dosen" id="edit_id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="">Pilih Dosen</option>
-                                            @foreach($dosenList as $dosen)
-                                            <option value="{{ $dosen->id }}">{{ $dosen->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
+                                        <input type="text" name="nama_course" id="edit_nama_course" required placeholder="Masukkan judul kursus" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
+                                        <input type="text" name="kode_course" id="edit_kode_course" required placeholder="Contoh: CS101" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
                                 </div>
+                                
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jurusan</label>
-                                    <div class="relative">
-                                        <select name="id_jurusan" id="edit_id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="">Pilih Jurusan</option>
-                                            @foreach($jurusanList as $jurusan)
-                                            <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->nama_jurusan }}</option>
-                                            @endforeach
-                                        </select>
-                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Kursus</label>
+                                    <textarea name="deskripsi" id="edit_deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
+                                        <div class="relative">
+                                            <select name="id_dosen" id="edit_id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">Pilih Dosen</option>
+                                                @foreach($dosenList as $dosen)
+                                                <option value="{{ $dosen->id }}">{{ $dosen->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
+                                        <div class="relative">
+                                            <select name="id_jurusan" id="edit_id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">Pilih Jurusan</option>
+                                                @foreach($jurusanList as $jurusan)
+                                                <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->nama_jurusan }}</option>
+                                                @endforeach
+                                            </select>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan</label>
+                                        <div class="relative">
+                                            <select name="level" id="edit_level" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">Pilih Tingkat</option>
+                                                <option value="Pemula">Pemula</option>
+                                                <option value="Menengah">Menengah</option>
+                                                <option value="Mahir">Mahir</option>
+                                            </select>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar (Jam)</label>
+                                        <input type="number" name="estimasi_waktu" id="edit_estimasi_waktu" min="0" placeholder="20" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                </div>
+                                
+                                {{-- Thumbnail --}}
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Kursus</label>
+                                    <div class="flex items-center gap-4">
+                                        <div id="editThumbnailPreview" class="w-20 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
+                                            <svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <label class="inline-flex items-center gap-2 px-3 py-1.5 border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium rounded-lg cursor-pointer transition">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                                </svg>
+                                                Upload Thumbnail
+                                                <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewEditThumbnail(this)">
+                                            </label>
+                                            <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    {{-- YouTube Playlist --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-4">
-                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Konten Video</h4>
-                        <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
-                            <div class="flex gap-2">
-                                <input type="url" name="youtube_playlist" id="edit_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." class="flex-1 px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                                <button type="button" onclick="syncPlaylist()" id="syncPlaylistBtn" class="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2 whitespace-nowrap">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                                    Sync Playlist
-                                </button>
-                            </div>
-                            <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube lalu klik Sync untuk mengambil daftar video.</p>
-                            <div id="syncStatus" class="mt-2 hidden"></div>
-                        </div>
-                        {{-- Video List --}}
-                        <div id="videoListContainer" class="mt-4 hidden">
-                            <div class="flex items-center justify-between mb-2">
-                                <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-300">Video Tersinkronisasi</h5>
-                                <span id="videoCount" class="text-xs text-gray-400">0 video</span>
-                            </div>
-                            <div id="videoList" class="space-y-2 max-h-48 overflow-y-auto"></div>
-                        </div>
-                    </div>
-                    
-                    {{-- Pengaturan Kursus --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Pengaturan Kursus</h4>
                         
-                        <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
+                        {{-- 2. Konten Video --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center justify-center">2</span>
+                                Konten Video
+                            </h4>
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
+                                <div class="flex gap-2">
+                                    <input type="url" name="youtube_playlist" id="edit_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." class="flex-1 px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <button type="button" onclick="syncPlaylist()" id="syncPlaylistBtn" class="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2 whitespace-nowrap">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                        Sync Playlist
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube lalu klik Sync.</p>
+                                <div id="syncStatus" class="mt-2 hidden"></div>
+                            </div>
+                            {{-- Video List --}}
+                            <div id="videoListContainer" class="mt-4 hidden">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-300">Video Tersinkronisasi</h5>
+                                    <span id="videoCount" class="text-xs text-gray-400">0 video</span>
+                                </div>
+                                <div id="videoList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                            </div>
+                        </div>
+                        
+                        {{-- 3. Pengaturan Kursus --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold flex items-center justify-center">3</span>
+                                Pengaturan Kursus
+                            </h4>
+                            
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    {{-- Status Kursus Toggle --}}
+                                    <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                        <div>
+                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">Status Kursus</h5>
+                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Aktif atau simpan draft</p>
+                                        </div>
+                                        <input type="hidden" name="status" id="edit_status_input" value="draft">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="edit_status_toggle" class="sr-only peer">
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                        </label>
+                                    </div>
+
+                                    {{-- Akses Publik Toggle --}}
+                                    <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                        <div>
+                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">Akses Publik</h5>
+                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Tampil untuk semua</p>
+                                        </div>
+                                        <input type="hidden" name="akses_publik" value="0">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="edit_akses_publik" name="akses_publik" value="1" class="sr-only peer" checked>
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {{-- Sertifikat Toggle --}}
+                                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                    <div>
+                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
+                                    </div>
+                                    <input type="hidden" name="sertifikat" value="0">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="edit_sertifikat" name="sertifikat" value="1" class="sr-only peer">
+                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{-- 4. Pricing & Akses Kursus --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center">4</span>
+                                Pricing & Akses Kursus
+                            </h4>
+                            
+                            <div class="space-y-4">
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori</label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
                                     <div class="relative">
-                                        <select name="kategori" id="edit_kategori" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                        <select name="kategori" id="edit_kategori" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                             <option value="kursus">Kursus</option>
                                             <option value="webinar">Webinar</option>
                                             <option value="tiket">Tiket</option>
                                         </select>
-                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
+                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tipe Harga</label>
-                                    <div class="relative">
-                                        <select name="tipe" id="edit_tipe" required onchange="toggleHarga('edit')" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="gratis">Gratis</option>
-                                            <option value="berbayar">Berbayar</option>
-                                        </select>
-                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
+                                
+                                <div class="grid grid-cols-3 gap-3 items-end">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
+                                        <input type="number" name="harga" id="edit_harga" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
-                                </div>
-                            </div>
-                            <div id="edit_harga_container" class="hidden">
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
-                                <input type="number" name="harga" id="edit_harga" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Status Publikasi</label>
-                                <div class="relative">
-                                    <select name="status" id="edit_status" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                        <option value="draft">Draft</option>
-                                        <option value="aktif">Aktif</option>
-                                        <option value="nonaktif">Nonaktif</option>
-                                    </select>
-                                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Diskon (%)</label>
+                                        <input type="number" name="diskon" id="edit_diskon" min="0" max="100" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div class="flex items-center gap-2 py-2.5">
+                                        <input type="hidden" name="tipe" id="edit_tipe_input" value="berbayar">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="edit_gratis_toggle" class="sr-only peer">
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                        </label>
+                                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Gratis</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -761,16 +894,88 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
-        
-        function toggleHarga(prefix) {
-            const tipe = document.getElementById(prefix + '_tipe').value;
-            const hargaContainer = document.getElementById(prefix + '_harga_container');
-            if (tipe === 'berbayar') {
-                hargaContainer.classList.remove('hidden');
-            } else {
-                hargaContainer.classList.add('hidden');
+
+        // Toggle helpers for new toggle-based UI
+        function initAddToggles() {
+            // Status toggle
+            const addStatusToggle = document.getElementById('add_status_toggle');
+            const addStatusInput = document.getElementById('add_status_input');
+            if (addStatusToggle) {
+                addStatusToggle.addEventListener('change', function() {
+                    addStatusInput.value = this.checked ? 'aktif' : 'draft';
+                });
+            }
+
+            // Gratis toggle
+            const addGratisToggle = document.getElementById('add_gratis_toggle');
+            const addTipeInput = document.getElementById('add_tipe_input');
+            const addHarga = document.getElementById('add_harga');
+            const addDiskon = document.getElementById('add_diskon');
+            if (addGratisToggle) {
+                addGratisToggle.addEventListener('change', function() {
+                    if (this.checked) {
+                        addTipeInput.value = 'gratis';
+                        addHarga.value = 0;
+                        addHarga.disabled = true;
+                        addDiskon.value = 0;
+                        addDiskon.disabled = true;
+                        addHarga.classList.add('opacity-50', 'cursor-not-allowed');
+                        addDiskon.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        addTipeInput.value = 'berbayar';
+                        addHarga.disabled = false;
+                        addDiskon.disabled = false;
+                        addHarga.classList.remove('opacity-50', 'cursor-not-allowed');
+                        addDiskon.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+                // Trigger on load if checked
+                if (addGratisToggle.checked) {
+                    addGratisToggle.dispatchEvent(new Event('change'));
+                }
             }
         }
+        
+        function initEditToggles() {
+            // Status toggle
+            const editStatusToggle = document.getElementById('edit_status_toggle');
+            const editStatusInput = document.getElementById('edit_status_input');
+            if (editStatusToggle) {
+                editStatusToggle.addEventListener('change', function() {
+                    editStatusInput.value = this.checked ? 'aktif' : 'draft';
+                });
+            }
+
+            // Gratis toggle
+            const editGratisToggle = document.getElementById('edit_gratis_toggle');
+            const editTipeInput = document.getElementById('edit_tipe_input');
+            const editHarga = document.getElementById('edit_harga');
+            const editDiskon = document.getElementById('edit_diskon');
+            if (editGratisToggle) {
+                editGratisToggle.addEventListener('change', function() {
+                    if (this.checked) {
+                        editTipeInput.value = 'gratis';
+                        editHarga.value = 0;
+                        editHarga.disabled = true;
+                        editDiskon.value = 0;
+                        editDiskon.disabled = true;
+                        editHarga.classList.add('opacity-50', 'cursor-not-allowed');
+                        editDiskon.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        editTipeInput.value = 'berbayar';
+                        editHarga.disabled = false;
+                        editDiskon.disabled = false;
+                        editHarga.classList.remove('opacity-50', 'cursor-not-allowed');
+                        editDiskon.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initAddToggles();
+            initEditToggles();
+        });
         
         // Edit Modal functions
         function openEditModal(id) {
@@ -785,14 +990,28 @@
                     document.getElementById('edit_deskripsi').value = data.deskripsi || '';
                     document.getElementById('edit_id_dosen').value = data.id_dosen || '';
                     document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
-                    document.getElementById('edit_tipe').value = data.tipe || 'gratis';
+                    document.getElementById('edit_level').value = data.level || '';
+                    document.getElementById('edit_estimasi_waktu').value = data.estimasi_waktu || 20;
                     document.getElementById('edit_kategori').value = data.kategori || 'kursus';
                     document.getElementById('edit_harga').value = data.harga || 0;
-                    document.getElementById('edit_status').value = data.status || 'draft';
+                    document.getElementById('edit_diskon').value = data.diskon || 0;
                     
-                    // Show/hide harga field
-                    toggleHarga('edit');
+                    // Set status toggle
+                    const statusToggle = document.getElementById('edit_status_toggle');
+                    const statusInput = document.getElementById('edit_status_input');
+                    const status = data.status || 'draft';
+                    statusInput.value = status;
+                    statusToggle.checked = (status === 'aktif');
                     
+                    // Set gratis toggle  
+                    const gratisToggle = document.getElementById('edit_gratis_toggle');
+                    const tipeInput = document.getElementById('edit_tipe_input');
+                    const tipe = data.tipe || 'berbayar';
+                    tipeInput.value = tipe;
+                    gratisToggle.checked = (tipe === 'gratis');
+                    gratisToggle.dispatchEvent(new Event('change'));
+                    
+                    // Set YouTube playlist
                     document.getElementById('edit_youtube_playlist').value = data.youtube_playlist || '';
                     
                     // Load synced YouTube videos
@@ -807,7 +1026,7 @@
                     if (data.thumbnail) {
                         preview.innerHTML = '<img src="/storage/' + data.thumbnail + '" class="w-full h-full object-cover">';
                     } else {
-                        preview.innerHTML = '<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
+                        preview.innerHTML = '<svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
                     }
                     
                     document.getElementById('editKursusModal').classList.remove('hidden');
