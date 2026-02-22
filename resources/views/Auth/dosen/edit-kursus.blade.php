@@ -82,14 +82,24 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
+                                <select name="kategori" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="kursus" {{ old('kategori', $course->kategori) === 'kursus' ? 'selected' : '' }}>Kursus</option>
+                                    <option value="webinar" {{ old('kategori', $course->kategori) === 'webinar' ? 'selected' : '' }}>Webinar</option>
+                                    <option value="tiket" {{ old('kategori', $course->kategori) === 'tiket' ? 'selected' : '' }}>Tiket</option>
+                                </select>
+                                @error('kategori')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Harga</label>
                                 <select name="tipe" id="tipe" required onchange="toggleHarga()" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     <option value="gratis" {{ old('tipe', $course->tipe) === 'gratis' ? 'selected' : '' }}>Gratis</option>
                                     <option value="berbayar" {{ old('tipe', $course->tipe) === 'berbayar' ? 'selected' : '' }}>Berbayar</option>
                                 </select>
                                 @error('tipe')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
-                             <div id="hargaField" class="{{ old('tipe', $course->tipe) === 'berbayar' ? '' : 'hidden' }}">
+                        </div>
+                        <div id="hargaField" class="{{ old('tipe', $course->tipe) === 'berbayar' ? '' : 'hidden' }}">
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Harga (Rp)</label>
                                 <input type="number" name="harga" value="{{ old('harga', $course->harga) }}" min="0" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @error('harga')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror

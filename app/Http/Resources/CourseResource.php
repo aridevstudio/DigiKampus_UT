@@ -24,6 +24,7 @@ class CourseResource extends JsonResource
                 ? asset('storage/' . $this->thumbnail)
                 : null,
             'tipe' => $this->tipe,
+            'kategori' => $this->kategori,
             'harga' => (float) $this->harga,
             'harga_formatted' => 'Rp ' . number_format($this->harga, 0, ',', '.'),
             'rating' => (float) $this->rating,

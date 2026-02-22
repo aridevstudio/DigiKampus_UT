@@ -44,12 +44,22 @@ class Enrollment extends Model
     }
 
     /**
-     * Scope by course tipe.
+     * Scope by course tipe (pricing).
      */
     public function scopeByCourseTipe($query, string $tipe)
     {
         return $query->whereHas('course', function ($q) use ($tipe) {
             $q->where('tipe', $tipe);
+        });
+    }
+
+    /**
+     * Scope by course kategori (webinar/tiket/kursus).
+     */
+    public function scopeByCourseKategori($query, string $kategori)
+    {
+        return $query->whereHas('course', function ($q) use ($kategori) {
+            $q->where('kategori', $kategori);
         });
     }
 

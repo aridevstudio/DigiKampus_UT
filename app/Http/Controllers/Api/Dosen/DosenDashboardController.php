@@ -71,9 +71,9 @@ class DosenDashboardController extends Controller
         // Average progress
         $averageProgress = Enrollment::whereIn('id_course', $courseIds)->avg('progress') ?? 0;
 
-        // Upcoming sessions (courses with webinar type scheduled in future)
+        // Upcoming sessions (courses with webinar kategori scheduled in future)
         $upcomingSessions = Course::where('id_dosen', $dosenId)
-            ->where('tipe', 'webinar')
+            ->where('kategori', 'webinar')
             ->where('status', 'aktif')
             ->count();
 

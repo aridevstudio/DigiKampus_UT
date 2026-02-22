@@ -202,6 +202,17 @@
                     <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-5">Pricing & Akses Kursus</h2>
                     
                     <div class="space-y-4">
+                        {{-- Kategori Kursus --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Kategori Kursus</label>
+                            <select name="kategori" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                                <option value="kursus" {{ old('kategori') === 'kursus' ? 'selected' : '' }}>Kursus</option>
+                                <option value="webinar" {{ old('kategori') === 'webinar' ? 'selected' : '' }}>Webinar</option>
+                                <option value="tiket" {{ old('kategori') === 'tiket' ? 'selected' : '' }}>Tiket</option>
+                            </select>
+                            @error('kategori')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Harga Kursus (Rp)</label>

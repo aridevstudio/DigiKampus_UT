@@ -61,7 +61,7 @@
 <div id="courses-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in-up delay-200">
     @forelse($courses as $index => $course)
     @php
-        $courseType = strtolower($course->tipe ?? 'kursus');
+        $courseType = strtolower($course->kategori ?? 'kursus');
         $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
         $courseRating = floatval($course->rating ?? 0);
         $courseReviews = intval($course->jumlah_ulasan ?? 0);
@@ -73,7 +73,7 @@
             <img src="{{ $courseImage }}" alt="{{ $course->nama_course }}" class="w-full h-full object-cover transition-transform duration-300 hover:scale-110">
             {{-- Type Badge --}}
             <span class="absolute top-3 right-3 {{ $typeColors[$courseType] ?? 'bg-gray-500' }} text-white text-xs font-medium px-3 py-1 rounded-full capitalize">
-                {{ $course->tipe ?? 'Kursus' }}
+                {{ $course->kategori ?? 'Kursus' }}
             </span>
         </div>
         

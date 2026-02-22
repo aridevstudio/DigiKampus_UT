@@ -783,9 +783,14 @@ class AdminController extends Controller
             $query->where('status', $request->status);
         }
         
-        // Filter by tipe
+        // Filter by tipe (pricing)
         if ($request->tipe && $request->tipe !== 'all') {
             $query->where('tipe', $request->tipe);
+        }
+        
+        // Filter by kategori (format)
+        if ($request->kategori && $request->kategori !== 'all') {
+            $query->where('kategori', $request->kategori);
         }
         
         // Search
@@ -809,6 +814,7 @@ class AdminController extends Controller
                 'dosen' => $kursus->dosen?->name ?? '-',
                 'jurusan' => $kursus->jurusan?->nama_jurusan ?? '-',
                 'tipe' => $kursus->tipe,
+                'kategori' => $kursus->kategori,
                 'harga' => $kursus->harga,
                 'status' => $kursus->status,
                 'rating' => $kursus->rating,
@@ -832,6 +838,7 @@ class AdminController extends Controller
             'search' => $request->search ?? '',
             'statusFilter' => $request->status ?? 'all',
             'tipeFilter' => $request->tipe ?? 'all',
+            'kategoriFilter' => $request->kategori ?? 'all',
             'dosenList' => $dosenList,
             'jurusanList' => $jurusanList,
         ]);
@@ -848,7 +855,8 @@ class AdminController extends Controller
             'deskripsi' => 'nullable|string',
             'id_dosen' => 'nullable|exists:users,id',
             'id_jurusan' => 'nullable|exists:jurusans,id_jurusan',
-            'tipe' => 'required|in:webinar,tiket,kursus,gratis,berbayar',
+            'tipe' => 'required|in:gratis,berbayar',
+            'kategori' => 'required|in:webinar,tiket,kursus',
             'harga' => 'nullable|numeric|min:0',
             'status' => 'required|in:aktif,draft,nonaktif',
             'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
@@ -868,7 +876,8 @@ class AdminController extends Controller
             'id_dosen' => $request->id_dosen,
             'id_jurusan' => $request->id_jurusan,
             'tipe' => $request->tipe,
-            'harga' => in_array($request->tipe, ['berbayar', 'tiket', 'webinar']) ? ($request->harga ?? 0) : 0,
+            'kategori' => $request->kategori,
+            'harga' => $request->tipe === 'berbayar' ? ($request->harga ?? 0) : 0,
             'status' => $request->status,
             'thumbnail' => $thumbnailPath,
             'youtube_playlist' => $request->youtube_playlist,
@@ -899,6 +908,7 @@ class AdminController extends Controller
             'id_dosen' => $kursus->id_dosen,
             'id_jurusan' => $kursus->id_jurusan,
             'tipe' => $kursus->tipe,
+            'kategori' => $kursus->kategori,
             'harga' => $kursus->harga,
             'status' => $kursus->status,
             'thumbnail' => $kursus->thumbnail,
@@ -924,7 +934,8 @@ class AdminController extends Controller
             'deskripsi' => 'nullable|string',
             'id_dosen' => 'nullable|exists:users,id',
             'id_jurusan' => 'nullable|exists:jurusans,id_jurusan',
-            'tipe' => 'required|in:webinar,tiket,kursus,gratis,berbayar',
+            'tipe' => 'required|in:gratis,berbayar',
+            'kategori' => 'required|in:webinar,tiket,kursus',
             'harga' => 'nullable|numeric|min:0',
             'status' => 'required|in:aktif,draft,nonaktif',
             'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
@@ -947,7 +958,8 @@ class AdminController extends Controller
             'id_dosen' => $request->id_dosen,
             'id_jurusan' => $request->id_jurusan,
             'tipe' => $request->tipe,
-            'harga' => in_array($request->tipe, ['berbayar', 'tiket', 'webinar']) ? ($request->harga ?? 0) : 0,
+            'kategori' => $request->kategori,
+            'harga' => $request->tipe === 'berbayar' ? ($request->harga ?? 0) : 0,
             'status' => $request->status,
             'youtube_playlist' => $request->youtube_playlist,
         ]);

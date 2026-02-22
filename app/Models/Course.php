@@ -22,6 +22,7 @@ class Course extends Model
         'youtube_playlist',
         'status',
         'tipe',
+        'kategori',
         'harga',
         // P0 FIX: Removed 'rating' and 'jumlah_ulasan' — these are system-calculated
         // and must only be set via recalculateRating()
@@ -87,11 +88,19 @@ class Course extends Model
     }
 
     /**
-     * Scope to filter by tipe.
+     * Scope to filter by tipe (pricing: gratis/berbayar).
      */
     public function scopeByTipe($query, string $tipe)
     {
         return $query->where('tipe', $tipe);
+    }
+
+    /**
+     * Scope to filter by kategori (format: webinar/tiket/kursus).
+     */
+    public function scopeByKategori($query, string $kategori)
+    {
+        return $query->where('kategori', $kategori);
     }
 
     /**

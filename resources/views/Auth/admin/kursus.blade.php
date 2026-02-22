@@ -30,15 +30,25 @@
                 </svg>
             </div>
             
-            {{-- Tipe Filter --}}
+            {{-- Tipe Filter (Pricing) --}}
             <div class="relative">
                 <select name="tipe" onchange="this.form.submit()" class="appearance-none px-4 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <option value="all" {{ ($tipeFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Tipe</option>
+                    <option value="all" {{ ($tipeFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Harga</option>
                     <option value="gratis" {{ ($tipeFilter ?? '') === 'gratis' ? 'selected' : '' }}>Gratis</option>
                     <option value="berbayar" {{ ($tipeFilter ?? '') === 'berbayar' ? 'selected' : '' }}>Berbayar</option>
-                    <option value="webinar" {{ ($tipeFilter ?? '') === 'webinar' ? 'selected' : '' }}>Webinar</option>
-                    <option value="tiket" {{ ($tipeFilter ?? '') === 'tiket' ? 'selected' : '' }}>Tiket</option>
-                    <option value="kursus" {{ ($tipeFilter ?? '') === 'kursus' ? 'selected' : '' }}>Kursus</option>
+                </select>
+                <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
+
+            {{-- Kategori Filter (Format) --}}
+            <div class="relative">
+                <select name="kategori" onchange="this.form.submit()" class="appearance-none px-4 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <option value="all" {{ ($kategoriFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Kategori</option>
+                    <option value="webinar" {{ ($kategoriFilter ?? '') === 'webinar' ? 'selected' : '' }}>Webinar</option>
+                    <option value="tiket" {{ ($kategoriFilter ?? '') === 'tiket' ? 'selected' : '' }}>Tiket</option>
+                    <option value="kursus" {{ ($kategoriFilter ?? '') === 'kursus' ? 'selected' : '' }}>Kursus</option>
                 </select>
                 <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -60,26 +70,24 @@
 
     {{-- Summary Stats --}}
     @if($totalKursus > 0)
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         @php
-            $tipeStats = collect($kursusList)->groupBy('tipe')->map->count();
+            $kategoriStats = collect($kursusList)->groupBy('kategori')->map->count();
             $statItems = [
                 ['label' => 'Total Kursus', 'count' => $totalKursus, 'icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', 'color' => 'blue'],
-                ['label' => 'Webinar', 'count' => $tipeStats->get('webinar', 0), 'icon' => 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', 'color' => 'purple'],
-                ['label' => 'Kursus', 'count' => $tipeStats->get('kursus', 0), 'icon' => 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', 'color' => 'indigo'],
-                ['label' => 'Tiket', 'count' => $tipeStats->get('tiket', 0), 'icon' => 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z', 'color' => 'orange'],
-                ['label' => 'Berbayar', 'count' => $tipeStats->get('berbayar', 0), 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'color' => 'emerald'],
+                ['label' => 'Webinar', 'count' => $kategoriStats->get('webinar', 0), 'icon' => 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', 'color' => 'purple'],
+                ['label' => 'Kursus', 'count' => $kategoriStats->get('kursus', 0), 'icon' => 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', 'color' => 'indigo'],
+                ['label' => 'Tiket', 'count' => $kategoriStats->get('tiket', 0), 'icon' => 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z', 'color' => 'orange'],
             ];
             $colorMap = [
                 'blue' => ['bg' => 'bg-blue-50 dark:bg-blue-900/20', 'icon' => 'text-blue-500 dark:text-blue-400', 'text' => 'text-blue-700 dark:text-blue-300'],
                 'purple' => ['bg' => 'bg-purple-50 dark:bg-purple-900/20', 'icon' => 'text-purple-500 dark:text-purple-400', 'text' => 'text-purple-700 dark:text-purple-300'],
                 'indigo' => ['bg' => 'bg-indigo-50 dark:bg-indigo-900/20', 'icon' => 'text-indigo-500 dark:text-indigo-400', 'text' => 'text-indigo-700 dark:text-indigo-300'],
                 'orange' => ['bg' => 'bg-orange-50 dark:bg-orange-900/20', 'icon' => 'text-orange-500 dark:text-orange-400', 'text' => 'text-orange-700 dark:text-orange-300'],
-                'emerald' => ['bg' => 'bg-emerald-50 dark:bg-emerald-900/20', 'icon' => 'text-emerald-500 dark:text-emerald-400', 'text' => 'text-emerald-700 dark:text-emerald-300'],
             ];
         @endphp
         @foreach($statItems as $stat)
-        <div class="flex items-center gap-3 p-3.5 rounded-xl {{ $colorMap[$stat['color']]['bg'] }} border border-{{ $stat['color'] === 'emerald' ? 'emerald' : $stat['color'] }}-100 dark:border-{{ $stat['color'] === 'emerald' ? 'emerald' : $stat['color'] }}-800/30">
+        <div class="flex items-center gap-3 p-3.5 rounded-xl {{ $colorMap[$stat['color']]['bg'] }} border border-{{ $stat['color'] }}-100 dark:border-{{ $stat['color'] }}-800/30">
             <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">
                 <svg class="w-5 h-5 {{ $colorMap[$stat['color']]['icon'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $stat['icon'] }}" />
@@ -104,8 +112,8 @@
                         <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kursus</th>
                         <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pengajar</th>
                         <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Peserta</th>
-                        <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipe</th>
-                        <th class="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Harga</th>
+                        <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kategori</th>
+                        <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Harga</th>
                         <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                         <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
                     </tr>
@@ -162,34 +170,33 @@
                             </div>
                         </td>
 
-                        {{-- Tipe --}}
+                        {{-- Kategori --}}
                         <td class="px-5 py-4 text-center">
                             @php
-                                $tipeConfig = match($kursus['tipe']) {
-                                    'gratis' => ['bg' => 'bg-emerald-50 dark:bg-emerald-900/20', 'text' => 'text-emerald-700 dark:text-emerald-400', 'border' => 'border-emerald-200 dark:border-emerald-700/40', 'icon' => 'M5 13l4 4L19 7', 'label' => 'Gratis'],
-                                    'berbayar' => ['bg' => 'bg-blue-50 dark:bg-blue-900/20', 'text' => 'text-blue-700 dark:text-blue-400', 'border' => 'border-blue-200 dark:border-blue-700/40', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'label' => 'Berbayar'],
+                                $kategoriConfig = match($kursus['kategori'] ?? 'kursus') {
                                     'webinar' => ['bg' => 'bg-purple-50 dark:bg-purple-900/20', 'text' => 'text-purple-700 dark:text-purple-400', 'border' => 'border-purple-200 dark:border-purple-700/40', 'icon' => 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', 'label' => 'Webinar'],
                                     'tiket' => ['bg' => 'bg-amber-50 dark:bg-amber-900/20', 'text' => 'text-amber-700 dark:text-amber-400', 'border' => 'border-amber-200 dark:border-amber-700/40', 'icon' => 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z', 'label' => 'Tiket'],
                                     'kursus' => ['bg' => 'bg-indigo-50 dark:bg-indigo-900/20', 'text' => 'text-indigo-700 dark:text-indigo-400', 'border' => 'border-indigo-200 dark:border-indigo-700/40', 'icon' => 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', 'label' => 'Kursus'],
-                                    default => ['bg' => 'bg-gray-50 dark:bg-gray-700/30', 'text' => 'text-gray-600 dark:text-gray-400', 'border' => 'border-gray-200 dark:border-gray-600/40', 'icon' => 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'label' => ucfirst($kursus['tipe'])],
+                                    default => ['bg' => 'bg-gray-50 dark:bg-gray-700/30', 'text' => 'text-gray-600 dark:text-gray-400', 'border' => 'border-gray-200 dark:border-gray-600/40', 'icon' => 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'label' => ucfirst($kursus['kategori'] ?? 'kursus')],
                                 };
                             @endphp
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border {{ $tipeConfig['bg'] }} {{ $tipeConfig['text'] }} {{ $tipeConfig['border'] }}">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border {{ $kategoriConfig['bg'] }} {{ $kategoriConfig['text'] }} {{ $kategoriConfig['border'] }}">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $tipeConfig['icon'] }}" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $kategoriConfig['icon'] }}" />
                                 </svg>
-                                {{ $tipeConfig['label'] }}
+                                {{ $kategoriConfig['label'] }}
                             </span>
                         </td>
 
                         {{-- Harga --}}
-                        <td class="px-5 py-4 text-right">
+                        <td class="px-5 py-4 text-center">
                             @if(($kursus['harga'] ?? 0) > 0)
-                                <div>
-                                    <span class="text-sm font-semibold text-gray-900 dark:text-white">Rp {{ number_format($kursus['harga'], 0, ',', '.') }}</span>
-                                </div>
+                                <span class="text-sm font-semibold text-gray-900 dark:text-white">Rp {{ number_format($kursus['harga'], 0, ',', '.') }}</span>
                             @else
-                                <span class="text-sm text-gray-300 dark:text-gray-600">&mdash;</span>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    Gratis
+                                </span>
                             @endif
                         </td>
 
@@ -417,24 +424,34 @@
                         <div class="space-y-4">
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tipe Kursus</label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori</label>
                                     <div class="relative">
-                                        <select name="tipe" id="add_tipe" required onchange="toggleHarga('add')" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="gratis">Gratis</option>
-                                            <option value="berbayar">Berbayar</option>
+                                        <select name="kategori" id="add_kategori" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                            <option value="kursus">Kursus</option>
                                             <option value="webinar">Webinar</option>
                                             <option value="tiket">Tiket</option>
-                                            <option value="kursus">Kursus</option>
                                         </select>
                                         <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </div>
                                 </div>
-                                <div id="add_harga_container" class="hidden">
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
-                                    <input type="number" name="harga" id="add_harga" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tipe Harga</label>
+                                    <div class="relative">
+                                        <select name="tipe" id="add_tipe" required onchange="toggleHarga('add')" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                            <option value="gratis">Gratis</option>
+                                            <option value="berbayar">Berbayar</option>
+                                        </select>
+                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
                                 </div>
+                            </div>
+                            <div id="add_harga_container" class="hidden">
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
+                                <input type="number" name="harga" id="add_harga" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                             
                             <div>
@@ -594,24 +611,34 @@
                         <div class="space-y-4">
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tipe Kursus</label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori</label>
                                     <div class="relative">
-                                        <select name="tipe" id="edit_tipe" required onchange="toggleHarga('edit')" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                            <option value="gratis">Gratis</option>
-                                            <option value="berbayar">Berbayar</option>
+                                        <select name="kategori" id="edit_kategori" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                            <option value="kursus">Kursus</option>
                                             <option value="webinar">Webinar</option>
                                             <option value="tiket">Tiket</option>
-                                            <option value="kursus">Kursus</option>
                                         </select>
                                         <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </div>
                                 </div>
-                                <div id="edit_harga_container" class="hidden">
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
-                                    <input type="number" name="harga" id="edit_harga" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tipe Harga</label>
+                                    <div class="relative">
+                                        <select name="tipe" id="edit_tipe" required onchange="toggleHarga('edit')" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                            <option value="gratis">Gratis</option>
+                                            <option value="berbayar">Berbayar</option>
+                                        </select>
+                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
                                 </div>
+                            </div>
+                            <div id="edit_harga_container" class="hidden">
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
+                                <input type="number" name="harga" id="edit_harga" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                             
                             <div>
@@ -714,7 +741,7 @@
         function toggleHarga(prefix) {
             const tipe = document.getElementById(prefix + '_tipe').value;
             const hargaContainer = document.getElementById(prefix + '_harga_container');
-            if (['berbayar', 'tiket', 'webinar'].includes(tipe)) {
+            if (tipe === 'berbayar') {
                 hargaContainer.classList.remove('hidden');
             } else {
                 hargaContainer.classList.add('hidden');
@@ -733,7 +760,8 @@
                     document.getElementById('edit_deskripsi').value = data.deskripsi || '';
                     document.getElementById('edit_id_dosen').value = data.id_dosen || '';
                     document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
-                    document.getElementById('edit_tipe').value = data.tipe || 'kursus';
+                    document.getElementById('edit_tipe').value = data.tipe || 'gratis';
+                    document.getElementById('edit_kategori').value = data.kategori || 'kursus';
                     document.getElementById('edit_harga').value = data.harga || 0;
                     document.getElementById('edit_status').value = data.status || 'draft';
                     

@@ -25,7 +25,8 @@ class SecurityFixesTest extends TestCase
             'deskripsi' => 'Test',
             'id_dosen' => $dosen->id,
             'status' => 'aktif',
-            'tipe' => 'kursus',
+            'tipe' => 'gratis',
+            'kategori' => 'kursus',
             'harga' => 0,
             'rating' => 5.0, // This should be ignored
             'jumlah_ulasan' => 999, // This should be ignored

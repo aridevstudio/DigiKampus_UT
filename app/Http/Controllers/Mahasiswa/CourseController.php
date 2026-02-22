@@ -33,7 +33,7 @@ class CourseController extends Controller
             ->aktif() // Only active courses
             ->search($search) // Search by nama_course or deskripsi
             ->when($tipe && $tipe !== 'semua', function ($query) use ($tipe) {
-                return $query->where('tipe', $tipe);
+                return $query->where('kategori', $tipe);
             })
             ->when(!empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
                 return $query->whereNotIn('id_course', $enrolledCourseIds);
@@ -88,10 +88,10 @@ class CourseController extends Controller
         $query = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
             ->with(['course.dosen', 'course.jurusan']);
         
-        // Filter by course type
+        // Filter by course category
         if ($tipe && $tipe !== 'all') {
             $query->whereHas('course', function($q) use ($tipe) {
-                $q->where('tipe', $tipe);
+                $q->where('kategori', $tipe);
             });
         }
         
@@ -115,9 +115,9 @@ class CourseController extends Controller
         $allCount = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->count();
         $typeCounts = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
             ->join('courses', 'enrollments.id_course', '=', 'courses.id_course')
-            ->selectRaw('courses.tipe, COUNT(*) as count')
-            ->groupBy('courses.tipe')
-            ->pluck('count', 'tipe')
+            ->selectRaw('courses.kategori, COUNT(*) as count')
+            ->groupBy('courses.kategori')
+            ->pluck('count', 'kategori')
             ->toArray();
         
         // Get recommended courses (courses user hasn't enrolled in)

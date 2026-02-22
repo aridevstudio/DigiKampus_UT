@@ -26,7 +26,8 @@ class MyCourseResource extends JsonResource
             'thumbnail_url' => $course->thumbnail
                 ? asset('storage/' . $course->thumbnail)
                 : null,
-            'tipe' => $course->tipe ?? 'kursus',
+            'tipe' => $course->tipe ?? 'gratis',
+            'kategori' => $course->kategori ?? 'kursus',
             'progress' => (int) $this->progress,
             'status' => $this->status,
             'status_label' => $this->status === 'aktif' ? 'Sedang Berlangsung' : 'Selesai',

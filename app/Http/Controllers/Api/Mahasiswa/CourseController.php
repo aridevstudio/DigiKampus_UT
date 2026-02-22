@@ -58,7 +58,7 @@ class CourseController extends Controller
 
         $courses = Course::with(['dosen', 'jurusan'])
             ->aktif()
-            ->byTipe('webinar')
+            ->byKategori('webinar')
             ->search($search)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -86,7 +86,7 @@ class CourseController extends Controller
 
         $courses = Course::with(['dosen', 'jurusan'])
             ->aktif()
-            ->byTipe('tiket')
+            ->byKategori('tiket')
             ->search($search)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -114,7 +114,7 @@ class CourseController extends Controller
 
         $courses = Course::with(['dosen', 'jurusan'])
             ->aktif()
-            ->byTipe('kursus')
+            ->byKategori('kursus')
             ->search($search)
             ->orderBy('created_at', 'desc')
             ->get();

@@ -43,7 +43,8 @@ class AdminYoutubeTest extends TestCase
             'kode_course' => 'CS101',
             'nama_course' => 'Test Course',
             'status' => 'aktif',
-            'tipe' => 'kursus',
+            'tipe' => 'gratis',
+            'kategori' => 'kursus',
             'harga' => 0,
         ]);
 
@@ -61,7 +62,8 @@ class AdminYoutubeTest extends TestCase
             'nama_course' => 'Test Course 2',
             'youtube_playlist' => 'https://www.google.com',
             'status' => 'aktif',
-            'tipe' => 'kursus',
+            'tipe' => 'gratis',
+            'kategori' => 'kursus',
             'harga' => 0,
         ]);
 
@@ -78,7 +80,8 @@ class AdminYoutubeTest extends TestCase
             'kode_course' => 'CS103',
             'nama_course' => 'No Videos',
             'status' => 'aktif',
-            'tipe' => 'kursus',
+            'tipe' => 'gratis',
+            'kategori' => 'kursus',
             'harga' => 0,
         ]);
 
@@ -95,7 +98,8 @@ class AdminYoutubeTest extends TestCase
             'kode_course' => 'CS104',
             'nama_course' => 'With Videos',
             'status' => 'aktif',
-            'tipe' => 'kursus',
+            'tipe' => 'gratis',
+            'kategori' => 'kursus',
             'harga' => 0,
         ]);
 
@@ -122,7 +126,8 @@ class AdminYoutubeTest extends TestCase
             'kode_course' => 'CS105',
             'nama_course' => 'Sync Test',
             'status' => 'aktif',
-            'tipe' => 'kursus',
+            'tipe' => 'gratis',
+            'kategori' => 'kursus',
             'harga' => 0,
         ]);
 
@@ -144,7 +149,8 @@ class AdminYoutubeTest extends TestCase
             'kode_course' => 'CS106',
             'nama_course' => 'Stale Test',
             'status' => 'aktif',
-            'tipe' => 'kursus',
+            'tipe' => 'gratis',
+            'kategori' => 'kursus',
             'harga' => 0,
         ]);
 

@@ -11,7 +11,7 @@
         'code' => $course->kode_course,
         'title' => $course->nama_course,
         'description' => $course->deskripsi ?? 'Tidak ada deskripsi tersedia',
-        'type' => ucfirst($course->tipe ?? 'kursus'),
+        'type' => ucfirst($course->kategori ?? 'kursus'),
         'price' => floatval($course->harga ?? 0),
         'rating' => floatval($course->rating ?? 0),
         'reviews' => intval($course->jumlah_ulasan ?? 0),
