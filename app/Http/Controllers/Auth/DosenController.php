@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\DosenNotification;
+use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1100,5 +1102,90 @@ class DosenController extends Controller
 
         return redirect()->route('dosen.login')
             ->with('status', 'Password berhasil diubah. Silakan login dengan password baru.');
+    }
+
+    // ==========================================
+    // NOTIFICATIONS
+    // ==========================================
+
+    /**
+     * Get notifications list (JSON for dropdown)
+     */
+    public function getNotifications()
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $notifications = DosenNotification::where('dosen_id', $dosen->id)
+            ->orderByDesc('created_at')
+            ->limit(15)
+            ->get()
+            ->map(function ($n) {
+                return [
+                    'id' => $n->id,
+                    'type' => $n->tipe,
+                    'icon' => $n->icon ?? 'info',
+                    'message' => $n->judul,
+                    'detail' => $n->konten,
+                    'link' => $n->link,
+                    'is_read' => $n->is_read,
+                    'time' => $n->created_at->diffForHumans(),
+                    'created_at' => $n->created_at,
+                ];
+            });
+
+        $unreadCount = DosenNotification::where('dosen_id', $dosen->id)->unread()->count();
+
+        return response()->json([
+            'count' => $unreadCount,
+            'items' => $notifications,
+        ]);
+    }
+
+    /**
+     * Get unread notification count (for badge polling)
+     */
+    public function getNotificationCount()
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $count = DosenNotification::where('dosen_id', $dosen->id)->unread()->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    /**
+     * Mark a single notification as read
+     */
+    public function markNotificationRead($id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        DosenNotification::where('id', $id)->where('dosen_id', $dosen->id)->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function markAllNotificationsRead()
+    {
+        $dosen = Auth::guard('dosen')->user();
+        DosenNotification::where('dosen_id', $dosen->id)->unread()->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    // ==========================================
+    // MESSAGE UNREAD COUNT (for header badge)
+    // ==========================================
+
+    /**
+     * Get unread message count (JSON for header badge)
+     */
+    public function getUnreadMessageCount()
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $count = Message::where('id_receiver', $dosen->id)->where('is_read', false)->count();
+
+        return response()->json(['count' => $count]);
     }
 }

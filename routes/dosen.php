@@ -103,6 +103,19 @@ Route::prefix('dosen')
         Route::view('/pesan', 'Auth.dosen.pesan')->name('dosen.pesan');
         
         // ----------------------------------------------------------------------
+        // Notifications (JSON endpoints for header dropdown)
+        // ----------------------------------------------------------------------
+        Route::get('/notifications', [DosenController::class, 'getNotifications'])->name('dosen.notifications');
+        Route::get('/notifications/count', [DosenController::class, 'getNotificationCount'])->name('dosen.notifications.count');
+        Route::post('/notifications/{id}/read', [DosenController::class, 'markNotificationRead'])->name('dosen.notifications.read');
+        Route::post('/notifications/read-all', [DosenController::class, 'markAllNotificationsRead'])->name('dosen.notifications.readAll');
+        
+        // ----------------------------------------------------------------------
+        // Messages (unread count for header badge)
+        // ----------------------------------------------------------------------
+        Route::get('/messages/unread-count', [DosenController::class, 'getUnreadMessageCount'])->name('dosen.messages.unreadCount');
+        
+        // ----------------------------------------------------------------------
         // Authentication
         // ----------------------------------------------------------------------
         Route::post('/logout', [DosenController::class, 'logout'])->name('dosen.logout');
