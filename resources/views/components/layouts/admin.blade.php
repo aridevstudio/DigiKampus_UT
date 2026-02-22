@@ -45,12 +45,21 @@
             
             {{-- User Info --}}
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                @php
+                    $adminUser = Auth::guard('admin')->user();
+                    $adminPhoto = $adminUser?->profile?->foto_profile;
+                    $adminName = $adminUser->name ?? 'Admin';
+                @endphp
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                        {{ substr(Auth::guard('admin')->user()->name ?? 'A', 0, 1) }}
-                    </div>
+                    @if($adminPhoto)
+                        <img src="{{ asset('storage/' . $adminPhoto) }}" alt="{{ $adminName }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                    @else
+                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                            {{ substr($adminName, 0, 1) }}
+                        </div>
+                    @endif
                     <div>
-                        <p class="font-medium text-gray-800 dark:text-gray-100">{{ Auth::guard('admin')->user()->name ?? 'Admin' }}</p>
+                        <p class="font-medium text-gray-800 dark:text-gray-100">{{ $adminName }}</p>
                         <p class="text-xs text-gray-500">Admin</p>
                     </div>
                 </div>
@@ -163,13 +172,20 @@
 
                         {{-- User Avatar --}}
                         @php
-                            $adminUser = Auth::guard('admin')->user();
-                            $adminName = $adminUser->name ?? 'Admin';
+                            $navAdminUser = Auth::guard('admin')->user();
+                            $navAdminName = $navAdminUser->name ?? 'Admin';
+                            $navAdminPhoto = $navAdminUser?->profile?->foto_profile;
                         @endphp
                         <div class="relative group">
-                            <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
-                                {{ strtoupper(substr($adminName, 0, 2)) }}
+                            @if($navAdminPhoto)
+                            <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden">
+                                <img src="{{ asset('storage/' . $navAdminPhoto) }}" alt="{{ $navAdminName }}" class="w-full h-full object-cover">
                             </button>
+                            @else
+                            <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
+                                {{ strtoupper(substr($navAdminName, 0, 2)) }}
+                            </button>
+                            @endif
                             
                             {{-- Dropdown Menu --}}
                             <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1f2937] rounded-lg shadow-lg border border-gray-100 dark:border-gray-700/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">

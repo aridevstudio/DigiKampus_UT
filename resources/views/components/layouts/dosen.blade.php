@@ -163,13 +163,20 @@
 
                         {{-- User Avatar --}}
                         @php
-                            $dosenUser = Auth::guard('dosen')->user();
-                            $dosenName = $dosenUser->name ?? 'Dosen';
+                            $navDosenUser = Auth::guard('dosen')->user();
+                            $navDosenName = $navDosenUser->name ?? 'Dosen';
+                            $navDosenPhoto = $navDosenUser?->profile?->foto_profile;
                         @endphp
                         <div class="relative group">
-                            <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
-                                {{ strtoupper(substr($dosenName, 0, 2)) }}
+                            @if($navDosenPhoto)
+                            <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden">
+                                <img src="{{ asset('storage/' . $navDosenPhoto) }}" alt="{{ $navDosenName }}" class="w-full h-full object-cover">
                             </button>
+                            @else
+                            <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
+                                {{ strtoupper(substr($navDosenName, 0, 2)) }}
+                            </button>
+                            @endif
                             
                             {{-- Dropdown Menu --}}
                             <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1f2937] rounded-lg shadow-lg border border-gray-100 dark:border-gray-700/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
