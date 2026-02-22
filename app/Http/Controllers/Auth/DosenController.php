@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Course;
 use App\Models\DosenNotification;
+use App\Models\Enrollment;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -1187,5 +1189,164 @@ class DosenController extends Controller
         $count = Message::where('id_receiver', $dosen->id)->where('is_read', false)->count();
 
         return response()->json(['count' => $count]);
+    }
+
+    // ==========================================
+    // MESSAGING (for pesan page)
+    // ==========================================
+
+    /**
+     * Get conversations list (JSON for chat sidebar)
+     */
+    public function getConversations(Request $request)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $dosenId = $dosen->id;
+        $search = $request->query('search');
+
+        // Get students who have conversations with this dosen
+        $conversationStudents = Message::where('id_sender', $dosenId)
+            ->orWhere('id_receiver', $dosenId)
+            ->selectRaw('CASE WHEN id_sender = ? THEN id_receiver ELSE id_sender END as student_id', [$dosenId])
+            ->distinct()
+            ->pluck('student_id');
+
+        // Also include students enrolled in dosen's courses (potential contacts)
+        $dosenCourseIds = Course::where('id_dosen', $dosenId)->pluck('id_course');
+        $enrolledStudents = Enrollment::whereIn('id_course', $dosenCourseIds)
+            ->pluck('id_mahasiswa');
+
+        $allStudentIds = $conversationStudents->merge($enrolledStudents)->unique();
+
+        // Query students
+        $studentsQuery = User::whereIn('id', $allStudentIds)
+            ->where('role', 'mahasiswa')
+            ->with('profile');
+
+        if ($search) {
+            $studentsQuery->where('name', 'like', "%{$search}%");
+        }
+
+        $students = $studentsQuery->get();
+
+        // Build conversations data
+        $conversations = $students->map(function ($student) use ($dosenId) {
+            $lastMessage = Message::where(function ($q) use ($dosenId, $student) {
+                    $q->where('id_sender', $dosenId)->where('id_receiver', $student->id);
+                })->orWhere(function ($q) use ($dosenId, $student) {
+                    $q->where('id_sender', $student->id)->where('id_receiver', $dosenId);
+                })
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $unreadCount = Message::where('id_sender', $student->id)
+                ->where('id_receiver', $dosenId)
+                ->where('is_read', false)
+                ->count();
+
+            $fotoProfile = $student->profile->foto_profile ?? null;
+            $avatar = $fotoProfile
+                ? asset('storage/' . $fotoProfile)
+                : 'https://ui-avatars.com/api/?name=' . urlencode($student->name) . '&background=random';
+
+            return [
+                'student_id' => $student->id,
+                'student_name' => $student->name,
+                'student_nim' => $student->profile->nim ?? '-',
+                'student_email' => $student->email ?? '-',
+                'student_avatar' => $avatar,
+                'last_message' => $lastMessage
+                    ? (strlen($lastMessage->content) > 50 ? substr($lastMessage->content, 0, 50) . '...' : $lastMessage->content)
+                    : null,
+                'last_message_time' => $lastMessage ? $lastMessage->created_at->toISOString() : null,
+                'unread_count' => $unreadCount,
+            ];
+        })->sortByDesc(function ($conv) {
+            return $conv['unread_count'] > 0 ? 1 : 0;
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $conversations,
+        ]);
+    }
+
+    /**
+     * Get chat messages with a specific student
+     */
+    public function getChatMessages(Request $request, $studentId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $dosenId = $dosen->id;
+
+        $student = User::where('id', $studentId)->where('role', 'mahasiswa')->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Mahasiswa tidak ditemukan.'], 404);
+        }
+
+        // Mark messages from student as read
+        Message::where('id_sender', $studentId)
+            ->where('id_receiver', $dosenId)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        // Get messages
+        $messages = Message::where(function ($q) use ($dosenId, $studentId) {
+                $q->where('id_sender', $dosenId)->where('id_receiver', $studentId);
+            })->orWhere(function ($q) use ($dosenId, $studentId) {
+                $q->where('id_sender', $studentId)->where('id_receiver', $dosenId);
+            })
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($msg) use ($dosenId) {
+                return [
+                    'id' => $msg->id_message,
+                    'content' => $msg->content,
+                    'sender_type' => $msg->id_sender === $dosenId ? 'dosen' : 'mahasiswa',
+                    'created_at' => $msg->created_at->toISOString(),
+                    'is_read' => $msg->is_read,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $messages,
+        ]);
+    }
+
+    /**
+     * Send a message to a student
+     */
+    public function sendChatMessage(Request $request)
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $request->validate([
+            'student_id' => 'required|integer|exists:users,id',
+            'content' => 'required|string|max:2000',
+        ]);
+
+        $student = User::where('id', $request->student_id)->where('role', 'mahasiswa')->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Mahasiswa tidak ditemukan.'], 404);
+        }
+
+        $message = Message::create([
+            'id_sender' => $dosen->id,
+            'id_receiver' => $request->student_id,
+            'content' => $request->content,
+            'is_read' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $message->id_message,
+                'content' => $message->content,
+                'sender_type' => 'dosen',
+                'created_at' => $message->created_at->toISOString(),
+                'is_read' => false,
+            ],
+        ]);
     }
 }

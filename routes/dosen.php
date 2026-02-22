@@ -111,9 +111,12 @@ Route::prefix('dosen')
         Route::post('/notifications/read-all', [DosenController::class, 'markAllNotificationsRead'])->name('dosen.notifications.readAll');
         
         // ----------------------------------------------------------------------
-        // Messages (unread count for header badge)
+        // Messages (unread count for header badge + chat endpoints)
         // ----------------------------------------------------------------------
         Route::get('/messages/unread-count', [DosenController::class, 'getUnreadMessageCount'])->name('dosen.messages.unreadCount');
+        Route::get('/messages/conversations', [DosenController::class, 'getConversations'])->name('dosen.messages.conversations');
+        Route::get('/messages/chat/{studentId}', [DosenController::class, 'getChatMessages'])->name('dosen.messages.chat');
+        Route::post('/messages/send', [DosenController::class, 'sendChatMessage'])->name('dosen.messages.send');
         
         // ----------------------------------------------------------------------
         // Authentication

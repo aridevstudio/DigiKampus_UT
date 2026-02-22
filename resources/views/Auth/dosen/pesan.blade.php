@@ -215,7 +215,7 @@
                 async fetchConversations(showLoading = true) {
                     if (showLoading) this.isLoadingConversations = true;
                     try {
-                        const response = await fetch(`/api/dosen/messages?search=${this.searchQuery}`, {
+                        const response = await fetch(`/dosen/messages/conversations?search=${this.searchQuery}`, {
                             credentials: 'same-origin',
                             headers: {
                                 'Accept': 'application/json'
@@ -261,7 +261,7 @@
                     }
 
                     try {
-                        const response = await fetch(`/api/dosen/messages/${this.activeConversation.student_id}`, {
+                        const response = await fetch(`/dosen/messages/chat/${this.activeConversation.student_id}`, {
                             credentials: 'same-origin',
                             headers: {
                                 'Accept': 'application/json'
@@ -305,7 +305,7 @@
                     this.$nextTick(() => this.scrollToBottom());
 
                     try {
-                        const response = await fetch('/api/dosen/messages', {
+                        const response = await fetch('/dosen/messages/send', {
                             method: 'POST',
                             credentials: 'same-origin',
                             headers: {
