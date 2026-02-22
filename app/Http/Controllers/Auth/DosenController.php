@@ -914,12 +914,26 @@ class DosenController extends Controller
             ->select('id_course', 'nama_course')
             ->get();
 
+        // Stats counts
+        $totalEnrollments = \App\Models\Enrollment::whereIn('id_course', $courses)->count();
+        $selesaiCount = \App\Models\Enrollment::whereIn('id_course', $courses)->where('progress', '>=', 100)->count();
+        $aktifCount = \App\Models\Enrollment::whereIn('id_course', $courses)->where('progress', '>', 0)->where('progress', '<', 100)->count();
+        $tidakAktifCount = \App\Models\Enrollment::whereIn('id_course', $courses)->where('progress', '<=', 0)->count();
+        $avgProgress = $totalEnrollments > 0
+            ? round(\App\Models\Enrollment::whereIn('id_course', $courses)->avg('progress'))
+            : 0;
+
         return view('Auth.dosen.progres-mahasiswa', [
             'dosen' => $dosen,
             'enrollments' => $enrollments,
             'coursesForFilter' => $coursesForFilter,
             'search' => $search,
             'courseFilter' => $courseFilter,
+            'totalEnrollments' => $totalEnrollments,
+            'selesaiCount' => $selesaiCount,
+            'aktifCount' => $aktifCount,
+            'tidakAktifCount' => $tidakAktifCount,
+            'avgProgress' => $avgProgress,
         ]);
     }
 
