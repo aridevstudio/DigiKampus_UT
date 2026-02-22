@@ -715,6 +715,7 @@ class DosenController extends Controller
             'level' => 'nullable|in:Pemula,Menengah,Mahir',
             'estimasi_waktu' => 'nullable|integer|min:0',
             'diskon' => 'nullable|integer|min:0|max:100',
+            'youtube_playlist' => 'nullable|url|max:500',
         ]);
 
         $thumbnailPath = null;
@@ -738,6 +739,7 @@ class DosenController extends Controller
             'sertifikat' => $request->boolean('sertifikat'),
             'akses_publik' => $request->boolean('akses_publik'),
             'diskon' => $request->diskon ?? 0,
+            'youtube_playlist' => $request->youtube_playlist,
         ]);
 
         return redirect()->route('dosen.kursus.modul', $course->id_course)
