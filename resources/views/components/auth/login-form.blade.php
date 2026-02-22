@@ -1,4 +1,7 @@
-<section class="min-h-screen flex flex-col items-center justify-center bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8 font-inter">
+{{-- Navbar --}}
+<x-auth.navbar />
+
+<section class="min-h-screen flex flex-col items-center justify-center bg-white px-4 sm:px-6 lg:px-8 pt-24 pb-6 sm:pb-8 font-inter">
     {{-- Main Container --}}
     <div class="w-full max-w-6xl flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-16 mx-auto">
         

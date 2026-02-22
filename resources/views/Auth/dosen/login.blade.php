@@ -6,14 +6,17 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login Dosen - SALUT</title>
     @vite('resources/css/app.css')
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
 <body class="min-h-screen">
+    {{-- Navbar --}}
+    <x-auth.navbar />
+
     {{-- Desktop View (lg and above) --}}
-    <div class="hidden lg:flex min-h-screen" style="background: linear-gradient(to right, #E8F0FE, #FFFFFF);">
+    <div class="hidden lg:flex min-h-screen pt-20" style="background: linear-gradient(to right, #E8F0FE, #FFFFFF);">
         {{-- Left Side - Illustration with Blue Circles --}}
         <div class="w-1/2 relative overflow-hidden flex items-center justify-center" style="background: linear-gradient(to bottom, #EFF6FF, #DBEAFE);">
             {{-- Decorative Blue Circles --}}
@@ -193,7 +196,7 @@
     </div>
 
     {{-- Mobile/Tablet View (below lg) --}}
-    <section class="lg:hidden min-h-screen flex flex-col items-center justify-center bg-white px-4 sm:px-6 py-6 sm:py-8">
+    <section class="lg:hidden min-h-screen flex flex-col items-center justify-center bg-white px-4 sm:px-6 pt-24 pb-6 sm:pb-8">
         <div class="w-full max-w-sm sm:max-w-md flex flex-col items-center">
             
             {{-- Mobile Illustration --}}
