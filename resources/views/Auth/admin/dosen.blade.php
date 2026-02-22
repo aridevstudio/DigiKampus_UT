@@ -49,69 +49,121 @@
     </form>
 
     {{-- Table --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
-                    <tr class="border-b border-gray-100 dark:border-gray-700">
-                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Foto</th>
-                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Nama Dosen</th>
-                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">NIP</th>
-                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Program Studi</th>
-                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Email</th>
-                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">No. Telepon</th>
-                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
-                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Aksi</th>
+                    <tr class="bg-gray-50/80 dark:bg-gray-900/40">
+                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
+                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dosen</th>
+                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">NIP</th>
+                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Program Studi</th>
+                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No. Telepon</th>
+                        <th class="text-center px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="text-center px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                    @forelse($dosenList as $dosen)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
+                    @forelse($dosenList as $index => $dosen)
+                    <tr class="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors duration-150 group">
+                        {{-- Row Number --}}
                         <td class="px-6 py-4">
-                            @if($dosen['foto'])
-                                <img src="{{ asset('storage/' . $dosen['foto']) }}" alt="{{ $dosen['nama'] }}" class="w-10 h-10 rounded-full object-cover">
-                            @else
-                                <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium">
-                                    Foto
+                            <span class="text-sm text-gray-400 dark:text-gray-500 font-medium">{{ ($dosenPaginated->currentPage() - 1) * $dosenPaginated->perPage() + $index + 1 }}</span>
+                        </td>
+                        {{-- Avatar + Name + Email (combined) --}}
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3.5">
+                                @if($dosen['foto'])
+                                    <img src="{{ asset('storage/' . $dosen['foto']) }}" alt="{{ $dosen['nama'] }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                @else
+                                    @php
+                                        $colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'];
+                                        $colorClass = $colors[$dosen['id'] % count($colors)];
+                                        $initials = collect(explode(' ', $dosen['nama']))->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join('');
+                                    @endphp
+                                    <div class="w-10 h-10 rounded-full {{ $colorClass }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                        {{ $initials }}
+                                    </div>
+                                @endif
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $dosen['nama'] }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{{ $dosen['email'] }}</p>
                                 </div>
+                            </div>
+                        </td>
+                        {{-- NIP --}}
+                        <td class="px-6 py-4">
+                            @if($dosen['nip'] && $dosen['nip'] !== '-')
+                                <span class="text-sm text-gray-700 dark:text-gray-300 font-mono">{{ $dosen['nip'] }}</span>
+                            @else
+                                <span class="text-sm text-gray-300 dark:text-gray-600 italic">Belum diisi</span>
                             @endif
                         </td>
+                        {{-- Program Studi --}}
                         <td class="px-6 py-4">
-                            <span class="text-gray-900 dark:text-white font-medium">{{ $dosen['nama'] }}</span>
+                            @if($dosen['program_studi'] && $dosen['program_studi'] !== '-')
+                                <span class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    {{ $dosen['program_studi'] }}
+                                </span>
+                            @else
+                                <span class="text-sm text-gray-300 dark:text-gray-600 italic">Belum diisi</span>
+                            @endif
                         </td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $dosen['nip'] }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $dosen['program_studi'] }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $dosen['email'] }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $dosen['no_telepon'] }}</td>
+                        {{-- No. Telepon --}}
                         <td class="px-6 py-4">
-                            <span class="inline-flex px-2.5 py-1 text-xs font-medium rounded-full {{ $dosen['status'] === 'Aktif' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }}">
-                                {{ $dosen['status'] }}
-                            </span>
+                            @if($dosen['no_telepon'] && $dosen['no_telepon'] !== '-')
+                                <span class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                    {{ $dosen['no_telepon'] }}
+                                </span>
+                            @else
+                                <span class="text-sm text-gray-300 dark:text-gray-600 italic">Belum diisi</span>
+                            @endif
                         </td>
+                        {{-- Status --}}
+                        <td class="px-6 py-4 text-center">
+                            @if($dosen['status'] === 'Aktif')
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800/50">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Aktif
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800/50">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                    Tidak Aktif
+                                </span>
+                            @endif
+                        </td>
+                        {{-- Actions --}}
                         <td class="px-6 py-4">
-                            <div class="flex items-center gap-2">
-                                <button onclick="openEditModal({{ $dosen['id'] }})" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex items-center justify-center gap-1">
+                                <button onclick="openEditModal({{ $dosen['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg transition-colors duration-150 opacity-80 group-hover:opacity-100" title="Edit">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
+                                    Edit
                                 </button>
-                                <button onclick="confirmDelete({{ $dosen['id'] }})" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition" title="Hapus">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button onclick="confirmDelete({{ $dosen['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors duration-150 opacity-80 group-hover:opacity-100" title="Hapus">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
+                                    Hapus
                                 </button>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-12 text-center">
-                            <div class="text-gray-400 dark:text-gray-500">
-                                <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
-                                <p class="text-lg font-medium">Belum ada data dosen</p>
-                                <p class="text-sm mt-1">Klik "Tambah Dosen" untuk menambahkan dosen baru</p>
+                        <td colspan="7" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
+                                    <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                                <p class="text-base font-semibold text-gray-500 dark:text-gray-400">Belum ada data dosen</p>
+                                <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Klik "Tambah Dosen" untuk menambahkan dosen baru</p>
                             </div>
                         </td>
                     </tr>
@@ -122,9 +174,9 @@
         
         {{-- Pagination --}}
         @if($totalDosen > 0)
-        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-900/20 flex items-center justify-between">
             <p class="text-sm text-gray-500 dark:text-gray-400">
-                Menampilkan {{ $dosenPaginated->firstItem() ?? 0 }}-{{ $dosenPaginated->lastItem() ?? 0 }} dari {{ $totalDosen }}
+                Menampilkan <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $dosenPaginated->firstItem() ?? 0 }}-{{ $dosenPaginated->lastItem() ?? 0 }}</span> dari <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $totalDosen }}</span> dosen
             </p>
             <div class="flex items-center gap-1">
                 {{-- Previous --}}
@@ -135,7 +187,7 @@
                     </svg>
                 </button>
                 @else
-                <a href="{{ $dosenPaginated->previousPageUrl() }}" class="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+                <a href="{{ $dosenPaginated->previousPageUrl() }}" class="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-white dark:hover:bg-gray-700 rounded-lg transition shadow-sm">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -145,15 +197,17 @@
                 {{-- Page Numbers --}}
                 @for($i = 1; $i <= $dosenPaginated->lastPage(); $i++)
                     @if($i <= 4 || $i === $dosenPaginated->lastPage())
-                    <a href="{{ $dosenPaginated->url($i) }}" class="w-9 h-9 flex items-center justify-center text-sm font-medium rounded-lg transition {{ $i === $currentPage ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                    <a href="{{ $dosenPaginated->url($i) }}" class="w-9 h-9 flex items-center justify-center text-sm font-medium rounded-lg transition {{ $i === $currentPage ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/30' : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm' }}">
                         {{ $i }}
                     </a>
+                    @elseif($i === 5)
+                    <span class="w-9 h-9 flex items-center justify-center text-gray-400">...</span>
                     @endif
                 @endfor
                 
                 {{-- Next --}}
                 @if($dosenPaginated->hasMorePages())
-                <a href="{{ $dosenPaginated->nextPageUrl() }}" class="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+                <a href="{{ $dosenPaginated->nextPageUrl() }}" class="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-white dark:hover:bg-gray-700 rounded-lg transition shadow-sm">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>

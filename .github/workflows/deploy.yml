@@ -126,7 +126,7 @@ jobs:
           sudo chmod -R 775 /var/www/digikampusut/bootstrap/cache
 
           echo "� Installing/updating Composer dependencies..."
-          sudo -u www-data composer install --no-dev --optimize-autoloader --no-interaction --working-dir=/var/www/digikampusut 2>&1 || echo "⚠️ Composer install had issues, check logs"
+          sudo -u www-data composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-gd --working-dir=/var/www/digikampusut 2>&1 || echo "⚠️ Composer install had issues, check logs"
 
           echo "�🔧 Running Laravel optimization commands..."
 
