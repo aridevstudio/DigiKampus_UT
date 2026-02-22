@@ -1003,6 +1003,8 @@ class AdminController extends Controller
             'estimasi_waktu' => $kursus->estimasi_waktu,
             'thumbnail' => $kursus->thumbnail,
             'youtube_playlist' => $kursus->youtube_playlist,
+            'sertifikat' => (bool) $kursus->sertifikat,
+            'akses_publik' => (bool) $kursus->akses_publik,
         ]);
     }
 

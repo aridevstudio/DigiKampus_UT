@@ -28,7 +28,10 @@ class Course extends Model
         // and must only be set via recalculateRating()
         'estimasi_waktu',
         'durasi_satuan',
-        'level'
+        'level',
+        'sertifikat',
+        'akses_publik',
+        'diskon'
     ];
 
     protected $casts = [

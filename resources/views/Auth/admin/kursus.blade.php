@@ -349,26 +349,26 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
-                                        <input type="text" name="nama_course" required placeholder="Masukkan judul kursus" value="{{ old('_modal') === 'add' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <input type="text" name="nama_course" id="add_nama_course" required placeholder="Masukkan judul kursus" value="{{ old('_modal') === 'add' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
-                                        <input type="text" name="kode_course" required placeholder="Contoh: CS101" value="{{ old('_modal') === 'add' ? old('kode_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <input type="text" name="kode_course" id="add_kode_course" required placeholder="Contoh: CS101" value="{{ old('_modal') === 'add' ? old('kode_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                     </div>
                                 </div>
                                 
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Kursus</label>
-                                    <textarea name="deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('_modal') === 'add' ? old('deskripsi') : '' }}</textarea>
+                                    <textarea name="deskripsi" id="add_deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('_modal') === 'add' ? old('deskripsi') : '' }}</textarea>
                                 </div>
                                 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
                                         <div class="relative">
-                                            <select name="id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <select name="id_dosen" id="add_id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                 <option value="">Pilih Dosen</option>
                                                 @foreach($dosenList as $dosen)
                                                 <option value="{{ $dosen->id }}" {{ old('_modal') === 'add' && old('id_dosen') == $dosen->id ? 'selected' : '' }}>{{ $dosen->name }}</option>
@@ -380,7 +380,7 @@
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
                                         <div class="relative">
-                                            <select name="id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <select name="id_jurusan" id="add_id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                 <option value="">Pilih Jurusan</option>
                                                 @foreach($jurusanList as $jurusan)
                                                 <option value="{{ $jurusan->id_jurusan }}" {{ old('_modal') === 'add' && old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
@@ -395,7 +395,7 @@
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan</label>
                                         <div class="relative">
-                                            <select name="level" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <select name="level" id="add_level" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                 <option value="">Pilih Tingkat</option>
                                                 <option value="Pemula" {{ old('_modal') === 'add' && old('level') == 'Pemula' ? 'selected' : '' }}>Pemula</option>
                                                 <option value="Menengah" {{ old('_modal') === 'add' && old('level') == 'Menengah' ? 'selected' : '' }}>Menengah</option>
@@ -406,7 +406,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar (Jam)</label>
-                                        <input type="number" name="estimasi_waktu" min="0" placeholder="20" value="{{ old('_modal') === 'add' ? old('estimasi_waktu', 20) : 20 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" min="0" placeholder="20" value="{{ old('_modal') === 'add' ? old('estimasi_waktu', 20) : 20 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
                                 </div>
                                 
@@ -442,7 +442,7 @@
                             </h4>
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
-                                <input type="url" name="youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('_modal') === 'add' ? old('youtube_playlist') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <input type="url" name="youtube_playlist" id="add_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('_modal') === 'add' ? old('youtube_playlist') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube untuk kursus ini.</p>
                             </div>
                         </div>
@@ -477,7 +477,7 @@
                                         </div>
                                         <input type="hidden" name="akses_publik" value="0">
                                         <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" name="akses_publik" value="1" class="sr-only peer" {{ old('_modal') === 'add' ? (old('akses_publik') ? 'checked' : '') : 'checked' }}>
+                                            <input type="checkbox" name="akses_publik" id="add_akses_publik" value="1" class="sr-only peer" {{ old('_modal') === 'add' ? (old('akses_publik') ? 'checked' : '') : 'checked' }}>
                                             <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
                                         </label>
                                     </div>
@@ -491,7 +491,7 @@
                                     </div>
                                     <input type="hidden" name="sertifikat" value="0">
                                     <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" name="sertifikat" value="1" class="sr-only peer" {{ old('_modal') === 'add' && old('sertifikat') ? 'checked' : '' }}>
+                                        <input type="checkbox" name="sertifikat" id="add_sertifikat" value="1" class="sr-only peer" {{ old('_modal') === 'add' && old('sertifikat') ? 'checked' : '' }}>
                                         <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
                                     </label>
                                 </div>
@@ -873,13 +873,93 @@
 
     @push('scripts')
     <script>
-        // Add Modal functions
+        // ============================================================
+        // Form Data Persistence (sessionStorage)
+        // ============================================================
+        const ADD_FORM_KEY = 'kursus_add_draft';
+        const EDIT_FORM_KEY = 'kursus_edit_draft';
+
+        // IDs of all saveable fields per modal
+        const addFieldIds = [
+            'add_nama_course', 'add_kode_course', 'add_deskripsi',
+            'add_id_dosen', 'add_id_jurusan', 'add_level', 'add_estimasi_waktu',
+            'add_youtube_playlist', 'add_kategori', 'add_harga', 'add_diskon',
+            'add_status_input', 'add_tipe_input'
+        ];
+        const addCheckboxIds = [
+            'add_status_toggle', 'add_akses_publik', 'add_sertifikat', 'add_gratis_toggle'
+        ];
+        const editFieldIds = [
+            'edit_nama_course', 'edit_kode_course', 'edit_deskripsi',
+            'edit_id_dosen', 'edit_id_jurusan', 'edit_level', 'edit_estimasi_waktu',
+            'edit_youtube_playlist', 'edit_kategori', 'edit_harga', 'edit_diskon',
+            'edit_status_input', 'edit_tipe_input'
+        ];
+        const editCheckboxIds = [
+            'edit_status_toggle', 'edit_akses_publik', 'edit_sertifikat', 'edit_gratis_toggle'
+        ];
+
+        function saveFormState(fieldIds, checkboxIds, storageKey, extra) {
+            const data = extra ? { ...extra } : {};
+            fieldIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) data[id] = el.value;
+            });
+            checkboxIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) data[id] = el.checked;
+            });
+            // Save thumbnail preview HTML
+            const thumbId = storageKey === ADD_FORM_KEY ? 'thumbnailPreview' : 'editThumbnailPreview';
+            const thumbEl = document.getElementById(thumbId);
+            if (thumbEl && thumbEl.querySelector('img')) {
+                data['_thumbHTML'] = thumbEl.innerHTML;
+            }
+            sessionStorage.setItem(storageKey, JSON.stringify(data));
+        }
+
+        function restoreFormState(fieldIds, checkboxIds, storageKey) {
+            const raw = sessionStorage.getItem(storageKey);
+            if (!raw) return false;
+            try {
+                const data = JSON.parse(raw);
+                fieldIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && data[id] !== undefined) el.value = data[id];
+                });
+                checkboxIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && data[id] !== undefined) {
+                        el.checked = data[id];
+                        el.dispatchEvent(new Event('change'));
+                    }
+                });
+                // Restore thumbnail preview
+                const thumbId = storageKey === ADD_FORM_KEY ? 'thumbnailPreview' : 'editThumbnailPreview';
+                if (data['_thumbHTML']) {
+                    document.getElementById(thumbId).innerHTML = data['_thumbHTML'];
+                }
+                return true;
+            } catch (e) { return false; }
+        }
+
+        function clearFormState(storageKey) {
+            sessionStorage.removeItem(storageKey);
+        }
+
+        // ============================================================
+        // Add Modal
+        // ============================================================
         function openAddModal() {
+            // Restore any previously saved data
+            restoreFormState(addFieldIds, addCheckboxIds, ADD_FORM_KEY);
             document.getElementById('addKursusModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
         
         function closeAddModal() {
+            // Save current form state before hiding
+            saveFormState(addFieldIds, addCheckboxIds, ADD_FORM_KEY);
             document.getElementById('addKursusModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
@@ -895,9 +975,10 @@
             }
         }
 
-        // Toggle helpers for new toggle-based UI
+        // ============================================================
+        // Toggle helpers
+        // ============================================================
         function initAddToggles() {
-            // Status toggle
             const addStatusToggle = document.getElementById('add_status_toggle');
             const addStatusInput = document.getElementById('add_status_input');
             if (addStatusToggle) {
@@ -906,7 +987,6 @@
                 });
             }
 
-            // Gratis toggle
             const addGratisToggle = document.getElementById('add_gratis_toggle');
             const addTipeInput = document.getElementById('add_tipe_input');
             const addHarga = document.getElementById('add_harga');
@@ -929,7 +1009,6 @@
                         addDiskon.classList.remove('opacity-50', 'cursor-not-allowed');
                     }
                 });
-                // Trigger on load if checked
                 if (addGratisToggle.checked) {
                     addGratisToggle.dispatchEvent(new Event('change'));
                 }
@@ -937,7 +1016,6 @@
         }
         
         function initEditToggles() {
-            // Status toggle
             const editStatusToggle = document.getElementById('edit_status_toggle');
             const editStatusInput = document.getElementById('edit_status_input');
             if (editStatusToggle) {
@@ -946,7 +1024,6 @@
                 });
             }
 
-            // Gratis toggle
             const editGratisToggle = document.getElementById('edit_gratis_toggle');
             const editTipeInput = document.getElementById('edit_tipe_input');
             const editHarga = document.getElementById('edit_harga');
@@ -975,70 +1052,116 @@
         document.addEventListener('DOMContentLoaded', function() {
             initAddToggles();
             initEditToggles();
+
+            // Clear add form storage on successful submit
+            const addForm = document.querySelector('#addKursusModal form');
+            if (addForm) {
+                addForm.addEventListener('submit', function() {
+                    clearFormState(ADD_FORM_KEY);
+                });
+            }
+            // Clear edit form storage on successful submit
+            const editForm = document.getElementById('editKursusForm');
+            if (editForm) {
+                editForm.addEventListener('submit', function() {
+                    clearFormState(EDIT_FORM_KEY);
+                });
+            }
         });
-        
-        // Edit Modal functions
+
+        // ============================================================
+        // Edit Modal
+        // ============================================================
+        let currentEditCourseId = null;
+
         function openEditModal(id) {
             currentEditCourseId = id;
-            fetch('/admin/kursus/' + id)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('editKursusForm').action = '/admin/kursus/' + id;
-                    document.getElementById('edit_kursus_id').value = id;
-                    document.getElementById('edit_nama_course').value = data.nama_course || '';
-                    document.getElementById('edit_kode_course').value = data.kode_course || '';
-                    document.getElementById('edit_deskripsi').value = data.deskripsi || '';
-                    document.getElementById('edit_id_dosen').value = data.id_dosen || '';
-                    document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
-                    document.getElementById('edit_level').value = data.level || '';
-                    document.getElementById('edit_estimasi_waktu').value = data.estimasi_waktu || 20;
-                    document.getElementById('edit_kategori').value = data.kategori || 'kursus';
-                    document.getElementById('edit_harga').value = data.harga || 0;
-                    document.getElementById('edit_diskon').value = data.diskon || 0;
-                    
-                    // Set status toggle
-                    const statusToggle = document.getElementById('edit_status_toggle');
-                    const statusInput = document.getElementById('edit_status_input');
-                    const status = data.status || 'draft';
-                    statusInput.value = status;
-                    statusToggle.checked = (status === 'aktif');
-                    
-                    // Set gratis toggle  
-                    const gratisToggle = document.getElementById('edit_gratis_toggle');
-                    const tipeInput = document.getElementById('edit_tipe_input');
-                    const tipe = data.tipe || 'berbayar';
-                    tipeInput.value = tipe;
-                    gratisToggle.checked = (tipe === 'gratis');
-                    gratisToggle.dispatchEvent(new Event('change'));
-                    
-                    // Set YouTube playlist
-                    document.getElementById('edit_youtube_playlist').value = data.youtube_playlist || '';
-                    
-                    // Load synced YouTube videos
-                    document.getElementById('videoListContainer').classList.add('hidden');
-                    document.getElementById('syncStatus').classList.add('hidden');
-                    if (data.youtube_playlist) {
-                        loadVideoList(id);
-                    }
-                    
-                    // Show existing thumbnail if available
-                    const preview = document.getElementById('editThumbnailPreview');
-                    if (data.thumbnail) {
-                        preview.innerHTML = '<img src="/storage/' + data.thumbnail + '" class="w-full h-full object-cover">';
-                    } else {
-                        preview.innerHTML = '<svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
-                    }
-                    
-                    document.getElementById('editKursusModal').classList.remove('hidden');
-                    document.body.style.overflow = 'hidden';
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Gagal memuat data kursus');
-                });
+
+            // Check if we have unsaved edits for this exact course
+            const saved = sessionStorage.getItem(EDIT_FORM_KEY);
+            let hasSavedDraft = false;
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed._courseId == id) hasSavedDraft = true;
+                } catch (e) {}
+            }
+
+            if (hasSavedDraft) {
+                // Restore from sessionStorage instead of re-fetching
+                document.getElementById('editKursusForm').action = '/admin/kursus/' + id;
+                document.getElementById('edit_kursus_id').value = id;
+                restoreFormState(editFieldIds, editCheckboxIds, EDIT_FORM_KEY);
+
+                // Load video list if playlist URL exists
+                const playlist = document.getElementById('edit_youtube_playlist').value;
+                document.getElementById('videoListContainer').classList.add('hidden');
+                document.getElementById('syncStatus').classList.add('hidden');
+                if (playlist) loadVideoList(id);
+
+                document.getElementById('editKursusModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                // Fetch fresh data from server
+                fetch('/admin/kursus/' + id)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('editKursusForm').action = '/admin/kursus/' + id;
+                        document.getElementById('edit_kursus_id').value = id;
+                        document.getElementById('edit_nama_course').value = data.nama_course || '';
+                        document.getElementById('edit_kode_course').value = data.kode_course || '';
+                        document.getElementById('edit_deskripsi').value = data.deskripsi || '';
+                        document.getElementById('edit_id_dosen').value = data.id_dosen || '';
+                        document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
+                        document.getElementById('edit_level').value = data.level || '';
+                        document.getElementById('edit_estimasi_waktu').value = data.estimasi_waktu || 20;
+                        document.getElementById('edit_kategori').value = data.kategori || 'kursus';
+                        document.getElementById('edit_harga').value = data.harga || 0;
+                        document.getElementById('edit_diskon').value = data.diskon || 0;
+
+                        const statusToggle = document.getElementById('edit_status_toggle');
+                        const statusInput = document.getElementById('edit_status_input');
+                        const status = data.status || 'draft';
+                        statusInput.value = status;
+                        statusToggle.checked = (status === 'aktif');
+
+                        const gratisToggle = document.getElementById('edit_gratis_toggle');
+                        const tipeInput = document.getElementById('edit_tipe_input');
+                        const tipe = data.tipe || 'berbayar';
+                        tipeInput.value = tipe;
+                        gratisToggle.checked = (tipe === 'gratis');
+                        gratisToggle.dispatchEvent(new Event('change'));
+
+                        document.getElementById('edit_youtube_playlist').value = data.youtube_playlist || '';
+
+                        // Set akses_publik & sertifikat checkboxes
+                        document.getElementById('edit_akses_publik').checked = data.akses_publik !== false;
+                        document.getElementById('edit_sertifikat').checked = !!data.sertifikat;
+
+                        document.getElementById('videoListContainer').classList.add('hidden');
+                        document.getElementById('syncStatus').classList.add('hidden');
+                        if (data.youtube_playlist) loadVideoList(id);
+
+                        const preview = document.getElementById('editThumbnailPreview');
+                        if (data.thumbnail) {
+                            preview.innerHTML = '<img src="/storage/' + data.thumbnail + '" class="w-full h-full object-cover">';
+                        } else {
+                            preview.innerHTML = '<svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
+                        }
+
+                        document.getElementById('editKursusModal').classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Gagal memuat data kursus');
+                    });
+            }
         }
         
         function closeEditModal() {
+            // Save current form state (keyed by course ID)
+            saveFormState(editFieldIds, editCheckboxIds, EDIT_FORM_KEY, { _courseId: currentEditCourseId });
             document.getElementById('editKursusModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
@@ -1053,8 +1176,10 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
-        
-        // Delete Modal functions
+
+        // ============================================================
+        // Delete Modal
+        // ============================================================
         function confirmDelete(id) {
             document.getElementById('deleteKursusForm').action = '/admin/kursus/' + id;
             document.getElementById('deleteKursusModal').classList.remove('hidden');
@@ -1066,9 +1191,9 @@
             document.body.style.overflow = 'auto';
         }
 
+        // ============================================================
         // YouTube Playlist Sync
-        let currentEditCourseId = null;
-
+        // ============================================================
         function syncPlaylist() {
             if (!currentEditCourseId) { alert('Simpan kursus terlebih dahulu.'); return; }
             const url = document.getElementById('edit_youtube_playlist').value.trim();
