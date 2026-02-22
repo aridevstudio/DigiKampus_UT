@@ -402,11 +402,17 @@ class AdminController extends Controller
         // Get jurusan list for dropdown
         $jurusanList = \App\Models\Jurusan::all();
 
+        // Stats counts (all dosen, not just current page)
+        $dosenAktifCount = User::where('role', 'dosen')->where('status', 'aktif')->count();
+        $dosenNonaktifCount = User::where('role', 'dosen')->where('status', '!=', 'aktif')->count();
+
         return view('Auth.admin.dosen', [
             'admin' => $admin,
             'dosenList' => $dosenList,
             'dosenPaginated' => $dosenPaginated,
             'totalDosen' => $dosenPaginated->total(),
+            'dosenAktifCount' => $dosenAktifCount,
+            'dosenNonaktifCount' => $dosenNonaktifCount,
             'currentPage' => $dosenPaginated->currentPage(),
             'perPage' => $perPage,
             'search' => $request->search ?? '',
