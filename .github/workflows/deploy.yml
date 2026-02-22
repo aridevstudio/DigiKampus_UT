@@ -96,6 +96,10 @@ jobs:
           # Sync storage/app/private for sensitive documents (KTP, CV, NPWP - admin only)
           mirror --reverse --only-newer --verbose --parallel=2 storage/app/private/ storage/app/private/;
 
+          # Sync composer files for dependency management
+          put composer.json -o composer.json;
+          put composer.lock -o composer.lock;
+
           # Clear bootstrap cache
           mirror --reverse --delete --verbose --parallel=1 bootstrap/cache/ bootstrap/cache/;
 
@@ -121,7 +125,10 @@ jobs:
           sudo chmod -R 775 /var/www/digikampusut/storage
           sudo chmod -R 775 /var/www/digikampusut/bootstrap/cache
 
-          echo "🔧 Running Laravel optimization commands..."
+          echo "� Installing/updating Composer dependencies..."
+          sudo -u www-data composer install --no-dev --optimize-autoloader --no-interaction --working-dir=/var/www/digikampusut 2>&1 || echo "⚠️ Composer install had issues, check logs"
+
+          echo "�🔧 Running Laravel optimization commands..."
 
           # Create storage symlink (important for uploaded files)
           sudo -u www-data php artisan storage:link --force 2>/dev/null || echo "Storage link already exists"
