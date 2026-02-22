@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminNotification;
 use App\Models\User;
+use App\Models\YoutubePlaylistVideo;
+use App\Services\ExcelImportService;
+use App\Services\YoutubePlaylistService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AdminController extends Controller
@@ -235,8 +240,25 @@ class AdminController extends Controller
     {
         $admin = Auth::guard('admin')->user();
 
+        $totalDosen = User::where('role', 'dosen')->where('status', 'aktif')->count();
+        $totalMahasiswa = User::where('role', 'mahasiswa')->where('status', 'aktif')->count();
+        $kursusAktif = \App\Models\Course::where('status', 'aktif')->count();
+        $totalKursus = \App\Models\Course::count();
+        $pendaftaranBulanIni = \App\Models\Enrollment::whereMonth('tanggal_daftar', now()->month)
+            ->whereYear('tanggal_daftar', now()->year)
+            ->count();
+
+        // Unread notification count for badge
+        $unreadNotifCount = AdminNotification::where('admin_id', $admin->id)->unread()->count();
+
         return view('Auth.admin.dashboard', [
-            'admin' => $admin
+            'admin' => $admin,
+            'totalDosen' => $totalDosen,
+            'totalMahasiswa' => $totalMahasiswa,
+            'kursusAktif' => $kursusAktif,
+            'totalKursus' => $totalKursus,
+            'pendaftaranBulanIni' => $pendaftaranBulanIni,
+            'unreadNotifCount' => $unreadNotifCount,
         ]);
     }
 
@@ -250,6 +272,9 @@ class AdminController extends Controller
 
         // Query dosen from users table with role 'dosen'
         $query = User::where('role', 'dosen')
+
+
+
             ->with('profile.jurusan');
 
         // Search filter
@@ -309,20 +334,50 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'nip' => 'required|string|max:50',
+            'nip' => 'required|string|max:50|unique:profiles,nim',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
-            'no_hp' => 'nullable|string|max:20',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'no_hp' => 'nullable|string|max:20|regex:/^[0-9]{10,15}$/',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
+        ], [
+            'email.unique' => 'Email sudah terdaftar di sistem.',
+            'nip.unique' => 'NIP sudah terdaftar di sistem.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
+            'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
+            'no_hp.regex' => 'Format nomor HP tidak valid (harus 10-15 digit angka).',
         ]);
 
-        // Create user
+        // Create user (P0 FIX: Generate secure random password instead of hardcoded)
+        $defaultPassword = \Illuminate\Support\Str::random(12);
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make('password123'), // Default password
+            'password' => Hash::make($defaultPassword),
             'role' => 'dosen',
             'status' => $request->status,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
         ]);
 
         // Handle photo upload
@@ -340,7 +395,7 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('admin.dosen')
-            ->with('success', 'Dosen berhasil ditambahkan! Password default: password123');
+            ->with('success', "Dosen berhasil ditambahkan! Password default: {$defaultPassword} (catat sekarang, tidak ditampilkan lagi)");
     }
 
     /**
@@ -378,14 +433,21 @@ class AdminController extends Controller
                 ->with('error', 'Dosen tidak ditemukan');
         }
 
+        $profileId = $dosen->profile?->id;
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'nip' => 'required|string|max:50',
+            'nip' => 'required|string|max:50|unique:profiles,nim,' . ($profileId ?? 'NULL') . ',id',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
-            'no_hp' => 'nullable|string|max:20',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'no_hp' => 'nullable|string|max:20|regex:/^[0-9]{10,15}$/',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
+        ], [
+            'email.unique' => 'Email sudah terdaftar di sistem.',
+            'nip.unique' => 'NIP sudah terdaftar di sistem.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
+            'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
+            'no_hp.regex' => 'Format nomor HP tidak valid (harus 10-15 digit angka).',
         ]);
 
         // Update user
@@ -522,18 +584,25 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'nim' => 'required|string|max:50',
+            'nim' => 'required|string|max:50|unique:profiles,nim',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
-            'no_hp' => 'nullable|string|max:20',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'no_hp' => 'nullable|string|max:20|regex:/^[0-9]{10,15}$/',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
+        ], [
+            'email.unique' => 'Email sudah terdaftar di sistem.',
+            'nim.unique' => 'NIM sudah terdaftar di sistem.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
+            'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
+            'no_hp.regex' => 'Format nomor HP tidak valid (harus 10-15 digit angka).',
         ]);
 
-        // Create user
+        // Create user (P0 FIX: Generate secure random password)
+        $defaultPassword = \Illuminate\Support\Str::random(12);
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make('password123'), // Default password
+            'password' => Hash::make($defaultPassword),
             'role' => 'mahasiswa',
             'status' => $request->status,
         ]);
@@ -566,7 +635,7 @@ class AdminController extends Controller
         }
 
         return redirect()->route('admin.mahasiswa')
-            ->with('success', 'Mahasiswa berhasil ditambahkan! Password default: password123');
+            ->with('success', "Mahasiswa berhasil ditambahkan! Password default: {$defaultPassword} (catat sekarang, tidak ditampilkan lagi)");
     }
 
     /**
@@ -624,11 +693,17 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'nim' => 'required|string|max:50',
+            'nim' => 'required|string|max:50|unique:profiles,nim,' . $id . ',user_id',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
-            'no_hp' => 'nullable|string|max:20',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'no_hp' => 'nullable|string|max:20|regex:/^[0-9]{10,15}$/',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
+        ], [
+            'email.unique' => 'Email sudah terdaftar di sistem.',
+            'nim.unique' => 'NIM sudah terdaftar di sistem.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
+            'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
+            'no_hp.regex' => 'Format nomor HP tidak valid (harus 10-15 digit angka).',
         ]);
 
         // Update user
@@ -701,7 +776,7 @@ class AdminController extends Controller
     {
         $admin = Auth::guard('admin')->user();
         
-        $query = \App\Models\Course::with(['dosen', 'jurusan']);
+        $query = \App\Models\Course::with(['dosen', 'jurusan'])->withCount('enrollments');
         
         // Filter by status
         if ($request->status && $request->status !== 'all') {
@@ -738,6 +813,8 @@ class AdminController extends Controller
                 'status' => $kursus->status,
                 'rating' => $kursus->rating,
                 'jumlah_ulasan' => $kursus->jumlah_ulasan,
+                'enrollments_count' => $kursus->enrollments_count ?? 0,
+                'has_youtube' => !empty($kursus->youtube_playlist),
             ];
         });
         
@@ -774,7 +851,8 @@ class AdminController extends Controller
             'tipe' => 'required|in:gratis,berbayar',
             'harga' => 'nullable|numeric|min:0',
             'status' => 'required|in:aktif,draft,nonaktif',
-            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'youtube_playlist' => 'nullable|url|max:500',
         ]);
 
         // Handle thumbnail upload
@@ -793,6 +871,7 @@ class AdminController extends Controller
             'harga' => $request->tipe === 'berbayar' ? $request->harga : 0,
             'status' => $request->status,
             'thumbnail' => $thumbnailPath,
+            'youtube_playlist' => $request->youtube_playlist,
             'rating' => 0,
             'jumlah_ulasan' => 0,
         ]);
@@ -823,6 +902,7 @@ class AdminController extends Controller
             'harga' => $kursus->harga,
             'status' => $kursus->status,
             'thumbnail' => $kursus->thumbnail,
+            'youtube_playlist' => $kursus->youtube_playlist,
         ]);
     }
 
@@ -847,7 +927,8 @@ class AdminController extends Controller
             'tipe' => 'required|in:gratis,berbayar',
             'harga' => 'nullable|numeric|min:0',
             'status' => 'required|in:aktif,draft,nonaktif',
-            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'youtube_playlist' => 'nullable|url|max:500',
         ]);
 
         // Handle thumbnail upload
@@ -868,6 +949,7 @@ class AdminController extends Controller
             'tipe' => $request->tipe,
             'harga' => $request->tipe === 'berbayar' ? $request->harga : 0,
             'status' => $request->status,
+            'youtube_playlist' => $request->youtube_playlist,
         ]);
 
         return redirect()->route('admin.kursus')
@@ -895,6 +977,515 @@ class AdminController extends Controller
 
         return redirect()->route('admin.kursus')
             ->with('success', 'Kursus berhasil dihapus!');
+    }
+
+    /**
+     * Show admin profile page
+     */
+    public function showProfile()
+    {
+        $admin = Auth::guard('admin')->user();
+        return view('Auth.admin.profile', ['admin' => $admin]);
+    }
+
+    /**
+     * Update admin profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $admin = Auth::guard('admin')->user();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $admin->id,
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'current_password' => 'nullable|required_with:new_password',
+            'new_password' => 'nullable|min:8|confirmed',
+        ], [
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
+            'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
+            'foto.image' => 'File harus berupa gambar.',
+        ]);
+
+        $admin->name = $request->name;
+        $admin->email = $request->email;
+
+        // Handle photo upload
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('admin-photos', 'public');
+            // Update or create profile
+            if ($admin->profile) {
+                $admin->profile->update(['foto_profile' => $fotoPath]);
+            } else {
+                $admin->profile()->create(['foto_profile' => $fotoPath]);
+            }
+        }
+
+        // Handle password change
+        if ($request->filled('current_password')) {
+            if (!Hash::check($request->current_password, $admin->password)) {
+                return back()->withErrors(['current_password' => 'Password lama tidak sesuai.']);
+            }
+            $admin->password = Hash::make($request->new_password);
+        }
+
+        $admin->save();
+
+        return redirect()->route('admin.profile')
+            ->with('success', 'Profil berhasil diperbarui!');
+    }
+
+    /**
+     * Import mahasiswa from CSV file
+     */
+    public function importMahasiswa(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('csv_file');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        if (!$handle) {
+            return redirect()->route('admin.mahasiswa')
+                ->with('error', 'Gagal membaca file CSV.');
+        }
+
+        // Read header row
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+            return redirect()->route('admin.mahasiswa')
+                ->with('error', 'File CSV kosong atau format header tidak valid.');
+        }
+
+        // Normalize header
+        $header = array_map(fn($h) => strtolower(trim($h)), $header);
+
+        $jurusanMap = \App\Models\Jurusan::pluck('id_jurusan', 'nama_jurusan')->toArray();
+        $imported = 0;
+        $skipped = 0;
+        $errors = [];
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) < 3) { $skipped++; continue; }
+
+            $data = array_combine($header, array_pad($row, count($header), ''));
+            $nama = $data['nama'] ?? '';
+            $nim = $data['nim'] ?? '';
+            $email = $data['email'] ?? '';
+            $jurusanName = $data['jurusan'] ?? '';
+            $noHp = $data['no_hp'] ?? '';
+
+            if (empty($nama) || empty($nim) || empty($email)) {
+                $skipped++;
+                continue;
+            }
+
+            // Check duplicates
+            if (User::where('email', $email)->exists()) {
+                $errors[] = "Email {$email} sudah terdaftar.";
+                $skipped++;
+                continue;
+            }
+
+            // Match jurusan by name
+            $idJurusan = null;
+            foreach ($jurusanMap as $name => $id) {
+                if (stripos($name, $jurusanName) !== false || stripos($jurusanName, $name) !== false) {
+                    $idJurusan = $id;
+                    break;
+                }
+            }
+
+            try {
+                $user = User::create([
+                    'name' => $nama,
+                    'email' => $email,
+                    'password' => Hash::make(\Illuminate\Support\Str::random(12)),
+                    'role' => 'mahasiswa',
+                    'status' => 'aktif',
+                ]);
+
+                $user->profile()->create([
+                    'nim' => $nim,
+                    'id_jurusan' => $idJurusan,
+                    'no_hp' => $noHp ?: null,
+                ]);
+
+                $imported++;
+            } catch (\Exception $e) {
+                $skipped++;
+                $errors[] = "Gagal import {$nama}: " . $e->getMessage();
+            }
+        }
+
+        fclose($handle);
+
+        $message = "{$imported} mahasiswa berhasil diimport.";
+        if ($skipped > 0) $message .= " {$skipped} data dilewati.";
+        if (!empty($errors)) $message .= " Errors: " . implode('; ', array_slice($errors, 0, 3));
+
+        return redirect()->route('admin.mahasiswa')
+            ->with($imported > 0 ? 'success' : 'error', $message);
+    }
+
+    /**
+     * Import dosen from CSV file
+     */
+    public function importDosen(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('csv_file');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        if (!$handle) {
+            return redirect()->route('admin.dosen')
+                ->with('error', 'Gagal membaca file CSV.');
+        }
+
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+            return redirect()->route('admin.dosen')
+                ->with('error', 'File CSV kosong atau format header tidak valid.');
+        }
+
+        $header = array_map(fn($h) => strtolower(trim($h)), $header);
+
+        $jurusanMap = \App\Models\Jurusan::pluck('id_jurusan', 'nama_jurusan')->toArray();
+        $imported = 0;
+        $skipped = 0;
+        $errors = [];
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) < 3) { $skipped++; continue; }
+
+            $data = array_combine($header, array_pad($row, count($header), ''));
+            $nama = $data['nama'] ?? '';
+            $nip = $data['nip'] ?? '';
+            $email = $data['email'] ?? '';
+            $jurusanName = $data['jurusan'] ?? '';
+            $noHp = $data['no_hp'] ?? '';
+
+            if (empty($nama) || empty($nip) || empty($email)) {
+                $skipped++;
+                continue;
+            }
+
+            if (User::where('email', $email)->exists()) {
+                $errors[] = "Email {$email} sudah terdaftar.";
+                $skipped++;
+                continue;
+            }
+
+            $idJurusan = null;
+            foreach ($jurusanMap as $name => $id) {
+                if (stripos($name, $jurusanName) !== false || stripos($jurusanName, $name) !== false) {
+                    $idJurusan = $id;
+                    break;
+                }
+            }
+
+            try {
+                $user = User::create([
+                    'name' => $nama,
+                    'email' => $email,
+                    'password' => Hash::make(\Illuminate\Support\Str::random(12)),
+                    'role' => 'dosen',
+                    'status' => 'aktif',
+                ]);
+
+                $user->profile()->create([
+                    'nim' => $nip,
+                    'id_jurusan' => $idJurusan,
+                    'no_hp' => $noHp ?: null,
+                ]);
+
+                $imported++;
+            } catch (\Exception $e) {
+                $skipped++;
+                $errors[] = "Gagal import {$nama}: " . $e->getMessage();
+            }
+        }
+
+        fclose($handle);
+
+        $message = "{$imported} dosen berhasil diimport.";
+        if ($skipped > 0) $message .= " {$skipped} data dilewati.";
+        if (!empty($errors)) $message .= " Errors: " . implode('; ', array_slice($errors, 0, 3));
+
+        return redirect()->route('admin.dosen')
+            ->with($imported > 0 ? 'success' : 'error', $message);
+    }
+
+    /**
+     * Get notifications (JSON API) — real persistent notifications
+     */
+    public function getNotifications()
+    {
+        $admin = Auth::guard('admin')->user();
+
+        $notifications = AdminNotification::where('admin_id', $admin->id)
+            ->orderByDesc('created_at')
+            ->limit(15)
+            ->get()
+            ->map(function ($n) {
+                return [
+                    'id' => $n->id,
+                    'type' => $n->tipe,
+                    'icon' => $n->icon ?? 'info',
+                    'message' => $n->judul,
+                    'detail' => $n->konten,
+                    'link' => $n->link,
+                    'is_read' => $n->is_read,
+                    'time' => $n->created_at->diffForHumans(),
+                    'created_at' => $n->created_at,
+                ];
+            });
+
+        $unreadCount = AdminNotification::where('admin_id', $admin->id)->unread()->count();
+
+        return response()->json([
+            'count' => $unreadCount,
+            'items' => $notifications,
+        ]);
+    }
+
+    /**
+     * Get unread notification count (for badge polling)
+     */
+    public function getNotificationCount()
+    {
+        $admin = Auth::guard('admin')->user();
+        $count = AdminNotification::where('admin_id', $admin->id)->unread()->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    /**
+     * Mark a single notification as read
+     */
+    public function markNotificationRead($id)
+    {
+        $admin = Auth::guard('admin')->user();
+        AdminNotification::where('id', $id)->where('admin_id', $admin->id)->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function markAllNotificationsRead()
+    {
+        $admin = Auth::guard('admin')->user();
+        AdminNotification::where('admin_id', $admin->id)->unread()->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    // ==========================================
+    // YOUTUBE PLAYLIST SYNC (Task 1)
+    // ==========================================
+
+    /**
+     * Sync YouTube playlist for a course
+     */
+    public function syncYoutubePlaylist(Request $request, $id)
+    {
+        $course = \App\Models\Course::find($id);
+
+        if (!$course) {
+            return response()->json(['error' => 'Kursus tidak ditemukan.'], 404);
+        }
+
+        $playlistUrl = $request->input('youtube_playlist', $course->youtube_playlist);
+
+        if (empty($playlistUrl)) {
+            return response()->json(['error' => 'URL playlist YouTube belum diisi.'], 422);
+        }
+
+        $playlistId = YoutubePlaylistService::extractPlaylistId($playlistUrl);
+        if (!$playlistId) {
+            return response()->json(['error' => 'URL playlist tidak valid. Gunakan format: https://www.youtube.com/playlist?list=PLxxxxxxx'], 422);
+        }
+
+        try {
+            $result = YoutubePlaylistService::fetchPlaylistVideos($playlistId);
+
+            if (empty($result['videos'])) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $result['message'] ?? 'Playlist valid tetapi tidak ada video ditemukan.',
+                    'sync' => null,
+                ]);
+            }
+
+            $sync = YoutubePlaylistService::syncToDatabase($course->id_course, $result['videos']);
+
+            // Update playlist URL on course if changed
+            if ($course->youtube_playlist !== $playlistUrl) {
+                $course->update(['youtube_playlist' => $playlistUrl]);
+            }
+
+            // Notify admin
+            AdminNotification::notifyAllAdmins(
+                "YouTube Playlist disinkronkan",
+                "Kursus \"{$course->nama_course}\": {$sync['added']} video ditambah, {$sync['updated']} diperbarui, {$sync['removed']} dihapus.",
+                'success',
+                'youtube',
+                route('admin.kursus')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => "Sinkronisasi selesai: {$sync['added']} ditambah, {$sync['updated']} diperbarui, {$sync['removed']} dihapus.",
+                'sync' => $sync,
+                'videos' => YoutubePlaylistVideo::where('id_course', $course->id_course)
+                    ->orderBy('urutan')
+                    ->get(),
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('YouTube sync error', ['course' => $id, 'error' => $e->getMessage()]);
+            return response()->json(['error' => 'Gagal sinkronisasi: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get YouTube videos for a course (JSON)
+     */
+    public function getYoutubeVideos($id)
+    {
+        $videos = YoutubePlaylistVideo::where('id_course', $id)
+            ->orderBy('urutan')
+            ->get();
+
+        return response()->json(['videos' => $videos]);
+    }
+
+    // ==========================================
+    // EXCEL IMPORT (Task 4+5)
+    // ==========================================
+
+    /**
+     * Preview Excel import
+     */
+    public function previewImport(Request $request, string $type)
+    {
+        if (!in_array($type, ['mahasiswa', 'dosen'])) {
+            return response()->json(['error' => 'Tipe import tidak valid.'], 422);
+        }
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ], [
+            'file.mimes' => 'Format file harus Excel (.xlsx, .xls) atau CSV.',
+            'file.max' => 'Ukuran file maksimal 5MB.',
+        ]);
+
+        try {
+            $filePath = $request->file('file')->getRealPath();
+            $preview = ExcelImportService::preview($filePath, $type);
+
+            // Store file temporarily for confirm step
+            $tempPath = $request->file('file')->store('imports/temp', 'local');
+            session(["import_temp_{$type}" => $tempPath]);
+            session(["import_preview_{$type}" => $preview]);
+
+            return response()->json([
+                'success' => true,
+                'preview' => $preview,
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Gagal membaca file: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Confirm and execute Excel import
+     */
+    public function confirmImport(Request $request, string $type)
+    {
+        if (!in_array($type, ['mahasiswa', 'dosen'])) {
+            return response()->json(['error' => 'Tipe import tidak valid.'], 422);
+        }
+
+        $strategy = $request->input('strategy', 'skip');
+        if (!in_array($strategy, ['skip', 'update', 'stop'])) {
+            return response()->json(['error' => 'Strategi duplikasi tidak valid.'], 422);
+        }
+
+        $preview = session("import_preview_{$type}");
+        if (!$preview || empty($preview['valid_rows'])) {
+            return response()->json(['error' => 'Tidak ada data preview. Upload file terlebih dahulu.'], 422);
+        }
+
+        $admin = Auth::guard('admin')->user();
+
+        try {
+            $result = ExcelImportService::executeImport(
+                $preview['valid_rows'],
+                $type,
+                $strategy,
+                $admin->id
+            );
+
+            // Clear session
+            $tempPath = session("import_temp_{$type}");
+            if ($tempPath && Storage::disk('local')->exists($tempPath)) {
+                Storage::disk('local')->delete($tempPath);
+            }
+            session()->forget(["import_temp_{$type}", "import_preview_{$type}"]);
+
+            $label = $type === 'mahasiswa' ? 'Mahasiswa' : 'Dosen';
+            $message = "{$result['imported']} {$label} berhasil diimport.";
+            if ($result['updated'] > 0) $message .= " {$result['updated']} diperbarui.";
+            if ($result['skipped'] > 0) $message .= " {$result['skipped']} dilewati.";
+
+            if ($result['status'] === 'stopped') {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['errors'][0] ?? 'Import dihentikan karena data duplikat.',
+                    'result' => $result,
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'result' => $result,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Gagal import: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Download Excel template
+     */
+    public function downloadTemplate(string $type)
+    {
+        if (!in_array($type, ['mahasiswa', 'dosen'])) {
+            abort(404);
+        }
+
+        try {
+            $path = ExcelImportService::generateTemplate($type);
+            $filename = "template_import_{$type}.xlsx";
+
+            return response()->download($path, $filename)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal generate template: ' . $e->getMessage());
+        }
     }
 
     /**

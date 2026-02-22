@@ -28,6 +28,18 @@ $routes = [
 // Check if routes exist
 $hasNotificationRoute = $userType && Route::has($userType . '.notification');
 $hasProfileRoute = $userType && Route::has($userType . '.profile');
+
+// Real cart count (mahasiswa only)
+$cartItemCount = 0;
+if ($userType === 'mahasiswa' && $user) {
+    $cartItemCount = \App\Models\Cart::where('id_mahasiswa', $user->id)->count();
+}
+
+// Real unread notification count (mahasiswa only)
+$unreadNotifCount = 0;
+if ($userType === 'mahasiswa' && $user) {
+    $unreadNotifCount = \App\Models\Notification::where('id_mahasiswa', $user->id)->unread()->count();
+}
 @endphp
 
 <header class="sticky top-0 z-30 bg-white dark:bg-[#1f2937] border-b border-gray-100 dark:border-gray-700/50 px-4 sm:px-6 py-3">
@@ -60,10 +72,9 @@ $hasProfileRoute = $userType && Route::has($userType . '.profile');
 
             {{-- Action Icons --}}
             <div class="flex items-center gap-1 sm:gap-2">
-                {{-- Cart (hidden on mobile) --}}
+                {{-- Cart (mahasiswa only, hidden on mobile) --}}
                 @php
                     $hasCheckoutRoute = $userType && Route::has($userType . '.checkout');
-                    $cartItemCount = 2; // Dummy cart count - in real app, get from session/database
                 @endphp
                 @if($hasCheckoutRoute)
                 <a href="{{ route($userType . '.checkout') }}" class="hidden sm:flex p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition relative">
@@ -71,7 +82,7 @@ $hasProfileRoute = $userType && Route::has($userType . '.profile');
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
                     </svg>
                     @if($cartItemCount > 0)
-                    <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center">{{ $cartItemCount }}</span>
+                    <span class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">{{ $cartItemCount > 99 ? '99+' : $cartItemCount }}</span>
                     @endif
                 </a>
                 @else
@@ -88,14 +99,15 @@ $hasProfileRoute = $userType && Route::has($userType . '.profile');
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     </svg>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full notif-pulse"></span>
+                    @if($unreadNotifCount > 0)
+                    <span class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">{{ $unreadNotifCount > 99 ? '99+' : $unreadNotifCount }}</span>
+                    @endif
                 </a>
                 @else
                 <button class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition relative">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     </svg>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full notif-pulse"></span>
                 </button>
                 @endif
 
@@ -137,7 +149,6 @@ $hasProfileRoute = $userType && Route::has($userType . '.profile');
                         @if($hasProfileRoute)
                         <a href="{{ route($userType . '.profile') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Profile</a>
                         @endif
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Settings</a>
                         <hr class="my-1 border-gray-100 dark:border-gray-700/50">
                         <form action="{{ $routes['logout'] }}" method="POST">
                             @csrf

@@ -82,7 +82,7 @@ Route::prefix('mahasiswa')
         Route::view('/chat', 'pages.mahasiswa.coming-soon', ['active' => 'chat', 'title' => 'Chat'])->name('mahasiswa.chat');
         Route::view('/apps', 'pages.mahasiswa.coming-soon', ['active' => 'apps', 'title' => 'Apps'])->name('mahasiswa.apps');
         Route::view('/learning-goals', 'pages.mahasiswa.coming-soon', ['active' => 'learning-goals', 'title' => 'Learning Goals'])->name('mahasiswa.learning-goals');
-        Route::view('/news', 'pages.mahasiswa.news', ['active' => 'news', 'title' => 'News'])->name('mahasiswa.news');
+        Route::get('/news', [DashboardController::class, 'news'])->name('mahasiswa.news');
         
         // Logout
         Route::post('/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');

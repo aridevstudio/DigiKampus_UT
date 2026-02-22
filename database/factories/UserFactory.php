@@ -29,6 +29,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => 'mahasiswa',
+            'status' => 'aktif',
         ];
     }
 
@@ -40,5 +42,37 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * Configure user as mahasiswa.
+     */
+    public function mahasiswa(): static
+    {
+        return $this->state(fn () => ['role' => 'mahasiswa']);
+    }
+
+    /**
+     * Configure user as dosen.
+     */
+    public function dosen(): static
+    {
+        return $this->state(fn () => ['role' => 'dosen']);
+    }
+
+    /**
+     * Configure user as admin.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn () => ['role' => 'admin']);
+    }
+
+    /**
+     * Configure user as nonaktif.
+     */
+    public function nonaktif(): static
+    {
+        return $this->state(fn () => ['status' => 'nonaktif']);
     }
 }

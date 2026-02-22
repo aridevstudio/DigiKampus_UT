@@ -553,9 +553,9 @@
                 <span>© {{ date('Y') }} DigiKampus UT</span>
             </div>
             <div style="display:flex;gap:24px">
-                <a href="#" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Tentang</a>
-                <a href="#" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Kontak</a>
-                <a href="#" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Privasi</a>
+                <a href="javascript:void(0)" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Tentang</a>
+                <a href="javascript:void(0)" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Kontak</a>
+                <a href="javascript:void(0)" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Privasi</a>
             </div>
         </div>
     </footer>

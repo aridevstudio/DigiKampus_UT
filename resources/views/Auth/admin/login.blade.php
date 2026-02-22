@@ -138,7 +138,7 @@
 
                 {{-- Footer --}}
                 <div class="mt-8 flex items-center justify-between text-xs text-gray-400 footer-animate">
-                    <a href="#" class="hover:underline">Privacy Policy</a>
+                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
                     <span>2025 © Universitas Terbuka</span>
                 </div>
             </div>
@@ -261,7 +261,7 @@
 
             {{-- Footer --}}
             <div class="w-full mt-6 flex items-center justify-between text-[10px] text-gray-400">
-                <a href="#" class="hover:underline">Privacy Policy</a>
+                <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
                 <span>2025 © Universitas Terbuka</span>
             </div>
         </div>

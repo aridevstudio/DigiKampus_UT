@@ -16,10 +16,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
             </div>
-            <span class="text-green-500 text-xs font-medium">+12%</span>
         </div>
-        <p class="text-2xl font-bold text-gray-800 dark:text-white mb-1">1,247</p>
-        <p class="text-gray-400 text-xs">Total Dosen</p>
+        <p class="text-2xl font-bold text-gray-800 dark:text-white mb-1">{{ number_format($totalDosen) }}</p>
+        <p class="text-gray-400 text-xs">Dosen Aktif</p>
     </div>
     
     {{-- Total Mahasiswa --}}
@@ -30,10 +29,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
             </div>
-            <span class="text-green-500 text-xs font-medium">+8%</span>
         </div>
-        <p class="text-2xl font-bold text-gray-800 dark:text-white mb-1">24,891</p>
-        <p class="text-gray-400 text-xs">Total Mahasiswa</p>
+        <p class="text-2xl font-bold text-gray-800 dark:text-white mb-1">{{ number_format($totalMahasiswa) }}</p>
+        <p class="text-gray-400 text-xs">Mahasiswa Aktif</p>
     </div>
     
     {{-- Kursus Aktif --}}
@@ -44,9 +42,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
             </div>
-            <span class="text-green-500 text-xs font-medium">+5%</span>
         </div>
-        <p class="text-2xl font-bold text-gray-800 dark:text-white mb-1">342</p>
+        <p class="text-2xl font-bold text-gray-800 dark:text-white mb-1">{{ number_format($kursusAktif) }}</p>
         <p class="text-gray-400 text-xs">Kursus Aktif</p>
     </div>
     
@@ -58,9 +55,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
             </div>
-            <span class="text-green-500 text-xs font-medium">+18%</span>
         </div>
-        <p class="text-2xl font-bold text-gray-800 dark:text-white mb-1">1,829</p>
+        <p class="text-2xl font-bold text-gray-800 dark:text-white mb-1">{{ number_format($pendaftaranBulanIni) }}</p>
         <p class="text-gray-400 text-xs">Pendaftaran Bulan Ini</p>
     </div>
 </div>
@@ -122,7 +118,7 @@
     <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Pengumuman Admin</h2>
-            <a href="#" class="text-blue-600 hover:text-blue-700 text-sm">Lihat Semua</a>
+            <a href="{{ route('admin.notifications') }}" class="text-blue-600 hover:text-blue-700 text-sm">Lihat Semua</a>
         </div>
         <div class="space-y-4">
             <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-lg">
@@ -156,19 +152,19 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Quick Actions</h2>
         <div class="space-y-3">
-            <a href="#" class="flex items-center justify-center gap-2 w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-medium transition">
+            <a href="{{ route('admin.dosen') }}" class="flex items-center justify-center gap-2 w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-medium transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
                 Tambah Dosen
             </a>
-            <a href="#" class="flex items-center justify-center gap-2 w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-medium transition">
+            <a href="{{ route('admin.mahasiswa') }}" class="flex items-center justify-center gap-2 w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-medium transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 Tambah Mahasiswa
             </a>
-            <a href="#" class="flex items-center justify-center gap-2 w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-medium transition">
+            <a href="{{ route('admin.kursus') }}" class="flex items-center justify-center gap-2 w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-medium transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>

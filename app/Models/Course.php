@@ -19,11 +19,12 @@ class Course extends Model
         'id_dosen',
         'id_jurusan',
         'thumbnail',
+        'youtube_playlist',
         'status',
         'tipe',
         'harga',
-        'rating',
-        'jumlah_ulasan',
+        // P0 FIX: Removed 'rating' and 'jumlah_ulasan' — these are system-calculated
+        // and must only be set via recalculateRating()
         'estimasi_waktu',
         'durasi_satuan',
         'level'

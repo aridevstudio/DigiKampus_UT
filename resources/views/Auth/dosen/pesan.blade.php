@@ -216,8 +216,8 @@
                     if (showLoading) this.isLoadingConversations = true;
                     try {
                         const response = await fetch(`/api/dosen/messages?search=${this.searchQuery}`, {
+                            credentials: 'same-origin',
                             headers: {
-                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
                                 'Accept': 'application/json'
                             }
                         });
@@ -262,8 +262,8 @@
 
                     try {
                         const response = await fetch(`/api/dosen/messages/${this.activeConversation.student_id}`, {
+                            credentials: 'same-origin',
                             headers: {
-                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
                                 'Accept': 'application/json'
                             }
                         });
@@ -307,9 +307,9 @@
                     try {
                         const response = await fetch('/api/dosen/messages', {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             },

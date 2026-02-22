@@ -155,7 +155,7 @@
 
                 {{-- Footer --}}
                 <div class="mt-8 text-center text-xs text-gray-400">
-                    <a href="#" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
+                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
                 </div>
             </div>
         </div>
@@ -295,7 +295,7 @@
 
             {{-- Footer --}}
             <div class="w-full mt-6 text-center text-[10px] text-gray-400">
-                <a href="#" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
+                <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
             </div>
         </div>
     </section>

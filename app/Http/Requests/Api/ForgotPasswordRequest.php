@@ -24,7 +24,8 @@ class ForgotPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'exists:users,email'],
+            // P0 FIX: Removed 'exists:users,email' to prevent user enumeration
+            'email' => ['required', 'email'],
         ];
     }
 

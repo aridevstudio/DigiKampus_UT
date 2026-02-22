@@ -192,7 +192,7 @@
                     </svg>
                 </button>
                 
-                <form action="{{ route('dosen.modul.store', $course['id']) }}" method="POST" class="p-6">
+                <form action="{{ route('dosen.module.store', $course['id']) }}" method="POST" class="p-6">
                     @csrf
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Modul Baru</h3>
                     
@@ -357,7 +357,7 @@
                     });
 
                     // Send to server
-                    fetch(`{{ route('dosen.modul.reorder', $course['id']) }}`, {
+                    fetch(`{{ route('dosen.module.reorder', $course['id']) }}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
@@ -388,10 +388,10 @@
         }
         
         function openEditModal(id) {
-            fetch(`/dosen/kursus/${courseId}/modul/${id}`)
+            fetch(`/dosen/kursus/${courseId}/material/${id}`)
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('editForm').action = `/dosen/kursus/${courseId}/modul/${id}`;
+                    document.getElementById('editForm').action = `/dosen/kursus/${courseId}/material/${id}`;
                     document.getElementById('edit_judul').value = data.judul_material || '';
                     document.getElementById('edit_tipe').value = data.tipe || 'video';
                     document.getElementById('edit_konten').value = data.konten || '';
@@ -408,7 +408,7 @@
         }
         
         function confirmDelete(id) {
-            document.getElementById('deleteForm').action = `/dosen/kursus/${courseId}/modul/${id}`;
+            document.getElementById('deleteForm').action = `/dosen/kursus/${courseId}/material/${id}`;
             document.getElementById('deleteModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }

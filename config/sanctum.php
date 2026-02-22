@@ -34,7 +34,7 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    'guard' => ['web', 'mahasiswa', 'dosen', 'admin'],
 
     /*
     |--------------------------------------------------------------------------
@@ -47,7 +47,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // P0 FIX: Tokens now expire after 24 hours (was null = never expire)
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION', 1440),
 
     /*
     |--------------------------------------------------------------------------

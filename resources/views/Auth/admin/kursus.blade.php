@@ -61,6 +61,7 @@
                         <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Nama Kursus</th>
                         <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Kode</th>
                         <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Dosen</th>
+                        <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Peserta</th>
                         <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Tipe</th>
                         <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Harga</th>
                         <th class="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
@@ -85,7 +86,20 @@
                             <span class="text-gray-900 dark:text-white font-medium">{{ $kursus['nama'] }}</span>
                         </td>
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $kursus['kode'] }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $kursus['dosen'] }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
+                            {{ $kursus['dosen'] }}
+                            @if($kursus['has_youtube'])
+                                <span title="YouTube Playlist tersedia" class="inline-block ml-1 text-red-500">
+                                    <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                {{ number_format($kursus['enrollments_count']) }}
+                            </span>
+                        </td>
                         <td class="px-6 py-4">
                             <span class="inline-flex px-2.5 py-1 text-xs font-medium rounded-full {{ $kursus['tipe'] === 'gratis' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' }}">
                                 {{ ucfirst($kursus['tipe']) }}
@@ -127,7 +141,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-12 text-center">
+                        <td colspan="9" class="px-6 py-12 text-center">
                             <div class="text-gray-400 dark:text-gray-500">
                                 <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -234,7 +248,7 @@
                                     Upload Thumbnail
                                     <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewThumbnail(this)">
                                 </label>
-                                <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
+                                <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG</p>
                             </div>
                         </div>
                     </div>
@@ -290,6 +304,16 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    
+                    {{-- YouTube Playlist --}}
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-4">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Konten Video</h4>
+                        <div>
+                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
+                            <input type="url" name="youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                            <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube untuk kursus ini.</p>
                         </div>
                     </div>
                     
@@ -383,7 +407,7 @@
                                     Upload Thumbnail
                                     <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewEditThumbnail(this)">
                                 </label>
-                                <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
+                                <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG</p>
                             </div>
                         </div>
                     </div>
@@ -439,6 +463,31 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    
+                    {{-- YouTube Playlist --}}
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-4">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Konten Video</h4>
+                        <div>
+                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
+                            <div class="flex gap-2">
+                                <input type="url" name="youtube_playlist" id="edit_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." class="flex-1 px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <button type="button" onclick="syncPlaylist()" id="syncPlaylistBtn" class="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2 whitespace-nowrap">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                    Sync Playlist
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube lalu klik Sync untuk mengambil daftar video.</p>
+                            <div id="syncStatus" class="mt-2 hidden"></div>
+                        </div>
+                        {{-- Video List --}}
+                        <div id="videoListContainer" class="mt-4 hidden">
+                            <div class="flex items-center justify-between mb-2">
+                                <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-300">Video Tersinkronisasi</h5>
+                                <span id="videoCount" class="text-xs text-gray-400">0 video</span>
+                            </div>
+                            <div id="videoList" class="space-y-2 max-h-48 overflow-y-auto"></div>
                         </div>
                     </div>
                     
@@ -575,6 +624,7 @@
         
         // Edit Modal functions
         function openEditModal(id) {
+            currentEditCourseId = id;
             fetch('/admin/kursus/' + id)
                 .then(response => response.json())
                 .then(data => {
@@ -590,6 +640,15 @@
                     
                     // Show/hide harga field
                     toggleHarga('edit');
+                    
+                    document.getElementById('edit_youtube_playlist').value = data.youtube_playlist || '';
+                    
+                    // Load synced YouTube videos
+                    document.getElementById('videoListContainer').classList.add('hidden');
+                    document.getElementById('syncStatus').classList.add('hidden');
+                    if (data.youtube_playlist) {
+                        loadVideoList(id);
+                    }
                     
                     // Show existing thumbnail if available
                     const preview = document.getElementById('editThumbnailPreview');
@@ -634,6 +693,83 @@
         function closeDeleteModal() {
             document.getElementById('deleteKursusModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
+        }
+
+        // YouTube Playlist Sync
+        let currentEditCourseId = null;
+
+        function syncPlaylist() {
+            if (!currentEditCourseId) { alert('Simpan kursus terlebih dahulu.'); return; }
+            const url = document.getElementById('edit_youtube_playlist').value.trim();
+            if (!url) { alert('Masukkan URL playlist YouTube terlebih dahulu.'); return; }
+
+            const btn = document.getElementById('syncPlaylistBtn');
+            const status = document.getElementById('syncStatus');
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Menyinkronkan...';
+            status.classList.remove('hidden');
+            status.innerHTML = '<p class="text-xs text-blue-500">Mengambil data playlist...</p>';
+
+            fetch('/admin/kursus/' + currentEditCourseId + '/sync-playlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ youtube_playlist: url })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    status.innerHTML = '<p class="text-xs text-red-500">' + data.error + '</p>';
+                } else {
+                    status.innerHTML = '<p class="text-xs text-green-500">' + data.message + '</p>';
+                    if (data.videos && data.videos.length > 0) {
+                        renderVideoList(data.videos);
+                    }
+                }
+            })
+            .catch(err => {
+                status.innerHTML = '<p class="text-xs text-red-500">Gagal sinkronisasi: ' + err.message + '</p>';
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> Sync Playlist';
+            });
+        }
+
+        function renderVideoList(videos) {
+            const container = document.getElementById('videoListContainer');
+            const list = document.getElementById('videoList');
+            const count = document.getElementById('videoCount');
+            container.classList.remove('hidden');
+            count.textContent = videos.length + ' video';
+            let html = '';
+            videos.forEach((v, i) => {
+                html += `<div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <span class="text-xs text-gray-400 w-5 text-center flex-shrink-0">${i + 1}</span>
+                    ${v.thumbnail_url ? `<img src="${v.thumbnail_url}" class="w-16 h-10 object-cover rounded flex-shrink-0">` : ''}
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-gray-800 dark:text-gray-200 truncate font-medium">${v.title}</p>
+                        ${v.formatted_duration ? `<p class="text-[10px] text-gray-400">${v.formatted_duration}</p>` : ''}
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=${v.youtube_id}" target="_blank" class="text-red-500 hover:text-red-600 flex-shrink-0">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>
+                    </a>
+                </div>`;
+            });
+            list.innerHTML = html;
+        }
+
+        function loadVideoList(courseId) {
+            fetch('/admin/kursus/' + courseId + '/youtube-videos')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.videos && data.videos.length > 0) {
+                        renderVideoList(data.videos);
+                    }
+                });
         }
     </script>
     @endpush

@@ -63,6 +63,7 @@ Route::prefix('dosen')
             Route::get('/{id}', [DosenController::class, 'getKursusDetail'])->name('dosen.kursus.detail');
             Route::get('/{id}/edit', [DosenController::class, 'showEditKursus'])->name('dosen.kursus.edit');
             Route::put('/{id}', [DosenController::class, 'updateCourse'])->name('dosen.kursus.update');
+            Route::get('/{id}/modul', [DosenController::class, 'showKelolaModul'])->name('dosen.kursus.modul');
             Route::get('/{id}/preview', [DosenController::class, 'previewKursus'])->name('dosen.kursus.preview');
             Route::get('/{id}/progres', [DosenController::class, 'showProgresKursus'])->name('dosen.kursus.progres');
             Route::post('/{id}/publish', [DosenController::class, 'publishCourse'])->name('dosen.kursus.publish');

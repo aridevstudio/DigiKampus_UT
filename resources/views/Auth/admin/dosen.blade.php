@@ -13,6 +13,16 @@
             </svg>
             Tambah Dosen
         </button>
+        <button type="button" onclick="openImportModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Import Excel
+        </button>
+        <a href="{{ route('admin.import.template', 'dosen') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Template
+        </a>
         
         {{-- Status Filter --}}
         <div class="relative">
@@ -210,7 +220,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                     </svg>
                                     Upload Foto
-                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewPhoto(this)">
+                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden" onchange="previewPhoto(this)">
                                 </label>
                                 <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
                             </div>
@@ -337,7 +347,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                     </svg>
                                     Upload Foto
-                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewEditPhoto(this)">
+                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden" onchange="previewEditPhoto(this)">
                                 </label>
                                 <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
                             </div>
@@ -432,6 +442,76 @@
                                 Hapus
                             </button>
                         </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Import Excel Modal --}}
+    <div id="importModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeImportModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6">
+                <button onclick="closeImportModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Import Dosen dari Excel</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload file Excel (.xlsx) untuk mengimport data dosen secara massal.</p>
+                </div>
+
+                {{-- Step 1: Upload --}}
+                <div id="importStep1">
+                    <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p class="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">Kolom yang dibutuhkan:</p>
+                        <code class="text-xs text-blue-600 dark:text-blue-400">nama, nip, email, jurusan, no_hp</code>
+                        <div class="mt-2">
+                            <a href="{{ route('admin.import.template', 'dosen') }}" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 font-medium">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                Download Template Excel
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-600 dark:text-gray-400 mb-2">Pilih File Excel</label>
+                        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
+                        <p class="text-xs text-gray-400 mt-1">Maks 5MB. Format: .xlsx, .xls, .csv | Password default: password123</p>
+                    </div>
+                    <div id="importUploadStatus" class="mb-4 hidden"></div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" onclick="closeImportModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">Batal</button>
+                        <button type="button" onclick="previewImportFile('dosen')" id="previewBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">Preview</button>
+                    </div>
+                </div>
+
+                {{-- Step 2: Preview & Confirm --}}
+                <div id="importStep2" class="hidden">
+                    <div id="importPreviewSummary" class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm"></div>
+                    <div id="importPreviewTable" class="mb-4 max-h-64 overflow-auto border border-gray-200 dark:border-gray-700 rounded-lg"></div>
+                    <div id="importErrorList" class="mb-4 hidden"></div>
+                    <div class="mb-4">
+                        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5">Strategi Duplikat (NIP sudah ada):</label>
+                        <select id="importStrategy" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white">
+                            <option value="skip">Lewati (skip)</option>
+                            <option value="update">Perbarui data (update)</option>
+                            <option value="stop">Hentikan jika ada duplikat</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <button type="button" onclick="backToStep1()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">Kembali</button>
+                        <button type="button" onclick="confirmImportFile('dosen')" id="confirmImportBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition">Konfirmasi Import</button>
+                    </div>
+                </div>
+
+                {{-- Step 3: Result --}}
+                <div id="importStep3" class="hidden">
+                    <div id="importResult" class="mb-4"></div>
+                    <div class="flex justify-end">
+                        <button type="button" onclick="closeImportModal(); location.reload();" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">Selesai</button>
                     </div>
                 </div>
             </div>
@@ -541,6 +621,95 @@
         function closeDeleteModal() {
             document.getElementById('deleteDosenModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
+        }
+        
+        // Import Modal functions
+        function openImportModal() {
+            document.getElementById('importModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            backToStep1();
+        }
+        
+        function closeImportModal() {
+            document.getElementById('importModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function backToStep1() {
+            document.getElementById('importStep1').classList.remove('hidden');
+            document.getElementById('importStep2').classList.add('hidden');
+            document.getElementById('importStep3').classList.add('hidden');
+            document.getElementById('importUploadStatus').classList.add('hidden');
+        }
+
+        function previewImportFile(type) {
+            const fileInput = document.getElementById('importFile');
+            if (!fileInput.files || !fileInput.files[0]) { alert('Pilih file terlebih dahulu.'); return; }
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            const btn = document.getElementById('previewBtn');
+            const status = document.getElementById('importUploadStatus');
+            btn.disabled = true; btn.textContent = 'Memproses...';
+            status.classList.remove('hidden');
+            status.innerHTML = '<p class="text-xs text-blue-500">Mengupload dan membaca file...</p>';
+            fetch('/admin/import/' + type + '/preview', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                body: formData
+            }).then(r => r.json()).then(data => {
+                if (data.error) { status.innerHTML = '<p class="text-xs text-red-500">' + data.error + '</p>'; return; }
+                showPreview(data.preview);
+            }).catch(err => {
+                status.innerHTML = '<p class="text-xs text-red-500">Gagal: ' + err.message + '</p>';
+            }).finally(() => { btn.disabled = false; btn.textContent = 'Preview'; });
+        }
+
+        function showPreview(preview) {
+            document.getElementById('importStep1').classList.add('hidden');
+            document.getElementById('importStep2').classList.remove('hidden');
+            document.getElementById('importPreviewSummary').innerHTML = `<div class="flex gap-4 text-center"><div class="flex-1"><p class="text-lg font-bold text-gray-800 dark:text-white">${preview.total_rows}</p><p class="text-xs text-gray-500">Total Baris</p></div><div class="flex-1"><p class="text-lg font-bold text-green-600">${preview.valid_count}</p><p class="text-xs text-gray-500">Valid</p></div><div class="flex-1"><p class="text-lg font-bold text-red-600">${preview.error_count}</p><p class="text-xs text-gray-500">Error</p></div></div>`;
+            const table = document.getElementById('importPreviewTable');
+            if (preview.valid_rows && preview.valid_rows.length > 0) {
+                const cols = Object.keys(preview.valid_rows[0]);
+                let html = '<table class="w-full text-xs"><thead><tr class="bg-gray-100 dark:bg-gray-700">';
+                cols.forEach(c => html += '<th class="px-2 py-1.5 text-left text-gray-600 dark:text-gray-300">' + c + '</th>');
+                html += '</tr></thead><tbody>';
+                preview.valid_rows.slice(0, 10).forEach(row => { html += '<tr class="border-t border-gray-100 dark:border-gray-700">'; cols.forEach(c => html += '<td class="px-2 py-1.5 text-gray-700 dark:text-gray-300">' + (row[c] || '-') + '</td>'); html += '</tr>'; });
+                if (preview.valid_rows.length > 10) html += '<tr><td colspan="' + cols.length + '" class="px-2 py-1.5 text-gray-400 text-center">...dan ' + (preview.valid_rows.length - 10) + ' baris lagi</td></tr>';
+                html += '</tbody></table>'; table.innerHTML = html;
+            } else { table.innerHTML = '<p class="p-4 text-sm text-gray-400 text-center">Tidak ada data valid</p>'; }
+            const errorList = document.getElementById('importErrorList');
+            if (preview.errors && preview.errors.length > 0) {
+                errorList.classList.remove('hidden');
+                let errHtml = '<div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"><p class="text-xs text-red-700 dark:text-red-300 font-medium mb-1">Error:</p><ul class="text-xs text-red-600 dark:text-red-400 list-disc list-inside space-y-0.5">';
+                preview.errors.slice(0, 10).forEach(e => errHtml += '<li>' + e + '</li>');
+                errHtml += '</ul></div>'; errorList.innerHTML = errHtml;
+            } else { errorList.classList.add('hidden'); }
+            document.getElementById('confirmImportBtn').disabled = !preview.valid_count;
+        }
+
+        function confirmImportFile(type) {
+            const strategy = document.getElementById('importStrategy').value;
+            const btn = document.getElementById('confirmImportBtn');
+            btn.disabled = true; btn.textContent = 'Mengimport...';
+            fetch('/admin/import/' + type + '/confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                body: JSON.stringify({ strategy: strategy })
+            }).then(r => r.json()).then(data => {
+                document.getElementById('importStep2').classList.add('hidden');
+                document.getElementById('importStep3').classList.remove('hidden');
+                const result = document.getElementById('importResult');
+                if (data.success) {
+                    result.innerHTML = '<div class="text-center"><div class="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center"><svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div><h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Import Berhasil!</h4><p class="text-sm text-gray-600 dark:text-gray-400">' + data.message + '</p></div>';
+                } else {
+                    result.innerHTML = '<div class="text-center"><div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center"><svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div><h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Import Dihentikan</h4><p class="text-sm text-gray-600 dark:text-gray-400">' + data.message + '</p></div>';
+                }
+            }).catch(err => {
+                document.getElementById('importStep2').classList.add('hidden');
+                document.getElementById('importStep3').classList.remove('hidden');
+                document.getElementById('importResult').innerHTML = '<p class="text-center text-red-500">Error: ' + err.message + '</p>';
+            }).finally(() => { btn.disabled = false; btn.textContent = 'Konfirmasi Import'; });
         }
         
         // Handle checkbox to hidden input conversion for status in Add form

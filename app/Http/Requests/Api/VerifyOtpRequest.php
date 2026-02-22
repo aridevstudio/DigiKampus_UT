@@ -16,8 +16,8 @@ class VerifyOtpRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'exists:users,email'],
-            'otp' => ['required', 'numeric', 'digits:4'],
+            'email' => ['required', 'email'],
+            'otp' => ['required', 'numeric', 'digits:6'],
         ];
     }
 
@@ -25,9 +25,8 @@ class VerifyOtpRequest extends FormRequest
     {
         return [
             'email.required' => 'Email wajib diisi.',
-            'email.exists' => 'Email tidak terdaftar.',
             'otp.required' => 'Kode OTP wajib diisi.',
-            'otp.digits' => 'Kode OTP harus 4 digit.',
+            'otp.digits' => 'Kode OTP harus 6 digit.',
         ];
     }
 

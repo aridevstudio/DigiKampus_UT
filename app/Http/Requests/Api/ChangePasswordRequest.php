@@ -24,7 +24,12 @@ class ChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'new_password' => 'required|string|min:8',
+            'new_password' => [
+                'required',
+                'string',
+                'min:8',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
+            ],
         ];
     }
 
@@ -39,6 +44,7 @@ class ChangePasswordRequest extends FormRequest
             'new_password.required' => 'Password baru wajib diisi.',
             'new_password.string' => 'Password baru harus berupa teks.',
             'new_password.min' => 'Password baru minimal 8 karakter.',
+            'new_password.regex' => 'Password harus mengandung huruf besar, huruf kecil, dan angka.',
         ];
     }
 

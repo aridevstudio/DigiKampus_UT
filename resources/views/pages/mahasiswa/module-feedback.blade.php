@@ -133,7 +133,7 @@
     
     <p style="color: #4b5563; line-height: 1.7; margin-bottom: 16px;">{{ $feedback['personal_notes'] }}</p>
     
-    <a href="#" style="display: inline-flex; align-items: center; gap: 4px; color: #3b82f6; font-size: 14px; text-decoration: none;">
+    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" style="display: inline-flex; align-items: center; gap: 4px; color: #3b82f6; font-size: 14px; text-decoration: none;">
         <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
         </svg>
@@ -150,7 +150,7 @@
         Kembali ke Modul
     </a>
     
-    <a href="#" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #3b82f6; color: white; border-radius: 12px; font-weight: 600; text-decoration: none;">
+    <a href="{{ route('mahasiswa.courses') }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #3b82f6; color: white; border-radius: 12px; font-weight: 600; text-decoration: none;">
         Lihat Sertifikat
     </a>
 </div>

@@ -34,9 +34,10 @@ class DosenMessageController extends Controller
         $search = $request->query('search');
 
         // Get students who have conversations with this dosen
+        // FIX P0: SQL injection — replaced string concatenation with parameter binding
         $conversationStudents = Message::where('id_sender', $dosenId)
             ->orWhere('id_receiver', $dosenId)
-            ->select(DB::raw('CASE WHEN id_sender = ' . $dosenId . ' THEN id_receiver ELSE id_sender END as student_id'))
+            ->selectRaw('CASE WHEN id_sender = ? THEN id_receiver ELSE id_sender END as student_id', [$dosenId])
             ->distinct()
             ->pluck('student_id');
 

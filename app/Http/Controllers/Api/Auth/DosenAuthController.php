@@ -7,13 +7,18 @@ use App\Http\Requests\Api\DosenLoginRequest;
 use App\Http\Requests\Api\DosenRegisterRequest;
 use App\Http\Resources\DosenResource;
 use App\Models\User;
+use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 
 class DosenAuthController extends Controller
 {
+    public function __construct(
+        private readonly OtpService $otpService
+    ) {}
     /**
      * Register Dosen (Regular)
      * 
@@ -82,6 +87,8 @@ class DosenAuthController extends Controller
             ], 403);
         }
 
+        // Revoke old tokens to prevent accumulation
+        $user->tokens()->delete();
         $token = $user->createToken('dosen-token')->plainTextToken;
 
         return response()->json([
@@ -161,10 +168,10 @@ class DosenAuthController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            Log::error('Google OAuth failed', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal login dengan Google.',
-                'error' => $e->getMessage()
+                'message' => 'Gagal login dengan Google.'
             ], 500);
         }
     }
@@ -184,46 +191,25 @@ class DosenAuthController extends Controller
         $validated = $request->validated();
         $email = $validated['email'];
 
-        // Validate email belongs to a Dosen
+        // P0 FIX: Always return success to prevent user enumeration
         $user = User::where('email', $email)->where('role', 'dosen')->first();
         if (!$user) {
             return response()->json([
-                'success' => false,
-                'message' => 'Email tidak terdaftar sebagai dosen.'
-            ], 404);
+                'success' => true,
+                'message' => 'Jika email terdaftar, kode OTP telah dikirim. Silakan cek inbox/spam.',
+                'data' => ['email' => $email, 'expires_in' => '5 minutes']
+            ], 200);
         }
 
-        // Generate OTP 4 digit
-        $otp = rand(1000, 9999);
-
-        // Save OTP to database (hashed)
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $email],
-            [
-                'token' => Hash::make($otp),
-                'created_at' => now()
-            ]
-        );
-
-        // Send Email (menggunakan konfigurasi dari .env)
-        try {
-            \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\OtpMail($otp));
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengirim email. Silakan coba lagi nanti.',
-                'error' => $e->getMessage() // Debug only
-            ], 500);
-        }
+        $result = $this->otpService->generateAndSend($email);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Kode OTP telah dikirim ke email Anda. Silakan cek inbox/spam.',
-            'data' => [
-                'email' => $email,
-                'expires_in' => '5 minutes'
-            ]
-        ], 200);
+            'success' => $result['success'],
+            'message' => $result['success']
+                ? 'Jika email terdaftar, kode OTP telah dikirim. Silakan cek inbox/spam.'
+                : $result['message'],
+            'data' => ['email' => $email, 'expires_in' => '5 minutes']
+        ], $result['success'] ? 200 : 429);
     }
 
     /**
@@ -239,55 +225,21 @@ class DosenAuthController extends Controller
     public function verifyOtp(\App\Http\Requests\Api\VerifyOtpRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $email = $validated['email'];
-        $otp = $validated['otp'];
+        $result = $this->otpService->verify($validated['email'], $validated['otp']);
 
-        // Get OTP record
-        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
-            ->where('email', $email)
-            ->first();
-
-        // Check if record exists
-        if (!$record) {
+        if (!$result['success']) {
             return response()->json([
                 'success' => false,
-                'message' => 'Permintaan reset password tidak ditemukan.'
-            ], 404);
-        }
-
-        // Check expiry (5 minutes)
-        if (\Carbon\Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode OTP telah kadaluarsa. Silakan request ulang.'
+                'message' => $result['message'],
             ], 400);
         }
-
-        // Verify OTP hash
-        if (!Hash::check($otp, $record->token)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode OTP salah.'
-            ], 400);
-        }
-
-        // Generate verification token for next step
-        $verificationToken = \Illuminate\Support\Str::random(64);
-
-        // Update record with verification token (hashed)
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')
-            ->where('email', $email)
-            ->update([
-                'token' => Hash::make($verificationToken),
-                'created_at' => now() // Reset expiry for this token
-            ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'OTP valid. Silakan lanjutkan ke reset password.',
+            'message' => $result['message'],
             'data' => [
-                'email' => $email,
-                'token' => $verificationToken // Token ini dipakai untuk reset password
+                'email' => $validated['email'],
+                'token' => $result['token'],
             ]
         ], 200);
     }
@@ -304,41 +256,17 @@ class DosenAuthController extends Controller
     public function resetPassword(\App\Http\Requests\Api\ResetPasswordRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $email = $validated['email'];
-        $token = $validated['token'];
-        $password = $validated['password'];
-
-        // Get record
-        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
-            ->where('email', $email)
-            ->first();
-
-        if (!$record) {
-            return response()->json(['success' => false, 'message' => 'Request tidak valid.'], 400);
-        }
-
-        // Verify token
-        if (!Hash::check($token, $record->token)) {
-            return response()->json(['success' => false, 'message' => 'Token verifikasi tidak valid.'], 400);
-        }
-
-        // Update User Password
-        $user = User::where('email', $email)->where('role', 'dosen')->first();
-
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
-        }
-
-        $user->password = Hash::make($password);
-        $user->save();
-
-        // Delete token (One-time use)
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $email)->delete();
+        $result = $this->otpService->resetPassword(
+            $validated['email'],
+            $validated['token'],
+            $validated['password'],
+            'dosen'
+        );
 
         return response()->json([
-            'success' => true,
-            'message' => 'Password berhasil diubah. Silakan login dengan password baru.'
-        ], 200);
+            'success' => $result['success'],
+            'message' => $result['message'],
+        ], $result['success'] ? 200 : 400);
     }
 
     /**

@@ -28,11 +28,16 @@ use App\Http\Controllers\Api\Dosen\DosenMessageController;
 */
 
 // Public routes (no authentication required)
+// P0 FIX: Added rate limiting to prevent brute-force/OTP abuse
 Route::prefix('auth/mahasiswa')->group(function () {
-    Route::post('/login', [MahasiswaAuthController::class, 'login']);
-    Route::post('/forgot-password', [MahasiswaAuthController::class, 'forgotPassword']);
-    Route::post('/verify-otp', [MahasiswaAuthController::class, 'verifyOtp']);
-    Route::post('/reset-password', [MahasiswaAuthController::class, 'resetPassword']);
+    Route::post('/login', [MahasiswaAuthController::class, 'login'])
+        ->middleware('throttle:10,1'); // 10 attempts per minute
+    Route::post('/forgot-password', [MahasiswaAuthController::class, 'forgotPassword'])
+        ->middleware('throttle:3,1'); // 3 OTP requests per minute
+    Route::post('/verify-otp', [MahasiswaAuthController::class, 'verifyOtp'])
+        ->middleware('throttle:5,5'); // 5 attempts per 5 minutes
+    Route::post('/reset-password', [MahasiswaAuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,5');
 });
 
 // Protected routes (requires authentication)
@@ -125,21 +130,30 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Dosen public routes
 Route::prefix('auth/dosen')->group(function () {
-    Route::post('/register', [DosenAuthController::class, 'register']);
-    Route::post('/login', [DosenAuthController::class, 'login']);
-    Route::post('/forgot-password', [DosenAuthController::class, 'forgotPassword']);
-    Route::post('/verify-otp', [DosenAuthController::class, 'verifyOtp']);
-    Route::post('/reset-password', [DosenAuthController::class, 'resetPassword']);
+    Route::post('/register', [DosenAuthController::class, 'register'])
+        ->middleware('throttle:5,1');
+    Route::post('/login', [DosenAuthController::class, 'login'])
+        ->middleware('throttle:10,1');
+    Route::post('/forgot-password', [DosenAuthController::class, 'forgotPassword'])
+        ->middleware('throttle:3,1');
+    Route::post('/verify-otp', [DosenAuthController::class, 'verifyOtp'])
+        ->middleware('throttle:5,5');
+    Route::post('/reset-password', [DosenAuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,5');
     Route::get('/google', [DosenAuthController::class, 'redirectToGoogle']);
     Route::get('/google/callback', [DosenAuthController::class, 'handleGoogleCallback']);
 });
 
 // Admin public routes
 Route::prefix('auth/admin')->group(function () {
-    Route::post('/login', [AdminAuthController::class, 'login']);
-    Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
-    Route::post('/verify-otp', [AdminAuthController::class, 'verifyOtp']);
-    Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
+    Route::post('/login', [AdminAuthController::class, 'login'])
+        ->middleware('throttle:10,1');
+    Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword'])
+        ->middleware('throttle:3,1');
+    Route::post('/verify-otp', [AdminAuthController::class, 'verifyOtp'])
+        ->middleware('throttle:5,5');
+    Route::post('/reset-password', [AdminAuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,5');
 });
 
 // Admin protected routes

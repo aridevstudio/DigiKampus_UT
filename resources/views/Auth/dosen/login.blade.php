@@ -177,7 +177,7 @@
                 <div class="mt-6 text-center animate-hidden animate-fade-in stagger-7">
                     <p class="text-sm text-gray-500">
                         Belum punya akun? 
-                        <a href="#" class="text-blue-500 hover:text-blue-600 link-animate font-medium">
+                        <a href="{{ route('dosen.coming-soon') }}" class="text-blue-500 hover:text-blue-600 link-animate font-medium">
                             Daftar sebagai Dosen Baru
                         </a>
                     </p>
@@ -185,7 +185,7 @@
 
                 {{-- Footer --}}
                 <div class="mt-8 flex items-center justify-between text-xs text-gray-400 footer-animate">
-                    <a href="#" class="hover:underline">Privacy Policy</a>
+                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
                     <span>2025 © Universitas Terbuka</span>
                 </div>
             </div>
@@ -347,7 +347,7 @@
             <div class="mt-4 text-center">
                 <p class="text-xs text-gray-500">
                     Belum punya akun? 
-                    <a href="#" class="text-blue-500 hover:text-blue-600 link-animate font-medium">
+                    <a href="{{ route('dosen.coming-soon') }}" class="text-blue-500 hover:text-blue-600 link-animate font-medium">
                         Daftar sebagai Dosen Baru
                     </a>
                 </p>
@@ -355,7 +355,7 @@
 
             {{-- Footer --}}
             <div class="w-full mt-6 flex items-center justify-between text-[10px] text-gray-400 footer-animate">
-                <a href="#" class="hover:underline">Privacy Policy</a>
+                <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
                 <span>2025 © Universitas Terbuka</span>
             </div>
         </div>

@@ -108,7 +108,7 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('newsPage', () => ({
-                allNews: [],
+                allNews: @json($newsData ?? []),
                 filteredNews: [],
                 categories: [],
                 isLoading: false,
@@ -118,31 +118,10 @@
                 selectedNews: null,
 
                 init() {
-                    this.fetchNews();
-                },
-
-                async fetchNews() {
-                    this.isLoading = true;
-                    try {
-                        const response = await fetch('/api/mahasiswa/dashboard/news?limit=50', {
-                            headers: {
-                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
-                                'Accept': 'application/json'
-                            }
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                            this.allNews = data.data;
-                            // Extract unique categories
-                            const cats = [...new Set(this.allNews.map(n => n.kategori).filter(Boolean))];
-                            this.categories = cats;
-                            this.filterNews();
-                        }
-                    } catch (error) {
-                        console.error('Error fetching news:', error);
-                    } finally {
-                        this.isLoading = false;
-                    }
+                    // Extract unique categories from server-provided data
+                    const cats = [...new Set(this.allNews.map(n => n.kategori).filter(Boolean))];
+                    this.categories = cats;
+                    this.filterNews();
                 },
 
                 filterNews() {

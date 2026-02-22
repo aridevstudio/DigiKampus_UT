@@ -144,4 +144,36 @@ class DashboardController extends Controller
 
         return redirect()->route('mahasiswa.notification')->with('success', 'Semua notifikasi ditandai sudah dibaca');
     }
+
+    /**
+     * Show news & announcements page
+     */
+    public function news()
+    {
+        $news = News::active()
+            ->published()
+            ->orderBy('tanggal_publish', 'desc')
+            ->take(50)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id_news' => $item->id_news,
+                    'judul' => $item->judul,
+                    'konten' => $item->konten,
+                    'thumbnail' => $item->thumbnail,
+                    'thumbnail_url' => $item->thumbnail
+                        ? asset('storage/' . $item->thumbnail)
+                        : null,
+                    'kategori' => $item->kategori,
+                    'tanggal_publish' => $item->tanggal_publish?->toDateTimeString(),
+                    'waktu_relatif' => $item->waktu_relatif,
+                ];
+            });
+
+        return view('pages.mahasiswa.news', [
+            'active' => 'news',
+            'title' => 'News',
+            'newsData' => $news,
+        ]);
+    }
 }

@@ -148,8 +148,8 @@
                     this.isLoading = true;
                     try {
                         const response = await fetch('/api/dosen/courses?sort=terbaru&per_page=100', {
+                            credentials: 'same-origin',
                             headers: {
-                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
                                 'Accept': 'application/json'
                             }
                         });
@@ -174,9 +174,9 @@
                     try {
                         const response = await fetch(`/api/dosen/courses/${this.selectedCourseId}/modules`, {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             },

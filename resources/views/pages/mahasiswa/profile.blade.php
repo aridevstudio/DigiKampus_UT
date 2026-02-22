@@ -171,7 +171,7 @@
             
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $userName }}</h2>
             <p class="text-gray-500 dark:text-gray-400 text-sm">NIM: {{ $nim }}</p>
-            <a href="#" class="text-blue-500 hover:text-blue-600 text-sm font-medium mt-1">{{ $programStudi }} ({{ $jenjang }})</a>
+            <a href="{{ route('mahasiswa.courses') }}" class="text-blue-500 hover:text-blue-600 text-sm font-medium mt-1">{{ $programStudi }} ({{ $jenjang }})</a>
             
             <div class="flex items-center gap-2 mt-4">
                 <span class="bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-medium">
