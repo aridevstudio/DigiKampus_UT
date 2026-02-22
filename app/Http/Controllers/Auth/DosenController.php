@@ -528,14 +528,29 @@ class DosenController extends Controller
             'konten' => 'nullable|string',
             'video_url' => 'nullable|url',
             'durasi' => 'nullable|integer|min:0',
-            'id_module' => 'required|exists:course_modules,id_module',
+            'id_module' => 'nullable|exists:course_modules,id_module',
         ]);
 
-        $lastOrder = \App\Models\CourseMaterial::where('id_module', $request->id_module)->max('urutan') ?? 0;
+        // Auto-create default module if none provided (for flat material pages)
+        $moduleId = $request->id_module;
+        if (!$moduleId) {
+            $defaultModule = \App\Models\CourseModule::where('id_course', $id)->first();
+            if (!$defaultModule) {
+                $defaultModule = \App\Models\CourseModule::create([
+                    'id_course' => $id,
+                    'judul_module' => 'Modul Utama',
+                    'deskripsi' => 'Modul default untuk materi kursus',
+                    'urutan' => 1,
+                ]);
+            }
+            $moduleId = $defaultModule->id_module;
+        }
+
+        $lastOrder = \App\Models\CourseMaterial::where('id_module', $moduleId)->max('urutan') ?? 0;
 
         \App\Models\CourseMaterial::create([
             'id_course' => $id,
-            'id_module' => $request->id_module,
+            'id_module' => $moduleId,
             'judul_material' => $request->judul_material,
             'tipe' => $request->tipe,
             'konten' => $request->konten,

@@ -192,7 +192,7 @@
                     </svg>
                 </button>
                 
-                <form action="{{ route('dosen.module.store', $course['id']) }}" method="POST" class="p-6">
+                <form action="{{ route('dosen.material.store', $course['id']) }}" method="POST" class="p-6">
                     @csrf
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Modul Baru</h3>
                     
@@ -312,9 +312,30 @@
         </div>
     </div>
 
+    {{-- Validation Errors --}}
+    @if($errors->any())
+    <div id="validationAlert" class="fixed top-4 right-4 z-[60] max-w-md bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg">
+        <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div class="flex-1">
+                <p class="font-semibold text-sm mb-1">Data gagal disimpan:</p>
+                <ul class="text-xs space-y-0.5 list-disc list-inside">
+                    @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            <button onclick="this.closest('#validationAlert').remove()" class="ml-2 shrink-0">&times;</button>
+        </div>
+    </div>
+    <script>setTimeout(() => document.getElementById('validationAlert')?.remove(), 8000);</script>
+    @endif
+
     {{-- Success/Error Messages --}}
     @if(session('success'))
-    <div id="successAlert" class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+    <div id="successAlert" class="fixed top-4 right-4 z-[60] bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
@@ -325,7 +346,7 @@
     @endif
 
     @if(session('error'))
-    <div id="errorAlert" class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+    <div id="errorAlert" class="fixed top-4 right-4 z-[60] bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -357,7 +378,7 @@
                     });
 
                     // Send to server
-                    fetch(`{{ route('dosen.module.reorder', $course['id']) }}`, {
+                    fetch(`{{ route('dosen.material.reorder', $course['id']) }}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',

@@ -336,7 +336,7 @@ class AdminController extends Controller
             'email' => 'required|email|unique:users,email',
             'nip' => 'required|string|max:50|unique:profiles,nim',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
-            'no_hp' => 'nullable|string|max:20|regex:/^[0-9]{10,15}$/',
+            'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ], [
@@ -344,7 +344,7 @@ class AdminController extends Controller
             'nip.unique' => 'NIP sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
-            'no_hp.regex' => 'Format nomor HP tidak valid (harus 10-15 digit angka).',
+            'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
         ]);
 
         // Create user (P0 FIX: Generate secure random password instead of hardcoded)
@@ -439,7 +439,7 @@ class AdminController extends Controller
             'email' => 'required|email|unique:users,email,' . $id,
             'nip' => 'required|string|max:50|unique:profiles,nim,' . ($profileId ?? 'NULL') . ',id',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
-            'no_hp' => 'nullable|string|max:20|regex:/^[0-9]{10,15}$/',
+            'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ], [
@@ -447,7 +447,7 @@ class AdminController extends Controller
             'nip.unique' => 'NIP sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
-            'no_hp.regex' => 'Format nomor HP tidak valid (harus 10-15 digit angka).',
+            'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
         ]);
 
         // Update user
@@ -596,7 +596,7 @@ class AdminController extends Controller
             'email' => 'required|email|unique:users,email',
             'nim' => 'required|string|max:50|unique:profiles,nim',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
-            'no_hp' => 'nullable|string|max:20|regex:/^[0-9]{10,15}$/',
+            'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ], [
@@ -604,7 +604,7 @@ class AdminController extends Controller
             'nim.unique' => 'NIM sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
-            'no_hp.regex' => 'Format nomor HP tidak valid (harus 10-15 digit angka).',
+            'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
         ]);
 
         // Create user (P0 FIX: Generate secure random password)
@@ -705,7 +705,7 @@ class AdminController extends Controller
             'email' => 'required|email|unique:users,email,' . $id,
             'nim' => 'required|string|max:50|unique:profiles,nim,' . $id . ',user_id',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
-            'no_hp' => 'nullable|string|max:20|regex:/^[0-9]{10,15}$/',
+            'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ], [
@@ -713,7 +713,7 @@ class AdminController extends Controller
             'nim.unique' => 'NIM sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
-            'no_hp.regex' => 'Format nomor HP tidak valid (harus 10-15 digit angka).',
+            'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
         ]);
 
         // Update user
