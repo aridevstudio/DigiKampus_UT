@@ -393,6 +393,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-gray-500 dark:text-gray-400">Tidak Aktif</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="status" value="nonaktif">
                                     <input type="checkbox" name="status" value="aktif" checked class="sr-only peer">
                                     <div class="w-10 h-5 bg-gray-300 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
                                 </label>
@@ -508,6 +509,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-gray-500 dark:text-gray-400">Tidak Aktif</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="status" value="nonaktif">
                                     <input type="checkbox" name="status" id="edit_status" value="aktif" class="sr-only peer">
                                     <div class="w-10 h-5 bg-gray-300 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
                                 </label>
@@ -923,31 +925,6 @@
             });
         }
         
-        // Handle checkbox to hidden input conversion for status in Add form
-        document.getElementById('addMahasiswaModal')?.querySelector('form')?.addEventListener('submit', function(e) {
-            const checkbox = this.querySelector('input[name="status"]');
-            if (!checkbox.checked) {
-                const hidden = document.createElement('input');
-                hidden.type = 'hidden';
-                hidden.name = 'status';
-                hidden.value = 'nonaktif';
-                this.appendChild(hidden);
-                checkbox.removeAttribute('name');
-            }
-        });
-        
-        // Handle checkbox for Edit form
-        document.getElementById('editMahasiswaForm')?.addEventListener('submit', function(e) {
-            const checkbox = this.querySelector('input[name="status"]');
-            if (!checkbox.checked) {
-                const hidden = document.createElement('input');
-                hidden.type = 'hidden';
-                hidden.name = 'status';
-                hidden.value = 'nonaktif';
-                this.appendChild(hidden);
-                checkbox.removeAttribute('name');
-            }
-        });
     </script>
     @endpush
 </x-layouts.admin>
