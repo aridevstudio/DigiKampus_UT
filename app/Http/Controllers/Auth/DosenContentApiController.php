@@ -135,25 +135,24 @@ class DosenContentApiController extends Controller
 
         $validated = $validator->validated();
 
-        $mainModule = CourseModule::where('id_course', $courseId)
-            ->orderBy('urutan')
-            ->first();
-
-        if (!$mainModule) {
-            $mainModule = CourseModule::create([
-                'id_course' => $courseId,
-                'judul_module' => 'Modul Utama',
-                'deskripsi' => 'Modul default untuk materi kursus',
-                'urutan' => 1,
-            ]);
-        }
-
-        $urutan = (int) (CourseMaterial::where('id_module', $mainModule->id_module)->max('urutan') ?? 0) + 1;
         $normalizedType = $this->normalizeModuleType($validated['tipe'] ?? null, $validated['konten'] ?? null);
+
+        $moduleOrder = (int) (CourseModule::where('id_course', $courseId)->max('urutan') ?? 0) + 1;
+
+        // Each publish from typed content page creates a dedicated module,
+        // so course structure and new content stay in sync.
+        $courseModule = CourseModule::create([
+            'id_course' => $courseId,
+            'judul_module' => $validated['judul_modul'],
+            'deskripsi' => $this->moduleDescriptionByType($normalizedType),
+            'urutan' => $moduleOrder,
+        ]);
+
+        $urutan = (int) (CourseMaterial::where('id_module', $courseModule->id_module)->max('urutan') ?? 0) + 1;
 
         $module = CourseMaterial::create([
             'id_course' => $courseId,
-            'id_module' => $mainModule->id_module,
+            'id_module' => $courseModule->id_module,
             'judul_material' => $validated['judul_modul'],
             'tipe' => $normalizedType,
             'konten' => $validated['konten'] ?? null,
@@ -167,10 +166,21 @@ class DosenContentApiController extends Controller
             'message' => 'Modul berhasil ditambahkan.',
             'data' => [
                 'id' => $module->id_material,
+                'id_module' => $courseModule->id_module,
                 'judul' => $module->judul_material,
                 'urutan' => $module->urutan,
             ],
         ], 201);
+    }
+
+    private function moduleDescriptionByType(string $type): string
+    {
+        return match ($type) {
+            'video' => 'Modul video pembelajaran',
+            'kuis' => 'Modul evaluasi kuis',
+            'tugas' => 'Modul tugas/penugasan',
+            default => 'Modul materi bacaan',
+        };
     }
 
     private function normalizeModuleType(?string $type, ?string $content = null): string

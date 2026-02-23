@@ -274,6 +274,35 @@
 
                 init() {
                     this.fetchCourses();
+                    this.stripSeedQueryParams();
+                },
+
+                stripSeedQueryParams() {
+                    if (!window?.location?.search) return;
+
+                    const paramsToStrip = [
+                        'course_id',
+                        'modul_judul',
+                        'modul_konten',
+                        'modul_video_url',
+                        'modul_durasi',
+                    ];
+
+                    const url = new URL(window.location.href);
+                    let changed = false;
+
+                    paramsToStrip.forEach((param) => {
+                        if (url.searchParams.has(param)) {
+                            url.searchParams.delete(param);
+                            changed = true;
+                        }
+                    });
+
+                    if (changed) {
+                        const query = url.searchParams.toString();
+                        const cleanUrl = `${url.pathname}${query ? `?${query}` : ''}`;
+                        window.history.replaceState({}, '', cleanUrl);
+                    }
                 },
 
                 async fetchCourses() {
@@ -384,15 +413,15 @@
 
                 async saveQuiz() {
                     if (!this.selectedCourseId) {
-                        alert('Mohon pilih kursus.');
+                        this.showToast('Pilih kursus terlebih dahulu.', 'error');
                         return;
                     }
                     if (!this.form.judul_modul) {
-                        alert('Mohon isi Judul Kuis.');
+                        this.showToast('Judul kuis wajib diisi.', 'error');
                         return;
                     }
                     if (this.questions.length === 0) {
-                        alert('Minimal 1 soal.');
+                        this.showToast('Minimal harus ada 1 soal kuis.', 'error');
                         return;
                     }
 
@@ -413,17 +442,20 @@
                         });
                         
                         const data = await response.json();
-                        if (data.success) {
-                            alert('Kuis berhasil dibuat!');
-                            // Reset
-                            this.questions = [];
-                            this.form.judul_modul = '';
-                            this.form.durasi = 15;
-                        } else {
-                            alert('Gagal: ' + data.message);
+
+                        if (response.ok && data.success) {
+                            this.showToast('Kursus berhasil diperbarui. Modul + kuis baru sudah ditambahkan.', 'success');
+                            setTimeout(() => {
+                                window.location.href = `/dosen/kursus/${this.selectedCourseId}/modul`;
+                            }, 900);
+                            return;
                         }
+
+                        const firstError = data?.errors ? Object.values(data.errors).flat()?.[0] : null;
+                        const errorMessage = firstError || data?.message || 'Gagal menyimpan kuis.';
+                        this.showToast(errorMessage, 'error');
                     } catch (error) {
-                        alert('Terjadi kesalahan.');
+                        this.showToast('Terjadi kesalahan saat menyimpan kuis.', 'error');
                     } finally {
                         this.isSubmitting = false;
                     }
