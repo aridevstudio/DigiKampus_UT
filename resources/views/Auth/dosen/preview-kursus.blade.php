@@ -79,21 +79,26 @@
                 <div class="flex-1">
                     <h4 class="font-medium text-gray-900 dark:text-white">{{ $material->judul_material }}</h4>
                     <div class="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        @if($material->tipe === 'video')
+                        @php
+                            $materialType = $material->tipe === 'quiz'
+                                ? 'kuis'
+                                : ($material->tipe === 'text' ? 'bacaan' : $material->tipe);
+                        @endphp
+                        @if($materialType === 'video')
                         <span class="flex items-center gap-1">
                             <svg class="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                             </svg>
                             Video
                         </span>
-                        @elseif($material->tipe === 'bacaan')
+                        @elseif($materialType === 'bacaan')
                         <span class="flex items-center gap-1">
                             <svg class="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
                             </svg>
                             Bacaan
                         </span>
-                        @elseif($material->tipe === 'kuis')
+                        @elseif($materialType === 'kuis')
                         <span class="flex items-center gap-1">
                             <svg class="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />

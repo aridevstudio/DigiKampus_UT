@@ -248,7 +248,7 @@
                 form: {
                     judul_modul: @json(request('modul_judul', '')),
                     durasi: @json(request('modul_durasi', 15)),
-                    tipe: 'quiz',
+                    tipe: 'kuis',
                     konten: ''
                 },
                 

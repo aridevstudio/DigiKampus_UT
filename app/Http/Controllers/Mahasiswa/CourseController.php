@@ -182,6 +182,8 @@ class CourseController extends Controller
                     'materials' => [],
                     'completed' => 0,
                     'total' => 0,
+                    'quiz' => null,
+                    'assignment' => null,
                 ];
             }
             
@@ -190,15 +192,35 @@ class CourseController extends Controller
                 ->where('id_material', $material->id_material)
                 ->where('is_completed', true)
                 ->exists();
+
+            $materialType = $this->normalizeMaterialType($material->tipe);
+            $materialTitle = $material->judul_material ?? $material->judul ?? 'Materi';
             
             $modules[$moduleNum]['materials'][] = [
                 'id' => $material->id_material,
-                'title' => $material->judul,
-                'type' => $material->tipe ?? 'document', // video, document, quiz
+                'title' => $materialTitle,
+                'type' => $materialType,
                 'content' => $material->konten,
                 'duration' => $material->durasi ?? '10 menit',
                 'is_completed' => $isCompleted,
+                'video_url' => $material->video_url,
             ];
+
+            if ($materialType === 'kuis' && $modules[$moduleNum]['quiz'] === null) {
+                $modules[$moduleNum]['quiz'] = [
+                    'id' => $material->id_material,
+                    'title' => $materialTitle,
+                    'duration' => $material->durasi,
+                ];
+            }
+
+            if ($materialType === 'tugas' && $modules[$moduleNum]['assignment'] === null) {
+                $modules[$moduleNum]['assignment'] = [
+                    'id' => $material->id_material,
+                    'title' => $materialTitle,
+                    'duration' => $material->durasi,
+                ];
+            }
             
             $modules[$moduleNum]['total']++;
             if ($isCompleted) {
@@ -766,5 +788,15 @@ class CourseController extends Controller
             'redirect' => route('mahasiswa.assignment-status', ['courseId' => $courseId, 'assignmentId' => $assignmentId])
         ]);
     }
-}
 
+    private function normalizeMaterialType(?string $type): string
+    {
+        return match ($type) {
+            'video' => 'video',
+            'kuis', 'quiz' => 'kuis',
+            'tugas' => 'tugas',
+            'bacaan', 'text' => 'bacaan',
+            default => 'bacaan',
+        };
+    }
+}

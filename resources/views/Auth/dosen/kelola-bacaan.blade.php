@@ -137,7 +137,7 @@
                     judul_modul: @json(request('modul_judul', '')),
                     konten: @json(request('modul_konten', '')),
                     durasi: @json(request('modul_durasi', 10)),
-                    tipe: 'text'
+                    tipe: 'bacaan'
                 },
 
                 init() {

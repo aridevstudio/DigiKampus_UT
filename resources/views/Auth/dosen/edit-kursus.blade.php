@@ -247,17 +247,30 @@
                                             'video' => 'bg-red-100 text-red-500', 
                                             'bacaan' => 'bg-blue-100 text-blue-500', 
                                             'kuis' => 'bg-green-100 text-green-500', 
-                                            'tugas' => 'bg-purple-100 text-purple-500'
+                                            'tugas' => 'bg-purple-100 text-purple-500',
+                                            'quiz' => 'bg-green-100 text-green-500',
+                                            'text' => 'bg-blue-100 text-blue-500',
                                         ];
                                         $icons = [
                                             'video' => '<path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />',
                                             'bacaan' => '<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />',
                                             'kuis' => '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />',
-                                            'tugas' => '<path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />'
+                                            'tugas' => '<path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />',
+                                            'quiz' => '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />',
+                                            'text' => '<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />',
                                         ];
+                                        $typeLabels = [
+                                            'video' => 'video',
+                                            'bacaan' => 'bacaan',
+                                            'kuis' => 'kuis',
+                                            'tugas' => 'tugas',
+                                            'quiz' => 'kuis',
+                                            'text' => 'bacaan',
+                                        ];
+                                        $typeKey = $material->tipe;
                                     @endphp
-                                    <div class="w-8 h-8 rounded-lg {{ $colors[$material->tipe] }} flex items-center justify-center">
-                                        <svg width="16" height="16" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">{!! $icons[$material->tipe] !!}</svg>
+                                    <div class="w-8 h-8 rounded-lg {{ $colors[$typeKey] ?? $colors['bacaan'] }} flex items-center justify-center">
+                                        <svg width="16" height="16" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">{!! $icons[$typeKey] ?? $icons['bacaan'] !!}</svg>
                                     </div>
                                 </div>
 
@@ -265,7 +278,7 @@
                                 <div class="flex-1 min-w-0">
                                     <h4 class="font-medium text-gray-900 dark:text-white text-sm truncate">{{ $material->judul_material }}</h4>
                                     <div class="text-xs text-gray-500 flex gap-2">
-                                        <span class="capitalize">{{ $material->tipe }}</span>
+                                        <span class="capitalize">{{ $typeLabels[$typeKey] ?? $typeKey }}</span>
                                         @if($material->durasi) &bull; {{ $material->durasi }} menit @endif
                                     </div>
                                 </div>

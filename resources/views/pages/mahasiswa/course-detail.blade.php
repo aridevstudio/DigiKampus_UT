@@ -34,9 +34,15 @@
         
         foreach ($course->materials as $material) {
             $currentModule['contents'][] = [
-                'type' => $material->tipe ?? 'document', // video, file, text
+                'type' => match($material->tipe) {
+                    'video' => 'video',
+                    'kuis', 'quiz' => 'quiz',
+                    'tugas' => 'assignment',
+                    'bacaan', 'text' => 'document',
+                    default => 'document',
+                },
                 'title' => $material->judul_material,
-                'duration' => '',
+                'duration' => $material->durasi ? ($material->durasi . ' menit') : '',
             ];
         }
         

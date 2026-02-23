@@ -141,7 +141,7 @@
                 selectedCourseId: @json(request('course_id', '')),
                 form: {
                     judul_modul: @json(request('modul_judul', '')),
-                    tipe: 'text', // Using 'text' as container for assignment
+                    tipe: 'tugas',
                     konten: '',
                     durasi: @json(request('modul_durasi', 60)) // Default estimate
                 },

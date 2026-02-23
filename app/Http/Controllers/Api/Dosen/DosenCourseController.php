@@ -434,7 +434,7 @@ class DosenCourseController extends Controller
 
         $validator = Validator::make($request->all(), [
             'judul_modul' => 'required|string|max:255',
-            'tipe' => 'nullable|in:video,text,quiz',
+            'tipe' => 'nullable|in:video,bacaan,kuis,tugas,text,quiz',
             'konten' => 'nullable|string',
             'video_url' => 'nullable|url',
             'durasi' => 'nullable|integer|min:1'
@@ -456,10 +456,15 @@ class DosenCourseController extends Controller
             ->first();
         $urutan = $lastModule ? $lastModule->urutan + 1 : 1;
 
+        $normalizedType = $this->normalizeModuleType(
+            $validated['tipe'] ?? null,
+            $validated['konten'] ?? null
+        );
+
         $module = CourseMaterial::create([
             'id_course' => $courseId,
             'judul_material' => $validated['judul_modul'],
-            'tipe' => $validated['tipe'] ?? 'text',
+            'tipe' => $normalizedType,
             'konten' => $validated['konten'] ?? null,
             'video_url' => $validated['video_url'] ?? null,
             'urutan' => $urutan,
@@ -522,7 +527,7 @@ class DosenCourseController extends Controller
 
         $validator = Validator::make($request->all(), [
             'judul_modul' => 'sometimes|string|max:255',
-            'tipe' => 'nullable|in:video,text,quiz',
+            'tipe' => 'nullable|in:video,bacaan,kuis,tugas,text,quiz',
             'konten' => 'nullable|string',
             'video_url' => 'nullable|url',
             'durasi' => 'nullable|integer|min:1',
@@ -542,8 +547,12 @@ class DosenCourseController extends Controller
         $updateData = [];
         if (isset($validated['judul_modul']))
             $updateData['judul_material'] = $validated['judul_modul'];
-        if (isset($validated['tipe']))
-            $updateData['tipe'] = $validated['tipe'];
+        if (isset($validated['tipe'])) {
+            $updateData['tipe'] = $this->normalizeModuleType(
+                $validated['tipe'],
+                $validated['konten'] ?? $module->konten
+            );
+        }
         if (isset($validated['konten']))
             $updateData['konten'] = $validated['konten'];
         if (isset($validated['video_url']))
@@ -608,5 +617,34 @@ class DosenCourseController extends Controller
             'success' => true,
             'message' => 'Modul berhasil dihapus.'
         ], 200);
+    }
+
+    private function normalizeModuleType(?string $type, ?string $content = null): string
+    {
+        $normalized = strtolower(trim((string) ($type ?? '')));
+
+        if ($normalized === '') {
+            return 'bacaan';
+        }
+
+        return match ($normalized) {
+            'video' => 'video',
+            'kuis', 'quiz' => 'kuis',
+            'tugas' => 'tugas',
+            'bacaan' => 'bacaan',
+            'text' => $this->isAssignmentPayload($content) ? 'tugas' : 'bacaan',
+            default => 'bacaan',
+        };
+    }
+
+    private function isAssignmentPayload(?string $content): bool
+    {
+        if (!$content) {
+            return false;
+        }
+
+        $decoded = json_decode($content, true);
+
+        return is_array($decoded) && !empty($decoded['is_tugas']);
     }
 }

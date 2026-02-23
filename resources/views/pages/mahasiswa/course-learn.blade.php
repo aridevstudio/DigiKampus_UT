@@ -94,7 +94,8 @@
                         @endforeach
                         
                         {{-- Quiz Link --}}
-                        <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $moduleIndex]) }}" 
+                        @if(!empty($module['quiz']))
+                        <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $module['quiz']['id']]) }}" 
                            class="flex items-center gap-3 p-3 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition bg-yellow-50/50 dark:bg-yellow-500/5 border-t border-yellow-200 dark:border-yellow-700/30">
                             <div class="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
                                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,16 +103,18 @@
                                 </svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-400">Kuis Akhir Modul</p>
-                                <p class="text-xs text-yellow-600 dark:text-yellow-500">10 Soal • 30 Menit</p>
+                                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-400">{{ $module['quiz']['title'] ?? 'Kuis Akhir Modul' }}</p>
+                                <p class="text-xs text-yellow-600 dark:text-yellow-500">Durasi: {{ $module['quiz']['duration'] ?? 30 }} menit</p>
                             </div>
                             <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                         </a>
+                        @endif
                         
                         {{-- Assignment Link --}}
-                        <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $moduleIndex]) }}" 
+                        @if(!empty($module['assignment']))
+                        <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $module['assignment']['id']]) }}" 
                            class="flex items-center gap-3 p-3 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition bg-orange-50/50 dark:bg-orange-500/5 border-t border-orange-200 dark:border-orange-700/30">
                             <div class="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
                                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,22 +122,24 @@
                                 </svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-orange-700 dark:text-orange-400">Tugas Akhir Modul</p>
-                                <p class="text-xs text-orange-600 dark:text-orange-500">Deadline: 7 Hari</p>
+                                <p class="text-sm font-medium text-orange-700 dark:text-orange-400">{{ $module['assignment']['title'] ?? 'Tugas Akhir Modul' }}</p>
+                                <p class="text-xs text-orange-600 dark:text-orange-500">Kumpulkan tugas modul ini</p>
                             </div>
                             <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                         </a>
+                        @endif
                         
                         {{-- Feedback & Nilai Link - Only show if module is complete (materials, quiz, assignment) --}}
                         @php
                             $completedMaterials = collect($module['materials'])->where('is_completed', true)->count();
                             $totalMaterials = count($module['materials']);
                             $materialsComplete = $totalMaterials > 0 && $completedMaterials == $totalMaterials;
-                            // Check if quiz and assignment are completed (from module data or default to false)
-                            $quizComplete = $module['quiz_completed'] ?? false;
-                            $assignmentComplete = $module['assignment_completed'] ?? false;
+                            $hasQuiz = !empty($module['quiz']);
+                            $hasAssignment = !empty($module['assignment']);
+                            $quizComplete = !$hasQuiz || ($module['quiz_completed'] ?? false);
+                            $assignmentComplete = !$hasAssignment || ($module['assignment_completed'] ?? false);
                             $isModuleComplete = $materialsComplete && $quizComplete && $assignmentComplete;
                         @endphp
                         @if($isModuleComplete)
@@ -173,7 +178,15 @@
                 <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $currentMaterial ? $currentMaterial['title'] : $course->nama_course }}</h1>
                 <p class="text-gray-500 dark:text-gray-400 text-sm">
                     @if($currentMaterial)
-                    Modul {{ $currentModuleIndex }}: {{ $modules[$currentModuleIndex]['title'] ?? 'Materi' }} - {{ $currentMaterial['type'] == 'video' ? 'Video' : 'Bacaan' }}: {{ $currentMaterial['title'] }}
+                    @php
+                        $materialTypeLabel = [
+                            'video' => 'Video',
+                            'bacaan' => 'Bacaan',
+                            'kuis' => 'Kuis',
+                            'tugas' => 'Tugas',
+                        ];
+                    @endphp
+                    Modul {{ $currentModuleIndex }}: {{ $modules[$currentModuleIndex]['title'] ?? 'Materi' }} - {{ $materialTypeLabel[$currentMaterial['type']] ?? 'Materi' }}: {{ $currentMaterial['title'] }}
                     @else
                     Pilih materi untuk memulai
                     @endif
@@ -221,14 +234,14 @@
                                 {!! nl2br(e($currentMaterial['content'])) !!}
                              </div>
                         </div>
-                    @elseif($currentMaterial['type'] == 'quiz')
+                    @elseif($currentMaterial['type'] == 'kuis')
                          <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
                             <div class="text-center">
                                 <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                 </svg>
                                 <p>Ini adalah materi Kuis</p>
-                                <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => 1]) }}" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Mulai Kuis</a>
+                                <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $currentMaterial['id']]) }}" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Mulai Kuis</a>
                             </div>
                         </div>
                     @else
