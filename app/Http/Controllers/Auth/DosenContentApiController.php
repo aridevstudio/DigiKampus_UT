@@ -305,7 +305,7 @@ class DosenContentApiController extends Controller
             return [null, 'youtube', null, 'URL YouTube tidak valid.'];
         }
 
-        // Fallback tanpa API key: parse lengthSeconds dari HTML watch page.
+        // Parse duration dari HTML watch page.
         try {
             $watchResponse = Http::timeout(12)
                 ->withHeaders([
@@ -319,20 +319,45 @@ class DosenContentApiController extends Controller
 
             if ($watchResponse->successful()) {
                 $body = $watchResponse->body();
-
-                if (preg_match('/"lengthSeconds":"(\d+)"/', $body, $matches)) {
-                    return [(int) $matches[1], 'youtube', 'watch_html', null];
-                }
-
-                if (preg_match('/"approxDurationMs":"(\d+)"/', $body, $matches)) {
-                    return [(int) ceil(((int) $matches[1]) / 1000), 'youtube', 'watch_html', null];
+                $seconds = $this->extractDurationFromYouTubeWatchHtml($body);
+                if ($seconds !== null && $seconds > 0) {
+                    return [$seconds, 'youtube', 'watch_html', null];
                 }
             }
         } catch (\Throwable $exception) {
-            // Ignore and return user-friendly message below.
+            // Keep manual fallback behavior if remote request fails.
         }
 
         return [null, 'youtube', null, 'Durasi YouTube belum bisa dideteksi otomatis.'];
+    }
+
+    private function extractDurationFromYouTubeWatchHtml(string $body): ?int
+    {
+        $candidates = [$body];
+        $unescapedBody = str_replace('\\"', '"', $body);
+        if ($unescapedBody !== $body) {
+            $candidates[] = $unescapedBody;
+        }
+
+        foreach ($candidates as $candidate) {
+            if (preg_match('/"lengthSeconds":"(\d+)"/', $candidate, $matches)) {
+                return (int) $matches[1];
+            }
+
+            if (preg_match('/"lengthSeconds":(\d+)/', $candidate, $matches)) {
+                return (int) $matches[1];
+            }
+
+            if (preg_match('/"approxDurationMs":"(\d+)"/', $candidate, $matches)) {
+                return (int) ceil(((int) $matches[1]) / 1000);
+            }
+
+            if (preg_match('/"approxDurationMs":(\d+)/', $candidate, $matches)) {
+                return (int) ceil(((int) $matches[1]) / 1000);
+            }
+        }
+
+        return null;
     }
 
     private function resolveVimeoDuration(string $url): array
