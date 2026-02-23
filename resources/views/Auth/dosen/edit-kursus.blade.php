@@ -4,7 +4,12 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1">Perbarui informasi dan struktur materi kursus Anda</p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-10 items-start w-full max-w-6xl mx-auto">
+    <style>
+        @@media (min-width: 1024px) {
+            #editKursusGrid { grid-template-columns: 3fr 2fr; }
+        }
+    </style>
+    <div class="grid grid-cols-1 gap-6 items-start w-full" id="editKursusGrid">
         {{-- Informasi Kursus --}}
         <div class="w-full">
             <div class="bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm p-8">
