@@ -222,7 +222,12 @@
                         </div>
                         <div id="add_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                            <input type="url" id="add_video_url" name="video_url" onchange="syncVideoDuration('add')" onblur="syncVideoDuration('add')" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <div class="flex gap-2">
+                                <input type="url" id="add_video_url" name="video_url" onchange="syncVideoDuration('add')" onblur="syncVideoDuration('add')" class="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <button type="button" id="add_validate_video_btn" onclick="syncVideoDuration('add', true)" class="shrink-0 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
+                                    Validasi Video
+                                </button>
+                            </div>
                             <p id="add_video_duration_hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                         </div>
                         <div id="add_durasi_group">
@@ -276,7 +281,12 @@
                         </div>
                         <div id="edit_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                            <input type="url" name="video_url" id="edit_video_url" onchange="syncVideoDuration('edit')" onblur="syncVideoDuration('edit')" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <div class="flex gap-2">
+                                <input type="url" name="video_url" id="edit_video_url" onchange="syncVideoDuration('edit')" onblur="syncVideoDuration('edit')" class="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <button type="button" id="edit_validate_video_btn" onclick="syncVideoDuration('edit', true)" class="shrink-0 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
+                                    Validasi Video
+                                </button>
+                            </div>
                             <p id="edit_video_duration_hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                         </div>
                         <div id="edit_durasi_group">
@@ -399,6 +409,8 @@
                 return;
             }
 
+            setVideoValidationButtonState(prefix, false);
+
             if (type === 'video') {
                 kontenLabel.textContent = 'Deskripsi Video';
                 if (kontenInput) kontenInput.placeholder = 'Ringkasan materi video...';
@@ -493,10 +505,19 @@
             hint.classList.add('text-gray-500', 'dark:text-gray-400');
         }
 
-        async function syncVideoDuration(prefix) {
+        function setVideoValidationButtonState(prefix, isLoading = false) {
+            const button = document.getElementById(`${prefix}_validate_video_btn`);
+            if (!button) return;
+
+            button.disabled = isLoading;
+            button.textContent = isLoading ? 'Memvalidasi...' : 'Validasi Video';
+        }
+
+        async function syncVideoDuration(prefix, manualTrigger = false) {
             const type = normalizeMaterialType(document.getElementById(`${prefix}_tipe`)?.value || 'video');
             if (type !== 'video') {
-                setVideoDurationHint(prefix, '');
+                setVideoValidationButtonState(prefix, false);
+                setVideoDurationHint(prefix, manualTrigger ? 'Validasi durasi hanya untuk tipe video.' : '', manualTrigger ? 'error' : 'neutral');
                 return;
             }
 
@@ -504,15 +525,18 @@
             const durasiInput = document.getElementById(`${prefix}_durasi`);
 
             if (!videoInput || !durasiInput) {
+                setVideoValidationButtonState(prefix, false);
                 return;
             }
 
             const url = videoInput.value?.trim();
             if (!url) {
-                setVideoDurationHint(prefix, '');
+                setVideoValidationButtonState(prefix, false);
+                setVideoDurationHint(prefix, manualTrigger ? 'Masukkan URL video terlebih dahulu.' : '', manualTrigger ? 'error' : 'neutral');
                 return;
             }
 
+            setVideoValidationButtonState(prefix, true);
             setVideoDurationHint(prefix, 'Mendeteksi durasi video...');
 
             try {
@@ -536,6 +560,8 @@
                 setVideoDurationHint(prefix, data?.message || 'Durasi belum bisa dideteksi otomatis.', 'error');
             } catch (error) {
                 setVideoDurationHint(prefix, 'Gagal koneksi saat mendeteksi durasi video.', 'error');
+            } finally {
+                setVideoValidationButtonState(prefix, false);
             }
         }
 
