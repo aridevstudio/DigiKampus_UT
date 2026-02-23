@@ -197,7 +197,7 @@
                     </svg>
                 </button>
                 
-                <form action="{{ route('dosen.material.store', $course['id']) }}" method="POST" class="p-6">
+                <form id="addMaterialForm" action="{{ route('dosen.material.store', $course['id']) }}" method="POST" class="p-6" onsubmit="return handleAddMaterialSubmit(event)">
                     @csrf
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Modul Baru</h3>
                     
@@ -214,6 +214,7 @@
                                 <option value="kuis">Kuis</option>
                                 <option value="tugas">Tugas</option>
                             </select>
+                            <p id="add_type_hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                         </div>
                         <div>
                             <label id="add_konten_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
@@ -231,7 +232,7 @@
                     
                     <div class="flex justify-end gap-2 mt-6">
                         <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">Simpan</button>
+                        <button type="submit" id="add_submit_btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">Simpan</button>
                     </div>
                 </form>
             </div>
@@ -365,6 +366,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script>
         const courseId = {{ $course['id'] }};
+        const typedContentRoutes = {
+            video: @json(route('dosen.kelola-video')),
+            bacaan: @json(route('dosen.kelola-bacaan')),
+            kuis: @json(route('dosen.kelola-quiz')),
+            tugas: @json(route('dosen.kelola-tugas')),
+        };
 
         function normalizeMaterialType(type) {
             const value = (type || '').toLowerCase();
@@ -378,6 +385,8 @@
             const type = normalizeMaterialType(rawType);
             const kontenLabel = document.getElementById(`${prefix}_konten_label`);
             const kontenInput = document.getElementById(`${prefix}_konten`);
+            const typeHint = document.getElementById(`${prefix}_type_hint`);
+            const submitBtn = document.getElementById(`${prefix}_submit_btn`);
             const videoGroup = document.getElementById(`${prefix}_video_group`);
             const videoInput = document.getElementById(`${prefix}_video_url`);
             const durasiGroup = document.getElementById(`${prefix}_durasi_group`);
@@ -391,6 +400,8 @@
             if (type === 'video') {
                 kontenLabel.textContent = 'Deskripsi Video';
                 if (kontenInput) kontenInput.placeholder = 'Ringkasan materi video...';
+                if (typeHint) typeHint.textContent = 'Setelah klik tombol, Anda akan diarahkan ke halaman Kelola Video.';
+                if (submitBtn) submitBtn.textContent = 'Lanjut Kelola Video';
                 videoGroup.classList.remove('hidden');
                 if (videoInput) videoInput.required = false;
                 durasiGroup.classList.remove('hidden');
@@ -401,6 +412,8 @@
             if (type === 'bacaan') {
                 kontenLabel.textContent = 'Konten Bacaan';
                 if (kontenInput) kontenInput.placeholder = 'Tulis konten bacaan...';
+                if (typeHint) typeHint.textContent = 'Setelah klik tombol, Anda akan diarahkan ke halaman Kelola Bacaan.';
+                if (submitBtn) submitBtn.textContent = 'Lanjut Kelola Bacaan';
                 videoGroup.classList.add('hidden');
                 if (videoInput) {
                     videoInput.required = false;
@@ -414,6 +427,8 @@
             if (type === 'kuis') {
                 kontenLabel.textContent = 'Instruksi Kuis';
                 if (kontenInput) kontenInput.placeholder = 'Petunjuk pengerjaan kuis...';
+                if (typeHint) typeHint.textContent = 'Setelah klik tombol, Anda akan diarahkan ke halaman Input Kuis untuk mengisi soal.';
+                if (submitBtn) submitBtn.textContent = 'Lanjut Isi Soal';
                 videoGroup.classList.add('hidden');
                 if (videoInput) {
                     videoInput.required = false;
@@ -427,6 +442,8 @@
             // tugas
             kontenLabel.textContent = 'Deskripsi Tugas';
             if (kontenInput) kontenInput.placeholder = 'Jelaskan instruksi dan ketentuan tugas...';
+            if (typeHint) typeHint.textContent = 'Setelah klik tombol, Anda akan diarahkan ke halaman Kelola Tugas.';
+            if (submitBtn) submitBtn.textContent = 'Lanjut Kelola Tugas';
             videoGroup.classList.add('hidden');
             if (videoInput) {
                 videoInput.required = false;
@@ -444,6 +461,36 @@
         function onEditTypeChange() {
             const select = document.getElementById('edit_tipe');
             applyTypeState('edit', select?.value || 'video');
+        }
+
+        function handleAddMaterialSubmit(event) {
+            const form = event.target;
+            const selectedType = normalizeMaterialType(document.getElementById('add_tipe')?.value || 'video');
+            const targetRoute = typedContentRoutes[selectedType];
+
+            // Always continue on the dedicated typed content page so form fields stay aligned with module type.
+            if (!targetRoute) return true;
+
+            event.preventDefault();
+
+            const params = new URLSearchParams();
+            params.set('course_id', String(courseId));
+
+            const judul = form.querySelector('input[name="judul_material"]')?.value?.trim();
+            const konten = form.querySelector('textarea[name="konten"]')?.value?.trim();
+            const durasi = form.querySelector('input[name="durasi"]')?.value;
+            const videoUrl = form.querySelector('input[name="video_url"]')?.value?.trim();
+
+            if (judul) params.set('modul_judul', judul);
+            if (konten) params.set('modul_konten', konten);
+            if (durasi !== undefined && durasi !== null && durasi !== '') {
+                params.set('modul_durasi', durasi);
+            }
+            if (videoUrl) params.set('modul_video_url', videoUrl);
+
+            const query = params.toString();
+            window.location.href = query ? `${targetRoute}?${query}` : targetRoute;
+            return false;
         }
         
         // Initialize Sortable
