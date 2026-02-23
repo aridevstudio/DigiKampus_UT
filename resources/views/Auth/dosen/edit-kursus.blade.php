@@ -4,10 +4,10 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1">Perbarui informasi dan struktur materi kursus Anda</p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start w-full max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-10 items-start w-full max-w-6xl mx-auto">
         {{-- Informasi Kursus --}}
         <div class="w-full">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8">
+            <div class="bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
                         <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,6 +39,7 @@
                             <textarea name="deskripsi" rows="4" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('deskripsi', $course->deskripsi) }}</textarea>
                         </div>
 
+                        {{-- Baris 1: Kategori & Tingkat Kesulitan --}}
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
@@ -62,32 +63,19 @@
                             </div>
                         </div>
 
-                        <div>
-                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estimasi Waktu Belajar</label>
-                             <div class="grid grid-cols-3 gap-4">
-                                 <div class="col-span-1">
-                                    <input type="number" name="estimasi_waktu" value="{{ old('estimasi_waktu', $course->estimasi_waktu) }}" min="0" placeholder="8" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    @error('estimasi_waktu')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                                 </div>
-                                 <div class="col-span-2">
-                                    <select name="durasi_satuan" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        {{-- Baris 2: Estimasi Waktu Belajar & Tipe Harga (sejajar 2 kolom sesuai wireframe) --}}
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estimasi Waktu Belajar</label>
+                                <div class="flex gap-2">
+                                    <input type="number" name="estimasi_waktu" value="{{ old('estimasi_waktu', $course->estimasi_waktu) }}" min="0" placeholder="8" class="w-20 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <select name="durasi_satuan" class="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         <option value="Minggu" {{ old('durasi_satuan', $course->durasi_satuan) == 'Minggu' ? 'selected' : '' }}>Minggu</option>
                                         <option value="Jam" {{ old('durasi_satuan', $course->durasi_satuan) == 'Jam' ? 'selected' : '' }}>Jam</option>
                                     </select>
-                                    @error('durasi_satuan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                                 </div>
-                             </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
-                                <select name="kategori" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="kursus" {{ old('kategori', $course->kategori) === 'kursus' ? 'selected' : '' }}>Kursus</option>
-                                    <option value="webinar" {{ old('kategori', $course->kategori) === 'webinar' ? 'selected' : '' }}>Webinar</option>
-                                    <option value="tiket" {{ old('kategori', $course->kategori) === 'tiket' ? 'selected' : '' }}>Tiket</option>
-                                </select>
-                                @error('kategori')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
+                                @error('estimasi_waktu')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                @error('durasi_satuan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Harga</label>
@@ -98,11 +86,23 @@
                                 @error('tipe')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
                         </div>
+
+                        {{-- Kategori Kursus (Kursus/Webinar/Tiket) --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jenis Kursus</label>
+                            <select name="kategori" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="kursus" {{ old('kategori', $course->kategori) === 'kursus' ? 'selected' : '' }}>Kursus</option>
+                                <option value="webinar" {{ old('kategori', $course->kategori) === 'webinar' ? 'selected' : '' }}>Webinar</option>
+                                <option value="tiket" {{ old('kategori', $course->kategori) === 'tiket' ? 'selected' : '' }}>Tiket</option>
+                            </select>
+                            @error('kategori')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
+
+                        {{-- Harga (condisional, muncul kalau Berbayar) --}}
                         <div id="hargaField" class="{{ old('tipe', $course->tipe) === 'berbayar' ? '' : 'hidden' }}">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Harga (Rp)</label>
-                                <input type="number" name="harga" value="{{ old('harga', $course->harga) }}" min="0" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                @error('harga')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                            </div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Harga (Rp)</label>
+                            <input type="number" name="harga" value="{{ old('harga', $course->harga) }}" min="0" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            @error('harga')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
 
                         <div>
@@ -148,7 +148,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full mt-6 flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition shadow-lg shadow-blue-500/30">
+                    <button type="submit" class="w-full mt-8 flex justify-center items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-base transition shadow-lg shadow-blue-500/30">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                         </svg>
@@ -164,7 +164,9 @@
 
         {{-- Modul Utama --}}
         <div class="w-full">
-            <div id="modulesList" class="space-y-6">
+            <div class="bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm p-8 flex flex-col min-h-[400px]">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Modul Utama</h2>
+                <div id="modulesList" class="space-y-6 flex-1">
                 @forelse($course->modules as $module)
                 <div data-module-id="{{ $module->id_module }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                     {{-- Module Header --}}
@@ -282,7 +284,7 @@
                             @endforeach
                         </div>
 
-                        <button onclick="openAddMaterialModal({{ $module->id_module }})" class="mt-4 flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium px-2 py-1 hover:bg-blue-50 rounded-lg transition">
+                        <button onclick="openAddMaterialModal({{ $module->id_module }})" class="mt-4 w-full flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 bg-white dark:bg-gray-800 transition">
                             <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                             Tambah Konten
                         </button>
@@ -301,7 +303,7 @@
                 @endforelse
             </div>
 
-            <button onclick="openAddModuleModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition shadow-lg shadow-blue-500/30">
+            <button onclick="openAddModuleModal()" class="w-full mt-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 text-base transition shadow-lg shadow-blue-500/30">
                 <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
