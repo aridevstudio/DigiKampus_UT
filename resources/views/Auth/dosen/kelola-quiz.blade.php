@@ -9,13 +9,14 @@
             
             <div class="flex flex-wrap items-center gap-3">
                 <div class="relative min-w-[200px]">
-                    <select x-model="selectedCourseId" class="w-full px-4 py-2.5 pr-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none">
+                    <select x-model="selectedCourseId" :disabled="courseLocked" class="w-full px-4 py-2.5 pr-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none disabled:opacity-70 disabled:cursor-not-allowed">
                         <option value="">-- Pilih Kursus --</option>
                         <template x-for="course in courses" :key="course.id">
                             <option :value="course.id" x-text="course.nama"></option>
                         </template>
                     </select>
                     <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    <p x-show="courseLocked" class="text-xs text-blue-500 mt-1">Kursus disesuaikan otomatis dari halaman sebelumnya.</p>
                 </div>
                 
                 <button type="button" @click="showAddModal = true" class="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-xl flex items-center gap-2 transition">
@@ -244,7 +245,9 @@
                 courses: [],
                 isLoading: false,
                 isSubmitting: false,
-                selectedCourseId: @json(request('course_id', '')),
+                selectedCourseId: @json((string) request('course_id', '')),
+                lockedCourseId: @json((string) request('course_id', '')),
+                courseLocked: false,
                 form: {
                     judul_modul: @json(request('modul_judul', '')),
                     durasi: @json(request('modul_durasi', 15)),
@@ -317,12 +320,32 @@
                         const data = await response.json();
                         if (data.success) {
                             this.courses = data.data.courses;
+                            this.applyLockedCourseSelection();
                         }
                     } catch (error) {
                         console.error('Error fetching courses:', error);
                     } finally {
                         this.isLoading = false;
                     }
+                },
+
+                applyLockedCourseSelection() {
+                    const lockedId = String(this.lockedCourseId || '');
+                    if (!lockedId) {
+                        this.courseLocked = false;
+                        return;
+                    }
+
+                    const matchedCourse = this.courses.find((course) => String(course.id) === lockedId);
+                    if (!matchedCourse) {
+                        this.selectedCourseId = '';
+                        this.courseLocked = false;
+                        return;
+                    }
+
+                    this.selectedCourseId = lockedId;
+                    this.courses = [matchedCourse];
+                    this.courseLocked = true;
                 },
 
                 formatTime(seconds) {

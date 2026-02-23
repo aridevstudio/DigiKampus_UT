@@ -24,12 +24,13 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Kursus <span class="text-red-500">*</span></label>
-                            <select x-model="selectedCourseId" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            <select x-model="selectedCourseId" :disabled="courseLocked" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:opacity-70 disabled:cursor-not-allowed">
                                 <option value="">-- Pilih Kursus --</option>
                                 <template x-for="course in courses" :key="course.id">
                                     <option :value="course.id" x-text="course.nama"></option>
                                 </template>
                             </select>
+                            <p x-show="courseLocked" class="text-xs text-blue-500 mt-1">Kursus disesuaikan otomatis dari halaman sebelumnya.</p>
                             <p x-show="courses.length === 0 && !isLoading" class="text-xs text-red-500 mt-1">Tidak ada kursus ditemukan. Silakan buat kursus terlebih dahulu.</p>
                         </div>
                     </div>
@@ -120,7 +121,9 @@
                 courses: [],
                 isLoading: false,
                 isSubmitting: false,
-                selectedCourseId: @json(request('course_id', '')),
+                selectedCourseId: @json((string) request('course_id', '')),
+                lockedCourseId: @json((string) request('course_id', '')),
+                courseLocked: false,
                 form: {
                     judul_modul: @json(request('modul_judul', '')),
                     video_url: @json(request('modul_video_url', '')),
@@ -145,12 +148,32 @@
                         const data = await response.json();
                         if (data.success) {
                             this.courses = data.data.courses;
+                            this.applyLockedCourseSelection();
                         }
                     } catch (error) {
                         console.error('Error fetching courses:', error);
                     } finally {
                         this.isLoading = false;
                     }
+                },
+
+                applyLockedCourseSelection() {
+                    const lockedId = String(this.lockedCourseId || '');
+                    if (!lockedId) {
+                        this.courseLocked = false;
+                        return;
+                    }
+
+                    const matchedCourse = this.courses.find((course) => String(course.id) === lockedId);
+                    if (!matchedCourse) {
+                        this.selectedCourseId = '';
+                        this.courseLocked = false;
+                        return;
+                    }
+
+                    this.selectedCourseId = lockedId;
+                    this.courses = [matchedCourse];
+                    this.courseLocked = true;
                 },
 
                 getEmbedUrl(url) {
