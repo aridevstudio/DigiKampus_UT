@@ -801,37 +801,58 @@ class DosenController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
         }
 
-        $course = \App\Models\Course::create([
-            'id_dosen' => $dosen->id,
-            'nama_course' => $request->nama_course,
-            'kode_course' => $request->kode_course,
-            'deskripsi' => $request->deskripsi,
-            'id_jurusan' => $request->id_jurusan,
-            'tipe' => $request->tipe,
-            'kategori' => $request->kategori,
-            'harga' => $request->tipe === 'berbayar' ? $request->harga : 0,
-            'thumbnail' => $thumbnailPath,
-            'status' => $request->status ?? 'draft',
-            'level' => $request->level,
-            'estimasi_waktu' => $request->estimasi_waktu,
-            'sertifikat' => $request->boolean('sertifikat'),
-            'akses_publik' => $request->boolean('akses_publik'),
-            'diskon' => $request->diskon ?? 0,
-            'youtube_playlist' => $request->youtube_playlist,
-        ]);
-
-        // Create initial module if modul_judul is provided
-        if ($request->filled('modul_judul')) {
-            \App\Models\CourseMaterial::create([
-                'id_course' => $course->id_course,
-                'judul_material' => $request->modul_judul,
-                'tipe' => $request->modul_tipe ?? 'video',
-                'konten' => $request->modul_konten,
-                'video_url' => $request->modul_video_url,
-                'durasi' => $request->modul_durasi,
-                'urutan' => 1,
+        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath) {
+            $course = \App\Models\Course::create([
+                'id_dosen' => $dosen->id,
+                'nama_course' => $request->nama_course,
+                'kode_course' => $request->kode_course,
+                'deskripsi' => $request->deskripsi,
+                'id_jurusan' => $request->id_jurusan,
+                'tipe' => $request->tipe,
+                'kategori' => $request->kategori,
+                'harga' => $request->tipe === 'berbayar' ? $request->harga : 0,
+                'thumbnail' => $thumbnailPath,
+                'status' => $request->status ?? 'draft',
+                'level' => $request->level,
+                'estimasi_waktu' => $request->estimasi_waktu,
+                'sertifikat' => $request->boolean('sertifikat'),
+                'akses_publik' => $request->boolean('akses_publik'),
+                'diskon' => $request->diskon ?? 0,
+                'youtube_playlist' => $request->youtube_playlist,
             ]);
-        }
+
+            // Build "Modul Utama" when initial structure fields are filled.
+            $hasInitialStructure =
+                $request->filled('modul_judul') ||
+                $request->filled('modul_konten') ||
+                $request->filled('modul_video_url') ||
+                $request->filled('modul_durasi');
+
+            if ($hasInitialStructure) {
+                $mainModule = \App\Models\CourseModule::create([
+                    'id_course' => $course->id_course,
+                    'judul_module' => 'Modul Utama',
+                    'deskripsi' => 'Modul default untuk materi awal kursus',
+                    'urutan' => 1,
+                ]);
+
+                // If title provided, create first material inside the main module.
+                if ($request->filled('modul_judul')) {
+                    \App\Models\CourseMaterial::create([
+                        'id_course' => $course->id_course,
+                        'id_module' => $mainModule->id_module,
+                        'judul_material' => $request->modul_judul,
+                        'tipe' => $request->modul_tipe ?? 'video',
+                        'konten' => $request->modul_konten,
+                        'video_url' => $request->modul_video_url,
+                        'durasi' => $request->modul_durasi,
+                        'urutan' => 1,
+                    ]);
+                }
+            }
+
+            return $course;
+        });
 
         return redirect()->route('dosen.kursus.modul', $course->id_course)
             ->with('success', 'Kursus berhasil dibuat! Silakan tambahkan modul.');
@@ -849,11 +870,61 @@ class DosenController extends Controller
                 $q->orderBy('urutan');
             }])
             ->firstOrFail();
-            
+
+        $this->ensureMainModuleForLegacyCourse($course);
+        $course->load(['modules.materials' => function($q) {
+            $q->orderBy('urutan');
+        }]);
+
         $jurusans = \App\Models\Jurusan::all();
         // $materials = $course->materials()->orderBy('urutan')->get(); // No longer needed as primary source?
         
         return view('Auth.dosen.edit-kursus', compact('course', 'jurusans'));
+    }
+
+    /**
+     * Ensure legacy courses still have a main module.
+     * Old data may contain materials without id_module.
+     */
+    private function ensureMainModuleForLegacyCourse(\App\Models\Course $course): void
+    {
+        $hasUnlinkedMaterials = \App\Models\CourseMaterial::where('id_course', $course->id_course)
+            ->where(function ($query) {
+                $query->whereNull('id_module')
+                    ->orWhereDoesntHave('module');
+            })
+            ->exists();
+
+        if (!$hasUnlinkedMaterials) {
+            return;
+        }
+
+        DB::transaction(function () use ($course) {
+            $targetModule = \App\Models\CourseModule::where('id_course', $course->id_course)
+                ->orderBy('urutan')
+                ->first();
+
+            if (!$targetModule) {
+                $targetModule = \App\Models\CourseModule::create([
+                    'id_course' => $course->id_course,
+                    'judul_module' => 'Modul Utama',
+                    'deskripsi' => 'Modul otomatis untuk data kursus lama',
+                    'urutan' => 1,
+                ]);
+            }
+
+            $materialIds = \App\Models\CourseMaterial::where('id_course', $course->id_course)
+                ->where(function ($query) {
+                    $query->whereNull('id_module')
+                        ->orWhereDoesntHave('module');
+                })
+                ->pluck('id_material');
+
+            if ($materialIds->isNotEmpty()) {
+                \App\Models\CourseMaterial::whereIn('id_material', $materialIds)
+                    ->update(['id_module' => $targetModule->id_module]);
+            }
+        });
     }
 
     /**
