@@ -138,7 +138,7 @@
                 courses: [],
                 isLoading: false,
                 isSubmitting: false,
-                selectedCourseId: '',
+                selectedCourseId: @json(request('course_id', '')),
                 form: {
                     judul_modul: '',
                     tipe: 'text', // Using 'text' as container for assignment

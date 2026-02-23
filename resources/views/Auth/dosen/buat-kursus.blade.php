@@ -125,25 +125,32 @@
                             </div>
                             <div>
                                 <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
-                                <select name="modul_tipe" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <select name="modul_tipe" id="modul_tipe" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                     <option value="video" {{ old('modul_tipe') == 'video' ? 'selected' : '' }}>Video</option>
                                     <option value="bacaan" {{ old('modul_tipe') == 'bacaan' ? 'selected' : '' }}>Bacaan</option>
                                     <option value="kuis" {{ old('modul_tipe') == 'kuis' ? 'selected' : '' }}>Kuis</option>
                                     <option value="tugas" {{ old('modul_tipe') == 'tugas' ? 'selected' : '' }}>Tugas</option>
                                 </select>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Jika Judul Modul diisi, setelah kursus dibuat Anda akan diarahkan ke halaman kelola sesuai tipe ini.
+                                </p>
                             </div>
                             <div>
-                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
-                                <textarea name="modul_konten" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Deskripsi modul...">{{ old('modul_konten') }}</textarea>
+                                <label id="modul_konten_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
+                                <textarea id="modul_konten" name="modul_konten" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Deskripsi modul...">{{ old('modul_konten') }}</textarea>
                             </div>
-                            <div>
+                            <div id="modul_video_url_group">
                                 <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                                <input type="url" name="modul_video_url" value="{{ old('modul_video_url') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://www.youtube.com/watch?v=...">
+                                <input type="url" id="modul_video_url" name="modul_video_url" value="{{ old('modul_video_url') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://www.youtube.com/watch?v=...">
                             </div>
-                            <div>
-                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
-                                <input type="number" name="modul_durasi" min="0" value="{{ old('modul_durasi') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="0">
+                            <div id="modul_durasi_group">
+                                <label id="modul_durasi_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
+                                <input type="number" id="modul_durasi" name="modul_durasi" min="0" value="{{ old('modul_durasi') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="0">
                             </div>
+                            <p id="modul_type_hint" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                            @error('modul_video_url')<p class="text-red-500 text-xs -mt-2">{{ $message }}</p>@enderror
+                            @error('modul_konten')<p class="text-red-500 text-xs -mt-2">{{ $message }}</p>@enderror
+                            @error('modul_durasi')<p class="text-red-500 text-xs -mt-2">{{ $message }}</p>@enderror
                         </div>
                     </div>
 
@@ -277,6 +284,15 @@
             const tipeInput = document.getElementById('tipe_input');
             const hargaInput = document.getElementById('harga_input');
             const diskonInput = document.getElementById('diskon_input');
+            const modulTipeSelect = document.getElementById('modul_tipe');
+            const modulKontenLabel = document.getElementById('modul_konten_label');
+            const modulKontenInput = document.getElementById('modul_konten');
+            const modulVideoGroup = document.getElementById('modul_video_url_group');
+            const modulVideoInput = document.getElementById('modul_video_url');
+            const modulDurasiGroup = document.getElementById('modul_durasi_group');
+            const modulDurasiLabel = document.getElementById('modul_durasi_label');
+            const modulDurasiInput = document.getElementById('modul_durasi');
+            const modulTypeHint = document.getElementById('modul_type_hint');
 
             // Status Toggle
             if (statusToggle) {
@@ -304,6 +320,75 @@
                         diskonInput.classList.remove('opacity-50', 'cursor-not-allowed');
                     }
                 });
+            }
+
+            // Struktur Modul Awal adaptif berdasarkan tipe materi
+            const syncModuleFieldsByType = () => {
+                if (!modulTipeSelect) return;
+
+                const type = modulTipeSelect.value || 'video';
+
+                const config = {
+                    video: {
+                        kontenLabel: 'Ringkasan Video (opsional)',
+                        kontenPlaceholder: 'Ringkas isi video yang akan dipelajari...',
+                        showVideoUrl: true,
+                        showDurasi: true,
+                        durasiLabel: 'Durasi Video (menit)',
+                        hint: 'Tipe Video menampilkan URL video dan durasi tayang.',
+                    },
+                    bacaan: {
+                        kontenLabel: 'Konten Bacaan',
+                        kontenPlaceholder: 'Tulis isi materi bacaan, rangkuman, atau poin utama...',
+                        showVideoUrl: false,
+                        showDurasi: true,
+                        durasiLabel: 'Estimasi Baca (menit)',
+                        hint: 'Tipe Bacaan fokus ke konten teks. URL video disembunyikan.',
+                    },
+                    kuis: {
+                        kontenLabel: 'Instruksi Kuis',
+                        kontenPlaceholder: 'Jelaskan aturan, jumlah soal, dan nilai minimum kelulusan...',
+                        showVideoUrl: false,
+                        showDurasi: true,
+                        durasiLabel: 'Durasi Kuis (menit)',
+                        hint: 'Tipe Kuis cocok untuk evaluasi belajar dengan batas waktu.',
+                    },
+                    tugas: {
+                        kontenLabel: 'Instruksi Tugas',
+                        kontenPlaceholder: 'Tuliskan instruksi pengerjaan, format pengumpulan, dan kriteria penilaian...',
+                        showVideoUrl: false,
+                        showDurasi: false,
+                        durasiLabel: 'Durasi (menit)',
+                        hint: 'Tipe Tugas menampilkan instruksi tanpa URL video dan durasi.',
+                    },
+                };
+
+                const selected = config[type] || config.video;
+
+                if (modulKontenLabel) modulKontenLabel.textContent = selected.kontenLabel;
+                if (modulKontenInput) modulKontenInput.placeholder = selected.kontenPlaceholder;
+                if (modulDurasiLabel) modulDurasiLabel.textContent = selected.durasiLabel;
+                if (modulTypeHint) modulTypeHint.textContent = selected.hint;
+
+                if (modulVideoGroup) {
+                    modulVideoGroup.classList.toggle('hidden', !selected.showVideoUrl);
+                }
+                if (modulDurasiGroup) {
+                    modulDurasiGroup.classList.toggle('hidden', !selected.showDurasi);
+                }
+
+                // Hindari data lintas tipe ikut terkirim.
+                if (!selected.showVideoUrl && modulVideoInput) {
+                    modulVideoInput.value = '';
+                }
+                if (!selected.showDurasi && modulDurasiInput) {
+                    modulDurasiInput.value = '';
+                }
+            };
+
+            if (modulTipeSelect) {
+                modulTipeSelect.addEventListener('change', syncModuleFieldsByType);
+                syncModuleFieldsByType();
             }
 
             // Handle submit buttons — set status based on which button was clicked

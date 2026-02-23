@@ -820,8 +820,8 @@ class DosenController extends Controller
             'modul_judul' => 'nullable|string|max:255',
             'modul_tipe' => 'nullable|in:video,bacaan,kuis,tugas',
             'modul_konten' => 'nullable|string',
-            'modul_video_url' => 'nullable|url|max:500',
-            'modul_durasi' => 'nullable|integer|min:0',
+            'modul_video_url' => 'nullable|url|max:500|exclude_unless:modul_tipe,video',
+            'modul_durasi' => 'nullable|integer|min:0|exclude_if:modul_tipe,tugas',
         ]);
 
         $thumbnailPath = null;
@@ -866,14 +866,16 @@ class DosenController extends Controller
 
                 // If title provided, create first material inside the main module.
                 if ($request->filled('modul_judul')) {
+                    $materialType = $request->modul_tipe ?? 'video';
+
                     \App\Models\CourseMaterial::create([
                         'id_course' => $course->id_course,
                         'id_module' => $mainModule->id_module,
                         'judul_material' => $request->modul_judul,
-                        'tipe' => $request->modul_tipe ?? 'video',
+                        'tipe' => $materialType,
                         'konten' => $request->modul_konten,
-                        'video_url' => $request->modul_video_url,
-                        'durasi' => $request->modul_durasi,
+                        'video_url' => $materialType === 'video' ? $request->modul_video_url : null,
+                        'durasi' => $materialType === 'tugas' ? null : $request->modul_durasi,
                         'urutan' => 1,
                     ]);
                 }
@@ -881,6 +883,19 @@ class DosenController extends Controller
 
             return $course;
         });
+
+        $typeRoutes = [
+            'video' => 'dosen.kelola-video',
+            'bacaan' => 'dosen.kelola-bacaan',
+            'kuis' => 'dosen.kelola-quiz',
+            'tugas' => 'dosen.kelola-tugas',
+        ];
+
+        if ($request->filled('modul_judul') && isset($typeRoutes[$request->modul_tipe])) {
+            return redirect()->route($typeRoutes[$request->modul_tipe], [
+                'course_id' => $course->id_course,
+            ])->with('success', 'Kursus berhasil dibuat! Lanjutkan pengelolaan konten sesuai tipe modul.');
+        }
 
         return redirect()->route('dosen.kursus.modul', $course->id_course)
             ->with('success', 'Kursus berhasil dibuat! Silakan tambahkan modul.');
