@@ -47,7 +47,8 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Video URL <span class="text-red-500">*</span></label>
-                            <input type="url" x-model="form.video_url" required placeholder="https://youtube.com/watch?v=..." class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            <input type="url" x-model="form.video_url" @change="resolveDurationFromUrl()" @blur="resolveDurationFromUrl()" required placeholder="https://youtube.com/watch?v=..." class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            <p x-show="durationMessage" class="text-xs mt-1" :class="durationMessageType === 'error' ? 'text-red-500' : (durationMessageType === 'success' ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400')" x-text="durationMessage"></p>
                         </div>
                     </div>
                 </div>
@@ -121,6 +122,9 @@
                 courses: [],
                 isLoading: false,
                 isSubmitting: false,
+                isResolvingDuration: false,
+                durationMessage: '',
+                durationMessageType: 'info',
                 selectedCourseId: @json((string) request('course_id', '')),
                 lockedCourseId: @json((string) request('course_id', '')),
                 courseLocked: false,
@@ -134,6 +138,9 @@
 
                 init() {
                     this.fetchCourses();
+                    if (this.form.video_url && !this.form.durasi) {
+                        this.resolveDurationFromUrl();
+                    }
                 },
 
                 async fetchCourses() {
@@ -185,6 +192,48 @@
                         return 'https://www.youtube.com/embed/' + match[2];
                     }
                     return null;
+                },
+
+                async resolveDurationFromUrl() {
+                    const url = (this.form.video_url || '').trim();
+
+                    if (!url) {
+                        this.durationMessage = '';
+                        this.durationMessageType = 'info';
+                        return;
+                    }
+
+                    this.isResolvingDuration = true;
+                    this.durationMessage = 'Mendeteksi durasi video...';
+                    this.durationMessageType = 'info';
+
+                    try {
+                        const response = await fetch(`/dosen/api/video-duration?url=${encodeURIComponent(url)}`, {
+                            method: 'GET',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            this.form.durasi = data.data.minutes;
+                            const provider = (data?.data?.provider || 'video').toUpperCase();
+                            this.durationMessage = `Durasi otomatis: ${data.data.minutes} menit (${provider}).`;
+                            this.durationMessageType = 'success';
+                            return;
+                        }
+
+                        this.durationMessage = data?.message || 'Durasi tidak bisa dideteksi otomatis.';
+                        this.durationMessageType = 'error';
+                    } catch (error) {
+                        this.durationMessage = 'Gagal koneksi saat mendeteksi durasi video.';
+                        this.durationMessageType = 'error';
+                    } finally {
+                        this.isResolvingDuration = false;
+                    }
                 },
 
                 async saveVideo() {

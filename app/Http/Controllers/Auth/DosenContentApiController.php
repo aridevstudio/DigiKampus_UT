@@ -9,10 +9,64 @@ use App\Models\CourseModule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class DosenContentApiController extends Controller
 {
+    public function resolveVideoDuration(Request $request): JsonResponse
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        if (!$dosen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'url' => 'required|url|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'URL video tidak valid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $url = $validator->validated()['url'];
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        [$seconds, $provider, $source, $errorMessage] = $this->detectDurationFromProvider($url, $host);
+
+        if ($seconds === null || $seconds <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => $errorMessage ?: 'Durasi video belum bisa dideteksi otomatis.',
+                'data' => [
+                    'provider' => $provider,
+                ],
+            ], 422);
+        }
+
+        $minutes = max(1, (int) ceil($seconds / 60));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Durasi video berhasil dideteksi.',
+            'data' => [
+                'provider' => $provider,
+                'source' => $source,
+                'seconds' => $seconds,
+                'minutes' => $minutes,
+            ],
+        ]);
+    }
+
     public function courses(Request $request): JsonResponse
     {
         $dosen = Auth::guard('dosen')->user();
@@ -210,5 +264,156 @@ class DosenContentApiController extends Controller
         $decoded = json_decode($content, true);
 
         return is_array($decoded) && !empty($decoded['is_tugas']);
+    }
+
+    private function detectDurationFromProvider(string $url, string $host): array
+    {
+        if ($this->isYouTubeHost($host)) {
+            return $this->resolveYouTubeDuration($url);
+        }
+
+        if ($this->isVimeoHost($host)) {
+            return $this->resolveVimeoDuration($url);
+        }
+
+        if ($this->isDailymotionHost($host)) {
+            return $this->resolveDailymotionDuration($url);
+        }
+
+        return [null, 'unknown', null, 'Provider video belum didukung untuk deteksi durasi otomatis.'];
+    }
+
+    private function isYouTubeHost(string $host): bool
+    {
+        return Str::contains($host, ['youtube.com', 'youtu.be', 'youtube-nocookie.com']);
+    }
+
+    private function isVimeoHost(string $host): bool
+    {
+        return Str::contains($host, 'vimeo.com');
+    }
+
+    private function isDailymotionHost(string $host): bool
+    {
+        return Str::contains($host, ['dailymotion.com', 'dai.ly']);
+    }
+
+    private function resolveYouTubeDuration(string $url): array
+    {
+        $videoId = $this->extractYouTubeVideoId($url);
+        if (!$videoId) {
+            return [null, 'youtube', null, 'URL YouTube tidak valid.'];
+        }
+
+        // Fallback tanpa API key: parse lengthSeconds dari HTML watch page.
+        try {
+            $watchResponse = Http::timeout(12)
+                ->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (compatible; DigiKampusBot/1.0)',
+                    'Accept-Language' => 'en-US,en;q=0.9',
+                ])
+                ->get('https://www.youtube.com/watch', [
+                    'v' => $videoId,
+                    'hl' => 'en',
+                ]);
+
+            if ($watchResponse->successful()) {
+                $body = $watchResponse->body();
+
+                if (preg_match('/"lengthSeconds":"(\d+)"/', $body, $matches)) {
+                    return [(int) $matches[1], 'youtube', 'watch_html', null];
+                }
+
+                if (preg_match('/"approxDurationMs":"(\d+)"/', $body, $matches)) {
+                    return [(int) ceil(((int) $matches[1]) / 1000), 'youtube', 'watch_html', null];
+                }
+            }
+        } catch (\Throwable $exception) {
+            // Ignore and return user-friendly message below.
+        }
+
+        return [null, 'youtube', null, 'Durasi YouTube belum bisa dideteksi otomatis.'];
+    }
+
+    private function resolveVimeoDuration(string $url): array
+    {
+        try {
+            $response = Http::timeout(10)->get('https://vimeo.com/api/oembed.json', [
+                'url' => $url,
+            ]);
+
+            if ($response->successful()) {
+                $duration = (int) $response->json('duration');
+                if ($duration > 0) {
+                    return [$duration, 'vimeo', 'oembed', null];
+                }
+            }
+        } catch (\Throwable $exception) {
+            // Ignore and return user-friendly message below.
+        }
+
+        return [null, 'vimeo', null, 'Durasi Vimeo belum bisa dideteksi otomatis.'];
+    }
+
+    private function resolveDailymotionDuration(string $url): array
+    {
+        try {
+            $response = Http::timeout(10)->get('https://www.dailymotion.com/services/oembed', [
+                'url' => $url,
+                'format' => 'json',
+            ]);
+
+            if ($response->successful()) {
+                $duration = (int) $response->json('duration');
+                if ($duration > 0) {
+                    return [$duration, 'dailymotion', 'oembed', null];
+                }
+            }
+        } catch (\Throwable $exception) {
+            // Ignore and return user-friendly message below.
+        }
+
+        return [null, 'dailymotion', null, 'Durasi Dailymotion belum bisa dideteksi otomatis.'];
+    }
+
+    private function extractYouTubeVideoId(string $url): ?string
+    {
+        $parts = parse_url($url);
+        if (!$parts) {
+            return null;
+        }
+
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $path = trim((string) ($parts['path'] ?? ''), '/');
+
+        if (Str::contains($host, 'youtu.be')) {
+            $id = explode('/', $path)[0] ?? '';
+            return $id !== '' ? $id : null;
+        }
+
+        if (!empty($parts['query'])) {
+            parse_str($parts['query'], $query);
+            if (!empty($query['v'])) {
+                return (string) $query['v'];
+            }
+        }
+
+        $segments = explode('/', $path);
+        $embedIndex = array_search('embed', $segments, true);
+        if ($embedIndex !== false && !empty($segments[$embedIndex + 1])) {
+            return (string) $segments[$embedIndex + 1];
+        }
+
+        $shortsIndex = array_search('shorts', $segments, true);
+        if ($shortsIndex !== false && !empty($segments[$shortsIndex + 1])) {
+            return (string) $segments[$shortsIndex + 1];
+        }
+
+        $liveIndex = array_search('live', $segments, true);
+        if ($liveIndex !== false && !empty($segments[$liveIndex + 1])) {
+            return (string) $segments[$liveIndex + 1];
+        }
+
+        return null;
     }
 }

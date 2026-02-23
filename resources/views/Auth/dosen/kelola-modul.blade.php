@@ -222,7 +222,8 @@
                         </div>
                         <div id="add_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                            <input type="url" id="add_video_url" name="video_url" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <input type="url" id="add_video_url" name="video_url" onchange="syncVideoDuration('add')" onblur="syncVideoDuration('add')" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <p id="add_video_duration_hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                         </div>
                         <div id="add_durasi_group">
                             <label id="add_durasi_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
@@ -275,7 +276,8 @@
                         </div>
                         <div id="edit_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                            <input type="url" name="video_url" id="edit_video_url" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <input type="url" name="video_url" id="edit_video_url" onchange="syncVideoDuration('edit')" onblur="syncVideoDuration('edit')" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <p id="edit_video_duration_hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                         </div>
                         <div id="edit_durasi_group">
                             <label id="edit_durasi_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
@@ -406,6 +408,11 @@
                 if (videoInput) videoInput.required = false;
                 durasiGroup.classList.remove('hidden');
                 if (durasiLabel) durasiLabel.textContent = 'Durasi Video (menit)';
+                if (videoInput?.value?.trim()) {
+                    syncVideoDuration(prefix);
+                } else {
+                    setVideoDurationHint(prefix, '');
+                }
                 return;
             }
 
@@ -419,6 +426,7 @@
                     videoInput.required = false;
                     videoInput.value = '';
                 }
+                setVideoDurationHint(prefix, '');
                 durasiGroup.classList.remove('hidden');
                 if (durasiLabel) durasiLabel.textContent = 'Estimasi Baca (menit)';
                 return;
@@ -434,6 +442,7 @@
                     videoInput.required = false;
                     videoInput.value = '';
                 }
+                setVideoDurationHint(prefix, '');
                 durasiGroup.classList.remove('hidden');
                 if (durasiLabel) durasiLabel.textContent = 'Durasi Kuis (menit)';
                 return;
@@ -449,6 +458,7 @@
                 videoInput.required = false;
                 videoInput.value = '';
             }
+            setVideoDurationHint(prefix, '');
             durasiGroup.classList.add('hidden');
             if (durasiInput) durasiInput.value = '';
         }
@@ -461,6 +471,72 @@
         function onEditTypeChange() {
             const select = document.getElementById('edit_tipe');
             applyTypeState('edit', select?.value || 'video');
+        }
+
+        function setVideoDurationHint(prefix, message, tone = 'neutral') {
+            const hint = document.getElementById(`${prefix}_video_duration_hint`);
+            if (!hint) return;
+
+            hint.textContent = message || '';
+            hint.classList.remove('text-red-500', 'text-green-600', 'dark:text-green-400', 'text-gray-500', 'dark:text-gray-400');
+
+            if (tone === 'error') {
+                hint.classList.add('text-red-500');
+                return;
+            }
+
+            if (tone === 'success') {
+                hint.classList.add('text-green-600', 'dark:text-green-400');
+                return;
+            }
+
+            hint.classList.add('text-gray-500', 'dark:text-gray-400');
+        }
+
+        async function syncVideoDuration(prefix) {
+            const type = normalizeMaterialType(document.getElementById(`${prefix}_tipe`)?.value || 'video');
+            if (type !== 'video') {
+                setVideoDurationHint(prefix, '');
+                return;
+            }
+
+            const videoInput = document.getElementById(`${prefix}_video_url`);
+            const durasiInput = document.getElementById(`${prefix}_durasi`);
+
+            if (!videoInput || !durasiInput) {
+                return;
+            }
+
+            const url = videoInput.value?.trim();
+            if (!url) {
+                setVideoDurationHint(prefix, '');
+                return;
+            }
+
+            setVideoDurationHint(prefix, 'Mendeteksi durasi video...');
+
+            try {
+                const response = await fetch(`/dosen/api/video-duration?url=${encodeURIComponent(url)}`, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    durasiInput.value = data.data.minutes;
+                    const provider = (data?.data?.provider || 'video').toUpperCase();
+                    setVideoDurationHint(prefix, `Durasi otomatis: ${data.data.minutes} menit (${provider}).`, 'success');
+                    return;
+                }
+
+                setVideoDurationHint(prefix, data?.message || 'Durasi belum bisa dideteksi otomatis.', 'error');
+            } catch (error) {
+                setVideoDurationHint(prefix, 'Gagal koneksi saat mendeteksi durasi video.', 'error');
+            }
         }
 
         function handleAddMaterialSubmit(event) {

@@ -94,6 +94,7 @@ Route::prefix('dosen')
         // ----------------------------------------------------------------------
         Route::prefix('api')->group(function () {
             Route::get('/courses', [DosenContentApiController::class, 'courses'])->name('dosen.api.courses');
+            Route::get('/video-duration', [DosenContentApiController::class, 'resolveVideoDuration'])->name('dosen.api.video-duration');
             Route::post('/courses/{courseId}/modules', [DosenContentApiController::class, 'addModule'])->name('dosen.api.courses.modules.store');
         });
 
