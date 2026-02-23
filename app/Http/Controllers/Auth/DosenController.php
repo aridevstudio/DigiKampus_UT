@@ -716,6 +716,11 @@ class DosenController extends Controller
             'estimasi_waktu' => 'nullable|integer|min:0',
             'diskon' => 'nullable|integer|min:0|max:100',
             'youtube_playlist' => 'nullable|url|max:500',
+            'modul_judul' => 'nullable|string|max:255',
+            'modul_tipe' => 'nullable|in:video,bacaan,kuis,tugas',
+            'modul_konten' => 'nullable|string',
+            'modul_video_url' => 'nullable|url|max:500',
+            'modul_durasi' => 'nullable|integer|min:0',
         ]);
 
         $thumbnailPath = null;
@@ -741,6 +746,19 @@ class DosenController extends Controller
             'diskon' => $request->diskon ?? 0,
             'youtube_playlist' => $request->youtube_playlist,
         ]);
+
+        // Create initial module if modul_judul is provided
+        if ($request->filled('modul_judul')) {
+            \App\Models\CourseMaterial::create([
+                'id_course' => $course->id_course,
+                'judul_material' => $request->modul_judul,
+                'tipe' => $request->modul_tipe ?? 'video',
+                'konten' => $request->modul_konten,
+                'video_url' => $request->modul_video_url,
+                'durasi' => $request->modul_durasi,
+                'urutan' => 1,
+            ]);
+        }
 
         return redirect()->route('dosen.kursus.modul', $course->id_course)
             ->with('success', 'Kursus berhasil dibuat! Silakan tambahkan modul.');
