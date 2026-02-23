@@ -196,6 +196,45 @@
                     {{-- Module Body (Materials) --}}
                     <div class="p-4">
                         <div id="materials-{{ $module->id_module }}" class="space-y-3 materials-list" data-module-id="{{ $module->id_module }}">
+                            @if($module->materials->count() === 0)
+                                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-4">
+                                    <h4 class="font-semibold text-blue-700 dark:text-blue-300 mb-3 text-base">Tambah Konten Awal</h4>
+                                    <form action="{{ route('dosen.material.store', $course->id_course) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="id_module" value="{{ $module->id_module }}">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                            <div>
+                                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Judul Materi</label>
+                                                <input type="text" name="judul_material" required class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
+                                                <select name="tipe" required class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                                    <option value="video">Video</option>
+                                                    <option value="bacaan">Bacaan</option>
+                                                    <option value="kuis">Kuis</option>
+                                                    <option value="tugas">Tugas</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
+                                            <textarea name="konten" rows="2" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4 mb-3">
+                                            <div>
+                                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
+                                                <input type="url" name="video_url" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
+                                                <input type="number" name="durasi" min="0" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition shadow shadow-blue-500/20">Simpan Konten Awal</button>
+                                    </form>
+                                </div>
+                            @endif
                             @foreach($module->materials as $material)
                             <div data-material-id="{{ $material->id_material }}" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition group/material">
                                 {{-- Material Handle --}}
