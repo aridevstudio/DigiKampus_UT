@@ -157,6 +157,7 @@ class CourseController extends Controller
         
         $course = Course::with(['dosen', 'materials', 'assignments'])
             ->findOrFail($id);
+        $courseId = $course->id_course;
         
         // Check if user is enrolled
         $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
