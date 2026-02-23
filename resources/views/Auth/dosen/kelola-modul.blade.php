@@ -208,7 +208,7 @@
                         </div>
                         <div>
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
-                            <select name="tipe" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <select name="tipe" id="add_tipe" onchange="onAddTypeChange()" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                 <option value="video">Video</option>
                                 <option value="bacaan">Bacaan</option>
                                 <option value="kuis">Kuis</option>
@@ -216,16 +216,16 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
-                            <textarea name="konten" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                            <label id="add_konten_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
+                            <textarea name="konten" id="add_konten" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
                         </div>
-                        <div>
+                        <div id="add_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                            <input type="url" name="video_url" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <input type="url" id="add_video_url" name="video_url" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
-                            <input type="number" name="durasi" min="0" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                        <div id="add_durasi_group">
+                            <label id="add_durasi_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
+                            <input type="number" id="add_durasi" name="durasi" min="0" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
                     
@@ -261,7 +261,7 @@
                         </div>
                         <div>
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
-                            <select name="tipe" id="edit_tipe" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <select name="tipe" id="edit_tipe" onchange="onEditTypeChange()" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                 <option value="video">Video</option>
                                 <option value="bacaan">Bacaan</option>
                                 <option value="kuis">Kuis</option>
@@ -269,15 +269,15 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
+                            <label id="edit_konten_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
                             <textarea name="konten" id="edit_konten" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
                         </div>
-                        <div>
+                        <div id="edit_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
                             <input type="url" name="video_url" id="edit_video_url" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
+                        <div id="edit_durasi_group">
+                            <label id="edit_durasi_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
                             <input type="number" name="durasi" id="edit_durasi" min="0" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
@@ -365,6 +365,86 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script>
         const courseId = {{ $course['id'] }};
+
+        function normalizeMaterialType(type) {
+            const value = (type || '').toLowerCase();
+            if (value === 'quiz') return 'kuis';
+            if (value === 'text') return 'bacaan';
+            if (['video', 'bacaan', 'kuis', 'tugas'].includes(value)) return value;
+            return 'video';
+        }
+
+        function applyTypeState(prefix, rawType) {
+            const type = normalizeMaterialType(rawType);
+            const kontenLabel = document.getElementById(`${prefix}_konten_label`);
+            const kontenInput = document.getElementById(`${prefix}_konten`);
+            const videoGroup = document.getElementById(`${prefix}_video_group`);
+            const videoInput = document.getElementById(`${prefix}_video_url`);
+            const durasiGroup = document.getElementById(`${prefix}_durasi_group`);
+            const durasiLabel = document.getElementById(`${prefix}_durasi_label`);
+            const durasiInput = document.getElementById(`${prefix}_durasi`);
+
+            if (!kontenLabel || !videoGroup || !durasiGroup) {
+                return;
+            }
+
+            if (type === 'video') {
+                kontenLabel.textContent = 'Deskripsi Video';
+                if (kontenInput) kontenInput.placeholder = 'Ringkasan materi video...';
+                videoGroup.classList.remove('hidden');
+                if (videoInput) videoInput.required = false;
+                durasiGroup.classList.remove('hidden');
+                if (durasiLabel) durasiLabel.textContent = 'Durasi Video (menit)';
+                return;
+            }
+
+            if (type === 'bacaan') {
+                kontenLabel.textContent = 'Konten Bacaan';
+                if (kontenInput) kontenInput.placeholder = 'Tulis konten bacaan...';
+                videoGroup.classList.add('hidden');
+                if (videoInput) {
+                    videoInput.required = false;
+                    videoInput.value = '';
+                }
+                durasiGroup.classList.remove('hidden');
+                if (durasiLabel) durasiLabel.textContent = 'Estimasi Baca (menit)';
+                return;
+            }
+
+            if (type === 'kuis') {
+                kontenLabel.textContent = 'Instruksi Kuis';
+                if (kontenInput) kontenInput.placeholder = 'Petunjuk pengerjaan kuis...';
+                videoGroup.classList.add('hidden');
+                if (videoInput) {
+                    videoInput.required = false;
+                    videoInput.value = '';
+                }
+                durasiGroup.classList.remove('hidden');
+                if (durasiLabel) durasiLabel.textContent = 'Durasi Kuis (menit)';
+                return;
+            }
+
+            // tugas
+            kontenLabel.textContent = 'Deskripsi Tugas';
+            if (kontenInput) kontenInput.placeholder = 'Jelaskan instruksi dan ketentuan tugas...';
+            videoGroup.classList.add('hidden');
+            if (videoInput) {
+                videoInput.required = false;
+                videoInput.value = '';
+            }
+            durasiGroup.classList.add('hidden');
+            if (durasiInput) durasiInput.value = '';
+        }
+
+        function onAddTypeChange() {
+            const select = document.getElementById('add_tipe');
+            applyTypeState('add', select?.value || 'video');
+        }
+
+        function onEditTypeChange() {
+            const select = document.getElementById('edit_tipe');
+            applyTypeState('edit', select?.value || 'video');
+        }
         
         // Initialize Sortable
         var el = document.getElementById('materialsList');
@@ -407,6 +487,7 @@
         function openAddModal() {
             document.getElementById('addModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+            onAddTypeChange();
         }
         function closeAddModal() {
             document.getElementById('addModal').classList.add('hidden');
@@ -419,10 +500,11 @@
                 .then(data => {
                     document.getElementById('editForm').action = `/dosen/kursus/${courseId}/material/${id}`;
                     document.getElementById('edit_judul').value = data.judul_material || '';
-                    document.getElementById('edit_tipe').value = data.tipe || 'video';
+                    document.getElementById('edit_tipe').value = normalizeMaterialType(data.tipe || 'video');
                     document.getElementById('edit_konten').value = data.konten || '';
                     document.getElementById('edit_video_url').value = data.video_url || '';
                     document.getElementById('edit_durasi').value = data.durasi || '';
+                    onEditTypeChange();
                     document.getElementById('editModal').classList.remove('hidden');
                     document.body.style.overflow = 'hidden';
                 })
@@ -455,6 +537,9 @@
                 icon.classList.remove('rotate-180');
             }
         }
+
+        onAddTypeChange();
+        onEditTypeChange();
     </script>
     @endpush
 </x-layouts.dosen>
