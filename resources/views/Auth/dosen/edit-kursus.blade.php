@@ -4,11 +4,10 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1">Perbarui informasi dan struktur materi kursus Anda</p>
     </div>
 
-    <div class="grid grid-cols-12 gap-8 items-start">
-        
-        {{-- Left Column: Course Information --}}
-        <div class="col-span-12 md:col-span-4 space-y-6">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 sticky top-6">
+    <div class="flex flex-col items-center w-full gap-8">
+        {{-- Informasi Kursus --}}
+        <div class="w-full max-w-2xl">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
                         <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,10 +162,8 @@
             </div>
         </div>
 
-        {{-- Right Column: Modules --}}
-        <div class="col-span-12 md:col-span-8 space-y-6">
-            
-            {{-- Modules List --}}
+        {{-- Modul Utama --}}
+        <div class="w-full max-w-2xl">
             <div id="modulesList" class="space-y-6">
                 @forelse($course->modules as $module)
                 <div data-module-id="{{ $module->id_module }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
