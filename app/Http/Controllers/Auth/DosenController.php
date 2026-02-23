@@ -182,10 +182,17 @@ class DosenController extends Controller
                 ->get();
             
             foreach ($schedules as $schedule) {
+                $startTime = $schedule->jam_mulai ?? $schedule->waktu_mulai ?? '09:00';
+                $endTime = $schedule->jam_selesai ?? $schedule->waktu_selesai ?? '11:00';
+                $courseId = $schedule->id_course
+                    ?? $schedule->course?->id_course
+                    ?? null;
+
                 $upcomingSchedules[] = [
+                    'id' => $courseId,
                     'course' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Kursus',
                     'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
-                    'waktu' => ($schedule->jam_mulai ?? '09:00') . ' - ' . ($schedule->jam_selesai ?? '11:00') . ' WIB',
+                    'waktu' => $startTime . ' - ' . $endTime . ' WIB',
                 ];
             }
         } catch (\Exception $e) {
@@ -365,20 +372,31 @@ class DosenController extends Controller
     /**
      * Get Kursus detail for API
      */
-    public function getKursusDetail($id)
+    public function getKursusDetail(Request $request, $id)
     {
         $dosen = Auth::guard('dosen')->user();
         
         $course = \App\Models\Course::where('id_course', $id)
             ->where('id_dosen', $dosen->id)
-            ->with(['enrollments.mahasiswa.profile', 'materials', 'jurusan'])
+            ->with([
+                'enrollments.mahasiswa.profile',
+                'materials',
+                'modules.materials',
+                'jurusan',
+            ])
             ->first();
 
         if (!$course) {
-            return response()->json(['error' => 'Kursus tidak ditemukan'], 404);
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json(['error' => 'Kursus tidak ditemukan'], 404);
+            }
+
+            return redirect()
+                ->route('dosen.kursus')
+                ->with('error', 'Kursus tidak ditemukan');
         }
 
-        return response()->json([
+        $detailData = [
             'id_course' => $course->id_course,
             'nama_course' => $course->nama_course,
             'kode_course' => $course->kode_course,
@@ -392,6 +410,16 @@ class DosenController extends Controller
             'mahasiswa_count' => $course->enrollments->count(),
             'progress_avg' => round($course->enrollments->avg('progress') ?? 0),
             'materials_count' => $course->materials?->count() ?? 0,
+            'modules_count' => $course->modules?->count() ?? 0,
+        ];
+
+        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+            return response()->json($detailData);
+        }
+
+        return view('Auth.dosen.detail-kursus', [
+            'course' => $course,
+            'detail' => $detailData,
         ]);
     }
 

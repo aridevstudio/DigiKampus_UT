@@ -202,12 +202,14 @@
                             </svg>
                             {{ $schedule['waktu'] }}
                         </div>
-                        <a href="{{ route('dosen.kursus.detail', $schedule['id']) }}" class="inline-flex items-center gap-1 mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium">
-                            Lihat Detail Jadwal
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </a>
+                        @if(!empty($schedule['id']))
+                            <a href="{{ route('dosen.kursus.detail', $schedule['id']) }}" class="inline-flex items-center gap-1 mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium">
+                                Lihat Detail Jadwal
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        @endif
                     </div>
                 </div>
                 @empty
