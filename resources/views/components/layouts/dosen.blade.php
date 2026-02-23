@@ -395,24 +395,56 @@
                         const iconSvg = iconMap[item.icon] || iconMap['info'];
                         const unreadBg = item.is_read ? '' : 'bg-blue-50/50 dark:bg-blue-500/5';
                         const unreadDot = item.is_read ? '' : '<span class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>';
-                        const clickAction = item.link ? `window.location.href='${item.link}'` : (item.is_read ? '' : `dosenMarkRead(${item.id})`);
-                        const cursor = (item.link || !item.is_read) ? 'cursor-pointer' : '';
+                        const canClick = Boolean(item.link) || !item.is_read;
+                        const cursor = canClick ? 'cursor-pointer' : '';
+                        const encodedLink = item.link ? encodeURIComponent(item.link) : '';
 
-                        html += `<div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-start gap-3 transition ${unreadBg} ${cursor}" ${clickAction ? `onclick="${clickAction}"` : ''} data-dosen-notif-id="${item.id}">`;
+                        html += `<div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-start gap-3 transition ${unreadBg} ${cursor}" data-dosen-notif-id="${item.id}" data-dosen-notif-read="${item.is_read ? '1' : '0'}" data-dosen-notif-link="${encodedLink}">`;
                         html += '<div class="mt-0.5 flex-shrink-0">' + iconSvg + '</div>';
                         html += '<div class="flex-1 min-w-0"><p class="text-sm text-gray-700 dark:text-gray-300 truncate font-medium">' + item.message + '</p>';
                         if (item.detail) html += '<p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">' + item.detail + '</p>';
                         html += '<p class="text-xs text-gray-400 mt-0.5">' + item.time + '</p></div>' + unreadDot + '</div>';
                     });
                     list.innerHTML = html;
+
+                    list.querySelectorAll('[data-dosen-notif-id]').forEach((notifEl) => {
+                        notifEl.addEventListener('click', () => {
+                            handleDosenNotificationClick(notifEl);
+                        });
+                    });
                 })
                 .catch(() => {
                     document.getElementById('dosenNotifList').innerHTML = '<div class="px-4 py-6 text-center text-sm text-red-400">Gagal memuat notifikasi</div>';
                 });
         }
 
-        function dosenMarkRead(id) {
-            fetch(`/dosen/notifications/${id}/read`, {
+        function handleDosenNotificationClick(notifEl) {
+            const id = notifEl.getAttribute('data-dosen-notif-id');
+            const isRead = notifEl.getAttribute('data-dosen-notif-read') === '1';
+            const encodedLink = notifEl.getAttribute('data-dosen-notif-link') || '';
+            const link = encodedLink ? decodeURIComponent(encodedLink) : '';
+
+            if (!id) return;
+
+            if (!isRead) {
+                dosenMarkRead(id, { skipCounterRefresh: Boolean(link) })
+                    .finally(() => {
+                        if (link) {
+                            window.location.href = link;
+                        }
+                    });
+                return;
+            }
+
+            if (link) {
+                window.location.href = link;
+            }
+        }
+
+        function dosenMarkRead(id, options = {}) {
+            const { skipCounterRefresh = false } = options;
+
+            return fetch(`/dosen/notifications/${id}/read`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
             }).then(() => {
@@ -421,7 +453,11 @@
                     el.classList.remove('bg-blue-50/50', 'dark:bg-blue-500/5');
                     const dot = el.querySelector('.w-2.h-2.bg-blue-500');
                     if (dot) dot.remove();
+                    el.setAttribute('data-dosen-notif-read', '1');
                 }
+
+                if (skipCounterRefresh) return;
+
                 fetch('/dosen/notifications/count').then(r => r.json()).then(data => {
                     updateDosenNotifBadge(data.count);
                     document.getElementById('dosenNotifSubtitle').textContent = data.count > 0 ? data.count + ' belum dibaca' : 'Semua sudah dibaca';

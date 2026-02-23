@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Models\News;
 use App\Models\Agenda;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -115,7 +116,7 @@ class DashboardController extends Controller
     /**
      * Mark a single notification as read
      */
-    public function markNotificationRead($id)
+    public function markNotificationRead(Request $request, $id)
     {
         $user = Auth::guard('mahasiswa')->user();
         
@@ -126,6 +127,13 @@ class DashboardController extends Controller
         if ($notification) {
             $notification->is_read = true;
             $notification->save();
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Notifikasi ditandai sudah dibaca',
+            ]);
         }
 
         return redirect()->route('mahasiswa.notification')->with('success', 'Notifikasi ditandai sudah dibaca');

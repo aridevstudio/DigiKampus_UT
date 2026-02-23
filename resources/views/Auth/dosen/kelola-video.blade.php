@@ -122,10 +122,10 @@
                 isSubmitting: false,
                 selectedCourseId: @json(request('course_id', '')),
                 form: {
-                    judul_modul: '',
-                    video_url: '',
-                    durasi: '',
-                    konten: '',
+                    judul_modul: @json(request('modul_judul', '')),
+                    video_url: @json(request('modul_video_url', '')),
+                    durasi: @json(request('modul_durasi', '')),
+                    konten: @json(request('modul_konten', '')),
                     tipe: 'video'
                 },
 

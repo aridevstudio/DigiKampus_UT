@@ -803,6 +803,15 @@ class DosenController extends Controller
     public function storeCourse(Request $request)
     {
         $dosen = Auth::guard('dosen')->user();
+
+        $typeRoutes = [
+            'video' => 'dosen.kelola-video',
+            'bacaan' => 'dosen.kelola-bacaan',
+            'kuis' => 'dosen.kelola-quiz',
+            'tugas' => 'dosen.kelola-tugas',
+        ];
+
+        $redirectToTypedPage = $request->filled('modul_judul') && isset($typeRoutes[$request->modul_tipe]);
         
         $request->validate([
             'nama_course' => 'required|string|max:255',
@@ -829,7 +838,7 @@ class DosenController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
         }
 
-        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath) {
+        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath, $redirectToTypedPage) {
             $course = \App\Models\Course::create([
                 'id_dosen' => $dosen->id,
                 'nama_course' => $request->nama_course,
@@ -865,7 +874,9 @@ class DosenController extends Controller
                 ]);
 
                 // If title provided, create first material inside the main module.
-                if ($request->filled('modul_judul')) {
+                // Prevent duplicate first material:
+                // when user is redirected to typed content page, that page will create the material.
+                if ($request->filled('modul_judul') && !$redirectToTypedPage) {
                     $materialType = $request->modul_tipe ?? 'video';
 
                     \App\Models\CourseMaterial::create([
@@ -884,17 +895,19 @@ class DosenController extends Controller
             return $course;
         });
 
-        $typeRoutes = [
-            'video' => 'dosen.kelola-video',
-            'bacaan' => 'dosen.kelola-bacaan',
-            'kuis' => 'dosen.kelola-quiz',
-            'tugas' => 'dosen.kelola-tugas',
-        ];
-
-        if ($request->filled('modul_judul') && isset($typeRoutes[$request->modul_tipe])) {
-            return redirect()->route($typeRoutes[$request->modul_tipe], [
+        if ($redirectToTypedPage) {
+            $redirectParams = array_filter([
                 'course_id' => $course->id_course,
-            ])->with('success', 'Kursus berhasil dibuat! Lanjutkan pengelolaan konten sesuai tipe modul.');
+                'modul_judul' => $request->modul_judul,
+                'modul_konten' => $request->modul_konten,
+                'modul_video_url' => $request->modul_video_url,
+                'modul_durasi' => $request->modul_durasi,
+            ], static function ($value) {
+                return $value !== null && $value !== '';
+            });
+
+            return redirect()->route($typeRoutes[$request->modul_tipe], $redirectParams)
+                ->with('success', 'Kursus berhasil dibuat! Lanjutkan pengelolaan konten sesuai tipe modul.');
         }
 
         return redirect()->route('dosen.kursus.modul', $course->id_course)

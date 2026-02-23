@@ -134,9 +134,9 @@
                 isSubmitting: false,
                 selectedCourseId: @json(request('course_id', '')),
                 form: {
-                    judul_modul: '',
-                    konten: '',
-                    durasi: 10,
+                    judul_modul: @json(request('modul_judul', '')),
+                    konten: @json(request('modul_konten', '')),
+                    durasi: @json(request('modul_durasi', 10)),
                     tipe: 'text'
                 },
 

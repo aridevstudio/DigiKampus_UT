@@ -21,6 +21,30 @@
     activeFilter: 'all',
     searchQuery: '',
     unreadCount: {{ $unreadCount }},
+    csrfToken: '{{ csrf_token() }}',
+
+    async markAsRead(notif) {
+        if (notif.is_read) return;
+
+        try {
+            await fetch(`/mahasiswa/notification/${notif.id}/read`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                }
+            });
+
+            notif.is_read = true;
+            this.unreadCount = Math.max(0, this.unreadCount - 1);
+        } catch (error) {
+            const fallbackForm = document.getElementById(`notif-read-form-${notif.id}`);
+            if (fallbackForm) {
+                fallbackForm.submit();
+            }
+        }
+    },
 
     get filteredNotifications() {
         return this.allNotifications.filter(n => {
@@ -62,9 +86,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                 </svg>
             </span>
-            @if($unreadCount > 0)
-            <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">{{ $unreadCount }}</span>
-            @endif
+            <template x-if="unreadCount > 0">
+                <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-medium" x-text="unreadCount"></span>
+            </template>
         </div>
         <div class="flex items-center gap-3">
             @if($unreadCount > 0)
@@ -112,7 +136,8 @@
                 <div class="space-y-3">
                     <template x-for="(notif, index) in filteredNotifications" :key="notif.id">
                         <div class="bg-white dark:bg-[#1f2937] rounded-xl p-4 border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition animate-fade-in-up group"
-                             :class="{ 'border-l-4 border-l-blue-500': !notif.is_read }"
+                             @click="markAsRead(notif)"
+                             :class="{ 'border-l-4 border-l-blue-500 cursor-pointer': !notif.is_read }"
                              :style="'animation-delay: ' + (index * 50) + 'ms'">
                             <div class="flex items-start gap-4">
                                 {{-- Icon --}}
@@ -157,15 +182,16 @@
                                 <div class="flex items-center gap-2 flex-shrink-0">
                                     <span x-show="!notif.is_read" class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
                                     <template x-if="!notif.is_read">
-                                        <form :action="'/mahasiswa/notification/' + notif.id + '/read'" method="POST" class="opacity-0 group-hover:opacity-100 transition">
-                                            @csrf
-                                            <button type="submit" class="text-xs text-blue-500 hover:text-blue-600 whitespace-nowrap" title="Tandai dibaca">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                                </svg>
-                                            </button>
-                                        </form>
+                                        <button type="button" @click.stop="markAsRead(notif)" class="opacity-0 group-hover:opacity-100 transition text-xs text-blue-500 hover:text-blue-600 whitespace-nowrap" title="Tandai dibaca">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                            </svg>
+                                        </button>
                                     </template>
+
+                                    <form :id="'notif-read-form-' + notif.id" :action="'/mahasiswa/notification/' + notif.id + '/read'" method="POST" class="hidden">
+                                        @csrf
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -202,7 +228,7 @@
                         :class="activeFilter === 'unread' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'"
                         class="w-full text-left px-4 py-2.5 rounded-lg text-sm transition">
                     Belum Dibaca
-                    <span class="float-right text-xs opacity-70">({{ $unreadCount }})</span>
+                    <span class="float-right text-xs opacity-70">(<span x-text="unreadCount"></span>)</span>
                 </button>
                 <button @click="activeFilter = 'kursus_pembelajaran'" 
                         :class="activeFilter === 'kursus_pembelajaran' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'"

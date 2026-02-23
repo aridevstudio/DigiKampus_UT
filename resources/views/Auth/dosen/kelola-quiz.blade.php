@@ -246,8 +246,8 @@
                 isSubmitting: false,
                 selectedCourseId: @json(request('course_id', '')),
                 form: {
-                    judul_modul: '',
-                    durasi: 15,
+                    judul_modul: @json(request('modul_judul', '')),
+                    durasi: @json(request('modul_durasi', 15)),
                     tipe: 'quiz',
                     konten: ''
                 },
