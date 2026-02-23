@@ -204,6 +204,79 @@ class DosenController extends Controller
     }
 
     /**
+     * Show dosen profile page
+     */
+    public function showProfile()
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        return view('Auth.dosen.profile', ['dosen' => $dosen]);
+    }
+
+    /**
+     * Update dosen profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $dosen->id,
+            'no_hp' => 'nullable|string|max:20',
+            'bio' => 'nullable|string|max:500',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'current_password' => 'nullable|required_with:new_password|string',
+            'new_password' => 'nullable|string|min:8|confirmed',
+        ], [
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
+            'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
+            'foto.image' => 'File harus berupa gambar.',
+        ]);
+
+        $dosen->name = $request->name;
+        $dosen->email = $request->email;
+
+        $profileData = [
+            'no_hp' => $request->no_hp,
+            'bio' => $request->bio,
+        ];
+
+        // Handle profile photo upload
+        if ($request->hasFile('foto')) {
+            if ($dosen->profile?->foto_profile && \Storage::disk('public')->exists($dosen->profile->foto_profile)) {
+                \Storage::disk('public')->delete($dosen->profile->foto_profile);
+            }
+
+            $profileData['foto_profile'] = $request->file('foto')->store('dosen-photos', 'public');
+        }
+
+        // Update/create profile record
+        if ($dosen->profile) {
+            $dosen->profile->update($profileData);
+        } else {
+            $dosen->profile()->create($profileData);
+        }
+
+        // Handle password change
+        if ($request->filled('new_password')) {
+            if (!Hash::check($request->current_password, $dosen->password)) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['current_password' => 'Password lama tidak sesuai.']);
+            }
+
+            $dosen->password = Hash::make($request->new_password);
+        }
+
+        $dosen->save();
+
+        return redirect()
+            ->route('dosen.profile')
+            ->with('success', 'Profil berhasil diperbarui!');
+    }
+
+    /**
      * Logout
      */
     public function logout(Request $request)

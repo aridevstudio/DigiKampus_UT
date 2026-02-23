@@ -204,7 +204,7 @@
                             {{-- Dropdown Menu --}}
                             <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1f2937] rounded-lg shadow-lg border border-gray-100 dark:border-gray-700/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                                 <div class="py-2">
-                                    <span class="block px-4 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed" title="Segera hadir">Profile <span class="text-xs">(Segera Hadir)</span></span>
+                                    <a href="{{ route('dosen.profile') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Profile</a>
                                     <span class="block px-4 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed" title="Segera hadir">Settings <span class="text-xs">(Segera Hadir)</span></span>
                                     <hr class="my-1 border-gray-100 dark:border-gray-700/50">
                                     <form action="{{ route('dosen.logout') }}" method="POST">

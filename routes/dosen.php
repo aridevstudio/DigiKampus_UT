@@ -50,6 +50,12 @@ Route::prefix('dosen')
         // Dashboard
         // ----------------------------------------------------------------------
         Route::get('/dashboard', [DosenController::class, 'showDashboard'])->name('dosen.dashboard');
+
+        // ----------------------------------------------------------------------
+        // Profile
+        // ----------------------------------------------------------------------
+        Route::get('/profile', [DosenController::class, 'showProfile'])->name('dosen.profile');
+        Route::put('/profile', [DosenController::class, 'updateProfile'])->name('dosen.profile.update');
         
         // ----------------------------------------------------------------------
         // Kursus Management
