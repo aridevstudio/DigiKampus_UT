@@ -4,9 +4,9 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1">Perbarui informasi dan struktur materi kursus Anda</p>
     </div>
 
-    <div class="flex flex-col items-center w-full gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start w-full max-w-6xl mx-auto">
         {{-- Informasi Kursus --}}
-        <div class="w-full max-w-2xl">
+        <div class="w-full">
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
@@ -163,7 +163,7 @@
         </div>
 
         {{-- Modul Utama --}}
-        <div class="w-full max-w-2xl">
+        <div class="w-full">
             <div id="modulesList" class="space-y-6">
                 @forelse($course->modules as $module)
                 <div data-module-id="{{ $module->id_module }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
