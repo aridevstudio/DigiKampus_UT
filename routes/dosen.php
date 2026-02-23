@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\DosenController;
+use App\Http\Controllers\Auth\DosenContentApiController;
 use App\Http\Middleware\EnsureAuthenticatedDosen;
 use App\Http\Middleware\RedirectIfAuthenticatedDosen;
 use Illuminate\Support\Facades\Route;
@@ -91,6 +92,11 @@ Route::prefix('dosen')
         // ----------------------------------------------------------------------
         // Content Creation (Video, Quiz, dll)
         // ----------------------------------------------------------------------
+        Route::prefix('api')->group(function () {
+            Route::get('/courses', [DosenContentApiController::class, 'courses'])->name('dosen.api.courses');
+            Route::post('/courses/{courseId}/modules', [DosenContentApiController::class, 'addModule'])->name('dosen.api.courses.modules.store');
+        });
+
         Route::prefix('konten')->group(function () {
             Route::view('/video', 'Auth.dosen.kelola-video')->name('dosen.kelola-video');
             Route::view('/quiz', 'Auth.dosen.kelola-quiz')->name('dosen.kelola-quiz');

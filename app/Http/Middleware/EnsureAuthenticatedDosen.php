@@ -17,6 +17,13 @@ class EnsureAuthenticatedDosen
     public function handle(Request $request, Closure $next): Response
     {
         if (!Auth::guard('dosen')->check()) {
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.',
+                ], 401);
+            }
+
             return redirect()->route('dosen.login')
                 ->with('alert', 'Silakan login terlebih dahulu.');
         }

@@ -279,7 +279,7 @@
                 async fetchCourses() {
                     this.isLoading = true;
                     try {
-                        const response = await fetch('/api/dosen/courses?sort=terbaru&per_page=100', {
+                        const response = await fetch('/dosen/api/courses?sort=terbaru&per_page=100', {
                             credentials: 'same-origin',
                             headers: {
                                 'Accept': 'application/json'
@@ -401,7 +401,7 @@
 
                     this.isSubmitting = true;
                     try {
-                        const response = await fetch(`/api/dosen/courses/${this.selectedCourseId}/modules`, {
+                        const response = await fetch(`/dosen/api/courses/${this.selectedCourseId}/modules`, {
                             method: 'POST',
                             credentials: 'same-origin',
                             headers: {
