@@ -30,6 +30,7 @@ class MahasiswaDashboardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $activeStatuses = ['aktif', 'in_progress'];
 
         // Get progress statistics
         $progressData = $this->getProgressData($user->id);
@@ -37,7 +38,7 @@ class MahasiswaDashboardController extends Controller
         // Get enrolled courses (limit 3 for dashboard)
         $enrolledCourses = Enrollment::with(['course', 'course.dosen'])
             ->where('id_mahasiswa', $user->id)
-            ->where('status', 'aktif')
+            ->whereIn('status', $activeStatuses)
             ->orderBy('updated_at', 'desc')
             ->take(3)
             ->get();
@@ -197,19 +198,19 @@ class MahasiswaDashboardController extends Controller
     private function getProgressData(int $mahasiswaId): array
     {
         $enrollments = Enrollment::where('id_mahasiswa', $mahasiswaId)->get();
+        $activeStatuses = ['aktif', 'in_progress'];
+        $activeEnrollments = $enrollments->whereIn('status', $activeStatuses);
 
-        $kursusAktif = $enrollments->where('status', 'aktif')->count();
+        $kursusAktif = $activeEnrollments->count();
         $kursusSelesai = $enrollments->where('status', 'selesai')->count();
 
         // Calculate courses with progress < 50% as "tertunda"
-        $kursusTertunda = $enrollments
-            ->where('status', 'aktif')
+        $kursusTertunda = $activeEnrollments
             ->where('progress', '<', 50)
             ->count();
 
         // Calculate total progress as average of all active enrollments
         $totalKemajuan = 0;
-        $activeEnrollments = $enrollments->where('status', 'aktif');
 
         if ($activeEnrollments->count() > 0) {
             $totalKemajuan = round($activeEnrollments->avg('progress'), 0);

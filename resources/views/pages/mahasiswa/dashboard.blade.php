@@ -5,10 +5,12 @@ $userName = $user?->name ?? 'Mahasiswa';
 $firstName = explode(' ', $userName)[0];
 
 // Use data from controller (with fallback to 0 if not set)
-$totalProgressValue = $totalProgress ?? 0;
+$totalProgressValue = max(0, min(100, (int) ($totalProgress ?? 0)));
 $activeCoursesCount = $kursusAktif ?? 0;
 $completedCoursesCount = $kursusSelesai ?? 0;
+$inProgressCoursesCount = $kursusSedangDipelajari ?? 0;
 $pendingCoursesCount = $kursusTertunda ?? 0;
+$continueLearningHref = $continueLearningUrl ?? route('mahasiswa.get-courses');
 
 // Gradients for course cards
 $gradients = [
@@ -25,6 +27,7 @@ if (isset($enrolledCourses) && count($enrolledCourses) > 0) {
     foreach ($enrolledCourses as $index => $enrollment) {
         $course = $enrollment->course;
         $courses[] = [
+            'id' => $course->id_course ?? $enrollment->id_course ?? null,
             'name' => $course->nama_course ?? 'Kursus',
             'code' => $course->kode_course ?? '',
             'progress' => $enrollment->progress ?? 0,
@@ -90,9 +93,9 @@ if (isset($agenda) && count($agenda) > 0) {
             <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">Perkembangan Belajarmu</h2>
             <p class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">Pantau sejauh mana progres belajar kamu di SALUT.</p>
         </div>
-        <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg font-medium text-xs sm:text-sm transition w-full sm:w-auto btn-pulse">
+        <a href="{{ $continueLearningHref }}" class="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg font-medium text-xs sm:text-sm transition w-full sm:w-auto btn-pulse">
             Lanjutkan Belajar
-        </button>
+        </a>
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6 lg:gap-8 items-center">
@@ -101,7 +104,7 @@ if (isset($agenda) && count($agenda) > 0) {
             <canvas id="progressChart"></canvas>
             <div class="absolute inset-0 flex flex-col items-center justify-center">
                 <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Kamu sedang</p>
-                <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">menyelesaikan {{ $completedCoursesCount }} dari {{ $activeCoursesCount }}</p>
+                <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">mempelajari {{ $inProgressCoursesCount }} dari {{ $activeCoursesCount }}</p>
                 <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">kursus aktif</p>
             </div>
         </div>
@@ -164,9 +167,9 @@ if (isset($agenda) && count($agenda) > 0) {
                 <div class="w-full h-2 rounded-full overflow-hidden mb-4 bg-blue-100 dark:bg-blue-500/20">
                     <div class="h-full rounded-full bg-blue-500 animate-progress" style="width: {{ $course['progress'] }}%;"></div>
                 </div>
-                <button class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium border border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition hover-scale">
+                <a href="{{ !empty($course['id']) ? route('mahasiswa.course-learn', $course['id']) : route('mahasiswa.get-courses') }}" class="inline-flex items-center justify-center text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium border border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition hover-scale">
                     Lanjutkan Kursus
-                </button>
+                </a>
             </div>
         </div>
         @endforeach
