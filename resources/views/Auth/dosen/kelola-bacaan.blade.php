@@ -68,13 +68,57 @@
                     </div>
                 </div>
 
-                {{-- Lampiran (Disabled Note) --}}
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 opacity-60">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Lampiran & Sumber Referensi</h2>
-                        <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Coming Soon</span>
+                {{-- Lampiran & Referensi --}}
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-5">Lampiran & Sumber Referensi</h2>
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Upload Lampiran (opsional)</label>
+                            <input
+                                x-ref="lampiranInput"
+                                type="file"
+                                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt,.jpg,.jpeg,.png,.webp"
+                                @change="onLampiranChange($event)"
+                                class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">Maksimum 10MB. Format umum dokumen/gambar didukung.</p>
+                            <div x-show="lampiranFileName" class="mt-2 flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                                <span x-text="`Terpilih: ${lampiranFileName}`"></span>
+                                <button type="button" @click="clearLampiran()" class="text-red-500 hover:text-red-600">Hapus</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sumber Referensi (URL)</label>
+                                <button type="button" @click="addReferenceField()" class="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300">
+                                    + Tambah Link
+                                </button>
+                            </div>
+
+                            <div class="space-y-2">
+                                <template x-for="(reference, index) in form.sumber_referensi" :key="`reference-${index}`">
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            type="url"
+                                            x-model="form.sumber_referensi[index]"
+                                            placeholder="https://contoh.com/referensi"
+                                            class="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm"
+                                        >
+                                        <button
+                                            type="button"
+                                            @click="removeReferenceField(index)"
+                                            x-show="form.sumber_referensi.length > 1"
+                                            class="px-3 py-2.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500">Fitur upload lampiran belum tersedia di backend saat ini.</p>
                 </div>
             </div>
 
@@ -105,6 +149,15 @@
                         {{-- Preview Content --}}
                         <div class="p-4">
                             <div class="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400" x-html="form.konten ? form.konten.substring(0, 200) + '...' : 'Konten bacaan akan muncul di sini...'"></div>
+                        </div>
+
+                        <div class="px-4 pb-4 space-y-2">
+                            <div class="text-xs text-gray-500 dark:text-gray-400" x-show="lampiranFileName">
+                                Lampiran: <span class="font-medium text-gray-700 dark:text-gray-300" x-text="lampiranFileName"></span>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400" x-show="normalizedReferences().length > 0">
+                                Referensi: <span class="font-medium text-gray-700 dark:text-gray-300" x-text="`${normalizedReferences().length} link`"></span>
+                            </div>
                         </div>
                     </div>
                     
@@ -140,11 +193,74 @@
                     judul_modul: @json(request('modul_judul', '')),
                     konten: @json(request('modul_konten', '')),
                     durasi: @json(request('modul_durasi', 10)),
-                    tipe: 'bacaan'
+                    tipe: 'bacaan',
+                    sumber_referensi: @json((array) request('sumber_referensi', ['']))
                 },
+                lampiranFile: null,
+                lampiranFileName: '',
 
                 init() {
+                    this.ensureReferenceField();
                     this.fetchCourses();
+                },
+
+                ensureReferenceField() {
+                    if (!Array.isArray(this.form.sumber_referensi)) {
+                        this.form.sumber_referensi = [''];
+                        return;
+                    }
+
+                    if (this.form.sumber_referensi.length === 0) {
+                        this.form.sumber_referensi.push('');
+                    }
+                },
+
+                addReferenceField() {
+                    this.form.sumber_referensi.push('');
+                },
+
+                removeReferenceField(index) {
+                    this.form.sumber_referensi.splice(index, 1);
+                    this.ensureReferenceField();
+                },
+
+                normalizedReferences() {
+                    return (this.form.sumber_referensi || [])
+                        .map((item) => String(item || '').trim())
+                        .filter((item) => item.length > 0);
+                },
+
+                onLampiranChange(event) {
+                    const [file] = event.target.files || [];
+                    this.lampiranFile = file || null;
+                    this.lampiranFileName = file ? file.name : '';
+                },
+
+                clearLampiran() {
+                    this.lampiranFile = null;
+                    this.lampiranFileName = '';
+                    if (this.$refs.lampiranInput) {
+                        this.$refs.lampiranInput.value = '';
+                    }
+                },
+
+                extractErrorMessage(data) {
+                    if (!data) {
+                        return 'Terjadi kesalahan saat menyimpan.';
+                    }
+
+                    if (data.message) {
+                        return data.message;
+                    }
+
+                    if (data.errors && typeof data.errors === 'object') {
+                        const firstKey = Object.keys(data.errors)[0];
+                        if (firstKey && Array.isArray(data.errors[firstKey]) && data.errors[firstKey][0]) {
+                            return data.errors[firstKey][0];
+                        }
+                    }
+
+                    return 'Terjadi kesalahan saat menyimpan.';
                 },
 
                 async fetchCourses() {
@@ -192,30 +308,49 @@
                         alert('Mohon pilih kursus terlebih dahulu.');
                         return;
                     }
+                    if (!this.form.judul_modul || !String(this.form.judul_modul).trim()) {
+                        alert('Mohon isi judul materi bacaan.');
+                        return;
+                    }
 
                     this.isSubmitting = true;
                     try {
+                        const formData = new FormData();
+                        formData.append('judul_modul', this.form.judul_modul);
+                        formData.append('tipe', this.form.tipe);
+                        formData.append('konten', this.form.konten ?? '');
+                        formData.append('durasi', this.form.durasi ?? 10);
+
+                        this.normalizedReferences().forEach((url) => {
+                            formData.append('sumber_referensi[]', url);
+                        });
+
+                        if (this.lampiranFile) {
+                            formData.append('lampiran_file', this.lampiranFile);
+                        }
+
                         const response = await fetch(`/dosen/api/courses/${this.selectedCourseId}/modules`, {
                             method: 'POST',
                             credentials: 'same-origin',
                             headers: {
-                                'Content-Type': 'application/json',
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             },
-                            body: JSON.stringify(this.form)
+                            body: formData
                         });
                         
                         const data = await response.json();
                         
-                        if (data.success) {
+                        if (response.ok && data.success) {
                             alert('Materi Bacaan berhasil ditambahkan!');
                             // Reset form
                             this.form.judul_modul = '';
                             this.form.konten = '';
                             this.form.durasi = 10;
+                            this.form.sumber_referensi = [''];
+                            this.clearLampiran();
                         } else {
-                            alert('Gagal menyimpan: ' + data.message);
+                            alert('Gagal menyimpan: ' + this.extractErrorMessage(data));
                         }
                     } catch (error) {
                         alert('Terjadi kesalahan saat menyimpan.');

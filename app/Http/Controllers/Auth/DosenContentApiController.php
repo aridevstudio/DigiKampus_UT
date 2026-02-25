@@ -177,6 +177,9 @@ class DosenContentApiController extends Controller
             'konten' => 'nullable|string',
             'video_url' => 'nullable|url',
             'durasi' => 'nullable|integer|min:1',
+            'lampiran_file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,zip,rar,jpg,jpeg,png,webp,txt',
+            'sumber_referensi' => 'nullable|array',
+            'sumber_referensi.*' => 'nullable|url|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -190,6 +193,20 @@ class DosenContentApiController extends Controller
         $validated = $validator->validated();
 
         $normalizedType = $this->normalizeModuleType($validated['tipe'] ?? null, $validated['konten'] ?? null);
+        $lampiranPath = null;
+        $sumberReferensi = [];
+
+        if ($normalizedType === 'bacaan') {
+            if ($request->hasFile('lampiran_file')) {
+                $lampiranPath = $request->file('lampiran_file')->store('bacaan-lampiran', 'public');
+            }
+
+            $sumberReferensi = collect($validated['sumber_referensi'] ?? [])
+                ->map(static fn ($url) => trim((string) $url))
+                ->filter(static fn ($url) => $url !== '')
+                ->values()
+                ->all();
+        }
 
         $moduleOrder = (int) (CourseModule::where('id_course', $courseId)->max('urutan') ?? 0) + 1;
 
@@ -211,6 +228,8 @@ class DosenContentApiController extends Controller
             'tipe' => $normalizedType,
             'konten' => $validated['konten'] ?? null,
             'video_url' => $validated['video_url'] ?? null,
+            'lampiran_path' => $lampiranPath,
+            'sumber_referensi' => $sumberReferensi,
             'urutan' => $urutan,
             'durasi' => $validated['durasi'] ?? 0,
         ]);
@@ -223,6 +242,8 @@ class DosenContentApiController extends Controller
                 'id_module' => $courseModule->id_module,
                 'judul' => $module->judul_material,
                 'urutan' => $module->urutan,
+                'lampiran_url' => $module->lampiran_path ? asset('storage/' . $module->lampiran_path) : null,
+                'sumber_referensi' => $module->sumber_referensi ?? [],
             ],
         ], 201);
     }

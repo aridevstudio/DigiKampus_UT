@@ -18,6 +18,8 @@ class CourseMaterial extends Model
         'tipe',
         'konten',
         'video_url',
+        'lampiran_path',
+        'sumber_referensi',
         'urutan',
         'durasi',
         'id_module'
@@ -26,6 +28,7 @@ class CourseMaterial extends Model
     protected $casts = [
         'urutan' => 'integer',
         'durasi' => 'integer',
+        'sumber_referensi' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
