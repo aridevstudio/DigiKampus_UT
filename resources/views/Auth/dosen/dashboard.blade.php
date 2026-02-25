@@ -205,7 +205,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                     </div>
-                    <div>
+                    <div class="flex-1 min-w-0">
                         <p class="font-medium text-gray-900 dark:text-white">{{ $schedule['course'] }}</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $schedule['tanggal'] }}</p>
                         <div class="flex items-center gap-1 mt-1 text-xs text-gray-400">
@@ -214,14 +214,45 @@
                             </svg>
                             {{ $schedule['waktu'] }}
                         </div>
-                        @if(!empty($schedule['id']))
-                            <a href="{{ route('dosen.kursus.detail', $schedule['id']) }}" class="inline-flex items-center gap-1 mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium">
-                                Lihat Detail Jadwal
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </a>
-                        @endif
+                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                            @if(!empty($schedule['id_course']))
+                                <a href="{{ route('dosen.kursus.detail', $schedule['id_course']) }}" class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 text-xs font-medium">
+                                    Lihat Detail Jadwal
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
+                            @endif
+
+                            @if(!empty($schedule['id_agenda']))
+                                <button
+                                    type="button"
+                                    onclick='openScheduleModal(@json([
+                                        "id_agenda" => $schedule["id_agenda"],
+                                        "id_course" => $schedule["id_course"] ?? null,
+                                        "judul" => $schedule["judul"] ?? "",
+                                        "deskripsi" => $schedule["deskripsi"] ?? "",
+                                        "tanggal" => $schedule["tanggal_raw"] ?? null,
+                                        "waktu_mulai" => $schedule["waktu_mulai_raw"] ?? null,
+                                        "waktu_selesai" => $schedule["waktu_selesai_raw"] ?? null,
+                                        "tipe" => $schedule["tipe"] ?? "webinar",
+                                    ]))'
+                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    type="button"
+                                    onclick='openScheduleDeleteModal(@json([
+                                        "id_agenda" => $schedule["id_agenda"],
+                                        "course" => $schedule["course"] ?? "jadwal ini",
+                                    ]))'
+                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition"
+                                >
+                                    Hapus
+                                </button>
+                            @endif
+                        </div>
                     </div>
                 </div>
                 @empty
@@ -248,7 +279,7 @@
                 </button>
 
                 <form id="scheduleForm" class="p-6" onsubmit="return submitScheduleForm(event)">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Jadwal Mengajar</h3>
+                    <h3 id="scheduleModalTitle" class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Jadwal Mengajar</h3>
 
                     <div class="space-y-4">
                         <div>
@@ -265,8 +296,8 @@
                                 <input type="date" id="scheduleDate" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                             </div>
                             <div>
-                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
-                                <select id="scheduleType" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe <span class="text-red-500">*</span></label>
+                                <select id="scheduleType" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                     <option value="webinar">Webinar</option>
                                     <option value="workshop">Workshop</option>
                                     <option value="deadline">Deadline</option>
@@ -276,18 +307,18 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Waktu Mulai</label>
-                                <input type="time" id="scheduleStartTime" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Waktu Mulai <span class="text-red-500">*</span></label>
+                                <input type="time" id="scheduleStartTime" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                             </div>
                             <div>
-                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Waktu Selesai</label>
-                                <input type="time" id="scheduleEndTime" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Waktu Selesai <span class="text-red-500">*</span></label>
+                                <input type="time" id="scheduleEndTime" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Judul Sesi (opsional)</label>
-                            <input type="text" id="scheduleTitle" placeholder="Contoh: Live Mentoring Mingguan" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Judul Sesi <span class="text-red-500">*</span></label>
+                            <input type="text" id="scheduleTitle" required placeholder="Contoh: Live Mentoring Mingguan" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                         </div>
 
                         <div>
@@ -305,6 +336,28 @@
         </div>
     </div>
 
+    {{-- Delete Schedule Modal --}}
+    <div id="scheduleDeleteModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeScheduleDeleteModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hapus Jadwal?</h3>
+                <p id="scheduleDeleteText" class="text-sm text-gray-600 dark:text-gray-300">
+                    Jadwal mengajar ini akan dihapus permanen.
+                </p>
+
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="closeScheduleDeleteModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">
+                        Batal
+                    </button>
+                    <button type="button" id="scheduleDeleteConfirmBtn" onclick="confirmDeleteSchedule()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                        Ya, Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Schedule Toast --}}
     <div id="scheduleToast" class="fixed top-4 right-4 z-[70] hidden opacity-0 translate-y-2 transition-all duration-200">
         <div id="scheduleToastCard" class="min-w-[260px] max-w-sm rounded-xl border bg-white dark:bg-gray-800 shadow-lg p-4">
@@ -315,17 +368,55 @@
     @push('scripts')
     <script>
         const scheduleModal = document.getElementById('scheduleModal');
+        const scheduleDeleteModal = document.getElementById('scheduleDeleteModal');
         const scheduleForm = document.getElementById('scheduleForm');
+        const scheduleModalTitle = document.getElementById('scheduleModalTitle');
         const scheduleCourseSelect = document.getElementById('scheduleCourse');
         const scheduleSubmitBtn = document.getElementById('scheduleSubmitBtn');
+        const scheduleDeleteConfirmBtn = document.getElementById('scheduleDeleteConfirmBtn');
+        const scheduleDeleteText = document.getElementById('scheduleDeleteText');
         const scheduleCourseHint = document.getElementById('scheduleCourseHint');
         const scheduleDateInput = document.getElementById('scheduleDate');
+        const scheduleTypeInput = document.getElementById('scheduleType');
+        const scheduleStartTimeInput = document.getElementById('scheduleStartTime');
+        const scheduleEndTimeInput = document.getElementById('scheduleEndTime');
+        const scheduleTitleInput = document.getElementById('scheduleTitle');
+        const scheduleDescriptionInput = document.getElementById('scheduleDescription');
         const scheduleToast = document.getElementById('scheduleToast');
         const scheduleToastCard = document.getElementById('scheduleToastCard');
         const scheduleToastMessage = document.getElementById('scheduleToastMessage');
         const scheduleCsrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? @json(csrf_token());
         let scheduleCoursesLoaded = false;
         let scheduleToastTimer = null;
+        let scheduleFormMode = 'create';
+        let scheduleEditingAgendaId = null;
+        let scheduleDeletingAgendaId = null;
+
+        function setBodyScrollLock(isLocked) {
+            document.body.style.overflow = isLocked ? 'hidden' : 'auto';
+        }
+
+        function getScheduleSubmitText(isSaving = false) {
+            if (isSaving) {
+                return scheduleFormMode === 'edit' ? 'Menyimpan Perubahan...' : 'Menyimpan...';
+            }
+
+            return scheduleFormMode === 'edit' ? 'Simpan Perubahan' : 'Simpan Jadwal';
+        }
+
+        function setScheduleFormMode(mode = 'create') {
+            scheduleFormMode = mode === 'edit' ? 'edit' : 'create';
+
+            if (scheduleModalTitle) {
+                scheduleModalTitle.textContent = scheduleFormMode === 'edit'
+                    ? 'Edit Jadwal Mengajar'
+                    : 'Tambah Jadwal Mengajar';
+            }
+
+            if (scheduleSubmitBtn) {
+                scheduleSubmitBtn.textContent = getScheduleSubmitText(false);
+            }
+        }
 
         function hideScheduleToast() {
             if (!scheduleToast) return;
@@ -422,22 +513,127 @@
             }
         }
 
-        function openScheduleModal() {
+        async function openScheduleModal(schedule = null) {
             if (!scheduleModal) return;
 
+            const isEdit = Number(schedule?.id_agenda) > 0;
+            scheduleEditingAgendaId = isEdit ? Number(schedule.id_agenda) : null;
+            setScheduleFormMode(isEdit ? 'edit' : 'create');
+
+            scheduleForm?.reset();
             scheduleModal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            setDefaultScheduleDate();
-            loadScheduleCourses();
+            setBodyScrollLock(true);
+            await loadScheduleCourses();
+
+            if (isEdit) {
+                if (scheduleCourseSelect && schedule?.id_course) {
+                    scheduleCourseSelect.value = String(schedule.id_course);
+                }
+                if (scheduleDateInput) {
+                    scheduleDateInput.value = schedule?.tanggal || '';
+                }
+                if (scheduleTypeInput) {
+                    scheduleTypeInput.value = schedule?.tipe || 'webinar';
+                }
+                if (scheduleStartTimeInput) {
+                    scheduleStartTimeInput.value = schedule?.waktu_mulai || '';
+                }
+                if (scheduleEndTimeInput) {
+                    scheduleEndTimeInput.value = schedule?.waktu_selesai || '';
+                }
+                if (scheduleTitleInput) {
+                    scheduleTitleInput.value = schedule?.judul || '';
+                }
+                if (scheduleDescriptionInput) {
+                    scheduleDescriptionInput.value = schedule?.deskripsi || '';
+                }
+            } else {
+                setDefaultScheduleDate();
+            }
         }
 
         function closeScheduleModal() {
             if (!scheduleModal) return;
 
             scheduleModal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
+            if (scheduleDeleteModal?.classList.contains('hidden')) {
+                setBodyScrollLock(false);
+            }
+
+            scheduleEditingAgendaId = null;
+            setScheduleFormMode('create');
             scheduleForm?.reset();
             setDefaultScheduleDate();
+        }
+
+        function openScheduleDeleteModal(schedule = null) {
+            const agendaId = Number(schedule?.id_agenda);
+            if (!scheduleDeleteModal || !agendaId) return;
+
+            scheduleDeletingAgendaId = agendaId;
+            if (scheduleDeleteText) {
+                const course = schedule?.course || 'jadwal ini';
+                scheduleDeleteText.textContent = `Jadwal untuk "${course}" akan dihapus permanen.`;
+            }
+
+            scheduleDeleteModal.classList.remove('hidden');
+            setBodyScrollLock(true);
+        }
+
+        function closeScheduleDeleteModal() {
+            if (!scheduleDeleteModal) return;
+
+            scheduleDeleteModal.classList.add('hidden');
+            scheduleDeletingAgendaId = null;
+            if (scheduleDeleteConfirmBtn) {
+                scheduleDeleteConfirmBtn.disabled = false;
+                scheduleDeleteConfirmBtn.textContent = 'Ya, Hapus';
+            }
+
+            if (scheduleModal?.classList.contains('hidden')) {
+                setBodyScrollLock(false);
+            }
+        }
+
+        async function confirmDeleteSchedule() {
+            if (!scheduleDeletingAgendaId) return;
+
+            if (scheduleDeleteConfirmBtn) {
+                scheduleDeleteConfirmBtn.disabled = true;
+                scheduleDeleteConfirmBtn.textContent = 'Menghapus...';
+            }
+
+            try {
+                const response = await fetch(`/dosen/api/schedules/${scheduleDeletingAgendaId}`, {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': scheduleCsrfToken,
+                    },
+                });
+
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (error) {
+                    data = {};
+                }
+
+                if (!response.ok || !data?.success) {
+                    throw new Error(extractScheduleErrorMessage(data));
+                }
+
+                closeScheduleDeleteModal();
+                showScheduleToast('Jadwal mengajar berhasil dihapus.', 'success');
+                setTimeout(() => window.location.reload(), 700);
+            } catch (error) {
+                showScheduleToast(error.message || 'Gagal menghapus jadwal mengajar.', 'error');
+                if (scheduleDeleteConfirmBtn) {
+                    scheduleDeleteConfirmBtn.disabled = false;
+                    scheduleDeleteConfirmBtn.textContent = 'Ya, Hapus';
+                }
+            }
         }
 
         function extractScheduleErrorMessage(data) {
@@ -454,12 +650,12 @@
             event.preventDefault();
 
             const courseId = scheduleCourseSelect?.value;
-            const tanggal = document.getElementById('scheduleDate')?.value;
-            const waktuMulai = document.getElementById('scheduleStartTime')?.value;
-            const waktuSelesai = document.getElementById('scheduleEndTime')?.value;
-            const judul = document.getElementById('scheduleTitle')?.value?.trim();
-            const deskripsi = document.getElementById('scheduleDescription')?.value?.trim();
-            const tipe = document.getElementById('scheduleType')?.value || 'webinar';
+            const tanggal = scheduleDateInput?.value;
+            const waktuMulai = scheduleStartTimeInput?.value;
+            const waktuSelesai = scheduleEndTimeInput?.value;
+            const judul = scheduleTitleInput?.value?.trim();
+            const deskripsi = scheduleDescriptionInput?.value?.trim();
+            const tipe = scheduleTypeInput?.value || 'webinar';
 
             if (!courseId) {
                 showScheduleToast('Silakan pilih kursus terlebih dahulu.', 'error');
@@ -471,23 +667,54 @@
                 return false;
             }
 
+            if (!tipe) {
+                showScheduleToast('Tipe jadwal wajib dipilih.', 'error');
+                return false;
+            }
+
+            if (!judul) {
+                showScheduleToast('Judul sesi wajib diisi.', 'error');
+                return false;
+            }
+
+            if (!waktuMulai) {
+                showScheduleToast('Waktu mulai wajib diisi.', 'error');
+                return false;
+            }
+
+            if (!waktuSelesai) {
+                showScheduleToast('Waktu selesai wajib diisi.', 'error');
+                return false;
+            }
+
+            if (waktuSelesai <= waktuMulai) {
+                showScheduleToast('Waktu selesai harus lebih besar dari waktu mulai.', 'error');
+                return false;
+            }
+
             const payload = {
                 id_course: Number(courseId),
                 tanggal,
+                judul,
+                waktu_mulai: waktuMulai,
+                waktu_selesai: waktuSelesai,
                 tipe,
             };
 
-            if (judul) payload.judul = judul;
             if (deskripsi) payload.deskripsi = deskripsi;
-            if (waktuMulai) payload.waktu_mulai = waktuMulai;
-            if (waktuSelesai) payload.waktu_selesai = waktuSelesai;
+
+            const isEditMode = scheduleFormMode === 'edit' && Number(scheduleEditingAgendaId) > 0;
+            const endpoint = isEditMode
+                ? `/dosen/api/schedules/${scheduleEditingAgendaId}`
+                : '/dosen/api/schedules';
+            const method = isEditMode ? 'PUT' : 'POST';
 
             scheduleSubmitBtn.disabled = true;
-            scheduleSubmitBtn.textContent = 'Menyimpan...';
+            scheduleSubmitBtn.textContent = getScheduleSubmitText(true);
 
             try {
-                const response = await fetch('/dosen/api/schedules', {
-                    method: 'POST',
+                const response = await fetch(endpoint, {
+                    method,
                     credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
@@ -497,26 +724,42 @@
                     body: JSON.stringify(payload),
                 });
 
-                const data = await response.json();
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (error) {
+                    data = {};
+                }
+
                 if (!response.ok || !data?.success) {
                     throw new Error(extractScheduleErrorMessage(data));
                 }
 
                 closeScheduleModal();
-                showScheduleToast('Jadwal mengajar berhasil ditambahkan.', 'success');
+                showScheduleToast(
+                    isEditMode ? 'Jadwal mengajar berhasil diperbarui.' : 'Jadwal mengajar berhasil ditambahkan.',
+                    'success'
+                );
                 setTimeout(() => window.location.reload(), 700);
             } catch (error) {
                 showScheduleToast(error.message || 'Gagal menyimpan jadwal mengajar.', 'error');
             } finally {
                 scheduleSubmitBtn.disabled = false;
-                scheduleSubmitBtn.textContent = 'Simpan Jadwal';
+                scheduleSubmitBtn.textContent = getScheduleSubmitText(false);
             }
 
             return false;
         }
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && scheduleModal && !scheduleModal.classList.contains('hidden')) {
+            if (event.key !== 'Escape') return;
+
+            if (scheduleDeleteModal && !scheduleDeleteModal.classList.contains('hidden')) {
+                closeScheduleDeleteModal();
+                return;
+            }
+
+            if (scheduleModal && !scheduleModal.classList.contains('hidden')) {
                 closeScheduleModal();
             }
         });

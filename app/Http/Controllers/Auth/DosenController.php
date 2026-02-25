@@ -194,10 +194,17 @@ class DosenController extends Controller
                 }
 
                 return [
-                    'id' => $schedule->id_course ?: $schedule->course?->id_course,
+                    'id_agenda' => $schedule->id_agenda,
+                    'id_course' => $schedule->id_course ?: $schedule->course?->id_course,
                     'course' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Jadwal Mengajar',
+                    'judul' => $schedule->judul,
+                    'deskripsi' => $schedule->deskripsi,
                     'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
+                    'tanggal_raw' => $schedule->tanggal?->format('Y-m-d'),
                     'waktu' => $timeText,
+                    'waktu_mulai_raw' => $startTime,
+                    'waktu_selesai_raw' => $endTime,
+                    'tipe' => $schedule->tipe ?? 'webinar',
                 ];
             })
             ->values()

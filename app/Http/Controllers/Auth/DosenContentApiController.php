@@ -187,11 +187,15 @@ class DosenContentApiController extends Controller
             return [
                 'id_agenda' => $schedule->id_agenda,
                 'id_course' => $schedule->id_course ?: $schedule->course?->id_course,
+                'judul' => $schedule->judul,
+                'deskripsi' => $schedule->deskripsi,
                 'course' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Jadwal Mengajar',
                 'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
+                'tanggal_raw' => $schedule->tanggal?->format('Y-m-d'),
                 'waktu' => $timeText,
                 'waktu_mulai' => $schedule->waktu_mulai,
                 'waktu_selesai' => $schedule->waktu_selesai,
+                'tipe' => $schedule->tipe,
             ];
         })->values();
 
@@ -215,16 +219,11 @@ class DosenContentApiController extends Controller
             ], 401);
         }
 
-        $validator = Validator::make($request->all(), [
-            'id_course' => 'required|integer|exists:courses,id_course',
-            'judul' => 'nullable|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'tanggal' => 'required|date|after_or_equal:today',
-            'waktu_mulai' => 'nullable|date_format:H:i',
-            'waktu_selesai' => 'nullable|date_format:H:i|after:waktu_mulai',
-            'tipe' => 'nullable|in:webinar,deadline,workshop',
-            'warna' => ['nullable', 'regex:/^#?[0-9A-Fa-f]{6}$/'],
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            $this->scheduleValidationRules(),
+            $this->scheduleValidationMessages()
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -251,15 +250,15 @@ class DosenContentApiController extends Controller
             'id_mahasiswa' => null,
             'id_dosen' => $dosen->id,
             'id_course' => $course->id_course,
-            'judul' => $validated['judul'] ?? $course->nama_course,
+            'judul' => trim($validated['judul']),
             'deskripsi' => $validated['deskripsi'] ?? null,
             'tanggal' => $validated['tanggal'],
-            'waktu_mulai' => $validated['waktu_mulai'] ?? null,
-            'waktu_selesai' => $validated['waktu_selesai'] ?? null,
-            'tipe' => $validated['tipe'] ?? 'webinar',
+            'waktu_mulai' => $validated['waktu_mulai'],
+            'waktu_selesai' => $validated['waktu_selesai'],
+            'tipe' => $validated['tipe'],
             'warna' => isset($validated['warna'])
-                ? (str_starts_with($validated['warna'], '#') ? $validated['warna'] : '#' . $validated['warna'])
-                : Agenda::getColorByType($validated['tipe'] ?? 'webinar'),
+                ? $this->normalizeHexColor($validated['warna'])
+                : Agenda::getColorByType($validated['tipe']),
         ]);
 
         return response()->json([
@@ -274,6 +273,116 @@ class DosenContentApiController extends Controller
                 'waktu_selesai' => $agenda->waktu_selesai,
             ],
         ], 201);
+    }
+
+    public function updateSchedule(Request $request, int $agendaId): JsonResponse
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        if (!$dosen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $validator = Validator::make(
+            $request->all(),
+            $this->scheduleValidationRules(),
+            $this->scheduleValidationMessages()
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+
+        $agenda = Agenda::query()
+            ->where('id_agenda', $agendaId)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$agenda) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal tidak ditemukan atau bukan milik dosen ini.',
+            ], 404);
+        }
+
+        $course = Course::where('id_course', $validated['id_course'])
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus tidak ditemukan atau bukan milik dosen ini.',
+            ], 404);
+        }
+
+        $resolvedType = $validated['tipe'];
+
+        $agenda->update([
+            'id_course' => $course->id_course,
+            'judul' => trim($validated['judul']),
+            'deskripsi' => $validated['deskripsi'] ?? null,
+            'tanggal' => $validated['tanggal'],
+            'waktu_mulai' => $validated['waktu_mulai'],
+            'waktu_selesai' => $validated['waktu_selesai'],
+            'tipe' => $resolvedType,
+            'warna' => isset($validated['warna'])
+                ? $this->normalizeHexColor($validated['warna'])
+                : Agenda::getColorByType($resolvedType),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jadwal mengajar berhasil diperbarui.',
+            'data' => [
+                'id_agenda' => $agenda->id_agenda,
+                'id_course' => $agenda->id_course,
+                'judul' => $agenda->judul,
+                'tanggal' => optional($agenda->tanggal)->format('Y-m-d'),
+                'waktu_mulai' => $agenda->waktu_mulai,
+                'waktu_selesai' => $agenda->waktu_selesai,
+            ],
+        ]);
+    }
+
+    public function deleteSchedule(int $agendaId): JsonResponse
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        if (!$dosen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $agenda = Agenda::query()
+            ->where('id_agenda', $agendaId)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$agenda) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal tidak ditemukan atau bukan milik dosen ini.',
+            ], 404);
+        }
+
+        $agenda->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jadwal mengajar berhasil dihapus.',
+        ]);
     }
 
     public function addModule(Request $request, int $courseId): JsonResponse
@@ -427,6 +536,39 @@ class DosenContentApiController extends Controller
                 ? substr($time, 0, 5)
                 : null;
         }
+    }
+
+    private function normalizeHexColor(string $color): string
+    {
+        return str_starts_with($color, '#') ? $color : '#' . $color;
+    }
+
+    private function scheduleValidationRules(): array
+    {
+        return [
+            'id_course' => 'required|integer|exists:courses,id_course',
+            'judul' => ['required', 'string', 'max:255', 'regex:/\S/'],
+            'deskripsi' => 'nullable|string',
+            'tanggal' => 'required|date|after_or_equal:today',
+            'waktu_mulai' => 'required|date_format:H:i',
+            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+            'tipe' => 'required|in:webinar,deadline,workshop',
+            'warna' => ['nullable', 'regex:/^#?[0-9A-Fa-f]{6}$/'],
+        ];
+    }
+
+    private function scheduleValidationMessages(): array
+    {
+        return [
+            'id_course.required' => 'Kursus wajib dipilih.',
+            'judul.required' => 'Judul sesi wajib diisi.',
+            'judul.regex' => 'Judul sesi wajib diisi.',
+            'tanggal.required' => 'Tanggal jadwal wajib diisi.',
+            'waktu_mulai.required' => 'Waktu mulai wajib diisi.',
+            'waktu_selesai.required' => 'Waktu selesai wajib diisi.',
+            'waktu_selesai.after' => 'Waktu selesai harus lebih besar dari waktu mulai.',
+            'tipe.required' => 'Tipe jadwal wajib dipilih.',
+        ];
     }
 
     private function detectDurationFromProvider(string $url, string $host): array
