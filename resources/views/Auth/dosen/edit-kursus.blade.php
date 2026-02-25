@@ -213,6 +213,7 @@
                                                     <option value="kuis">Kuis</option>
                                                     <option value="tugas">Tugas</option>
                                                 </select>
+                                                <p class="initial-type-hint mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                                             </div>
                                         </div>
                                         <div class="mb-3">
@@ -229,7 +230,7 @@
                                                 <input type="number" name="durasi" min="0" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                             </div>
                                         </div>
-                                        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition shadow shadow-blue-500/20">Simpan Konten Awal</button>
+                                        <button type="submit" class="initial-submit-btn w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition shadow shadow-blue-500/20">Setup Video</button>
                                     </form>
                                 </div>
                             @endif
@@ -419,7 +420,7 @@
                 <button onclick="closeAddMaterialModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-                <form id="addMaterialForm" action="{{ route('dosen.material.store', $course->id_course) }}" method="POST" class="p-6">
+                <form id="addMaterialForm" action="{{ route('dosen.material.store', $course->id_course) }}" method="POST" class="p-6" onsubmit="return handleAddMaterialSubmit(event)">
                     @csrf
                     <input type="hidden" name="id_module" id="add_material_module_id">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Materi Baru</h3>
@@ -453,7 +454,7 @@
                     </div>
                     <div class="flex justify-end gap-2 mt-6">
                         <button type="button" onclick="closeAddMaterialModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">Simpan Materi</button>
+                        <button type="submit" id="add_material_submit_btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">Setup Video</button>
                     </div>
                 </form>
             </div>
@@ -581,6 +582,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script>
         const courseId = {{ $course->id_course }};
+        const typedContentRoutes = {
+            video: @json(route('dosen.kelola-video')),
+            bacaan: @json(route('dosen.kelola-bacaan')),
+            kuis: @json(route('dosen.kelola-quiz')),
+            tugas: @json(route('dosen.kelola-tugas')),
+        };
 
         function normalizeMaterialType(type) {
             const value = (type || '').toLowerCase();
@@ -595,11 +602,13 @@
             const kontenLabel = document.getElementById(`${prefix}_konten_label`);
             const kontenInput = document.getElementById(`${prefix}_konten`);
             const typeHint = document.getElementById(`${prefix}_type_hint`);
+            const submitBtn = document.getElementById(`${prefix}_submit_btn`);
             const videoGroup = document.getElementById(`${prefix}_video_group`);
             const videoInput = document.getElementById(`${prefix}_video_url`);
             const durasiGroup = document.getElementById(`${prefix}_durasi_group`);
             const durasiLabel = document.getElementById(`${prefix}_durasi_label`);
             const durasiInput = document.getElementById(`${prefix}_durasi`);
+            const usesSetupFlow = Boolean(submitBtn);
 
             if (!kontenLabel || !videoGroup || !durasiGroup) {
                 return;
@@ -608,7 +617,12 @@
             if (type === 'video') {
                 kontenLabel.textContent = 'Deskripsi Video';
                 if (kontenInput) kontenInput.placeholder = 'Ringkasan materi video...';
-                if (typeHint) typeHint.textContent = 'Masukkan URL video (opsional) dan isi durasi secara manual.';
+                if (typeHint) {
+                    typeHint.textContent = usesSetupFlow
+                        ? 'Klik Setup Video untuk lanjut ke halaman kelola video.'
+                        : 'Masukkan URL video (opsional) dan isi durasi secara manual.';
+                }
+                if (submitBtn) submitBtn.textContent = 'Setup Video';
                 videoGroup.classList.remove('hidden');
                 if (videoInput) videoInput.required = false;
                 durasiGroup.classList.remove('hidden');
@@ -619,7 +633,12 @@
             if (type === 'bacaan') {
                 kontenLabel.textContent = 'Konten Bacaan';
                 if (kontenInput) kontenInput.placeholder = 'Tulis konten bacaan...';
-                if (typeHint) typeHint.textContent = 'Isi konten bacaan dan estimasi waktu baca.';
+                if (typeHint) {
+                    typeHint.textContent = usesSetupFlow
+                        ? 'Klik Setup Bacaan untuk lanjut ke halaman kelola bacaan.'
+                        : 'Isi konten bacaan dan estimasi waktu baca.';
+                }
+                if (submitBtn) submitBtn.textContent = 'Setup Bacaan';
                 videoGroup.classList.add('hidden');
                 if (videoInput) {
                     videoInput.required = false;
@@ -633,7 +652,12 @@
             if (type === 'kuis') {
                 kontenLabel.textContent = 'Instruksi Kuis';
                 if (kontenInput) kontenInput.placeholder = 'Petunjuk pengerjaan kuis...';
-                if (typeHint) typeHint.textContent = 'Isi instruksi kuis dan durasi pengerjaan.';
+                if (typeHint) {
+                    typeHint.textContent = usesSetupFlow
+                        ? 'Klik Setup Kuis untuk lanjut ke halaman input kuis.'
+                        : 'Isi instruksi kuis dan durasi pengerjaan.';
+                }
+                if (submitBtn) submitBtn.textContent = 'Setup Kuis';
                 videoGroup.classList.add('hidden');
                 if (videoInput) {
                     videoInput.required = false;
@@ -646,7 +670,12 @@
 
             kontenLabel.textContent = 'Deskripsi Tugas';
             if (kontenInput) kontenInput.placeholder = 'Jelaskan instruksi dan ketentuan tugas...';
-            if (typeHint) typeHint.textContent = 'Isi deskripsi tugas. Durasi tidak wajib untuk tipe ini.';
+            if (typeHint) {
+                typeHint.textContent = usesSetupFlow
+                    ? 'Klik Setup Tugas untuk lanjut ke halaman kelola tugas.'
+                    : 'Isi deskripsi tugas. Durasi tidak wajib untuk tipe ini.';
+            }
+            if (submitBtn) submitBtn.textContent = 'Setup Tugas';
             videoGroup.classList.add('hidden');
             if (videoInput) {
                 videoInput.required = false;
@@ -665,6 +694,8 @@
             const durasiGroup = form.querySelector('.initial-durasi-group');
             const durasiLabel = form.querySelector('.initial-durasi-label');
             const durasiInput = form.querySelector('input[name="durasi"]');
+            const typeHint = form.querySelector('.initial-type-hint');
+            const submitBtn = form.querySelector('.initial-submit-btn');
 
             if (!select || !videoGroup || !durasiGroup) {
                 return;
@@ -676,6 +707,8 @@
                 videoGroup.classList.remove('hidden');
                 durasiGroup.classList.remove('hidden');
                 if (durasiLabel) durasiLabel.textContent = 'Durasi Video (menit)';
+                if (typeHint) typeHint.textContent = 'Klik Setup Video untuk lanjut ke halaman kelola video.';
+                if (submitBtn) submitBtn.textContent = 'Setup Video';
                 return;
             }
 
@@ -685,17 +718,23 @@
             if (type === 'bacaan') {
                 durasiGroup.classList.remove('hidden');
                 if (durasiLabel) durasiLabel.textContent = 'Estimasi Baca (menit)';
+                if (typeHint) typeHint.textContent = 'Klik Setup Bacaan untuk lanjut ke halaman kelola bacaan.';
+                if (submitBtn) submitBtn.textContent = 'Setup Bacaan';
                 return;
             }
 
             if (type === 'kuis') {
                 durasiGroup.classList.remove('hidden');
                 if (durasiLabel) durasiLabel.textContent = 'Durasi Kuis (menit)';
+                if (typeHint) typeHint.textContent = 'Klik Setup Kuis untuk lanjut ke halaman input kuis.';
+                if (submitBtn) submitBtn.textContent = 'Setup Kuis';
                 return;
             }
 
             durasiGroup.classList.add('hidden');
             if (durasiInput) durasiInput.value = '';
+            if (typeHint) typeHint.textContent = 'Klik Setup Tugas untuk lanjut ke halaman kelola tugas.';
+            if (submitBtn) submitBtn.textContent = 'Setup Tugas';
         }
 
         function initializeInitialContentForms() {
@@ -704,7 +743,13 @@
                 if (!select) return;
 
                 const updateState = () => applyInitialContentTypeState(form);
+                const handleSubmit = (event) => {
+                    event.preventDefault();
+                    redirectToTypedContentSetup(form, select.value || 'video');
+                };
+
                 select.addEventListener('change', updateState);
+                form.addEventListener('submit', handleSubmit);
                 updateState();
             });
         }
@@ -717,6 +762,49 @@
         function onEditMaterialTypeChange() {
             const select = document.getElementById('edit_material_tipe');
             applyMaterialTypeState('edit_material', select?.value || 'video');
+        }
+
+        function redirectToTypedContentSetup(form, rawType) {
+            const selectedType = normalizeMaterialType(rawType);
+            const targetRoute = typedContentRoutes[selectedType];
+
+            if (!targetRoute) {
+                return true;
+            }
+
+            const judulInput = form.querySelector('input[name="judul_material"]');
+            const judul = judulInput?.value?.trim();
+
+            if (!judul) {
+                alert('Judul materi wajib diisi sebelum setup konten.');
+                judulInput?.focus();
+                return false;
+            }
+
+            const params = new URLSearchParams();
+            params.set('course_id', String(courseId));
+            params.set('modul_judul', judul);
+
+            const konten = form.querySelector('textarea[name="konten"]')?.value?.trim();
+            const durasi = form.querySelector('input[name="durasi"]')?.value;
+            const videoUrl = form.querySelector('input[name="video_url"]')?.value?.trim();
+
+            if (konten) params.set('modul_konten', konten);
+            if (durasi !== undefined && durasi !== null && durasi !== '') {
+                params.set('modul_durasi', durasi);
+            }
+            if (videoUrl) params.set('modul_video_url', videoUrl);
+
+            const query = params.toString();
+            window.location.href = query ? `${targetRoute}?${query}` : targetRoute;
+            return false;
+        }
+
+        function handleAddMaterialSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const selectedType = form.querySelector('select[name="tipe"]')?.value || 'video';
+            return redirectToTypedContentSetup(form, selectedType);
         }
 
         // Toggle Harga Field
