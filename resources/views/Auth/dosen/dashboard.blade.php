@@ -305,6 +305,13 @@
         </div>
     </div>
 
+    {{-- Schedule Toast --}}
+    <div id="scheduleToast" class="fixed top-4 right-4 z-[70] hidden opacity-0 translate-y-2 transition-all duration-200">
+        <div id="scheduleToastCard" class="min-w-[260px] max-w-sm rounded-xl border bg-white dark:bg-gray-800 shadow-lg p-4">
+            <p id="scheduleToastMessage" class="text-sm font-medium text-gray-800 dark:text-gray-100"></p>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
         const scheduleModal = document.getElementById('scheduleModal');
@@ -313,8 +320,54 @@
         const scheduleSubmitBtn = document.getElementById('scheduleSubmitBtn');
         const scheduleCourseHint = document.getElementById('scheduleCourseHint');
         const scheduleDateInput = document.getElementById('scheduleDate');
+        const scheduleToast = document.getElementById('scheduleToast');
+        const scheduleToastCard = document.getElementById('scheduleToastCard');
+        const scheduleToastMessage = document.getElementById('scheduleToastMessage');
         const scheduleCsrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? @json(csrf_token());
         let scheduleCoursesLoaded = false;
+        let scheduleToastTimer = null;
+
+        function hideScheduleToast() {
+            if (!scheduleToast) return;
+
+            scheduleToast.classList.remove('opacity-100', 'translate-y-0');
+            scheduleToast.classList.add('opacity-0', 'translate-y-2');
+            setTimeout(() => scheduleToast.classList.add('hidden'), 200);
+        }
+
+        function showScheduleToast(message, type = 'success') {
+            if (!scheduleToast || !scheduleToastCard || !scheduleToastMessage) {
+                return;
+            }
+
+            scheduleToastMessage.textContent = message;
+            scheduleToastCard.classList.remove(
+                'border-green-200',
+                'dark:border-green-800',
+                'bg-green-50',
+                'dark:bg-green-900/20',
+                'border-red-200',
+                'dark:border-red-800',
+                'bg-red-50',
+                'dark:bg-red-900/20'
+            );
+
+            if (type === 'error') {
+                scheduleToastCard.classList.add('border-red-200', 'dark:border-red-800', 'bg-red-50', 'dark:bg-red-900/20');
+            } else {
+                scheduleToastCard.classList.add('border-green-200', 'dark:border-green-800', 'bg-green-50', 'dark:bg-green-900/20');
+            }
+
+            scheduleToast.classList.remove('hidden', 'opacity-0', 'translate-y-2');
+            scheduleToast.classList.add('opacity-100', 'translate-y-0');
+
+            if (scheduleToastTimer) {
+                clearTimeout(scheduleToastTimer);
+            }
+            scheduleToastTimer = setTimeout(() => {
+                hideScheduleToast();
+            }, 2800);
+        }
 
         function setDefaultScheduleDate() {
             if (!scheduleDateInput) return;
@@ -409,12 +462,12 @@
             const tipe = document.getElementById('scheduleType')?.value || 'webinar';
 
             if (!courseId) {
-                alert('Silakan pilih kursus terlebih dahulu.');
+                showScheduleToast('Silakan pilih kursus terlebih dahulu.', 'error');
                 return false;
             }
 
             if (!tanggal) {
-                alert('Tanggal jadwal wajib diisi.');
+                showScheduleToast('Tanggal jadwal wajib diisi.', 'error');
                 return false;
             }
 
@@ -450,10 +503,10 @@
                 }
 
                 closeScheduleModal();
-                alert('Jadwal mengajar berhasil ditambahkan.');
-                window.location.reload();
+                showScheduleToast('Jadwal mengajar berhasil ditambahkan.', 'success');
+                setTimeout(() => window.location.reload(), 700);
             } catch (error) {
-                alert(error.message || 'Gagal menyimpan jadwal mengajar.');
+                showScheduleToast(error.message || 'Gagal menyimpan jadwal mengajar.', 'error');
             } finally {
                 scheduleSubmitBtn.disabled = false;
                 scheduleSubmitBtn.textContent = 'Simpan Jadwal';
