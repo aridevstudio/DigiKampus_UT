@@ -39,6 +39,7 @@ class MahasiswaDashboardController extends Controller
         $enrolledCourses = Enrollment::with(['course', 'course.dosen'])
             ->where('id_mahasiswa', $user->id)
             ->whereIn('status', $activeStatuses)
+            ->where('progress', '<', 100)
             ->orderBy('updated_at', 'desc')
             ->take(3)
             ->get();
@@ -199,10 +200,16 @@ class MahasiswaDashboardController extends Controller
     {
         $enrollments = Enrollment::where('id_mahasiswa', $mahasiswaId)->get();
         $activeStatuses = ['aktif', 'in_progress'];
-        $activeEnrollments = $enrollments->whereIn('status', $activeStatuses);
+        $activeEnrollments = $enrollments->filter(function ($enrollment) use ($activeStatuses) {
+            return in_array($enrollment->status, $activeStatuses, true)
+                && (float) $enrollment->progress < 100;
+        });
+        $completedEnrollments = $enrollments->filter(function ($enrollment) {
+            return $enrollment->status === 'selesai' || (float) $enrollment->progress >= 100;
+        });
 
         $kursusAktif = $activeEnrollments->count();
-        $kursusSelesai = $enrollments->where('status', 'selesai')->count();
+        $kursusSelesai = $completedEnrollments->count();
 
         // Calculate courses with progress < 50% as "tertunda"
         $kursusTertunda = $activeEnrollments

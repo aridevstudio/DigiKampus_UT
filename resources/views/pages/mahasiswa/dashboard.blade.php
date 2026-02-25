@@ -26,12 +26,16 @@ $courses = [];
 if (isset($enrolledCourses) && count($enrolledCourses) > 0) {
     foreach ($enrolledCourses as $index => $enrollment) {
         $course = $enrollment->course;
+        $courseProgress = (float) ($enrollment->progress ?? 0);
+        $courseStatus = $courseProgress >= 100
+            ? 'Selesai'
+            : ($courseProgress > 0 ? 'Sedang Berlangsung' : 'Belum Dimulai');
         $courses[] = [
             'id' => $course->id_course ?? $enrollment->id_course ?? null,
             'name' => $course->nama_course ?? 'Kursus',
             'code' => $course->kode_course ?? '',
-            'progress' => $enrollment->progress ?? 0,
-            'status' => 'Sedang Berlangsung',
+            'progress' => $courseProgress,
+            'status' => $courseStatus,
             'gradient' => $gradients[$index % count($gradients)],
             'dosen' => $course->dosen->name ?? 'Dosen',
             'thumbnail' => $course->thumbnail ?? null,

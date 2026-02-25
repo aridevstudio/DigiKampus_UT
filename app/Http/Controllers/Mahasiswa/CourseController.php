@@ -269,8 +269,15 @@ class CourseController extends Controller
             ->count();
         $progressPercent = $totalMaterials > 0 ? round(($completedMaterials / $totalMaterials) * 100) : 0;
         
-        // Update enrollment progress
-        $enrollment->update(['progress' => $progressPercent]);
+        // Update enrollment progress and status consistently.
+        $nextStatus = $progressPercent >= 100
+            ? 'selesai'
+            : (in_array($enrollment->status, ['aktif', 'in_progress'], true) ? $enrollment->status : 'aktif');
+
+        $enrollment->update([
+            'progress' => $progressPercent,
+            'status' => $nextStatus,
+        ]);
         
         return view('pages.mahasiswa.course-learn', [
             'course' => $course,
@@ -294,11 +301,11 @@ class CourseController extends Controller
         $material = CourseMaterial::findOrFail($id);
         
         // Check enrollment
-        $enrolled = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
             ->where('id_course', $material->id_course)
-            ->exists();
+            ->first();
         
-        if (!$enrolled) {
+        if (!$enrollment) {
             return back()->with('error', 'Anda tidak terdaftar di kursus ini');
         }
         
@@ -313,6 +320,9 @@ class CourseController extends Controller
                 'completed_at' => now(),
             ]
         );
+
+        // Recalculate aggregate progress and update enrollment status.
+        $enrollment->recalculateProgress($user->id);
         
         return back()->with('success', 'Materi ditandai selesai!');
     }

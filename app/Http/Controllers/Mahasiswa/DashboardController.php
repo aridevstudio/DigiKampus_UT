@@ -22,11 +22,17 @@ class DashboardController extends Controller
         $enrollments = Enrollment::where('id_mahasiswa', $user->id)->get();
 
         $activeStatuses = ['aktif', 'in_progress'];
-        $activeEnrollments = $enrollments->whereIn('status', $activeStatuses);
+        $activeEnrollments = $enrollments->filter(function ($enrollment) use ($activeStatuses) {
+            return in_array($enrollment->status, $activeStatuses, true)
+                && (float) $enrollment->progress < 100;
+        });
+        $completedEnrollments = $enrollments->filter(function ($enrollment) {
+            return $enrollment->status === 'selesai' || (float) $enrollment->progress >= 100;
+        });
 
         // Calculate progress statistics
         $kursusAktif = $activeEnrollments->count();
-        $kursusSelesai = $enrollments->where('status', 'selesai')->count();
+        $kursusSelesai = $completedEnrollments->count();
         $kursusSedangDipelajari = $activeEnrollments->where('progress', '>', 0)->count();
         $kursusTertunda = $activeEnrollments->where('progress', '<', 50)->count();
 
@@ -39,6 +45,7 @@ class DashboardController extends Controller
         $enrolledCourses = Enrollment::with(['course', 'course.dosen'])
             ->where('id_mahasiswa', $user->id)
             ->whereIn('status', $activeStatuses)
+            ->where('progress', '<', 100)
             ->orderByRaw('CASE WHEN progress > 0 THEN 0 ELSE 1 END')
             ->orderByDesc('updated_at')
             ->take(3)
@@ -47,6 +54,7 @@ class DashboardController extends Controller
         // Prefer course with existing progress for "continue learning" CTA.
         $nextEnrollment = Enrollment::where('id_mahasiswa', $user->id)
             ->whereIn('status', $activeStatuses)
+            ->where('progress', '<', 100)
             ->orderByRaw('CASE WHEN progress > 0 THEN 0 ELSE 1 END')
             ->orderByDesc('updated_at')
             ->first();
