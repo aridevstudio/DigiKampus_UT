@@ -197,7 +197,7 @@
                             @if($module->materials->count() === 0)
                                 <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-4">
                                     <h4 class="font-semibold text-blue-700 dark:text-blue-300 mb-3 text-base">Tambah Konten Awal</h4>
-                                    <form action="{{ route('dosen.material.store', $course->id_course) }}" method="POST">
+                                    <form action="{{ route('dosen.material.store', $course->id_course) }}" method="POST" class="initial-content-form">
                                         @csrf
                                         <input type="hidden" name="id_module" value="{{ $module->id_module }}">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
@@ -207,7 +207,7 @@
                                             </div>
                                             <div>
                                                 <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
-                                                <select name="tipe" required class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                                <select name="tipe" required class="initial-type-select w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                                     <option value="video">Video</option>
                                                     <option value="bacaan">Bacaan</option>
                                                     <option value="kuis">Kuis</option>
@@ -220,12 +220,12 @@
                                             <textarea name="konten" rows="2" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
                                         </div>
                                         <div class="grid grid-cols-2 gap-4 mb-3">
-                                            <div>
+                                            <div class="initial-video-group">
                                                 <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                                                <input type="url" name="video_url" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                                <input type="url" name="video_url" class="initial-video-input w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                             </div>
-                                            <div>
-                                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
+                                            <div class="initial-durasi-group">
+                                                <label class="initial-durasi-label block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
                                                 <input type="number" name="durasi" min="0" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                             </div>
                                         </div>
@@ -656,6 +656,59 @@
             if (durasiInput) durasiInput.value = '';
         }
 
+        function applyInitialContentTypeState(form) {
+            if (!form) return;
+
+            const select = form.querySelector('.initial-type-select');
+            const videoGroup = form.querySelector('.initial-video-group');
+            const videoInput = form.querySelector('.initial-video-input');
+            const durasiGroup = form.querySelector('.initial-durasi-group');
+            const durasiLabel = form.querySelector('.initial-durasi-label');
+            const durasiInput = form.querySelector('input[name="durasi"]');
+
+            if (!select || !videoGroup || !durasiGroup) {
+                return;
+            }
+
+            const type = normalizeMaterialType(select.value || 'video');
+
+            if (type === 'video') {
+                videoGroup.classList.remove('hidden');
+                durasiGroup.classList.remove('hidden');
+                if (durasiLabel) durasiLabel.textContent = 'Durasi Video (menit)';
+                return;
+            }
+
+            videoGroup.classList.add('hidden');
+            if (videoInput) videoInput.value = '';
+
+            if (type === 'bacaan') {
+                durasiGroup.classList.remove('hidden');
+                if (durasiLabel) durasiLabel.textContent = 'Estimasi Baca (menit)';
+                return;
+            }
+
+            if (type === 'kuis') {
+                durasiGroup.classList.remove('hidden');
+                if (durasiLabel) durasiLabel.textContent = 'Durasi Kuis (menit)';
+                return;
+            }
+
+            durasiGroup.classList.add('hidden');
+            if (durasiInput) durasiInput.value = '';
+        }
+
+        function initializeInitialContentForms() {
+            document.querySelectorAll('.initial-content-form').forEach((form) => {
+                const select = form.querySelector('.initial-type-select');
+                if (!select) return;
+
+                const updateState = () => applyInitialContentTypeState(form);
+                select.addEventListener('change', updateState);
+                updateState();
+            });
+        }
+
         function onAddMaterialTypeChange() {
             const select = document.getElementById('add_material_tipe');
             applyMaterialTypeState('add_material', select?.value || 'video');
@@ -809,6 +862,7 @@
 
         onAddMaterialTypeChange();
         onEditMaterialTypeChange();
+        initializeInitialContentForms();
 
         function previewImage(input) {
             if (input.files && input.files[0]) {
