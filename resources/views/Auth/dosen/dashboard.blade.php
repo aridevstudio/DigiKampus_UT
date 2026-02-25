@@ -225,28 +225,32 @@
                             @endif
 
                             @if(!empty($schedule['id_agenda']))
+                                @php
+                                    $editSchedulePayload = [
+                                        'id_agenda' => $schedule['id_agenda'],
+                                        'id_course' => $schedule['id_course'] ?? null,
+                                        'judul' => $schedule['judul'] ?? '',
+                                        'deskripsi' => $schedule['deskripsi'] ?? '',
+                                        'tanggal' => $schedule['tanggal_raw'] ?? null,
+                                        'waktu_mulai' => $schedule['waktu_mulai_raw'] ?? null,
+                                        'waktu_selesai' => $schedule['waktu_selesai_raw'] ?? null,
+                                        'tipe' => $schedule['tipe'] ?? 'webinar',
+                                    ];
+                                    $deleteSchedulePayload = [
+                                        'id_agenda' => $schedule['id_agenda'],
+                                        'course' => $schedule['course'] ?? 'jadwal ini',
+                                    ];
+                                @endphp
                                 <button
                                     type="button"
-                                    onclick='openScheduleModal(@json([
-                                        "id_agenda" => $schedule["id_agenda"],
-                                        "id_course" => $schedule["id_course"] ?? null,
-                                        "judul" => $schedule["judul"] ?? "",
-                                        "deskripsi" => $schedule["deskripsi"] ?? "",
-                                        "tanggal" => $schedule["tanggal_raw"] ?? null,
-                                        "waktu_mulai" => $schedule["waktu_mulai_raw"] ?? null,
-                                        "waktu_selesai" => $schedule["waktu_selesai_raw"] ?? null,
-                                        "tipe" => $schedule["tipe"] ?? "webinar",
-                                    ]))'
+                                    onclick='openScheduleModal(@json($editSchedulePayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT))'
                                     class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition"
                                 >
                                     Edit
                                 </button>
                                 <button
                                     type="button"
-                                    onclick='openScheduleDeleteModal(@json([
-                                        "id_agenda" => $schedule["id_agenda"],
-                                        "course" => $schedule["course"] ?? "jadwal ini",
-                                    ]))'
+                                    onclick='openScheduleDeleteModal(@json($deleteSchedulePayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT))'
                                     class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition"
                                 >
                                     Hapus
