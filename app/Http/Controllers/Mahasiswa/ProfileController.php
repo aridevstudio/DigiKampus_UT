@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agenda;
+use App\Models\CourseRating;
+use App\Models\Enrollment;
 use App\Models\Profile;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +19,79 @@ class ProfileController extends Controller
      */
     public function index()
     {
-        return view('pages.mahasiswa.profile');
+        $user = Auth::guard('mahasiswa')->user()->loadMissing(['profile.jurusan']);
+        $profile = $user->profile;
+        $jurusan = $profile?->jurusan;
+
+        $userName = $user->name ?? 'Mahasiswa';
+        $userEmail = $user->email ?? '-';
+        $nim = $profile?->nim;
+        $noHp = $profile?->no_hp;
+        $alamat = $profile?->alamat;
+        $tempatLahir = $profile?->tempat_lahir;
+        $tanggalLahir = $profile?->tanggal_lahir
+            ? Carbon::parse($profile->tanggal_lahir)->translatedFormat('d F Y')
+            : null;
+        $ttl = collect([$tempatLahir, $tanggalLahir])->filter()->implode(', ');
+
+        $jenisKelaminRaw = $profile?->jenis_kelamin;
+        $jenisKelamin = match ($jenisKelaminRaw) {
+            'L' => 'Laki-laki',
+            'P' => 'Perempuan',
+            default => '-',
+        };
+
+        $ipk = $profile?->ipk;
+        $totalSks = $profile?->total_sks ?? 0;
+        $maxSks = 144;
+        $statusAkademik = $profile?->status_akademik ?? 'Aktif';
+        $fotoProfile = $profile?->foto_profile
+            ? asset('storage/' . $profile->foto_profile)
+            : asset('assets/image/default-avatar.png');
+        $bio = $profile?->bio;
+
+        $programStudi = $jurusan?->nama_jurusan;
+        $fakultas = $jurusan?->fakultas;
+        $jenjang = $jurusan?->jenjang;
+
+        $enrollments = Enrollment::where('id_mahasiswa', $user->id)->get();
+
+        $kursusAktif = $enrollments->whereIn('status', ['aktif', 'in_progress'])->count();
+        if ($kursusAktif === 0) {
+            $kursusAktif = $enrollments->count();
+        }
+
+        $tugasDiselesaikan = $enrollments->where('progress', '>=', 100)->count();
+        $semesterProgress = (int) round($enrollments->avg('progress') ?? 0);
+
+        $tahunMasuk = $profile?->created_at?->format('Y') ?? $user->created_at?->format('Y');
+        $kegiatanTerakhir = $this->buildRecentActivities($user->id);
+
+        return view('pages.mahasiswa.profile', compact(
+            'userName',
+            'userEmail',
+            'nim',
+            'noHp',
+            'alamat',
+            'tempatLahir',
+            'tanggalLahir',
+            'ttl',
+            'jenisKelamin',
+            'ipk',
+            'totalSks',
+            'maxSks',
+            'statusAkademik',
+            'fotoProfile',
+            'bio',
+            'programStudi',
+            'fakultas',
+            'jenjang',
+            'kursusAktif',
+            'tugasDiselesaikan',
+            'semesterProgress',
+            'tahunMasuk',
+            'kegiatanTerakhir'
+        ));
     }
 
     /**
@@ -23,7 +99,27 @@ class ProfileController extends Controller
      */
     public function edit()
     {
-        return view('pages.mahasiswa.edit-profile');
+        $user = Auth::guard('mahasiswa')->user()->loadMissing(['profile.jurusan']);
+        $profile = $user->profile;
+        $jurusan = $profile?->jurusan;
+
+        return view('pages.mahasiswa.edit-profile', [
+            'userName' => $user->name ?? '',
+            'userEmail' => $user->email ?? '',
+            'nim' => $profile?->nim ?? '',
+            'noHp' => $profile?->no_hp ?? '',
+            'alamat' => $profile?->alamat ?? '',
+            'tempatLahir' => $profile?->tempat_lahir ?? '',
+            'tanggalLahir' => $profile?->tanggal_lahir
+                ? Carbon::parse($profile->tanggal_lahir)->format('Y-m-d')
+                : '',
+            'jenisKelamin' => $profile?->jenis_kelamin ?? 'L',
+            'fotoProfile' => $profile?->foto_profile ? asset('storage/' . $profile->foto_profile) : null,
+            'bio' => $profile?->bio ?? '',
+            'programStudi' => $jurusan?->nama_jurusan ?? 'Belum diisi',
+            'fakultas' => $jurusan?->fakultas ?? 'Belum diisi',
+            'tahunMasuk' => $profile?->created_at?->format('Y') ?? $user->created_at?->format('Y') ?? '-',
+        ]);
     }
 
     /**
@@ -31,7 +127,7 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'tempat_lahir' => ['nullable', 'string', 'max:100'],
             'tanggal_lahir' => ['nullable', 'date'],
@@ -46,26 +142,25 @@ class ProfileController extends Controller
         ]);
 
         $user = Auth::guard('mahasiswa')->user();
-        
+
         // Update user name
-        $user->name = $request->name;
-        
+        $user->name = $validated['name'];
+
         // Update password if provided
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+        if (!empty($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
         }
-        
+
         $user->save();
 
         // Update or create profile
         $profileData = [
-            'tempat_lahir' => $request->tempat_lahir,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'alamat' => $request->alamat,
-            'no_hp' => $request->no_hp,
-            'bio' => $request->bio,
-            'visibilitas' => $request->has('visibilitas') ? 1 : 0,
+            'tempat_lahir' => $validated['tempat_lahir'] ?? null,
+            'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
+            'alamat' => $validated['alamat'] ?? null,
+            'no_hp' => $validated['no_hp'] ?? null,
+            'bio' => $validated['bio'] ?? null,
         ];
 
         // Handle foto upload - simpan ke local storage
@@ -85,5 +180,89 @@ class ProfileController extends Controller
 
         return redirect()->route('mahasiswa.profile')
             ->with('success', 'Profil berhasil diperbarui!');
+    }
+
+    private function buildRecentActivities(int $mahasiswaId): array
+    {
+        $kegiatanTerakhir = collect();
+
+        $recentAgenda = Agenda::where('id_mahasiswa', $mahasiswaId)
+            ->orderBy('tanggal', 'desc')
+            ->limit(3)
+            ->get();
+
+        foreach ($recentAgenda as $agenda) {
+            $iconMap = [
+                'webinar' => ['icon' => 'calendar', 'color' => 'blue'],
+                'workshop' => ['icon' => 'calendar', 'color' => 'green'],
+                'deadline' => ['icon' => 'calendar', 'color' => 'rose'],
+                'quiz' => ['icon' => 'calendar', 'color' => 'yellow'],
+            ];
+            $iconData = $iconMap[$agenda->tipe] ?? ['icon' => 'calendar', 'color' => 'gray'];
+            $agendaDate = $agenda->tanggal ? Carbon::parse($agenda->tanggal) : null;
+
+            $text = $agenda->judul ?? 'Agenda';
+            if ($agendaDate) {
+                $text .= ', ' . $agendaDate->translatedFormat('d F Y');
+            }
+
+            $kegiatanTerakhir->push([
+                'icon' => $iconData['icon'],
+                'text' => $text,
+                'color' => $iconData['color'],
+                'date' => $agendaDate?->timestamp ?? 0,
+            ]);
+        }
+
+        $recentEnrollments = Enrollment::where('id_mahasiswa', $mahasiswaId)
+            ->with('course')
+            ->orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get();
+
+        foreach ($recentEnrollments as $enrollment) {
+            if ($enrollment->course) {
+                $kegiatanTerakhir->push([
+                    'icon' => 'check',
+                    'text' => 'Mendaftar kursus ' . $enrollment->course->nama_course,
+                    'color' => 'green',
+                    'date' => $enrollment->created_at?->timestamp ?? 0,
+                ]);
+            }
+        }
+
+        $recentRatings = CourseRating::where('id_mahasiswa', $mahasiswaId)
+            ->with('course')
+            ->orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get();
+
+        foreach ($recentRatings as $rating) {
+            if ($rating->course) {
+                $kegiatanTerakhir->push([
+                    'icon' => 'chat',
+                    'text' => 'Memberikan ulasan untuk ' . $rating->course->nama_course,
+                    'color' => 'blue',
+                    'date' => $rating->created_at?->timestamp ?? 0,
+                ]);
+            }
+        }
+
+        $items = $kegiatanTerakhir->sortByDesc('date')
+            ->take(5)
+            ->map(function (array $item) {
+                unset($item['date']);
+                return $item;
+            })
+            ->values()
+            ->all();
+
+        if (empty($items)) {
+            return [
+                ['icon' => 'info', 'text' => 'Belum ada kegiatan terbaru', 'color' => 'gray'],
+            ];
+        }
+
+        return $items;
     }
 }

@@ -1,133 +1,4 @@
 <x-layouts.dashboard :active="'profile'">
-@php
-    $user = Auth::guard('mahasiswa')->user();
-    $profile = $user?->profile;
-    $jurusan = $profile?->jurusan;
-    
-    // User data
-    $userName = $user?->name ?? 'Mahasiswa';
-    $userEmail = $user?->email ?? 'email@ecampus.ut.ac.id';
-    
-    // Profile data (use real data if available, fallback to dummy)
-    $nim = $profile?->nim ?? '0000000000';
-    $noHp = $profile?->no_hp ?? '+62 812-3456-7890';
-    $alamat = $profile?->alamat ?? 'Alamat belum diisi';
-    $tempatLahir = $profile?->tempat_lahir ?? 'Tempat lahir';
-    $tanggalLahir = $profile?->tanggal_lahir ? \Carbon\Carbon::parse($profile->tanggal_lahir)->translatedFormat('d F Y') : '1 Januari 2000';
-    $ttl = $tempatLahir . ', ' . $tanggalLahir; // Tempat, Tanggal Lahir
-    $jenisKelaminRaw = $profile?->jenis_kelamin ?? 'L';
-    $jenisKelamin = $jenisKelaminRaw === 'L' ? 'Laki-laki' : ($jenisKelaminRaw === 'P' ? 'Perempuan' : $jenisKelaminRaw);
-    $ipk = $profile?->ipk ?? '0.00';
-    $totalSks = $profile?->total_sks ?? 0;
-    $maxSks = 144;
-    $statusAkademik = $profile?->status_akademik ?? 'Aktif';
-    $fotoProfile = $profile?->foto_profile ? asset('storage/' . $profile->foto_profile) : asset('assets/image/default-avatar.png');
-    $bio = $profile?->bio ?? 'Bio belum diisi';
-    
-    // Jurusan data
-    $programStudi = $jurusan?->nama_jurusan ?? 'Program Studi';
-    $fakultas = $jurusan?->fakultas ?? 'Fakultas';
-    $jenjang = $jurusan?->jenjang ?? 'S1';
-    
-    // Calculate real progress data from backend
-    // Get user's enrollments
-    $userEnrollments = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->get();
-    
-    // Kursus aktif = enrollments with status 'aktif' or in progress
-    $kursusAktif = $userEnrollments->whereIn('status', ['aktif', 'in_progress'])->count();
-    if ($kursusAktif == 0) {
-        $kursusAktif = $userEnrollments->count(); // Count all if no specific status
-    }
-    
-    // Tugas diselesaikan = completed assignments or enrollment progress indicator  
-    $tugasDiselesaikan = $userEnrollments->where('progress', '>=', 100)->count();
-    if ($tugasDiselesaikan == 0) {
-        // Calculate from total progress across all enrollments
-        $tugasDiselesaikan = intval($userEnrollments->sum('progress') / 10); // Rough estimate
-    }
-    
-    // Semester progress = average progress of all enrollments
-    $semesterProgress = 0;
-    if ($userEnrollments->count() > 0) {
-        $semesterProgress = intval($userEnrollments->avg('progress') ?? 0);
-    }
-    
-    // Tahun masuk from profile or estimate
-    $tahunMasuk = $profile?->created_at?->format('Y') ?? '2021';
-    
-    // Get recent activities from various sources
-    $kegiatanTerakhir = collect();
-    
-    // 1. Recent agenda items (upcoming/past events)
-    $recentAgenda = $user->agenda()
-        ->orderBy('tanggal', 'desc')
-        ->limit(3)
-        ->get();
-    
-    foreach ($recentAgenda as $agenda) {
-        $iconMap = [
-            'webinar' => ['icon' => 'calendar', 'color' => 'blue'],
-            'workshop' => ['icon' => 'calendar', 'color' => 'green'],
-            'deadline' => ['icon' => 'alert', 'color' => 'rose'],
-            'quiz' => ['icon' => 'quiz', 'color' => 'yellow'],
-        ];
-        $iconData = $iconMap[$agenda->tipe] ?? ['icon' => 'calendar', 'color' => 'gray'];
-        
-        $kegiatanTerakhir->push([
-            'icon' => $iconData['icon'],
-            'text' => $agenda->judul . ', ' . \Carbon\Carbon::parse($agenda->tanggal)->translatedFormat('d F Y'),
-            'color' => $iconData['color'],
-            'date' => $agenda->tanggal,
-        ]);
-    }
-    
-    // 2. Recent enrollments (enrolled courses)
-    $recentEnrollments = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
-        ->with('course')
-        ->orderBy('created_at', 'desc')
-        ->limit(2)
-        ->get();
-    
-    foreach ($recentEnrollments as $enrollment) {
-        if ($enrollment->course) {
-            $kegiatanTerakhir->push([
-                'icon' => 'check',
-                'text' => 'Mendaftar kursus ' . $enrollment->course->nama_course,
-                'color' => 'green',
-                'date' => $enrollment->created_at,
-            ]);
-        }
-    }
-    
-    // 3. Recent course ratings (reviews submitted)
-    $recentRatings = \App\Models\CourseRating::where('id_mahasiswa', $user->id)
-        ->with('course')
-        ->orderBy('created_at', 'desc')
-        ->limit(2)
-        ->get();
-    
-    foreach ($recentRatings as $rating) {
-        if ($rating->course) {
-            $kegiatanTerakhir->push([
-                'icon' => 'chat',
-                'text' => 'Memberikan ulasan untuk ' . $rating->course->nama_course,
-                'color' => 'blue',
-                'date' => $rating->created_at,
-            ]);
-        }
-    }
-    
-    // Sort by date and take latest 5
-    $kegiatanTerakhir = $kegiatanTerakhir->sortByDesc('date')->take(5)->values()->toArray();
-    
-    // If empty, show placeholder
-    if (empty($kegiatanTerakhir)) {
-        $kegiatanTerakhir = [
-            ['icon' => 'info', 'text' => 'Belum ada kegiatan terbaru', 'color' => 'gray'],
-        ];
-    }
-@endphp
-
 {{-- Page Header --}}
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 animate-fade-in-up">
     <div>
@@ -170,8 +41,8 @@
             </div>
             
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $userName }}</h2>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">NIM: {{ $nim }}</p>
-            <a href="{{ route('mahasiswa.courses') }}" class="text-blue-500 hover:text-blue-600 text-sm font-medium mt-1">{{ $programStudi }} ({{ $jenjang }})</a>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">NIM: {{ $nim ?? '-' }}</p>
+            <a href="{{ route('mahasiswa.courses') }}" class="text-blue-500 hover:text-blue-600 text-sm font-medium mt-1">{{ $programStudi ?? '-' }} ({{ $jenjang ?? '-' }})</a>
             
             <div class="flex items-center gap-2 mt-4">
                 <span class="bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-medium">
@@ -200,7 +71,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Email</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $userEmail }}</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $userEmail ?? '-' }}</p>
                     </div>
                 </div>
                 
@@ -213,7 +84,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">No. Telepon</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $noHp }}</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $noHp ?? '-' }}</p>
                     </div>
                 </div>
                 
@@ -226,7 +97,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Alamat</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $alamat }}</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $alamat ?? '-' }}</p>
                     </div>
                 </div>
                 
@@ -239,7 +110,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Tempat, Tanggal Lahir</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $ttl }}</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $ttl ?: '-' }}</p>
                     </div>
                 </div>
                 
@@ -252,12 +123,12 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Jenis Kelamin</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $jenisKelamin }}</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $jenisKelamin ?? '-' }}</p>
                     </div>
                 </div>
 
                 {{-- Bio --}}
-                @if($bio && $bio !== 'Bio belum diisi')
+                @if(!empty($bio))
                 <div class="flex items-start gap-3">
                     <div class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
                         <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,20 +154,20 @@
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Program Studi</p>
-                    <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $programStudi }}</p>
+                    <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $programStudi ?? '-' }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Fakultas</p>
-                    <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $fakultas }}</p>
+                    <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $fakultas ?? '-' }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Tahun Masuk</p>
-                    <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $tahunMasuk }}</p>
+                    <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $tahunMasuk ?? '-' }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Status Akademik</p>
                     <span class="inline-block bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded text-xs font-medium">
-                        {{ $statusAkademik }}
+                        {{ $statusAkademik ?? '-' }}
                     </span>
                 </div>
                 <div>
@@ -319,11 +190,13 @@
                 <div class="flex items-center gap-3 p-3 rounded-xl 
                     @if($kegiatan['color'] === 'green') bg-green-50 dark:bg-green-500/10
                     @elseif($kegiatan['color'] === 'blue') bg-blue-50 dark:bg-blue-500/10
+                    @elseif($kegiatan['color'] === 'gray') bg-gray-50 dark:bg-gray-500/10
                     @else bg-rose-50 dark:bg-rose-500/10
                     @endif">
                     <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
                         @if($kegiatan['color'] === 'green') bg-green-500/20 text-green-600 dark:text-green-400
                         @elseif($kegiatan['color'] === 'blue') bg-blue-500/20 text-blue-600 dark:text-blue-400
+                        @elseif($kegiatan['color'] === 'gray') bg-gray-500/20 text-gray-600 dark:text-gray-400
                         @else bg-rose-500/20 text-rose-600 dark:text-rose-400
                         @endif">
                         @if($kegiatan['icon'] === 'check')
@@ -333,6 +206,10 @@
                         @elseif($kegiatan['icon'] === 'chat')
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        @elseif($kegiatan['icon'] === 'info')
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         @else
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

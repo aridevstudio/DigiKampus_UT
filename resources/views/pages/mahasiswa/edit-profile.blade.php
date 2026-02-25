@@ -1,32 +1,4 @@
 <x-layouts.dashboard :active="'profile'">
-@php
-    $user = Auth::guard('mahasiswa')->user();
-    $profile = $user?->profile;
-    $jurusan = $profile?->jurusan;
-    
-    // User data
-    $userName = $user?->name ?? '';
-    $userEmail = $user?->email ?? '';
-    
-    // Profile data
-    $nim = $profile?->nim ?? '';
-    $noHp = $profile?->no_hp ?? '';
-    $alamat = $profile?->alamat ?? '';
-    $tempatLahir = $profile?->tempat_lahir ?? '';
-    $tanggalLahir = $profile?->tanggal_lahir ?? '';
-    $jenisKelamin = $profile?->jenis_kelamin ?? 'L';
-    $fotoProfile = $profile?->foto_profile ? asset('storage/' . $profile->foto_profile) : null;
-    $visibilitas = $profile?->visibilitas ?? true;
-    $bio = $profile?->bio ?? '';
-    
-    // Jurusan data (read-only)
-    $programStudi = $jurusan?->nama_jurusan ?? 'Belum diisi';
-    $fakultas = $jurusan?->fakultas ?? 'Belum diisi';
-    
-    // Dummy
-    $tahunMasuk = '2021';
-@endphp
-
 {{-- Page Header --}}
 <div class="mb-6 animate-fade-in-up">
     <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Edit Profil</h1>
@@ -387,20 +359,6 @@
                     readonly
                     disabled
                 >
-            </div>
-            
-            {{-- Visibilitas Profil --}}
-            <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="font-medium text-gray-800 dark:text-gray-100">Visibilitas Profil</h3>
-                        <p class="text-gray-500 dark:text-gray-400 text-sm">Tampilkan profil saya ke dosen dan teman kuliah</p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="visibilitas" value="1" class="sr-only peer" {{ $visibilitas ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-                    </label>
-                </div>
             </div>
         </div>
     </div>
