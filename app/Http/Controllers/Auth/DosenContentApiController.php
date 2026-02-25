@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agenda;
 use App\Models\Course;
 use App\Models\CourseMaterial;
 use App\Models\CourseModule;
@@ -149,6 +150,132 @@ class DosenContentApiController extends Controller
         ]);
     }
 
+    public function upcomingSchedules(Request $request): JsonResponse
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        if (!$dosen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $limit = (int) $request->query('limit', 3);
+        $limit = max(1, min($limit, 20));
+
+        $schedules = Agenda::query()
+            ->where('id_dosen', $dosen->id)
+            ->whereDate('tanggal', '>=', now()->toDateString())
+            ->with('course')
+            ->orderBy('tanggal')
+            ->orderByRaw('CASE WHEN waktu_mulai IS NULL THEN 1 ELSE 0 END, waktu_mulai ASC')
+            ->limit($limit)
+            ->get();
+
+        $items = $schedules->map(function (Agenda $schedule) {
+            $startTime = $this->formatScheduleTime($schedule->waktu_mulai);
+            $endTime = $this->formatScheduleTime($schedule->waktu_selesai);
+            $timeText = 'Waktu belum ditentukan';
+
+            if ($startTime && $endTime) {
+                $timeText = "{$startTime} - {$endTime} WIB";
+            } elseif ($startTime) {
+                $timeText = "{$startTime} WIB";
+            }
+
+            return [
+                'id_agenda' => $schedule->id_agenda,
+                'id_course' => $schedule->id_course ?: $schedule->course?->id_course,
+                'course' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Jadwal Mengajar',
+                'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
+                'waktu' => $timeText,
+                'waktu_mulai' => $schedule->waktu_mulai,
+                'waktu_selesai' => $schedule->waktu_selesai,
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jadwal mengajar terdekat berhasil diambil.',
+            'data' => [
+                'items' => $items,
+            ],
+        ]);
+    }
+
+    public function storeSchedule(Request $request): JsonResponse
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        if (!$dosen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'id_course' => 'required|integer|exists:courses,id_course',
+            'judul' => 'nullable|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'tanggal' => 'required|date|after_or_equal:today',
+            'waktu_mulai' => 'nullable|date_format:H:i',
+            'waktu_selesai' => 'nullable|date_format:H:i|after:waktu_mulai',
+            'tipe' => 'nullable|in:webinar,deadline,workshop',
+            'warna' => ['nullable', 'regex:/^#?[0-9A-Fa-f]{6}$/'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+
+        $course = Course::where('id_course', $validated['id_course'])
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus tidak ditemukan atau bukan milik dosen ini.',
+            ], 404);
+        }
+
+        $agenda = Agenda::create([
+            'id_mahasiswa' => null,
+            'id_dosen' => $dosen->id,
+            'id_course' => $course->id_course,
+            'judul' => $validated['judul'] ?? $course->nama_course,
+            'deskripsi' => $validated['deskripsi'] ?? null,
+            'tanggal' => $validated['tanggal'],
+            'waktu_mulai' => $validated['waktu_mulai'] ?? null,
+            'waktu_selesai' => $validated['waktu_selesai'] ?? null,
+            'tipe' => $validated['tipe'] ?? 'webinar',
+            'warna' => isset($validated['warna'])
+                ? (str_starts_with($validated['warna'], '#') ? $validated['warna'] : '#' . $validated['warna'])
+                : Agenda::getColorByType($validated['tipe'] ?? 'webinar'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jadwal mengajar berhasil dibuat.',
+            'data' => [
+                'id_agenda' => $agenda->id_agenda,
+                'id_course' => $agenda->id_course,
+                'judul' => $agenda->judul,
+                'tanggal' => optional($agenda->tanggal)->format('Y-m-d'),
+                'waktu_mulai' => $agenda->waktu_mulai,
+                'waktu_selesai' => $agenda->waktu_selesai,
+            ],
+        ], 201);
+    }
+
     public function addModule(Request $request, int $courseId): JsonResponse
     {
         $dosen = Auth::guard('dosen')->user();
@@ -285,6 +412,21 @@ class DosenContentApiController extends Controller
         $decoded = json_decode($content, true);
 
         return is_array($decoded) && !empty($decoded['is_tugas']);
+    }
+
+    private function formatScheduleTime(?string $time): ?string
+    {
+        if (!$time) {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::createFromFormat('H:i:s', $time)->format('H:i');
+        } catch (\Throwable $exception) {
+            return preg_match('/^\d{2}:\d{2}/', $time) === 1
+                ? substr($time, 0, 5)
+                : null;
+        }
     }
 
     private function detectDurationFromProvider(string $url, string $host): array

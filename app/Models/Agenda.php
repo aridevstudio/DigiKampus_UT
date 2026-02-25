@@ -14,6 +14,8 @@ class Agenda extends Model
 
     protected $fillable = [
         'id_mahasiswa',
+        'id_dosen',
+        'id_course',
         'judul',
         'deskripsi',
         'tanggal',
@@ -35,6 +37,22 @@ class Agenda extends Model
     public function mahasiswa()
     {
         return $this->belongsTo(User::class, 'id_mahasiswa', 'id');
+    }
+
+    /**
+     * Get the dosen that owns this teaching schedule.
+     */
+    public function dosen()
+    {
+        return $this->belongsTo(User::class, 'id_dosen', 'id');
+    }
+
+    /**
+     * Get the related course for this schedule.
+     */
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'id_course', 'id_course');
     }
 
     /**

@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api\Dosen;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agenda;
 use App\Models\Course;
 use App\Models\Enrollment;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 /**
  * @tags Dosen Dashboard
@@ -71,10 +70,10 @@ class DosenDashboardController extends Controller
         // Average progress
         $averageProgress = Enrollment::whereIn('id_course', $courseIds)->avg('progress') ?? 0;
 
-        // Upcoming sessions (courses with webinar kategori scheduled in future)
-        $upcomingSessions = Course::where('id_dosen', $dosenId)
-            ->where('kategori', 'webinar')
-            ->where('status', 'aktif')
+        // Upcoming sessions from jadwal mengajar backend (agendas).
+        $upcomingSessions = Agenda::query()
+            ->where('id_dosen', $dosenId)
+            ->whereDate('tanggal', '>=', now()->toDateString())
             ->count();
 
         return [
@@ -156,19 +155,47 @@ class DosenDashboardController extends Controller
      */
     private function getUpcomingSchedule(int $dosenId, int $limit): array
     {
-        $courses = Course::where('id_dosen', $dosenId)
-            ->where('status', 'aktif')
-            ->orderBy('created_at', 'desc')
+        $schedules = Agenda::query()
+            ->where('id_dosen', $dosenId)
+            ->whereDate('tanggal', '>=', now()->toDateString())
+            ->with('course')
+            ->orderBy('tanggal')
+            ->orderByRaw('CASE WHEN waktu_mulai IS NULL THEN 1 ELSE 0 END, waktu_mulai ASC')
             ->limit($limit)
             ->get();
 
-        return $courses->map(function ($course) {
+        return $schedules->map(function (Agenda $schedule) {
+            $startTime = $this->formatScheduleTime($schedule->waktu_mulai);
+            $endTime = $this->formatScheduleTime($schedule->waktu_selesai);
+            $timeText = 'Waktu belum ditentukan';
+
+            if ($startTime && $endTime) {
+                $timeText = "{$startTime} - {$endTime} WIB";
+            } elseif ($startTime) {
+                $timeText = "{$startTime} WIB";
+            }
+
             return [
-                'id' => $course->id_course,
-                'nama' => $course->nama_course,
-                'tanggal' => Carbon::now()->addDays(rand(1, 14))->format('l, d F Y'),
-                'waktu' => '09:00 - 11:00 WIB'
+                'id' => $schedule->id_course ?: $schedule->course?->id_course,
+                'nama' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Jadwal Mengajar',
+                'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
+                'waktu' => $timeText,
             ];
         })->toArray();
+    }
+
+    private function formatScheduleTime(?string $time): ?string
+    {
+        if (!$time) {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::createFromFormat('H:i:s', $time)->format('H:i');
+        } catch (\Throwable $exception) {
+            return preg_match('/^\d{2}:\d{2}/', $time) === 1
+                ? substr($time, 0, 5)
+                : null;
+        }
     }
 }

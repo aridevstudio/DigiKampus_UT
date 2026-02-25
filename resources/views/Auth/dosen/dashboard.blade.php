@@ -179,7 +179,19 @@
         
         {{-- Jadwal Mengajar Terdekat --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-            <h3 class="font-bold text-gray-900 dark:text-white mb-4">Jadwal Mengajar Terdekat</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-gray-900 dark:text-white">Jadwal Mengajar Terdekat</h3>
+                <button
+                    type="button"
+                    onclick="openScheduleModal()"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-xs font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Tambah Jadwal
+                </button>
+            </div>
             
             <div class="space-y-4">
                 @forelse($upcomingSchedules ?? [] as $index => $schedule)
@@ -223,4 +235,238 @@
             </div>
         </div>
     </div>
+
+    {{-- Add Schedule Modal --}}
+    <div id="scheduleModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeScheduleModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
+                <button onclick="closeScheduleModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <form id="scheduleForm" class="p-6" onsubmit="return submitScheduleForm(event)">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Jadwal Mengajar</h3>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Kursus <span class="text-red-500">*</span></label>
+                            <select id="scheduleCourse" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <option value="">Memuat daftar kursus...</option>
+                            </select>
+                            <p id="scheduleCourseHint" class="mt-1 text-xs text-gray-500 dark:text-gray-400 hidden"></p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tanggal <span class="text-red-500">*</span></label>
+                                <input type="date" id="scheduleDate" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
+                                <select id="scheduleType" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                    <option value="webinar">Webinar</option>
+                                    <option value="workshop">Workshop</option>
+                                    <option value="deadline">Deadline</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Waktu Mulai</label>
+                                <input type="time" id="scheduleStartTime" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Waktu Selesai</label>
+                                <input type="time" id="scheduleEndTime" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Judul Sesi (opsional)</label>
+                            <input type="text" id="scheduleTitle" placeholder="Contoh: Live Mentoring Mingguan" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Deskripsi (opsional)</label>
+                            <textarea id="scheduleDescription" rows="3" placeholder="Catatan untuk sesi mengajar..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 mt-6">
+                        <button type="button" onclick="closeScheduleModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Batal</button>
+                        <button type="submit" id="scheduleSubmitBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">Simpan Jadwal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        const scheduleModal = document.getElementById('scheduleModal');
+        const scheduleForm = document.getElementById('scheduleForm');
+        const scheduleCourseSelect = document.getElementById('scheduleCourse');
+        const scheduleSubmitBtn = document.getElementById('scheduleSubmitBtn');
+        const scheduleCourseHint = document.getElementById('scheduleCourseHint');
+        const scheduleDateInput = document.getElementById('scheduleDate');
+        const scheduleCsrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? @json(csrf_token());
+        let scheduleCoursesLoaded = false;
+
+        function setDefaultScheduleDate() {
+            if (!scheduleDateInput) return;
+            if (scheduleDateInput.value) return;
+
+            const today = new Date();
+            scheduleDateInput.value = today.toISOString().slice(0, 10);
+        }
+
+        async function loadScheduleCourses() {
+            if (scheduleCoursesLoaded || !scheduleCourseSelect) return;
+
+            scheduleCourseSelect.innerHTML = '<option value="">Memuat daftar kursus...</option>';
+            scheduleCourseSelect.disabled = true;
+
+            try {
+                const response = await fetch('/dosen/api/courses?sort=nama&per_page=100', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+                const data = await response.json();
+
+                const courses = data?.data?.courses ?? [];
+                if (!response.ok) {
+                    throw new Error(data?.message || 'Gagal memuat daftar kursus.');
+                }
+
+                if (!Array.isArray(courses) || courses.length === 0) {
+                    scheduleCourseSelect.innerHTML = '<option value="">Belum ada kursus tersedia</option>';
+                    scheduleCourseHint.textContent = 'Buat kursus terlebih dahulu sebelum menambahkan jadwal.';
+                    scheduleCourseHint.classList.remove('hidden');
+                    return;
+                }
+
+                const options = ['<option value="">-- Pilih Kursus --</option>'];
+                courses.forEach((course) => {
+                    options.push(`<option value="${course.id}">${course.nama}</option>`);
+                });
+
+                scheduleCourseSelect.innerHTML = options.join('');
+                scheduleCoursesLoaded = true;
+                scheduleCourseHint.classList.add('hidden');
+            } catch (error) {
+                scheduleCourseSelect.innerHTML = '<option value="">Gagal memuat kursus</option>';
+                scheduleCourseHint.textContent = error.message || 'Terjadi kesalahan saat memuat kursus.';
+                scheduleCourseHint.classList.remove('hidden');
+            } finally {
+                scheduleCourseSelect.disabled = false;
+            }
+        }
+
+        function openScheduleModal() {
+            if (!scheduleModal) return;
+
+            scheduleModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            setDefaultScheduleDate();
+            loadScheduleCourses();
+        }
+
+        function closeScheduleModal() {
+            if (!scheduleModal) return;
+
+            scheduleModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            scheduleForm?.reset();
+            setDefaultScheduleDate();
+        }
+
+        function extractScheduleErrorMessage(data) {
+            if (data?.errors && typeof data.errors === 'object') {
+                const firstKey = Object.keys(data.errors)[0];
+                const firstError = firstKey ? data.errors[firstKey]?.[0] : null;
+                if (firstError) return firstError;
+            }
+
+            return data?.message || 'Terjadi kesalahan saat menyimpan jadwal.';
+        }
+
+        async function submitScheduleForm(event) {
+            event.preventDefault();
+
+            const courseId = scheduleCourseSelect?.value;
+            const tanggal = document.getElementById('scheduleDate')?.value;
+            const waktuMulai = document.getElementById('scheduleStartTime')?.value;
+            const waktuSelesai = document.getElementById('scheduleEndTime')?.value;
+            const judul = document.getElementById('scheduleTitle')?.value?.trim();
+            const deskripsi = document.getElementById('scheduleDescription')?.value?.trim();
+            const tipe = document.getElementById('scheduleType')?.value || 'webinar';
+
+            if (!courseId) {
+                alert('Silakan pilih kursus terlebih dahulu.');
+                return false;
+            }
+
+            if (!tanggal) {
+                alert('Tanggal jadwal wajib diisi.');
+                return false;
+            }
+
+            const payload = {
+                id_course: Number(courseId),
+                tanggal,
+                tipe,
+            };
+
+            if (judul) payload.judul = judul;
+            if (deskripsi) payload.deskripsi = deskripsi;
+            if (waktuMulai) payload.waktu_mulai = waktuMulai;
+            if (waktuSelesai) payload.waktu_selesai = waktuSelesai;
+
+            scheduleSubmitBtn.disabled = true;
+            scheduleSubmitBtn.textContent = 'Menyimpan...';
+
+            try {
+                const response = await fetch('/dosen/api/schedules', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': scheduleCsrfToken,
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data?.success) {
+                    throw new Error(extractScheduleErrorMessage(data));
+                }
+
+                closeScheduleModal();
+                alert('Jadwal mengajar berhasil ditambahkan.');
+                window.location.reload();
+            } catch (error) {
+                alert(error.message || 'Gagal menyimpan jadwal mengajar.');
+            } finally {
+                scheduleSubmitBtn.disabled = false;
+                scheduleSubmitBtn.textContent = 'Simpan Jadwal';
+            }
+
+            return false;
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && scheduleModal && !scheduleModal.classList.contains('hidden')) {
+                closeScheduleModal();
+            }
+        });
+    </script>
+    @endpush
 </x-layouts.dosen>

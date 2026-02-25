@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agenda;
 use App\Models\Course;
 use App\Models\DosenNotification;
 use App\Models\Enrollment;
@@ -172,32 +173,35 @@ class DosenController extends Controller
                 ];
             });
         
-        // Get upcoming schedules (placeholder - using Agenda model if exists)
-        $upcomingSchedules = [];
-        try {
-            $schedules = \App\Models\Agenda::where('id_dosen', $dosen->id)
-                ->where('tanggal', '>=', now())
-                ->orderBy('tanggal')
-                ->take(3)
-                ->get();
-            
-            foreach ($schedules as $schedule) {
-                $startTime = $schedule->jam_mulai ?? $schedule->waktu_mulai ?? '09:00';
-                $endTime = $schedule->jam_selesai ?? $schedule->waktu_selesai ?? '11:00';
-                $courseId = $schedule->id_course
-                    ?? $schedule->course?->id_course
-                    ?? null;
+        // Get upcoming teaching schedules from agendas backend.
+        $upcomingSchedules = Agenda::query()
+            ->where('id_dosen', $dosen->id)
+            ->whereDate('tanggal', '>=', now()->toDateString())
+            ->with('course')
+            ->orderBy('tanggal')
+            ->orderByRaw('CASE WHEN waktu_mulai IS NULL THEN 1 ELSE 0 END, waktu_mulai ASC')
+            ->take(3)
+            ->get()
+            ->map(function (Agenda $schedule) {
+                $startTime = $this->formatScheduleTime($schedule->waktu_mulai);
+                $endTime = $this->formatScheduleTime($schedule->waktu_selesai);
+                $timeText = 'Waktu belum ditentukan';
 
-                $upcomingSchedules[] = [
-                    'id' => $courseId,
-                    'course' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Kursus',
+                if ($startTime && $endTime) {
+                    $timeText = "{$startTime} - {$endTime} WIB";
+                } elseif ($startTime) {
+                    $timeText = "{$startTime} WIB";
+                }
+
+                return [
+                    'id' => $schedule->id_course ?: $schedule->course?->id_course,
+                    'course' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Jadwal Mengajar',
                     'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
-                    'waktu' => $startTime . ' - ' . $endTime . ' WIB',
+                    'waktu' => $timeText,
                 ];
-            }
-        } catch (\Exception $e) {
-            // Agenda model might not have these fields
-        }
+            })
+            ->values()
+            ->all();
 
         return view('Auth.dosen.dashboard', [
             'dosen' => $dosen,
@@ -1582,5 +1586,21 @@ class DosenController extends Controller
                 'is_read' => false,
             ],
         ]);
+    }
+
+    private function formatScheduleTime(?string $time): ?string
+    {
+        if (!$time) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('H:i:s', $time)->format('H:i');
+        } catch (\Throwable $exception) {
+            // Fallback for values that are already formatted.
+            return preg_match('/^\d{2}:\d{2}/', $time) === 1
+                ? substr($time, 0, 5)
+                : null;
+        }
     }
 }
