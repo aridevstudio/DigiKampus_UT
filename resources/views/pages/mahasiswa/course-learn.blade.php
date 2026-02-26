@@ -186,7 +186,7 @@
                             'tugas' => 'Tugas',
                         ];
                     @endphp
-                    Modul {{ $currentModuleIndex }}: {{ $modules[$currentModuleIndex]['title'] ?? 'Materi' }} - {{ $materialTypeLabel[$currentMaterial['type']] ?? 'Materi' }}: {{ $currentMaterial['title'] }}
+                    {{ $modules[$currentModuleIndex]['title'] ?? 'Materi' }} - {{ $materialTypeLabel[$currentMaterial['type']] ?? 'Materi' }}: {{ $currentMaterial['title'] }}
                     @else
                     Pilih materi untuk memulai
                     @endif
@@ -302,29 +302,9 @@
             {{-- Diskusi Tab --}}
             <div id="tab-diskusi" class="tab-content p-4">
                 <div class="space-y-4" style="max-height: 300px; overflow-y: auto;">
-                    <div class="flex gap-3">
-                        <img src="https://ui-avatars.com/api/?name=Ahmad+Rizki&background=3b82f6&color=fff&size=40" alt="User" class="w-10 h-10 rounded-full flex-shrink-0">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-medium text-gray-800 dark:text-gray-100 text-sm">Ahmad Rizki</span>
-                                <span class="text-gray-400 text-xs">2 jam lalu</span>
-                            </div>
-                            <p class="text-gray-600 dark:text-gray-400 text-sm">Apakah ada cara mudah untuk memahami konsep OOP?</p>
-                            <button class="text-blue-500 text-xs mt-1 hover:underline">Balas</button>
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-3">
-                        <img src="https://ui-avatars.com/api/?name=Sari+Indah&background=10b981&color=fff&size=40" alt="User" class="w-10 h-10 rounded-full flex-shrink-0">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-medium text-gray-800 dark:text-gray-100 text-sm">Sari Indah</span>
-                                <span class="text-gray-400 text-xs">1 hari lalu</span>
-                            </div>
-                            <p class="text-gray-600 dark:text-gray-400 text-sm">Video ini sangat membantu! Terima kasih coach.</p>
-                            <button class="text-blue-500 text-xs mt-1 hover:underline">Balas</button>
-                        </div>
-                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">
+                        Belum ada diskusi untuk materi ini.
+                    </p>
                 </div>
                 
                 {{-- Comment Input --}}

@@ -5,7 +5,7 @@
     </div>
 
     <style>
-        @@media (min-width: 1024px) {
+        @media (min-width: 1024px) {
             #editKursusGrid { grid-template-columns: 3fr 2fr; }
         }
     </style>
@@ -48,7 +48,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Persyaratan Kursus</label>
                             <textarea name="persyaratan" rows="4" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" placeholder="Satu persyaratan per baris">{{ old('persyaratan', $course->persyaratan) }}</textarea>
-                            <p class="text-xs text-gray-500 mt-1">Contoh: `STIN4101 - Pengantar TI` atau kalimat bebas per baris.</p>
+                            <p class="text-xs text-gray-500 mt-1">Contoh: STIN4101 - Pengantar TI, satu persyaratan per baris.</p>
                             @error('persyaratan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
 
@@ -79,10 +79,16 @@
                         {{-- Baris 2: Estimasi Waktu Belajar & Tipe Harga (sejajar 2 kolom sesuai wireframe) --}}
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estimasi Waktu Belajar (Jam)</label>
-                                <input type="number" name="estimasi_waktu" value="{{ old('estimasi_waktu', $course->estimasi_waktu) }}" min="0" placeholder="20" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <input type="hidden" name="durasi_satuan" value="Jam">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estimasi Waktu Belajar</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="number" name="estimasi_waktu" value="{{ old('estimasi_waktu', $course->estimasi_waktu) }}" min="0" placeholder="20" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <select name="durasi_satuan" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="Jam" {{ old('durasi_satuan', $course->durasi_satuan ?: 'Jam') === 'Jam' ? 'selected' : '' }}>Jam</option>
+                                        <option value="Minggu" {{ old('durasi_satuan', $course->durasi_satuan) === 'Minggu' ? 'selected' : '' }}>Minggu</option>
+                                    </select>
+                                </div>
                                 @error('estimasi_waktu')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                @error('durasi_satuan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Harga</label>
@@ -103,6 +109,12 @@
                                 <option value="tiket" {{ old('kategori', $course->kategori) === 'tiket' ? 'selected' : '' }}>Tiket</option>
                             </select>
                             @error('kategori')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL Playlist YouTube (Opsional)</label>
+                            <input type="url" name="youtube_playlist" value="{{ old('youtube_playlist', $course->youtube_playlist) }}" placeholder="https://www.youtube.com/playlist?list=..." class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            @error('youtube_playlist')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
 
                         {{-- Harga (condisional, muncul kalau Berbayar) --}}

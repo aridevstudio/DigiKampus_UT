@@ -196,9 +196,11 @@ class CourseController extends Controller
         $modules = [];
         foreach ($materials as $material) {
             $moduleNum = $material->modul ?? 1;
+            $moduleTopic = trim((string) ($material->topik ?? 'Materi'));
+            $moduleTopic = preg_replace('/^modul\s+\d+\s*:\s*/i', '', $moduleTopic) ?: 'Materi';
             if (!isset($modules[$moduleNum])) {
                 $modules[$moduleNum] = [
-                    'title' => 'Modul ' . $moduleNum . ': ' . ($material->topik ?? 'Materi'),
+                    'title' => 'Modul ' . $moduleNum . ': ' . $moduleTopic,
                     'materials' => [],
                     'completed' => 0,
                     'total' => 0,
@@ -248,6 +250,10 @@ class CourseController extends Controller
             }
         }
         
+        if (!empty($modules)) {
+            ksort($modules, SORT_NUMERIC);
+        }
+
         // Get completion status from session
         $completedQuizzes = session('completed_quizzes', []);
         $completedAssignments = session('completed_assignments', []);
@@ -261,15 +267,31 @@ class CourseController extends Controller
         }
         unset($module); // Break reference
         
-        // Get current material (first incomplete material)
+        // Get current material from query (?material=ID) when available.
         $currentMaterial = null;
         $currentModuleIndex = 0;
-        foreach ($modules as $idx => $module) {
-            foreach ($module['materials'] as $mat) {
-                if (!$mat['is_completed']) {
-                    $currentMaterial = $mat;
-                    $currentModuleIndex = $idx;
-                    break 2;
+        $requestedMaterialId = (int) request('material');
+
+        if ($requestedMaterialId > 0) {
+            foreach ($modules as $idx => $module) {
+                foreach ($module['materials'] as $mat) {
+                    if ((int) $mat['id'] === $requestedMaterialId) {
+                        $currentMaterial = $mat;
+                        $currentModuleIndex = $idx;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        if (!$currentMaterial) {
+            foreach ($modules as $idx => $module) {
+                foreach ($module['materials'] as $mat) {
+                    if (!$mat['is_completed']) {
+                        $currentMaterial = $mat;
+                        $currentModuleIndex = $idx;
+                        break 2;
+                    }
                 }
             }
         }
