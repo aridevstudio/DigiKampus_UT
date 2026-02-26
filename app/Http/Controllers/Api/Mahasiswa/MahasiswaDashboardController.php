@@ -43,6 +43,12 @@ class MahasiswaDashboardController extends Controller
             ->orderBy('updated_at', 'desc')
             ->take(3)
             ->get();
+        $enrolledCourseIds = Enrollment::where('id_mahasiswa', $user->id)
+            ->pluck('id_course')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
         // Get latest news (limit 3)
         $news = News::active()
@@ -52,7 +58,8 @@ class MahasiswaDashboardController extends Controller
             ->get();
 
         // Get current month agenda
-        $agenda = Agenda::where('id_mahasiswa', $user->id)
+        $agenda = Agenda::query()
+            ->visibleToMahasiswa($user->id, $enrolledCourseIds)
             ->byMonth(now()->month, now()->year)
             ->orderBy('tanggal', 'asc')
             ->get();
@@ -165,8 +172,15 @@ class MahasiswaDashboardController extends Controller
         $user = $request->user();
         $month = $request->query('month', now()->month);
         $year = $request->query('year', now()->year);
+        $enrolledCourseIds = Enrollment::where('id_mahasiswa', $user->id)
+            ->pluck('id_course')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
-        $agenda = Agenda::where('id_mahasiswa', $user->id)
+        $agenda = Agenda::query()
+            ->visibleToMahasiswa($user->id, $enrolledCourseIds)
             ->byMonth($month, $year)
             ->orderBy('tanggal', 'asc')
             ->get();

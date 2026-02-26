@@ -7,6 +7,7 @@ use App\Models\Agenda;
 use App\Models\Course;
 use App\Models\CourseMaterial;
 use App\Models\CourseModule;
+use App\Models\Enrollment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -150,6 +151,59 @@ class DosenContentApiController extends Controller
         ]);
     }
 
+    public function courseStudents(int $courseId): JsonResponse
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        if (!$dosen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $course = Course::query()
+            ->where('id_course', $courseId)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus tidak ditemukan atau bukan milik dosen ini.',
+            ], 404);
+        }
+
+        $students = Enrollment::query()
+            ->where('id_course', $course->id_course)
+            ->with(['mahasiswa.profile'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function (Enrollment $enrollment) {
+                return [
+                    'id' => $enrollment->id_mahasiswa,
+                    'name' => $enrollment->mahasiswa?->name ?? 'Mahasiswa',
+                    'email' => $enrollment->mahasiswa?->email,
+                    'nim' => $enrollment->mahasiswa?->profile?->nim,
+                    'status' => $enrollment->status,
+                ];
+            })
+            ->filter(fn (array $item) => !empty($item['id']))
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar mahasiswa kursus berhasil diambil.',
+            'data' => [
+                'course' => [
+                    'id' => $course->id_course,
+                    'nama' => $course->nama_course,
+                ],
+                'items' => $students,
+            ],
+        ]);
+    }
+
     public function upcomingSchedules(Request $request): JsonResponse
     {
         $dosen = Auth::guard('dosen')->user();
@@ -167,7 +221,7 @@ class DosenContentApiController extends Controller
         $schedules = Agenda::query()
             ->where('id_dosen', $dosen->id)
             ->whereDate('tanggal', '>=', now()->toDateString())
-            ->with('course')
+            ->with(['course', 'mahasiswa'])
             ->orderBy('tanggal')
             ->orderByRaw('CASE WHEN waktu_mulai IS NULL THEN 1 ELSE 0 END, waktu_mulai ASC')
             ->limit($limit)
@@ -196,6 +250,8 @@ class DosenContentApiController extends Controller
                 'waktu_mulai' => $schedule->waktu_mulai,
                 'waktu_selesai' => $schedule->waktu_selesai,
                 'tipe' => $schedule->tipe,
+                'id_mahasiswa' => $schedule->id_mahasiswa,
+                'mahasiswa' => $schedule->mahasiswa?->name,
             ];
         })->values();
 
@@ -246,8 +302,19 @@ class DosenContentApiController extends Controller
             ], 404);
         }
 
+        $selectedMahasiswaId = $this->resolveAndValidateScheduleMahasiswaId($validated, $course->id_course);
+        if ($selectedMahasiswaId === false) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mahasiswa yang dipilih tidak terdaftar di kursus ini.',
+                'errors' => [
+                    'id_mahasiswa' => ['Mahasiswa yang dipilih tidak terdaftar di kursus ini.'],
+                ],
+            ], 422);
+        }
+
         $agenda = Agenda::create([
-            'id_mahasiswa' => null,
+            'id_mahasiswa' => $selectedMahasiswaId,
             'id_dosen' => $dosen->id,
             'id_course' => $course->id_course,
             'judul' => trim($validated['judul']),
@@ -271,6 +338,7 @@ class DosenContentApiController extends Controller
                 'tanggal' => optional($agenda->tanggal)->format('Y-m-d'),
                 'waktu_mulai' => $agenda->waktu_mulai,
                 'waktu_selesai' => $agenda->waktu_selesai,
+                'id_mahasiswa' => $agenda->id_mahasiswa,
             ],
         ], 201);
     }
@@ -325,10 +393,22 @@ class DosenContentApiController extends Controller
             ], 404);
         }
 
+        $selectedMahasiswaId = $this->resolveAndValidateScheduleMahasiswaId($validated, $course->id_course);
+        if ($selectedMahasiswaId === false) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mahasiswa yang dipilih tidak terdaftar di kursus ini.',
+                'errors' => [
+                    'id_mahasiswa' => ['Mahasiswa yang dipilih tidak terdaftar di kursus ini.'],
+                ],
+            ], 422);
+        }
+
         $resolvedType = $validated['tipe'];
 
         $agenda->update([
             'id_course' => $course->id_course,
+            'id_mahasiswa' => $selectedMahasiswaId,
             'judul' => trim($validated['judul']),
             'deskripsi' => $validated['deskripsi'] ?? null,
             'tanggal' => $validated['tanggal'],
@@ -350,6 +430,7 @@ class DosenContentApiController extends Controller
                 'tanggal' => optional($agenda->tanggal)->format('Y-m-d'),
                 'waktu_mulai' => $agenda->waktu_mulai,
                 'waktu_selesai' => $agenda->waktu_selesai,
+                'id_mahasiswa' => $agenda->id_mahasiswa,
             ],
         ]);
     }
@@ -547,6 +628,7 @@ class DosenContentApiController extends Controller
     {
         return [
             'id_course' => 'required|integer|exists:courses,id_course',
+            'id_mahasiswa' => 'nullable|integer|exists:users,id',
             'judul' => ['required', 'string', 'max:255', 'regex:/\S/'],
             'deskripsi' => 'nullable|string',
             'tanggal' => 'required|date|after_or_equal:today',
@@ -561,6 +643,7 @@ class DosenContentApiController extends Controller
     {
         return [
             'id_course.required' => 'Kursus wajib dipilih.',
+            'id_mahasiswa.exists' => 'Mahasiswa yang dipilih tidak ditemukan.',
             'judul.required' => 'Judul sesi wajib diisi.',
             'judul.regex' => 'Judul sesi wajib diisi.',
             'tanggal.required' => 'Tanggal jadwal wajib diisi.',
@@ -569,6 +652,25 @@ class DosenContentApiController extends Controller
             'waktu_selesai.after' => 'Waktu selesai harus lebih besar dari waktu mulai.',
             'tipe.required' => 'Tipe jadwal wajib dipilih.',
         ];
+    }
+
+    private function resolveAndValidateScheduleMahasiswaId(array $validated, int $courseId): int|false|null
+    {
+        if (!isset($validated['id_mahasiswa']) || $validated['id_mahasiswa'] === null || $validated['id_mahasiswa'] === '') {
+            return null;
+        }
+
+        $mahasiswaId = (int) $validated['id_mahasiswa'];
+        if ($mahasiswaId <= 0) {
+            return false;
+        }
+
+        $isEnrolled = Enrollment::query()
+            ->where('id_course', $courseId)
+            ->where('id_mahasiswa', $mahasiswaId)
+            ->exists();
+
+        return $isEnrolled ? $mahasiswaId : false;
     }
 
     private function detectDurationFromProvider(string $url, string $host): array

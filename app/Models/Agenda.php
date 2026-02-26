@@ -65,6 +65,34 @@ class Agenda extends Model
     }
 
     /**
+     * Scope for master teaching schedules created by dosen.
+     */
+    public function scopeMasterSchedule($query)
+    {
+        return $query->whereNull('id_mahasiswa')
+            ->whereNotNull('id_dosen');
+    }
+
+    /**
+     * Scope agenda visible to a mahasiswa:
+     * 1) personal agenda (id_mahasiswa = current user)
+     * 2) dosen teaching schedules for enrolled courses
+     */
+    public function scopeVisibleToMahasiswa($query, int $mahasiswaId, array $enrolledCourseIds = [])
+    {
+        return $query->where(function ($agendaQuery) use ($mahasiswaId, $enrolledCourseIds) {
+            $agendaQuery->where('id_mahasiswa', $mahasiswaId);
+
+            if (!empty($enrolledCourseIds)) {
+                $agendaQuery->orWhere(function ($courseScheduleQuery) use ($enrolledCourseIds) {
+                    $courseScheduleQuery->masterSchedule()
+                        ->whereIn('id_course', $enrolledCourseIds);
+                });
+            }
+        });
+    }
+
+    /**
      * Get color based on type.
      */
     public static function getColorByType($tipe)

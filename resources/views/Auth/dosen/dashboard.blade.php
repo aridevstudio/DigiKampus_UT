@@ -214,6 +214,14 @@
                             </svg>
                             {{ $schedule['waktu'] }}
                         </div>
+                        @if(!empty($schedule['mahasiswa']))
+                            <div class="flex items-center gap-1 mt-1 text-xs text-emerald-600 dark:text-emerald-300">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.369 0 4.602.589 6.599 1.627M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Untuk: {{ $schedule['mahasiswa'] }}
+                            </div>
+                        @endif
                         <div class="flex flex-wrap items-center gap-2 mt-2">
                             @if(!empty($schedule['id_course']))
                                 <a href="{{ route('dosen.kursus.detail', $schedule['id_course']) }}" class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 text-xs font-medium">
@@ -229,6 +237,7 @@
                                     $editSchedulePayload = [
                                         'id_agenda' => $schedule['id_agenda'],
                                         'id_course' => $schedule['id_course'] ?? null,
+                                        'id_mahasiswa' => $schedule['id_mahasiswa'] ?? null,
                                         'judul' => $schedule['judul'] ?? '',
                                         'deskripsi' => $schedule['deskripsi'] ?? '',
                                         'tanggal' => $schedule['tanggal_raw'] ?? null,
@@ -292,6 +301,14 @@
                                 <option value="">Memuat daftar kursus...</option>
                             </select>
                             <p id="scheduleCourseHint" class="mt-1 text-xs text-gray-500 dark:text-gray-400 hidden"></p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Mahasiswa (opsional)</label>
+                            <select id="scheduleStudent" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <option value="">Pilih kursus terlebih dahulu...</option>
+                            </select>
+                            <p id="scheduleStudentHint" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pilih kursus untuk menampilkan daftar mahasiswa terdaftar.</p>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -380,6 +397,8 @@
         const scheduleDeleteConfirmBtn = document.getElementById('scheduleDeleteConfirmBtn');
         const scheduleDeleteText = document.getElementById('scheduleDeleteText');
         const scheduleCourseHint = document.getElementById('scheduleCourseHint');
+        const scheduleStudentSelect = document.getElementById('scheduleStudent');
+        const scheduleStudentHint = document.getElementById('scheduleStudentHint');
         const scheduleDateInput = document.getElementById('scheduleDate');
         const scheduleTypeInput = document.getElementById('scheduleType');
         const scheduleStartTimeInput = document.getElementById('scheduleStartTime');
@@ -391,6 +410,7 @@
         const scheduleToastMessage = document.getElementById('scheduleToastMessage');
         const scheduleCsrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? @json(csrf_token());
         let scheduleCoursesLoaded = false;
+        const scheduleStudentsCache = new Map();
         let scheduleToastTimer = null;
         let scheduleFormMode = 'create';
         let scheduleEditingAgendaId = null;
@@ -472,6 +492,105 @@
             scheduleDateInput.value = today.toISOString().slice(0, 10);
         }
 
+        function escapeScheduleHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function resetScheduleStudentField(message = 'Pilih kursus untuk menampilkan daftar mahasiswa terdaftar.') {
+            if (!scheduleStudentSelect) return;
+
+            scheduleStudentSelect.innerHTML = '<option value="">Untuk seluruh mahasiswa di kursus ini</option>';
+            scheduleStudentSelect.value = '';
+            scheduleStudentSelect.disabled = true;
+
+            if (scheduleStudentHint) {
+                scheduleStudentHint.textContent = message;
+                scheduleStudentHint.classList.remove('hidden');
+            }
+        }
+
+        function applyScheduleStudentOptions(students = [], selectedStudentId = null) {
+            if (!scheduleStudentSelect) return;
+
+            const options = ['<option value="">Untuk seluruh mahasiswa di kursus ini</option>'];
+            students.forEach((student) => {
+                const studentId = Number(student?.id);
+                if (!studentId) return;
+
+                const studentName = escapeScheduleHtml(student?.name ?? 'Mahasiswa');
+                const studentNim = student?.nim ? ` - ${escapeScheduleHtml(student.nim)}` : '';
+                options.push(`<option value="${studentId}">${studentName}${studentNim}</option>`);
+            });
+
+            scheduleStudentSelect.innerHTML = options.join('');
+            scheduleStudentSelect.disabled = false;
+
+            if (selectedStudentId) {
+                scheduleStudentSelect.value = String(selectedStudentId);
+            }
+
+            if (!scheduleStudentHint) return;
+
+            if (students.length === 0) {
+                scheduleStudentHint.textContent = 'Belum ada mahasiswa terdaftar. Jadwal akan berlaku untuk seluruh peserta kursus.';
+                scheduleStudentHint.classList.remove('hidden');
+                return;
+            }
+
+            scheduleStudentHint.classList.add('hidden');
+        }
+
+        async function loadScheduleStudents(courseId, selectedStudentId = null) {
+            if (!scheduleStudentSelect) return;
+
+            const resolvedCourseId = Number(courseId);
+            if (!resolvedCourseId) {
+                resetScheduleStudentField();
+                return;
+            }
+
+            const cacheKey = String(resolvedCourseId);
+            const cachedStudents = scheduleStudentsCache.get(cacheKey);
+            if (cachedStudents) {
+                applyScheduleStudentOptions(cachedStudents, selectedStudentId);
+                return;
+            }
+
+            scheduleStudentSelect.innerHTML = '<option value="">Memuat daftar mahasiswa...</option>';
+            scheduleStudentSelect.disabled = true;
+
+            if (scheduleStudentHint) {
+                scheduleStudentHint.textContent = 'Sedang memuat mahasiswa terdaftar...';
+                scheduleStudentHint.classList.remove('hidden');
+            }
+
+            try {
+                const response = await fetch(`/dosen/api/courses/${resolvedCourseId}/students`, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+                const data = await response.json();
+
+                if (!response.ok || !data?.success) {
+                    throw new Error(data?.message || 'Gagal memuat mahasiswa kursus.');
+                }
+
+                const students = Array.isArray(data?.data?.items) ? data.data.items : [];
+                scheduleStudentsCache.set(cacheKey, students);
+                applyScheduleStudentOptions(students, selectedStudentId);
+            } catch (error) {
+                resetScheduleStudentField(error.message || 'Terjadi kesalahan saat memuat mahasiswa kursus.');
+            }
+        }
+
         async function loadScheduleCourses() {
             if (scheduleCoursesLoaded || !scheduleCourseSelect) return;
 
@@ -533,6 +652,7 @@
                 if (scheduleCourseSelect && schedule?.id_course) {
                     scheduleCourseSelect.value = String(schedule.id_course);
                 }
+                await loadScheduleStudents(scheduleCourseSelect?.value, schedule?.id_mahasiswa ?? null);
                 if (scheduleDateInput) {
                     scheduleDateInput.value = schedule?.tanggal || '';
                 }
@@ -553,6 +673,7 @@
                 }
             } else {
                 setDefaultScheduleDate();
+                resetScheduleStudentField();
             }
         }
 
@@ -568,6 +689,7 @@
             setScheduleFormMode('create');
             scheduleForm?.reset();
             setDefaultScheduleDate();
+            resetScheduleStudentField();
         }
 
         function openScheduleDeleteModal(schedule = null) {
@@ -660,6 +782,7 @@
             const judul = scheduleTitleInput?.value?.trim();
             const deskripsi = scheduleDescriptionInput?.value?.trim();
             const tipe = scheduleTypeInput?.value || 'webinar';
+            const mahasiswaId = scheduleStudentSelect?.value;
 
             if (!courseId) {
                 showScheduleToast('Silakan pilih kursus terlebih dahulu.', 'error');
@@ -706,6 +829,7 @@
             };
 
             if (deskripsi) payload.deskripsi = deskripsi;
+            if (mahasiswaId) payload.id_mahasiswa = Number(mahasiswaId);
 
             const isEditMode = scheduleFormMode === 'edit' && Number(scheduleEditingAgendaId) > 0;
             const endpoint = isEditMode
@@ -754,6 +878,14 @@
 
             return false;
         }
+
+        if (scheduleCourseSelect) {
+            scheduleCourseSelect.addEventListener('change', (event) => {
+                loadScheduleStudents(event?.target?.value ?? null);
+            });
+        }
+
+        resetScheduleStudentField();
 
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') return;

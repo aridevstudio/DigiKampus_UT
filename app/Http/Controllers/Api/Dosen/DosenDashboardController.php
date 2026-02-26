@@ -158,7 +158,7 @@ class DosenDashboardController extends Controller
         $schedules = Agenda::query()
             ->where('id_dosen', $dosenId)
             ->whereDate('tanggal', '>=', now()->toDateString())
-            ->with('course')
+            ->with(['course', 'mahasiswa'])
             ->orderBy('tanggal')
             ->orderByRaw('CASE WHEN waktu_mulai IS NULL THEN 1 ELSE 0 END, waktu_mulai ASC')
             ->limit($limit)
@@ -180,6 +180,8 @@ class DosenDashboardController extends Controller
                 'nama' => $schedule->course?->nama_course ?? $schedule->judul ?? 'Jadwal Mengajar',
                 'tanggal' => $schedule->tanggal?->translatedFormat('l, d F Y') ?? '-',
                 'waktu' => $timeText,
+                'id_mahasiswa' => $schedule->id_mahasiswa,
+                'mahasiswa' => $schedule->mahasiswa?->name,
             ];
         })->toArray();
     }

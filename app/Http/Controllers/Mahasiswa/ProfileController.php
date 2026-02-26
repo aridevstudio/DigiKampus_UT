@@ -185,8 +185,15 @@ class ProfileController extends Controller
     private function buildRecentActivities(int $mahasiswaId): array
     {
         $kegiatanTerakhir = collect();
+        $enrolledCourseIds = Enrollment::where('id_mahasiswa', $mahasiswaId)
+            ->pluck('id_course')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
-        $recentAgenda = Agenda::where('id_mahasiswa', $mahasiswaId)
+        $recentAgenda = Agenda::query()
+            ->visibleToMahasiswa($mahasiswaId, $enrolledCourseIds)
             ->orderBy('tanggal', 'desc')
             ->limit(3)
             ->get();

@@ -29,6 +29,11 @@ class DashboardController extends Controller
         $completedEnrollments = $enrollments->filter(function ($enrollment) {
             return $enrollment->status === 'selesai' || (float) $enrollment->progress >= 100;
         });
+        $enrolledCourseIds = $enrollments->pluck('id_course')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
         // Calculate progress statistics
         $kursusAktif = $activeEnrollments->count();
@@ -70,7 +75,8 @@ class DashboardController extends Controller
             ->get();
 
         // Get current month agenda
-        $agenda = Agenda::where('id_mahasiswa', $user->id)
+        $agenda = Agenda::query()
+            ->visibleToMahasiswa($user->id, $enrolledCourseIds)
             ->whereMonth('tanggal', now()->month)
             ->whereYear('tanggal', now()->year)
             ->orderBy('tanggal', 'asc')
@@ -99,9 +105,16 @@ class DashboardController extends Controller
         // Get month and year from request or use current
         $month = request('month', now()->month);
         $year = request('year', now()->year);
+        $enrolledCourseIds = Enrollment::where('id_mahasiswa', $user->id)
+            ->pluck('id_course')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
         
         // Get agenda for selected month (for calendar markers)
-        $agenda = Agenda::where('id_mahasiswa', $user->id)
+        $agenda = Agenda::query()
+            ->visibleToMahasiswa($user->id, $enrolledCourseIds)
             ->whereMonth('tanggal', $month)
             ->whereYear('tanggal', $year)
             ->orderBy('tanggal', 'asc')

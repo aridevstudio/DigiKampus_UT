@@ -177,7 +177,7 @@ class DosenController extends Controller
         $upcomingSchedules = Agenda::query()
             ->where('id_dosen', $dosen->id)
             ->whereDate('tanggal', '>=', now()->toDateString())
-            ->with('course')
+            ->with(['course', 'mahasiswa'])
             ->orderBy('tanggal')
             ->orderByRaw('CASE WHEN waktu_mulai IS NULL THEN 1 ELSE 0 END, waktu_mulai ASC')
             ->take(3)
@@ -205,6 +205,8 @@ class DosenController extends Controller
                     'waktu_mulai_raw' => $startTime,
                     'waktu_selesai_raw' => $endTime,
                     'tipe' => $schedule->tipe ?? 'webinar',
+                    'id_mahasiswa' => $schedule->id_mahasiswa,
+                    'mahasiswa' => $schedule->mahasiswa?->name,
                 ];
             })
             ->values()
