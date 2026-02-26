@@ -66,7 +66,15 @@ class CourseController extends Controller
      */
     public function show($id)
     {
-        $course = Course::with(['dosen', 'jurusan', 'materials', 'assignments', 'ratings.mahasiswa'])
+        $course = Course::with([
+            'dosen',
+            'jurusan',
+            'materials' => fn ($query) => $query->orderBy('urutan'),
+            'modules' => fn ($query) => $query->orderBy('urutan'),
+            'modules.materials' => fn ($query) => $query->orderBy('urutan'),
+            'assignments' => fn ($query) => $query->orderBy('deadline'),
+            'ratings.mahasiswa.profile',
+        ])
             ->findOrFail($id);
         
         // Get user's enrollment status if logged in

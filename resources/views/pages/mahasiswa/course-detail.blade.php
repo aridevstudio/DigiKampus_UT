@@ -1,62 +1,122 @@
 <x-layouts.dashboard :active="'get-courses'">
 @php
-    // Use data from controller - $course is passed from CourseController@show
-    // Default image if thumbnail is empty
     $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop';
     $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
-    
-    // Map course data for easy access in view
+
+    $allRatings = $course->ratings ?? collect();
+    $totalReviews = $allRatings->count();
+    $avgRating = $totalReviews > 0 ? (float) $allRatings->avg('rating') : 0.0;
+
+    $estimatedDuration = null;
+    if (!empty($course->estimasi_waktu) && !empty($course->durasi_satuan)) {
+        $estimatedDuration = trim($course->estimasi_waktu . ' ' . $course->durasi_satuan);
+    }
+
+    $totalMaterialMinutes = (int) ($course->materials?->sum('durasi') ?? 0);
+    if (!$estimatedDuration && $totalMaterialMinutes > 0) {
+        $hours = intdiv($totalMaterialMinutes, 60);
+        $minutes = $totalMaterialMinutes % 60;
+
+        if ($hours > 0 && $minutes > 0) {
+            $estimatedDuration = $hours . ' jam ' . $minutes . ' menit';
+        } elseif ($hours > 0) {
+            $estimatedDuration = $hours . ' jam';
+        } else {
+            $estimatedDuration = $minutes . ' menit';
+        }
+    }
+
+    if (!$estimatedDuration) {
+        $estimatedDuration = 'Belum ditentukan';
+    }
+
+    $normalizedCategory = strtolower((string) ($course->kategori ?? 'kursus'));
+    $methodByCategory = [
+        'kursus' => 'Belajar mandiri berbasis materi',
+        'webinar' => 'Sesi live interaktif bersama pengajar',
+        'tiket' => 'Kehadiran pada event terjadwal',
+    ];
+
     $courseData = [
         'id' => $course->id_course,
-        'code' => $course->kode_course,
+        'code' => $course->kode_course ?? '-',
         'title' => $course->nama_course,
         'description' => $course->deskripsi ?? 'Tidak ada deskripsi tersedia',
-        'type' => ucfirst($course->kategori ?? 'kursus'),
+        'type' => ucfirst($normalizedCategory ?: 'kursus'),
         'price' => floatval($course->harga ?? 0),
-        'rating' => floatval($course->rating ?? 0),
-        'reviews' => intval($course->jumlah_ulasan ?? 0),
+        'rating' => round($avgRating, 1),
+        'reviews' => $totalReviews,
         'image' => $courseImage,
-        'duration' => '16 minggu (1 semester)', // Could be added to course model later
-        'method' => 'Online learning dengan tutorial tatap muka',
+        'duration' => $estimatedDuration,
+        'method' => $methodByCategory[$normalizedCategory] ?? 'Belajar mandiri berbasis materi',
         'objectives' => $course->deskripsi ?? 'Memahami konsep dasar dan penerapannya.',
         'creator' => $course->dosen ? $course->dosen->name : 'Universitas Terbuka',
     ];
-    
-    // Build modules from course materials
+
+    $mapContentType = static function (?string $itemType): string {
+        return match ($itemType) {
+            'video' => 'video',
+            'kuis', 'quiz' => 'quiz',
+            'tugas' => 'assignment',
+            'bacaan', 'text' => 'document',
+            default => 'document',
+        };
+    };
+
     $modules = [];
-    if ($course->materials && $course->materials->count() > 0) {
-        // Group materials by module (urutan or create single module)
-        $currentModule = [
-            'title' => 'Modul 1: Materi Pembelajaran',
-            'items' => $course->materials->count(),
-            'contents' => []
-        ];
-        
-        foreach ($course->materials as $material) {
-            $currentModule['contents'][] = [
-                'type' => match($material->tipe) {
-                    'video' => 'video',
-                    'kuis', 'quiz' => 'quiz',
-                    'tugas' => 'assignment',
-                    'bacaan', 'text' => 'document',
-                    default => 'document',
-                },
-                'title' => $material->judul_material,
-                'duration' => $material->durasi ? ($material->durasi . ' menit') : '',
+
+    if ($course->modules && $course->modules->count() > 0) {
+        $moduleNumber = 1;
+        foreach ($course->modules as $module) {
+            $contents = [];
+
+            foreach ($module->materials as $material) {
+                $contents[] = [
+                    'type' => $mapContentType($material->tipe),
+                    'title' => $material->judul_material,
+                    'duration' => $material->durasi ? ($material->durasi . ' menit') : '',
+                ];
+            }
+
+            $modules[] = [
+                'title' => 'Modul ' . $moduleNumber . ': ' . ($module->judul_module ?? 'Materi Pembelajaran'),
+                'items' => count($contents),
+                'contents' => $contents,
             ];
+            $moduleNumber++;
         }
-        
-        $modules[] = $currentModule;
+    } elseif ($course->materials && $course->materials->count() > 0) {
+        $groupedMaterials = $course->materials
+            ->sortBy('urutan')
+            ->groupBy(fn ($material) => $material->id_module ?: 'default');
+
+        $moduleNumber = 1;
+        foreach ($groupedMaterials as $materials) {
+            $contents = [];
+            foreach ($materials as $material) {
+                $contents[] = [
+                    'type' => $mapContentType($material->tipe),
+                    'title' => $material->judul_material,
+                    'duration' => $material->durasi ? ($material->durasi . ' menit') : '',
+                ];
+            }
+
+            $modules[] = [
+                'title' => 'Modul ' . $moduleNumber . ': Materi Pembelajaran',
+                'items' => count($contents),
+                'contents' => $contents,
+            ];
+            $moduleNumber++;
+        }
     }
-    
-    // Add assignments as separate module
+
     if ($course->assignments && $course->assignments->count() > 0) {
         $assignmentModule = [
             'title' => 'Tugas & Penilaian',
             'items' => $course->assignments->count(),
             'contents' => []
         ];
-        
+
         foreach ($course->assignments as $assignment) {
             $assignmentModule['contents'][] = [
                 'type' => 'assignment',
@@ -64,11 +124,10 @@
                 'duration' => $assignment->deadline ? $assignment->deadline->format('d M Y') : '',
             ];
         }
-        
+
         $modules[] = $assignmentModule;
     }
-    
-    // If no modules, add placeholder
+
     if (empty($modules)) {
         $modules[] = [
             'title' => 'Modul Belum Tersedia',
@@ -76,17 +135,9 @@
             'contents' => []
         ];
     }
-    
-    // Prerequisites (could be added to course model later)
-    $prerequisites = [
-        ['code' => 'STIN4101', 'name' => 'Pengantar Teknologi Informasi'],
-    ];
-    
-    // Get reviews from course ratings - calculate real breakdown
-    $allRatings = $course->ratings ?? collect();
-    $totalReviews = $allRatings->count();
-    $avgRating = $totalReviews > 0 ? $allRatings->avg('rating') : 0;
-    
+
+    $prerequisites = [];
+
     $reviewStats = [
         'average' => round($avgRating, 1),
         'total' => $totalReviews,
@@ -96,31 +147,30 @@
             3 => $allRatings->where('rating', 3)->count(),
             2 => $allRatings->where('rating', 2)->count(),
             1 => $allRatings->where('rating', 1)->count(),
-        ]
+        ],
     ];
-    
-    // Get sample reviews from database
-    $reviews = [];
-    if ($allRatings->count() > 0) {
-        foreach ($allRatings->sortByDesc('created_at')->take(10) as $rating) {
-            // Get profile photo or fallback to ui-avatars
-            $profilePhoto = null;
+
+    $reviews = $allRatings
+        ->sortByDesc('created_at')
+        ->take(10)
+        ->map(function ($rating) {
             if ($rating->mahasiswa && $rating->mahasiswa->profile && $rating->mahasiswa->profile->foto_profile) {
                 $profilePhoto = asset('storage/' . $rating->mahasiswa->profile->foto_profile);
             } else {
                 $profilePhoto = 'https://ui-avatars.com/api/?name=' . urlencode($rating->mahasiswa ? $rating->mahasiswa->name : 'A') . '&background=3b82f6&color=fff';
             }
-            
-            $reviews[] = [
+
+            return [
                 'name' => $rating->mahasiswa ? $rating->mahasiswa->name : 'Anonymous',
                 'avatar' => $profilePhoto,
                 'rating' => $rating->rating,
                 'date' => $rating->created_at ? $rating->created_at->diffForHumans() : 'Baru saja',
-                'comment' => $rating->ulasan ?? 'Kursus yang bagus!',
+                'comment' => $rating->ulasan ?: 'Tidak ada komentar.',
             ];
-        }
-    }
-    
+        })
+        ->values()
+        ->all();
+
     $typeColors = [
         'Webinar' => 'bg-blue-500',
         'Kursus' => 'bg-green-500',
@@ -241,14 +291,16 @@
                 </h2>
                 
                 <div class="space-y-2">
-                    @foreach($prerequisites as $prereq)
+                    @forelse($prerequisites as $prereq)
                     <div class="flex items-center gap-2 text-sm">
                         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
                         <span class="text-gray-700 dark:text-gray-300">{{ $prereq['name'] }} ({{ $prereq['code'] }})</span>
                     </div>
-                    @endforeach
+                    @empty
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada prasyarat.</p>
+                    @endforelse
                 </div>
             </div>
             
@@ -384,12 +436,16 @@
         <div id="tab-prasyarat" class="tab-content hidden">
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
                 <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Prasyarat Detail</h2>
-                @foreach($prerequisites as $prereq)
+                @forelse($prerequisites as $prereq)
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl mb-3">
                     <p class="font-medium text-gray-800 dark:text-gray-100">{{ $prereq['name'] }}</p>
                     <p class="text-gray-500 dark:text-gray-400 text-sm">Kode: {{ $prereq['code'] }}</p>
                 </div>
-                @endforeach
+                @empty
+                <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada prasyarat untuk kursus ini.</p>
+                </div>
+                @endforelse
             </div>
         </div>
         
@@ -433,7 +489,7 @@
                             $percentage = $reviewStats['total'] > 0 ? ($count / $reviewStats['total']) * 100 : 0;
                         @endphp
                         <div class="flex items-center gap-3">
-                            <span class="text-sm text-gray-600 dark:text-gray-400 w-6">{{ $star }}★</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400 w-6">{{ $star }}&starf;</span>
                             <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                 <div class="h-full bg-yellow-400 rounded-full" style="width: {{ $percentage }}%"></div>
                             </div>
@@ -459,7 +515,7 @@
             
             {{-- Review Cards --}}
             <div class="space-y-4">
-                @foreach($reviews as $review)
+                @forelse($reviews as $review)
                 <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
                     {{-- Review Header --}}
                     <div class="flex items-start justify-between mb-3">
@@ -491,7 +547,11 @@
                     {{-- Read More Link --}}
                     <button class="text-blue-500 hover:text-blue-600 text-sm font-medium">Lihat Selengkapnya</button>
                 </div>
-                @endforeach
+                @empty
+                <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada ulasan untuk kursus ini.</p>
+                </div>
+                @endforelse
             </div>
         </div>
     </div>
