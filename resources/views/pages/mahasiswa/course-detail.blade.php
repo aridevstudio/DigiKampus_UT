@@ -137,6 +137,33 @@
     }
 
     $prerequisites = [];
+    $rawPrerequisites = trim((string) ($course->persyaratan ?? ''));
+    if ($rawPrerequisites !== '') {
+        $lines = preg_split('/\r\n|\r|\n/', $rawPrerequisites) ?: [];
+        foreach ($lines as $line) {
+            $line = trim((string) $line);
+            if ($line === '') {
+                continue;
+            }
+
+            $code = null;
+            $name = $line;
+
+            if (str_contains($line, '|')) {
+                [$first, $second] = array_map('trim', explode('|', $line, 2));
+                $code = $first !== '' ? $first : null;
+                $name = $second !== '' ? $second : $line;
+            } elseif (preg_match('/^([A-Za-z0-9\/\-.]+)\s*[-:]\s*(.+)$/', $line, $matches)) {
+                $code = trim($matches[1]) ?: null;
+                $name = trim($matches[2]) ?: $line;
+            }
+
+            $prerequisites[] = [
+                'code' => $code,
+                'name' => $name,
+            ];
+        }
+    }
 
     $reviewStats = [
         'average' => round($avgRating, 1),
@@ -296,7 +323,9 @@
                         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span class="text-gray-700 dark:text-gray-300">{{ $prereq['name'] }} ({{ $prereq['code'] }})</span>
+                        <span class="text-gray-700 dark:text-gray-300">
+                            {{ $prereq['name'] }}@if(!empty($prereq['code'])) ({{ $prereq['code'] }})@endif
+                        </span>
                     </div>
                     @empty
                     <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada prasyarat.</p>
@@ -439,7 +468,9 @@
                 @forelse($prerequisites as $prereq)
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl mb-3">
                     <p class="font-medium text-gray-800 dark:text-gray-100">{{ $prereq['name'] }}</p>
+                    @if(!empty($prereq['code']))
                     <p class="text-gray-500 dark:text-gray-400 text-sm">Kode: {{ $prereq['code'] }}</p>
+                    @endif
                 </div>
                 @empty
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">

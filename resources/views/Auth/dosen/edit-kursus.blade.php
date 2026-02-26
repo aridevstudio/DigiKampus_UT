@@ -34,14 +34,22 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kode Kursus</label>
-                            <input type="text" name="kode_course" value="{{ old('kode_course', $course->kode_course) }}" required class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kode Kursus <span class="text-red-500">*</span></label>
+                            <input type="text" id="edit_kode_course" name="kode_course" value="{{ old('kode_course', $course->kode_course) }}" required placeholder="Contoh: EKMA4116" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <p class="text-xs text-gray-500 mt-1">Gunakan kode unik, karena dipakai sebagai identitas kursus.</p>
                             @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deskripsi Kursus</label>
                             <textarea name="deskripsi" rows="4" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('deskripsi', $course->deskripsi) }}</textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Persyaratan Kursus</label>
+                            <textarea name="persyaratan" rows="4" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" placeholder="Satu persyaratan per baris">{{ old('persyaratan', $course->persyaratan) }}</textarea>
+                            <p class="text-xs text-gray-500 mt-1">Contoh: `STIN4101 - Pengantar TI` atau kalimat bebas per baris.</p>
+                            @error('persyaratan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
 
                         {{-- Baris 1: Kategori & Tingkat Kesulitan --}}

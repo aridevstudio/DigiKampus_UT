@@ -837,6 +837,7 @@ class DosenController extends Controller
             ],
             'kode_course' => 'required|string|max:50|unique:courses,kode_course',
             'deskripsi' => 'nullable|string',
+            'persyaratan' => 'nullable|string|max:4000',
             'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',
             'tipe' => 'required|in:gratis,berbayar',
             'kategori' => 'required|in:webinar,tiket,kursus',
@@ -844,6 +845,7 @@ class DosenController extends Controller
             'thumbnail' => 'nullable|image|max:2048',
             'level' => 'nullable|in:Pemula,Menengah,Mahir',
             'estimasi_waktu' => 'nullable|integer|min:0',
+            'durasi_satuan' => 'nullable|in:Jam,Minggu',
             'diskon' => 'nullable|integer|min:0|max:100',
             'youtube_playlist' => 'nullable|url|max:500',
             'modul_judul' => 'nullable|string|max:255',
@@ -859,11 +861,17 @@ class DosenController extends Controller
         }
 
         $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath, $redirectToTypedPage) {
+            $durasiSatuan = null;
+            if ($request->filled('estimasi_waktu')) {
+                $durasiSatuan = $request->durasi_satuan ?: 'Jam';
+            }
+
             $course = \App\Models\Course::create([
                 'id_dosen' => $dosen->id,
                 'nama_course' => $request->nama_course,
                 'kode_course' => $request->kode_course,
                 'deskripsi' => $request->deskripsi,
+                'persyaratan' => $request->persyaratan,
                 'id_jurusan' => $request->id_jurusan,
                 'tipe' => $request->tipe,
                 'kategori' => $request->kategori,
@@ -872,6 +880,7 @@ class DosenController extends Controller
                 'status' => $request->status ?? 'draft',
                 'level' => $request->level,
                 'estimasi_waktu' => $request->estimasi_waktu,
+                'durasi_satuan' => $durasiSatuan,
                 'sertifikat' => $request->boolean('sertifikat'),
                 'akses_publik' => $request->boolean('akses_publik'),
                 'diskon' => $request->diskon ?? 0,
@@ -1029,6 +1038,7 @@ class DosenController extends Controller
             ],
             'kode_course' => 'required|string|max:50|unique:courses,kode_course,' . $id . ',id_course',
             'deskripsi' => 'nullable|string',
+            'persyaratan' => 'nullable|string|max:4000',
             'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',
             'tipe' => 'required|in:gratis,berbayar',
             'kategori' => 'required|in:webinar,tiket,kursus',
@@ -1053,6 +1063,7 @@ class DosenController extends Controller
             'nama_course' => $request->nama_course,
             'kode_course' => $request->kode_course,
             'deskripsi' => $request->deskripsi,
+            'persyaratan' => $request->persyaratan,
             'id_jurusan' => $request->id_jurusan,
             'tipe' => $request->tipe,
             'kategori' => $request->kategori,

@@ -77,6 +77,7 @@ class DosenCourseController extends Controller
                 'kode' => $course->kode_course,
                 'nama' => $course->nama_course,
                 'deskripsi' => $course->deskripsi,
+                'persyaratan' => $course->persyaratan,
                 'thumbnail' => $course->thumbnail,
                 'status' => $course->status,
                 'tipe' => $course->tipe,
@@ -143,6 +144,7 @@ class DosenCourseController extends Controller
                 'kode' => $course->kode_course,
                 'nama' => $course->nama_course,
                 'deskripsi' => $course->deskripsi,
+                'persyaratan' => $course->persyaratan,
                 'thumbnail' => $course->thumbnail,
                 'status' => $course->status,
                 'tipe' => $course->tipe,
@@ -206,6 +208,7 @@ class DosenCourseController extends Controller
                     ->where(static fn ($query) => $query->where('id_dosen', $dosenId)),
             ],
             'deskripsi' => 'required|string',
+            'persyaratan' => 'nullable|string|max:4000',
             'kategori' => 'required|integer|exists:jurusans,id_jurusan',
             'tingkat_kesulitan' => 'nullable|in:pemula,menengah,lanjutan',
             'estimasi_waktu' => 'nullable|integer|min:1',
@@ -253,6 +256,7 @@ class DosenCourseController extends Controller
             'kode_course' => $kodeCourse,
             'nama_course' => $validated['judul_kursus'],
             'deskripsi' => $validated['deskripsi'],
+            'persyaratan' => $validated['persyaratan'] ?? null,
             'id_dosen' => $dosenId,
             'id_jurusan' => $validated['kategori'],
             'thumbnail' => $thumbnailPath,
@@ -317,6 +321,7 @@ class DosenCourseController extends Controller
                     ->ignore($course->id_course, 'id_course'),
             ],
             'deskripsi' => 'sometimes|string',
+            'persyaratan' => 'nullable|string|max:4000',
             'kategori' => 'sometimes|integer|exists:jurusans,id_jurusan',
             'tingkat_kesulitan' => 'nullable|in:pemula,menengah,lanjutan',
             'estimasi_waktu' => 'nullable|integer|min:1',
@@ -351,6 +356,8 @@ class DosenCourseController extends Controller
             $updateData['nama_course'] = $validated['judul_kursus'];
         if (isset($validated['deskripsi']))
             $updateData['deskripsi'] = $validated['deskripsi'];
+        if (array_key_exists('persyaratan', $validated))
+            $updateData['persyaratan'] = $validated['persyaratan'];
         if (isset($validated['kategori']))
             $updateData['id_jurusan'] = $validated['kategori'];
         if (isset($validated['thumbnail']))

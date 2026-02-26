@@ -40,13 +40,26 @@
                                 @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
-                            {{-- Hidden Kode Course (Auto-generated) --}}
-                            <input type="hidden" name="kode_course" value="{{ 'C-' . strtoupper(substr(md5(time()), 0, 6)) }}">
+                            {{-- Kode Kursus --}}
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
+                                <input type="text" name="kode_course" id="add_kode_course" required placeholder="Contoh: EKMA4116" value="{{ old('kode_course', 'C-' . strtoupper(substr(md5((string) now()->timestamp), 0, 6))) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <p class="text-xs text-gray-400 mt-1">Gunakan kode unik untuk kursus ini.</p>
+                                @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
 
                             {{-- Deskripsi Kursus --}}
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Kursus</label>
                                 <textarea name="deskripsi" id="add_deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('deskripsi') }}</textarea>
+                            </div>
+
+                            {{-- Persyaratan Kursus --}}
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Persyaratan Kursus (Opsional)</label>
+                                <textarea name="persyaratan" id="add_persyaratan" rows="3" placeholder="Contoh:&#10;STIN4101 - Pengantar Teknologi Informasi&#10;Memiliki laptop dan koneksi internet stabil" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('persyaratan') }}</textarea>
+                                <p class="text-xs text-gray-400 mt-1">Tulis satu persyaratan per baris.</p>
+                                @error('persyaratan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Kategori & Tingkat Kesulitan --}}
@@ -81,10 +94,28 @@
                             {{-- Estimasi Waktu --}}
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar (Jam)</label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar</label>
                                     <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" min="0" placeholder="20" value="{{ old('estimasi_waktu', 20) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('estimasi_waktu')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
-                                <div></div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Satuan Durasi</label>
+                                    <div class="relative">
+                                        <select name="durasi_satuan" id="add_durasi_satuan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="Jam" {{ old('durasi_satuan', 'Jam') === 'Jam' ? 'selected' : '' }}>Jam</option>
+                                            <option value="Minggu" {{ old('durasi_satuan') === 'Minggu' ? 'selected' : '' }}>Minggu</option>
+                                        </select>
+                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </div>
+                                    @error('durasi_satuan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+
+                            {{-- Playlist YouTube --}}
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Playlist YouTube (Opsional)</label>
+                                <input type="url" name="youtube_playlist" id="add_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('youtube_playlist') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('youtube_playlist')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Thumbnail --}}

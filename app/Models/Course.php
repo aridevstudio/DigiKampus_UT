@@ -16,6 +16,7 @@ class Course extends Model
         'kode_course',
         'nama_course',
         'deskripsi',
+        'persyaratan',
         'id_dosen',
         'id_jurusan',
         'thumbnail',
