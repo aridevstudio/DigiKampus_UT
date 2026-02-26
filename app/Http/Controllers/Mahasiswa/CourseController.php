@@ -9,6 +9,7 @@ use App\Models\Assignment;
 use App\Models\DosenNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CourseController extends Controller
 {
@@ -31,10 +32,21 @@ class CourseController extends Controller
         
         // Get courses from database (exclude enrolled courses)
         $courses = Course::with(['dosen', 'jurusan'])
+            ->withCount('ratings as real_jumlah_ulasan')
+            ->withAvg('ratings as real_rating', 'rating')
             ->aktif() // Only active courses
             ->search($search) // Search by nama_course or deskripsi
             ->when($tipe && $tipe !== 'semua', function ($query) use ($tipe) {
                 return $query->where('kategori', $tipe);
+            })
+            ->whereNotExists(function ($query) {
+                // Keep only the latest active course for duplicate names per dosen.
+                $query->select(DB::raw(1))
+                    ->from('courses as newer_courses')
+                    ->whereColumn('newer_courses.id_dosen', 'courses.id_dosen')
+                    ->whereRaw('LOWER(TRIM(newer_courses.nama_course)) = LOWER(TRIM(courses.nama_course))')
+                    ->where('newer_courses.status', 'aktif')
+                    ->whereColumn('newer_courses.id_course', '>', 'courses.id_course');
             })
             ->when(!empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
                 return $query->whereNotIn('id_course', $enrolledCourseIds);

@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 /**
  * @tags Dosen Courses
@@ -194,8 +195,16 @@ class DosenCourseController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $dosenId = $request->user()->id;
+
         $validator = Validator::make($request->all(), [
-            'judul_kursus' => 'required|string|max:255',
+            'judul_kursus' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('courses', 'nama_course')
+                    ->where(static fn ($query) => $query->where('id_dosen', $dosenId)),
+            ],
             'deskripsi' => 'required|string',
             'kategori' => 'required|integer|exists:jurusans,id_jurusan',
             'tingkat_kesulitan' => 'nullable|in:pemula,menengah,lanjutan',
@@ -219,7 +228,6 @@ class DosenCourseController extends Controller
         }
 
         $validated = $validator->validated();
-        $dosenId = $request->user()->id;
 
         // Generate course code
         $kodePrefix = 'CRS';
@@ -300,7 +308,14 @@ class DosenCourseController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'judul_kursus' => 'sometimes|string|max:255',
+            'judul_kursus' => [
+                'sometimes',
+                'string',
+                'max:255',
+                Rule::unique('courses', 'nama_course')
+                    ->where(static fn ($query) => $query->where('id_dosen', $dosenId))
+                    ->ignore($course->id_course, 'id_course'),
+            ],
             'deskripsi' => 'sometimes|string',
             'kategori' => 'sometimes|integer|exists:jurusans,id_jurusan',
             'tingkat_kesulitan' => 'nullable|in:pemula,menengah,lanjutan',

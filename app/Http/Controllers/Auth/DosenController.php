@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Laravel\Socialite\Facades\Socialite;
 use Carbon\Carbon;
 
@@ -827,7 +828,13 @@ class DosenController extends Controller
         $redirectToTypedPage = $request->filled('modul_judul') && isset($typeRoutes[$request->modul_tipe]);
         
         $request->validate([
-            'nama_course' => 'required|string|max:255',
+            'nama_course' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('courses', 'nama_course')
+                    ->where(static fn ($query) => $query->where('id_dosen', $dosen->id)),
+            ],
             'kode_course' => 'required|string|max:50|unique:courses,kode_course',
             'deskripsi' => 'nullable|string',
             'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',
@@ -1012,7 +1019,14 @@ class DosenController extends Controller
         }
 
         $request->validate([
-            'nama_course' => 'required|string|max:255',
+            'nama_course' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('courses', 'nama_course')
+                    ->where(static fn ($query) => $query->where('id_dosen', $dosen->id))
+                    ->ignore($course->id_course, 'id_course'),
+            ],
             'kode_course' => 'required|string|max:50|unique:courses,kode_course,' . $id . ',id_course',
             'deskripsi' => 'nullable|string',
             'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',

@@ -63,8 +63,8 @@
     @php
         $courseType = strtolower($course->kategori ?? 'kursus');
         $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
-        $courseRating = floatval($course->rating ?? 0);
-        $courseReviews = intval($course->jumlah_ulasan ?? 0);
+        $courseRating = floatval($course->real_rating ?? 0);
+        $courseReviews = intval($course->real_jumlah_ulasan ?? 0);
         $coursePrice = floatval($course->harga ?? 0);
     @endphp
     <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" class="course-card bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden hover-lift transition block" data-type="{{ $courseType }}" style="animation-delay: {{ $index * 50 }}ms">
