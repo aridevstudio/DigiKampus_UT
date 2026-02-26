@@ -13,8 +13,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed mahasiswa dengan profile (termasuk NIM)
+        // Seed 3 akun default role
+        // admin: admin@digikampus.test / password123
+        // dosen: dosen@digikampus.test / password123
+        // mahasiswa: mahasiswa@digikampus.test / password123
         $this->call([
+            UserRoleSeeder::class,
             MahasiswaSeeder::class,
         ]);
     }
