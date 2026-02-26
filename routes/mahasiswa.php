@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\MahasiswaController;
 use App\Http\Controllers\Mahasiswa\DashboardController;
 use App\Http\Controllers\Mahasiswa\ProfileController;
 use App\Http\Controllers\Mahasiswa\CourseController;
+use App\Http\Controllers\Mahasiswa\ChatController;
 use App\Http\Controllers\Mahasiswa\CheckoutController;
 use App\Http\Middleware\EnsureAuthenticatedMahasiswa;
 use App\Http\Middleware\RedirectIfAuthenticatedMahasiswa;
@@ -65,6 +66,12 @@ Route::prefix('mahasiswa')
         Route::get('/favorites', [CourseController::class, 'favorites'])->name('mahasiswa.favorites');
         Route::post('/favorite/add', [CourseController::class, 'addToFavorite'])->name('mahasiswa.favorite.add');
         Route::delete('/favorite/{id}', [CourseController::class, 'removeFromFavorite'])->name('mahasiswa.favorite.remove');
+
+        // Chat
+        Route::get('/chat', [ChatController::class, 'index'])->name('mahasiswa.chat');
+        Route::get('/messages/conversations', [ChatController::class, 'getConversations'])->name('mahasiswa.messages.conversations');
+        Route::get('/messages/chat/{dosenId}', [ChatController::class, 'getChatMessages'])->name('mahasiswa.messages.chat');
+        Route::post('/messages/send', [ChatController::class, 'sendChatMessage'])->name('mahasiswa.messages.send');
         
         // Checkout & Payment
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('mahasiswa.checkout');
@@ -79,7 +86,6 @@ Route::prefix('mahasiswa')
         
         // Coming Soon Pages
         Route::view('/forum', 'pages.mahasiswa.coming-soon', ['active' => 'forum', 'title' => 'Forum'])->name('mahasiswa.forum');
-        Route::view('/chat', 'pages.mahasiswa.coming-soon', ['active' => 'chat', 'title' => 'Chat'])->name('mahasiswa.chat');
         Route::view('/apps', 'pages.mahasiswa.coming-soon', ['active' => 'apps', 'title' => 'Apps'])->name('mahasiswa.apps');
         Route::view('/learning-goals', 'pages.mahasiswa.coming-soon', ['active' => 'learning-goals', 'title' => 'Learning Goals'])->name('mahasiswa.learning-goals');
         Route::get('/news', [DashboardController::class, 'news'])->name('mahasiswa.news');
