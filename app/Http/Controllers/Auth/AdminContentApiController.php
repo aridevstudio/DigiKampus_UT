@@ -86,8 +86,7 @@ class AdminContentApiController extends Controller
         $perPage = (int) $request->query('per_page', 100);
         $perPage = max(1, min($perPage, 100));
 
-        $query = Course::where('id_dosen', $dosen->id)
-            ->with(['enrollments', 'jurusan']);
+        $query = Course::with(['enrollments', 'jurusan']);
 
         if ($filter !== 'semua') {
             $query->where('status', $filter);

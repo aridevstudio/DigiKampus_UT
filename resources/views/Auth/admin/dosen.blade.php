@@ -773,39 +773,6 @@
             document.getElementById('approveDosenModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
-
-        // Approve Modal functions
-        function confirmApprove(id) {
-            document.getElementById('approveDosenForm').action = '/admin/dosen/' + id + '/approve';
-            document.getElementById('approveDosenModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeApproveModal() {
-            document.getElementById('approveDosenModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-            document.getElementById('deleteDosenForm').action = '/admin/dosen/' + id;
-            document.getElementById('deleteDosenModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeDeleteModal() {
-            document.getElementById('deleteDosenModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        // Approve Modal functions
-        function confirmApprove(id) {
-            document.getElementById('approveDosenForm').action = '/admin/dosen/' + id + '/approve';
-            document.getElementById('approveDosenModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeApproveModal() {
-            document.getElementById('approveDosenModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
         
         // Import Modal functions
         function openImportModal() {

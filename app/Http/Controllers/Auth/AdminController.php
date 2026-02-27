@@ -395,7 +395,11 @@ class AdminController extends Controller
                 'program_studi' => $dosen->profile?->jurusan?->nama_jurusan ?? '-',
                 'email' => $dosen->email,
                 'no_telepon' => $dosen->profile?->no_hp ?? '-',
-                'status' => $dosen->status === 'aktif' ? 'Aktif' : 'Nonaktif',
+                'status' => match($dosen->status) {
+                    'aktif'   => 'Aktif',
+                    'pending' => 'Pending',
+                    default   => 'Nonaktif',
+                },
             ];
         });
 
@@ -404,7 +408,9 @@ class AdminController extends Controller
 
         // Stats counts (all dosen, not just current page)
         $dosenAktifCount = User::where('role', 'dosen')->where('status', 'aktif')->count();
-        $dosenNonaktifCount = User::where('role', 'dosen')->where('status', '!=', 'aktif')->count();
+        $dosenNonaktifCount = User::where('role', 'dosen')->where('status', 'nonaktif')->count();
+        $dosenPendingCount = User::where('role', 'dosen')->where('status', 'pending')->count();
+
 
         return view('Auth.admin.dosen', [
             'admin' => $admin,
@@ -413,6 +419,7 @@ class AdminController extends Controller
             'totalDosen' => $dosenPaginated->total(),
             'dosenAktifCount' => $dosenAktifCount,
             'dosenNonaktifCount' => $dosenNonaktifCount,
+            'dosenPendingCount' => $dosenPendingCount,
             'currentPage' => $dosenPaginated->currentPage(),
             'perPage' => $perPage,
             'search' => $request->search ?? '',
