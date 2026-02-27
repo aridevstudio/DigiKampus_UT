@@ -1755,6 +1755,78 @@ class AdminController extends Controller
     }
 
     /**
+     * Export Dosen or Mahasiswa to Excel
+     */
+    public function exportExcel($type)
+    {
+        if (!in_array($type, ['dosen', 'mahasiswa'])) {
+            abort(404);
+        }
+
+        $users = \App\Models\User::where('role', $type)
+            ->with('profile.jurusan')
+            ->get();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $isMahasiswa = ($type === 'mahasiswa');
+        $sheet->setTitle(ucfirst($type));
+
+        // Headers
+        $headers = $isMahasiswa
+            ? ['No', 'Nama', 'NIM', 'Email', 'Program Studi', 'No. Telepon', 'Status']
+            : ['No', 'Nama', 'NIP', 'Email', 'Program Studi', 'No. Telepon', 'Status'];
+
+        foreach ($headers as $col => $header) {
+            $cell = chr(65 + $col) . '1';
+            $sheet->setCellValue($cell, $header);
+        }
+
+        // Style header row
+        $lastCol = chr(65 + count($headers) - 1);
+        $headerRange = "A1:{$lastCol}1";
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['argb' => 'FF3B82F6'],
+            ],
+            'font' => [
+                'bold' => true,
+                'color' => ['argb' => 'FFFFFFFF'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+            ],
+        ]);
+
+        $rowNum = 2;
+        foreach ($users as $index => $user) {
+            $sheet->setCellValue('A' . $rowNum, $index + 1);
+            $sheet->setCellValue('B' . $rowNum, $user->name);
+            $sheet->setCellValueExplicit('C' . $rowNum, $user->profile?->nim ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('D' . $rowNum, $user->email);
+            $sheet->setCellValue('E' . $rowNum, $user->profile?->jurusan?->nama_jurusan ?? '-');
+            $sheet->setCellValueExplicit('F' . $rowNum, $user->profile?->no_hp ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('G' . $rowNum, ucfirst($user->status));
+            $rowNum++;
+        }
+
+        foreach (range('A', $lastCol) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = "Export_" . ucfirst($type) . "_" . date('Ymd_His') . ".xlsx";
+
+        return response()->streamDownload(function() use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
      * Logout
      */
     public function logout(Request $request)

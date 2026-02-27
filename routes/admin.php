@@ -73,7 +73,8 @@ Route::prefix('admin')
         Route::post('/kursus/{id}/sync-playlist', [AdminController::class, 'syncYoutubePlaylist'])->name('admin.kursus.syncPlaylist');
         Route::get('/kursus/{id}/youtube-videos', [AdminController::class, 'getYoutubeVideos'])->name('admin.kursus.youtubeVideos');
 
-        // Excel Import (with preview)
+        // Excel Import & Export
+        Route::get('/export/{type}/excel', [AdminController::class, 'exportExcel'])->name('admin.export.excel');
         Route::post('/import/{type}/preview', [AdminController::class, 'previewImport'])->name('admin.import.preview');
         Route::post('/import/{type}/confirm', [AdminController::class, 'confirmImport'])->name('admin.import.confirm');
         Route::get('/import/{type}/template', [AdminController::class, 'downloadTemplate'])->name('admin.import.template');
