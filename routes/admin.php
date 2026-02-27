@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AdminController;
+use App\Http\Controllers\Auth\AdminContentApiController;
 use App\Http\Middleware\EnsureAuthenticatedAdmin;
 use App\Http\Middleware\RedirectIfAuthenticatedAdmin;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,36 @@ Route::prefix('admin')
         Route::get('/kursus/{id}', [AdminController::class, 'getKursus'])->name('admin.kursus.get');
         Route::put('/kursus/{id}', [AdminController::class, 'updateKursus'])->name('admin.kursus.update');
         Route::delete('/kursus/{id}', [AdminController::class, 'deleteKursus'])->name('admin.kursus.delete');
+
+        // Module Management
+        Route::get('/kursus/{id}/modul', [AdminController::class, 'showKelolaModul'])->name('admin.kursus.modul');
+        Route::post('/kursus/{id}/module', [AdminController::class, 'storeModule'])->name('admin.module.store');
+        Route::put('/kursus/{id}/module/reorder', [AdminController::class, 'reorderModules'])->name('admin.module.reorder');
+        Route::put('/kursus/{id}/module/{moduleId}', [AdminController::class, 'updateModule'])->name('admin.module.update');
+        Route::delete('/kursus/{id}/module/{moduleId}', [AdminController::class, 'deleteModule'])->name('admin.module.delete');
+        
+        // Material/Content Management
+        Route::get('/kursus/{id}/material/{materialId}', [AdminController::class, 'getMaterialDetail'])->name('admin.material.detail');
+        Route::post('/kursus/{id}/material', [AdminController::class, 'storeMaterial'])->name('admin.material.store');
+        Route::put('/kursus/{id}/material/reorder', [AdminController::class, 'reorderMaterials'])->name('admin.material.reorder');
+        Route::put('/kursus/{id}/material/{materialId}', [AdminController::class, 'updateMaterial'])->name('admin.material.update');
+        Route::delete('/kursus/{id}/material/{materialId}', [AdminController::class, 'deleteMaterial'])->name('admin.material.delete');
+
+        // Admin Content Pages
+        Route::prefix('konten')->group(function () {
+            Route::view('/video', 'Auth.admin.kelola-video')->name('admin.kelola-video');
+            Route::view('/quiz', 'Auth.admin.kelola-quiz')->name('admin.kelola-quiz');
+            Route::view('/bacaan', 'Auth.admin.kelola-bacaan')->name('admin.kelola-bacaan');
+            Route::view('/tugas', 'Auth.admin.kelola-tugas')->name('admin.kelola-tugas');
+        });
+
+        // Admin API routes for content
+        Route::prefix('api')->group(function () {
+            Route::get('/courses', [AdminContentApiController::class, 'courses'])->name('admin.api.courses');
+            Route::get('/courses/{courseId}/students', [AdminContentApiController::class, 'courseStudents'])->name('admin.api.courses.students');
+            Route::get('/video-duration', [AdminContentApiController::class, 'resolveVideoDuration'])->name('admin.api.video-duration');
+            Route::post('/courses/{courseId}/modules', [AdminContentApiController::class, 'addModule'])->name('admin.api.courses.modules.store');
+        });
 
         // Profile
         Route::get('/profile', [AdminController::class, 'showProfile'])->name('admin.profile');

@@ -935,6 +935,7 @@ class AdminController extends Controller
             'nama_course' => 'required|string|max:255',
             'kode_course' => 'required|string|max:50|unique:courses,kode_course',
             'deskripsi' => 'nullable|string',
+            'persyaratan' => 'nullable|string',
             'id_dosen' => 'nullable|exists:users,id',
             'id_jurusan' => 'nullable|exists:jurusans,id_jurusan',
             'tipe' => 'required|in:gratis,berbayar',
@@ -944,6 +945,7 @@ class AdminController extends Controller
             'status' => 'required|in:aktif,draft,nonaktif',
             'level' => 'nullable|in:Pemula,Menengah,Mahir',
             'estimasi_waktu' => 'nullable|numeric|min:0',
+            'durasi_satuan' => 'nullable|in:Jam,Minggu',
             'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'youtube_playlist' => 'nullable|url|max:500',
         ]);
@@ -964,6 +966,7 @@ class AdminController extends Controller
             'kode_course' => $request->kode_course,
             'nama_course' => $request->nama_course,
             'deskripsi' => $request->deskripsi,
+            'persyaratan' => $request->persyaratan,
             'id_dosen' => $request->id_dosen,
             'id_jurusan' => $request->id_jurusan,
             'tipe' => $request->tipe,
@@ -972,6 +975,7 @@ class AdminController extends Controller
             'status' => $status,
             'level' => $request->level,
             'estimasi_waktu' => $request->estimasi_waktu,
+            'durasi_satuan' => $request->durasi_satuan ?? 'Jam',
             'thumbnail' => $thumbnailPath,
             'youtube_playlist' => $request->youtube_playlist,
             'rating' => 0,
@@ -998,6 +1002,7 @@ class AdminController extends Controller
             'kode_course' => $kursus->kode_course,
             'nama_course' => $kursus->nama_course,
             'deskripsi' => $kursus->deskripsi,
+            'persyaratan' => $kursus->persyaratan,
             'id_dosen' => $kursus->id_dosen,
             'id_jurusan' => $kursus->id_jurusan,
             'tipe' => $kursus->tipe,
@@ -1007,6 +1012,7 @@ class AdminController extends Controller
             'status' => $kursus->status,
             'level' => $kursus->level,
             'estimasi_waktu' => $kursus->estimasi_waktu,
+            'durasi_satuan' => $kursus->durasi_satuan,
             'thumbnail' => $kursus->thumbnail,
             'youtube_playlist' => $kursus->youtube_playlist,
             'sertifikat' => (bool) $kursus->sertifikat,
@@ -1030,6 +1036,7 @@ class AdminController extends Controller
             'nama_course' => 'required|string|max:255',
             'kode_course' => 'required|string|max:50|unique:courses,kode_course,' . $id . ',id_course',
             'deskripsi' => 'nullable|string',
+            'persyaratan' => 'nullable|string',
             'id_dosen' => 'nullable|exists:users,id',
             'id_jurusan' => 'nullable|exists:jurusans,id_jurusan',
             'tipe' => 'required|in:gratis,berbayar',
@@ -1039,6 +1046,7 @@ class AdminController extends Controller
             'status' => 'required|in:aktif,draft,nonaktif',
             'level' => 'nullable|in:Pemula,Menengah,Mahir',
             'estimasi_waktu' => 'nullable|numeric|min:0',
+            'durasi_satuan' => 'nullable|in:Jam,Minggu',
             'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'youtube_playlist' => 'nullable|url|max:500',
         ]);
@@ -1056,6 +1064,7 @@ class AdminController extends Controller
             'kode_course' => $request->kode_course,
             'nama_course' => $request->nama_course,
             'deskripsi' => $request->deskripsi,
+            'persyaratan' => $request->persyaratan,
             'id_dosen' => $request->id_dosen,
             'id_jurusan' => $request->id_jurusan,
             'tipe' => $request->tipe,
@@ -1064,6 +1073,7 @@ class AdminController extends Controller
             'status' => $request->status,
             'level' => $request->level,
             'estimasi_waktu' => $request->estimasi_waktu,
+            'durasi_satuan' => $request->durasi_satuan ?? 'Jam',
             'youtube_playlist' => $request->youtube_playlist,
         ]);
 
@@ -1092,6 +1102,294 @@ class AdminController extends Controller
 
         return redirect()->route('admin.kursus')
             ->with('success', 'Kursus berhasil dihapus!');
+    }
+
+    /**
+     * Show Kelola Modul page
+     */
+    public function showKelolaModul($id)
+    {
+        $course = \App\Models\Course::where('id_course', $id)
+            ->with(['enrollments', 'materials' => function($q) {
+                $q->orderBy('urutan', 'asc');
+            }])
+            ->first();
+
+        if (!$course) {
+            return redirect()->route('admin.kursus')->with('error', 'Kursus tidak ditemukan');
+        }
+
+        $materials = $course->materials->map(function($material) {
+            return [
+                'id' => $material->id_material,
+                'judul' => $material->judul_material,
+                'tipe' => $material->tipe,
+                'konten' => $material->konten,
+                'video_url' => $material->video_url,
+                'urutan' => $material->urutan,
+                'durasi' => $material->durasi,
+            ];
+        });
+
+        return view('Auth.admin.kelola-modul', [
+            'course' => [
+                'id' => $course->id_course,
+                'nama' => $course->nama_course,
+                'kode' => $course->kode_course,
+                'status' => $course->status,
+                'mahasiswa_count' => $course->enrollments->count(),
+            ],
+            'materials' => $materials,
+        ]);
+    }
+
+    /**
+     * Get Modul/Material detail
+     */
+    public function getMaterialDetail($courseId, $materialId)
+    {
+        $material = \App\Models\CourseMaterial::where('id_material', $materialId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$material) {
+            return response()->json(['error' => 'Material tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'id_material' => $material->id_material,
+            'judul_material' => $material->judul_material,
+            'tipe' => $material->tipe,
+            'konten' => $material->konten,
+            'video_url' => $material->video_url,
+            'urutan' => $material->urutan,
+            'durasi' => $material->durasi,
+        ]);
+    }
+
+    /**
+     * Store new module
+     */
+    public function storeModule(Request $request, $id)
+    {
+        $course = \App\Models\Course::where('id_course', $id)->first();
+
+        if (!$course) {
+            return back()->with('error', 'Kursus tidak ditemukan');
+        }
+
+        $request->validate([
+            'judul_module' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        $lastOrder = \App\Models\CourseModule::where('id_course', $id)->max('urutan') ?? 0;
+
+        \App\Models\CourseModule::create([
+            'id_course' => $id,
+            'judul_module' => $request->judul_module,
+            'deskripsi' => $request->deskripsi,
+            'urutan' => $lastOrder + 1,
+        ]);
+
+        return back()->with('success', 'Modul berhasil ditambahkan');
+    }
+
+    /**
+     * Update module
+     */
+    public function updateModule(Request $request, $courseId, $moduleId)
+    {
+        $module = \App\Models\CourseModule::where('id_module', $moduleId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$module) {
+            return back()->with('error', 'Modul tidak ditemukan');
+        }
+
+        $request->validate([
+            'judul_module' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        $module->update([
+            'judul_module' => $request->judul_module,
+            'deskripsi' => $request->deskripsi,
+        ]);
+
+        return back()->with('success', 'Modul berhasil diperbarui');
+    }
+
+    /**
+     * Delete module
+     */
+    public function deleteModule($courseId, $moduleId)
+    {
+        $module = \App\Models\CourseModule::where('id_module', $moduleId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$module) {
+            return back()->with('error', 'Modul tidak ditemukan');
+        }
+
+        $module->delete();
+
+        return back()->with('success', 'Modul berhasil dihapus');
+    }
+
+     /**
+     * Reorder modules
+     */
+    public function reorderModules(Request $request, $courseId)
+    {
+        $course = \App\Models\Course::where('id_course', $courseId)->first();
+
+        if (!$course) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $order = $request->input('order');
+        
+        if (!is_array($order)) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+
+        foreach ($order as $index => $moduleId) {
+            \App\Models\CourseModule::where('id_module', $moduleId)
+                ->where('id_course', $courseId)
+                ->update(['urutan' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Store new material
+     */
+    public function storeMaterial(Request $request, $id)
+    {
+        $course = \App\Models\Course::where('id_course', $id)->first();
+
+        if (!$course) {
+            return back()->with('error', 'Kursus tidak ditemukan');
+        }
+
+        $request->validate([
+            'judul_material' => 'required|string|max:255',
+            'tipe' => 'required|in:video,bacaan,kuis,tugas',
+            'konten' => 'nullable|string',
+            'video_url' => 'nullable|url',
+            'durasi' => 'nullable|integer|min:0',
+            'id_module' => 'nullable|exists:course_modules,id_module',
+        ]);
+
+        // Auto-create default module if none provided (for flat material pages)
+        $moduleId = $request->id_module;
+        if (!$moduleId) {
+            $defaultModule = \App\Models\CourseModule::where('id_course', $id)->first();
+            if (!$defaultModule) {
+                $defaultModule = \App\Models\CourseModule::create([
+                    'id_course' => $id,
+                    'judul_module' => 'Modul Utama',
+                    'deskripsi' => 'Modul default untuk materi kursus',
+                    'urutan' => 1,
+                ]);
+            }
+            $moduleId = $defaultModule->id_module;
+        }
+
+        $lastOrder = \App\Models\CourseMaterial::where('id_module', $moduleId)->max('urutan') ?? 0;
+
+        \App\Models\CourseMaterial::create([
+            'id_course' => $id,
+            'id_module' => $moduleId,
+            'judul_material' => $request->judul_material,
+            'tipe' => $request->tipe,
+            'konten' => $request->konten,
+            'video_url' => $request->video_url,
+            'urutan' => $lastOrder + 1,
+            'durasi' => $request->durasi ?? 0,
+        ]);
+
+        return back()->with('success', 'Material berhasil ditambahkan');
+    }
+
+    /**
+     * Update material
+     */
+    public function updateMaterial(Request $request, $courseId, $materialId)
+    {
+        $material = \App\Models\CourseMaterial::where('id_material', $materialId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$material) {
+            return back()->with('error', 'Material tidak ditemukan');
+        }
+
+        $request->validate([
+            'judul_material' => 'required|string|max:255',
+            'tipe' => 'required|in:video,bacaan,kuis,tugas',
+            'konten' => 'nullable|string',
+            'video_url' => 'nullable|url',
+            'durasi' => 'nullable|integer|min:0',
+        ]);
+
+        $material->update([
+            'judul_material' => $request->judul_material,
+            'tipe' => $request->tipe,
+            'konten' => $request->konten,
+            'video_url' => $request->video_url,
+            'durasi' => $request->durasi ?? $material->durasi,
+        ]);
+
+        return back()->with('success', 'Material berhasil diperbarui');
+    }
+
+    /**
+     * Reorder materials
+     */
+    public function reorderMaterials(Request $request, $courseId)
+    {
+        $course = \App\Models\Course::where('id_course', $courseId)->first();
+
+        if (!$course) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $order = $request->input('order');
+        
+        if (!is_array($order)) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+
+        foreach ($order as $index => $materialId) {
+            \App\Models\CourseMaterial::where('id_material', $materialId)
+                ->where('id_course', $courseId)
+                ->update(['urutan' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Delete material
+     */
+    public function deleteMaterial($courseId, $materialId)
+    {
+        $material = \App\Models\CourseMaterial::where('id_material', $materialId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$material) {
+            return back()->with('error', 'Material tidak ditemukan');
+        }
+
+        $material->delete();
+
+        return back()->with('success', 'Material berhasil dihapus');
     }
 
     /**

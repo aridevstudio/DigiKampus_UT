@@ -364,6 +364,12 @@
                                     <textarea name="deskripsi" id="add_deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('_modal') === 'add' ? old('deskripsi') : '' }}</textarea>
                                 </div>
                                 
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Persyaratan Kursus (Opsional)</label>
+                                    <textarea name="persyaratan" id="add_persyaratan" rows="3" placeholder="Contoh:&#10;STIN4101 - Pengantar Teknologi Informasi&#10;Memiliki laptop dan koneksi internet stabil" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('_modal') === 'add' ? old('persyaratan') : '' }}</textarea>
+                                    <p class="text-xs text-gray-400 mt-1">Tulis satu persyaratan per baris.</p>
+                                </div>
+                                
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
@@ -404,9 +410,21 @@
                                             <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar (Jam)</label>
-                                        <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" min="0" placeholder="20" value="{{ old('_modal') === 'add' ? old('estimasi_waktu', 20) : 20 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu</label>
+                                            <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" min="0" placeholder="20" value="{{ old('_modal') === 'add' ? old('estimasi_waktu', 20) : 20 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Satuan</label>
+                                            <div class="relative">
+                                                <select name="durasi_satuan" id="add_durasi_satuan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                    <option value="Jam" {{ old('_modal') === 'add' && old('durasi_satuan', 'Jam') === 'Jam' ? 'selected' : '' }}>Jam</option>
+                                                    <option value="Minggu" {{ old('_modal') === 'add' && old('durasi_satuan') === 'Minggu' ? 'selected' : '' }}>Minggu</option>
+                                                </select>
+                                                <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -434,16 +452,17 @@
                             </div>
                         </div>
                         
-                        {{-- 2. Konten Video --}}
+                        {{-- 2. Modul Kursus --}}
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center justify-center">2</span>
-                                Konten Video
+                                Modul Kursus
                             </h4>
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
-                                <input type="url" name="youtube_playlist" id="add_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('_modal') === 'add' ? old('youtube_playlist') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube untuk kursus ini.</p>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 p-4 rounded-lg text-sm flex items-start gap-3">
+                                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p>Pengelolaan modul dan materi kursus (seperti video, bacaan, dan kuis) dapat dilakukan di halaman <strong>Kelola Modul</strong> setelah kursus berhasil dibuat.</p>
                             </div>
                         </div>
                         
@@ -602,6 +621,12 @@
                                     <textarea name="deskripsi" id="edit_deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
                                 </div>
                                 
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Persyaratan Kursus (Opsional)</label>
+                                    <textarea name="persyaratan" id="edit_persyaratan" rows="3" placeholder="Contoh:&#10;STIN4101 - Pengantar Teknologi Informasi&#10;Memiliki laptop dan koneksi internet stabil" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                                    <p class="text-xs text-gray-400 mt-1">Tulis satu persyaratan per baris.</p>
+                                </div>
+                                
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
@@ -642,9 +667,21 @@
                                             <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar (Jam)</label>
-                                        <input type="number" name="estimasi_waktu" id="edit_estimasi_waktu" min="0" placeholder="20" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu</label>
+                                            <input type="number" name="estimasi_waktu" id="edit_estimasi_waktu" min="0" placeholder="20" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Satuan</label>
+                                            <div class="relative">
+                                                <select name="durasi_satuan" id="edit_durasi_satuan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                    <option value="Jam">Jam</option>
+                                                    <option value="Minggu">Minggu</option>
+                                                </select>
+                                                <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -672,31 +709,20 @@
                             </div>
                         </div>
                         
-                        {{-- 2. Konten Video --}}
+                        {{-- 2. Modul Kursus --}}
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center justify-center">2</span>
-                                Konten Video
+                                Modul Kursus
                             </h4>
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">YouTube Playlist URL</label>
-                                <div class="flex gap-2">
-                                    <input type="url" name="youtube_playlist" id="edit_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." class="flex-1 px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <button type="button" onclick="syncPlaylist()" id="syncPlaylistBtn" class="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2 whitespace-nowrap">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                                        Sync Playlist
-                                    </button>
-                                </div>
-                                <p class="text-xs text-gray-400 mt-1">Opsional. Masukkan URL playlist YouTube lalu klik Sync.</p>
-                                <div id="syncStatus" class="mt-2 hidden"></div>
-                            </div>
-                            {{-- Video List --}}
-                            <div id="videoListContainer" class="mt-4 hidden">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-300">Video Tersinkronisasi</h5>
-                                    <span id="videoCount" class="text-xs text-gray-400">0 video</span>
-                                </div>
-                                <div id="videoList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Kelola struktur modul, video pembelajaran, bahan bacaan, kuis, dan tugas untuk kursus ini.</p>
+                                <a href="#" id="edit_modul_btn" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 font-medium rounded-lg transition border border-blue-200 dark:border-blue-800 w-full justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    Kelola Modul Kursus
+                                </a>
                             </div>
                         </div>
                         
@@ -881,18 +907,18 @@
 
         // IDs of all saveable fields per modal
         const addFieldIds = [
-            'add_nama_course', 'add_kode_course', 'add_deskripsi',
-            'add_id_dosen', 'add_id_jurusan', 'add_level', 'add_estimasi_waktu',
-            'add_youtube_playlist', 'add_kategori', 'add_harga', 'add_diskon',
+            'add_nama_course', 'add_kode_course', 'add_deskripsi', 'add_persyaratan',
+            'add_id_dosen', 'add_id_jurusan', 'add_level', 'add_estimasi_waktu', 'add_durasi_satuan',
+            'add_kategori', 'add_harga', 'add_diskon',
             'add_status_input', 'add_tipe_input'
         ];
         const addCheckboxIds = [
             'add_status_toggle', 'add_akses_publik', 'add_sertifikat', 'add_gratis_toggle'
         ];
         const editFieldIds = [
-            'edit_nama_course', 'edit_kode_course', 'edit_deskripsi',
-            'edit_id_dosen', 'edit_id_jurusan', 'edit_level', 'edit_estimasi_waktu',
-            'edit_youtube_playlist', 'edit_kategori', 'edit_harga', 'edit_diskon',
+            'edit_nama_course', 'edit_kode_course', 'edit_deskripsi', 'edit_persyaratan',
+            'edit_id_dosen', 'edit_id_jurusan', 'edit_level', 'edit_estimasi_waktu', 'edit_durasi_satuan',
+            'edit_kategori', 'edit_harga', 'edit_diskon',
             'edit_status_input', 'edit_tipe_input'
         ];
         const editCheckboxIds = [
@@ -1092,12 +1118,12 @@
                 document.getElementById('editKursusForm').action = '/admin/kursus/' + id;
                 document.getElementById('edit_kursus_id').value = id;
                 restoreFormState(editFieldIds, editCheckboxIds, EDIT_FORM_KEY);
-
-                // Load video list if playlist URL exists
-                const playlist = document.getElementById('edit_youtube_playlist').value;
-                document.getElementById('videoListContainer').classList.add('hidden');
-                document.getElementById('syncStatus').classList.add('hidden');
-                if (playlist) loadVideoList(id);
+                
+                // Update Kelola Modul link
+                const btnModul = document.getElementById('edit_modul_btn');
+                if (btnModul) {
+                    btnModul.href = '/admin/kursus/' + id + '/modul';
+                }
 
                 document.getElementById('editKursusModal').classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
@@ -1111,10 +1137,12 @@
                         document.getElementById('edit_nama_course').value = data.nama_course || '';
                         document.getElementById('edit_kode_course').value = data.kode_course || '';
                         document.getElementById('edit_deskripsi').value = data.deskripsi || '';
+                        document.getElementById('edit_persyaratan').value = data.persyaratan || '';
                         document.getElementById('edit_id_dosen').value = data.id_dosen || '';
                         document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
                         document.getElementById('edit_level').value = data.level || '';
                         document.getElementById('edit_estimasi_waktu').value = data.estimasi_waktu || 20;
+                        document.getElementById('edit_durasi_satuan').value = data.durasi_satuan || 'Jam';
                         document.getElementById('edit_kategori').value = data.kategori || 'kursus';
                         document.getElementById('edit_harga').value = data.harga || 0;
                         document.getElementById('edit_diskon').value = data.diskon || 0;
@@ -1132,15 +1160,15 @@
                         gratisToggle.checked = (tipe === 'gratis');
                         gratisToggle.dispatchEvent(new Event('change'));
 
-                        document.getElementById('edit_youtube_playlist').value = data.youtube_playlist || '';
-
                         // Set akses_publik & sertifikat checkboxes
                         document.getElementById('edit_akses_publik').checked = data.akses_publik !== false;
                         document.getElementById('edit_sertifikat').checked = !!data.sertifikat;
 
-                        document.getElementById('videoListContainer').classList.add('hidden');
-                        document.getElementById('syncStatus').classList.add('hidden');
-                        if (data.youtube_playlist) loadVideoList(id);
+                        // Update Kelola Modul link
+                        const btnModul = document.getElementById('edit_modul_btn');
+                        if (btnModul) {
+                            btnModul.href = '/admin/kursus/' + id + '/modul';
+                        }
 
                         const preview = document.getElementById('editThumbnailPreview');
                         if (data.thumbnail) {
@@ -1191,82 +1219,6 @@
             document.body.style.overflow = 'auto';
         }
 
-        // ============================================================
-        // YouTube Playlist Sync
-        // ============================================================
-        function syncPlaylist() {
-            if (!currentEditCourseId) { alert('Simpan kursus terlebih dahulu.'); return; }
-            const url = document.getElementById('edit_youtube_playlist').value.trim();
-            if (!url) { alert('Masukkan URL playlist YouTube terlebih dahulu.'); return; }
-
-            const btn = document.getElementById('syncPlaylistBtn');
-            const status = document.getElementById('syncStatus');
-            btn.disabled = true;
-            btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Menyinkronkan...';
-            status.classList.remove('hidden');
-            status.innerHTML = '<p class="text-xs text-blue-500">Mengambil data playlist...</p>';
-
-            fetch('/admin/kursus/' + currentEditCourseId + '/sync-playlist', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ youtube_playlist: url })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    status.innerHTML = '<p class="text-xs text-red-500">' + data.error + '</p>';
-                } else {
-                    status.innerHTML = '<p class="text-xs text-green-500">' + data.message + '</p>';
-                    if (data.videos && data.videos.length > 0) {
-                        renderVideoList(data.videos);
-                    }
-                }
-            })
-            .catch(err => {
-                status.innerHTML = '<p class="text-xs text-red-500">Gagal sinkronisasi: ' + err.message + '</p>';
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> Sync Playlist';
-            });
-        }
-
-        function renderVideoList(videos) {
-            const container = document.getElementById('videoListContainer');
-            const list = document.getElementById('videoList');
-            const count = document.getElementById('videoCount');
-            container.classList.remove('hidden');
-            count.textContent = videos.length + ' video';
-            let html = '';
-            videos.forEach((v, i) => {
-                html += `<div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <span class="text-xs text-gray-400 w-5 text-center flex-shrink-0">${i + 1}</span>
-                    ${v.thumbnail_url ? `<img src="${v.thumbnail_url}" class="w-16 h-10 object-cover rounded flex-shrink-0">` : ''}
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs text-gray-800 dark:text-gray-200 truncate font-medium">${v.title}</p>
-                        ${v.formatted_duration ? `<p class="text-[10px] text-gray-400">${v.formatted_duration}</p>` : ''}
-                    </div>
-                    <a href="https://www.youtube.com/watch?v=${v.youtube_id}" target="_blank" class="text-red-500 hover:text-red-600 flex-shrink-0">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>
-                    </a>
-                </div>`;
-            });
-            list.innerHTML = html;
-        }
-
-        function loadVideoList(courseId) {
-            fetch('/admin/kursus/' + courseId + '/youtube-videos')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.videos && data.videos.length > 0) {
-                        renderVideoList(data.videos);
-                    }
-                });
-        }
 
         // Auto-reopen modal on validation error
         @if($errors->any() && old('_modal') === 'add')
