@@ -36,6 +36,7 @@ Route::prefix('admin')
         Route::post('/dosen', [AdminController::class, 'storeDosen'])->name('admin.dosen.store');
         Route::get('/dosen/{id}', [AdminController::class, 'getDosen'])->name('admin.dosen.get');
         Route::put('/dosen/{id}', [AdminController::class, 'updateDosen'])->name('admin.dosen.update');
+        Route::put('/dosen/{id}/approve', [AdminController::class, 'approveDosen'])->name('admin.dosen.approve');
         Route::delete('/dosen/{id}', [AdminController::class, 'deleteDosen'])->name('admin.dosen.delete');
         Route::post('/dosen/import', [AdminController::class, 'importDosen'])->name('admin.dosen.import');
         

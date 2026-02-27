@@ -24,9 +24,58 @@ class DosenController extends Controller
     /**
      * Show login form
      */
-    public function showLoginForm()
+        public function showLoginForm()
     {
         return view('Auth.dosen.login');
+    }
+
+    /**
+     * Show registration form
+     */
+    public function showRegisterForm()
+    {
+        $jurusans = \App\Models\Jurusan::orderBy('nama_jurusan')->get();
+        return view('Auth.dosen.register', compact('jurusans'));
+    }
+
+    /**
+     * Handle registration
+     */
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'nip' => ['required', 'string', 'max:50', 'unique:profiles,nim'],
+            'id_jurusan' => ['required', 'exists:jurusans,id_jurusan'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'google_id' => ['nullable', 'string'],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'dosen',
+                'status' => 'pending', 
+                'google_id' => $request->google_id,
+            ]);
+
+            $user->profile()->create([
+                'nim' => $request->nip, // NIP is stored in 'nim' based on existing patterns
+                'id_jurusan' => $request->id_jurusan,
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('dosen.login')
+                ->with('status', 'Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan admin.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('alert', 'Pendaftaran gagal: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -55,7 +104,11 @@ class DosenController extends Controller
                 ->with('alert', 'Password salah. Silakan coba lagi.');
         }
 
-        if ($user->status !== 'aktif') {
+                if ($user->status === 'pending') {
+            return back()
+                ->withInput()
+                ->with('alert', 'Akun Anda sedang menunggu persetujuan admin.');
+        } elseif ($user->status !== 'aktif') {
             return back()
                 ->withInput()
                 ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi admin.');
@@ -89,11 +142,19 @@ class DosenController extends Controller
                 ->first();
 
             if (!$user) {
-                return redirect()->route('dosen.login')
-                    ->with('alert', 'Email tidak terdaftar sebagai dosen. Silakan hubungi admin.');
+                return redirect()->route('dosen.register')
+                    ->withInput([
+                        'name' => $googleUser->getName(),
+                        'email' => $googleUser->getEmail()
+                    ])
+                    ->with('google_id', $googleUser->getId())
+                    ->with('alert', 'Akun Anda belum terdaftar. Silakan lengkapi form pendaftaran.');
             }
 
-            if ($user->status !== 'aktif') {
+            if ($user->status === 'pending') {
+                return redirect()->route('dosen.login')
+                    ->with('alert', 'Akun Anda sedang menunggu persetujuan admin.');
+            } elseif ($user->status !== 'aktif') {
                 return redirect()->route('dosen.login')
                     ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi admin.');
             }

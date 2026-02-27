@@ -38,6 +38,7 @@
                 <select name="status" onchange="this.form.submit()" class="appearance-none px-4 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     <option value="all" {{ ($statusFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
                     <option value="aktif" {{ ($statusFilter ?? '') === 'aktif' ? 'selected' : '' }}>Aktif</option>
+                    <option value="pending" {{ ($statusFilter ?? '') === 'pending' ? 'selected' : '' }}>Menunggu Persetujuan</option>
                     <option value="tidak_aktif" {{ ($statusFilter ?? '') === 'tidak_aktif' ? 'selected' : '' }}>Tidak Aktif</option>
                 </select>
                 <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,17 +63,19 @@
     @if($totalDosen > 0)
     @php
         $dosenStatItems = [
-            ['label' => 'Total Dosen', 'count' => $dosenAktifCount + $dosenNonaktifCount, 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', 'color' => 'blue'],
+            ['label' => 'Total Dosen', 'count' => $dosenAktifCount + $dosenNonaktifCount + $dosenPendingCount, 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', 'color' => 'blue'],
             ['label' => 'Aktif', 'count' => $dosenAktifCount, 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'color' => 'emerald'],
+            ['label' => 'Menunggu', 'count' => $dosenPendingCount, 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'color' => 'amber'],
             ['label' => 'Tidak Aktif', 'count' => $dosenNonaktifCount, 'icon' => 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636', 'color' => 'red'],
         ];
         $dosenColorMap = [
             'blue' => ['bg' => 'bg-blue-50 dark:bg-blue-900/20', 'icon' => 'text-blue-500 dark:text-blue-400', 'text' => 'text-blue-700 dark:text-blue-300', 'border' => 'border-blue-100 dark:border-blue-800/30'],
             'emerald' => ['bg' => 'bg-emerald-50 dark:bg-emerald-900/20', 'icon' => 'text-emerald-500 dark:text-emerald-400', 'text' => 'text-emerald-700 dark:text-emerald-300', 'border' => 'border-emerald-100 dark:border-emerald-800/30'],
+            'amber' => ['bg' => 'bg-amber-50 dark:bg-amber-900/20', 'icon' => 'text-amber-500 dark:text-amber-400', 'text' => 'text-amber-700 dark:text-amber-300', 'border' => 'border-amber-100 dark:border-amber-800/30'],
             'red' => ['bg' => 'bg-red-50 dark:bg-red-900/20', 'icon' => 'text-red-500 dark:text-red-400', 'text' => 'text-red-700 dark:text-red-300', 'border' => 'border-red-100 dark:border-red-800/30'],
         ];
     @endphp
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         @foreach($dosenStatItems as $stat)
         <div class="flex items-center gap-3 p-3.5 rounded-xl {{ $dosenColorMap[$stat['color']]['bg'] }} border {{ $dosenColorMap[$stat['color']]['border'] }}">
             <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">
@@ -162,12 +165,16 @@
                                 <span class="text-xs text-gray-300 dark:text-gray-600 italic">Belum diisi</span>
                             @endif
                         </td>
-                        {{-- Status --}}
                         <td class="px-5 py-4 text-center">
                             @if($dosen['status'] === 'Aktif')
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700/40">
                                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                                     Aktif
+                                </span>
+                            @elseif($dosen['status'] === 'Pending')
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    Menunggu Persetujuan
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700/40">
@@ -179,6 +186,15 @@
                         {{-- Actions --}}
                         <td class="px-5 py-4 text-center">
                             <div class="inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-0.5">
+                                @if($dosen['status'] === 'Pending')
+                                <button onclick="confirmApprove({{ $dosen['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Setujui Dosen">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Terima
+                                </button>
+                                <div class="w-px h-4 bg-gray-200 dark:bg-gray-600"></div>
+                                @endif
                                 <button onclick="openEditModal({{ $dosen['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Edit Dosen">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -743,6 +759,51 @@
         
         function closeDeleteModal() {
             document.getElementById('deleteDosenModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Approve Modal functions
+        function confirmApprove(id) {
+            document.getElementById('approveDosenForm').action = '/admin/dosen/' + id + '/approve';
+            document.getElementById('approveDosenModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeApproveModal() {
+            document.getElementById('approveDosenModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Approve Modal functions
+        function confirmApprove(id) {
+            document.getElementById('approveDosenForm').action = '/admin/dosen/' + id + '/approve';
+            document.getElementById('approveDosenModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeApproveModal() {
+            document.getElementById('approveDosenModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+            document.getElementById('deleteDosenForm').action = '/admin/dosen/' + id;
+            document.getElementById('deleteDosenModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteDosenModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Approve Modal functions
+        function confirmApprove(id) {
+            document.getElementById('approveDosenForm').action = '/admin/dosen/' + id + '/approve';
+            document.getElementById('approveDosenModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeApproveModal() {
+            document.getElementById('approveDosenModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
         

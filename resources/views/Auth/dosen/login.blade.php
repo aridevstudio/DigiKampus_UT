@@ -180,7 +180,7 @@
                 <div class="mt-6 text-center animate-hidden animate-fade-in stagger-7">
                     <p class="text-sm text-gray-500">
                         Belum punya akun? 
-                        <a href="{{ route('dosen.coming-soon') }}" class="text-blue-500 hover:text-blue-600 link-animate font-medium">
+                        <a href="{{ route('dosen.register') }}" class="text-blue-500 hover:text-blue-600 link-animate font-medium">
                             Daftar sebagai Dosen Baru
                         </a>
                     </p>
@@ -350,7 +350,7 @@
             <div class="mt-4 text-center">
                 <p class="text-xs text-gray-500">
                     Belum punya akun? 
-                    <a href="{{ route('dosen.coming-soon') }}" class="text-blue-500 hover:text-blue-600 link-animate font-medium">
+                    <a href="{{ route('dosen.register') }}" class="text-blue-500 hover:text-blue-600 link-animate font-medium">
                         Daftar sebagai Dosen Baru
                     </a>
                 </p>
