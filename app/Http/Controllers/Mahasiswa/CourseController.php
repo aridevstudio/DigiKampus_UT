@@ -81,18 +81,24 @@ class CourseController extends Controller
         $user = Auth::guard('mahasiswa')->user();
         $isEnrolled = false;
         $enrollment = null;
+        $isFavorited = false;
         
         if ($user) {
             $enrollment = $course->enrollments()
                 ->where('id_mahasiswa', $user->id)
                 ->first();
             $isEnrolled = $enrollment !== null;
+            
+            $isFavorited = \App\Models\Favorite::where('id_mahasiswa', $user->id)
+                ->where('id_course', $course->id_course)
+                ->exists();
         }
         
         return view('pages.mahasiswa.course-detail', [
             'course' => $course,
             'isEnrolled' => $isEnrolled,
             'enrollment' => $enrollment,
+            'isFavorited' => $isFavorited,
         ]);
     }
 
@@ -381,8 +387,11 @@ class CourseController extends Controller
         }
         
         $favorites = \App\Models\Favorite::with(['course', 'course.dosen'])
+            ->whereHas('course', function ($query) {
+                $query->where('status', 'publish'); // Asumsi hanya menampilkan kursus yang di-publish
+            })
             ->where('id_mahasiswa', $user->id)
-            ->orderBy('created_at', 'desc')
+            ->latest()
             ->get();
             
         return view('pages.mahasiswa.favorites', compact('favorites'));

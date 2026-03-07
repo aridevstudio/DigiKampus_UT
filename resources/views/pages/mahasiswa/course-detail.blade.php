@@ -640,16 +640,29 @@
                     </button>
                 </form>
                 
+                @if($isFavorited)
+                <form action="{{ route('mahasiswa.favorite.remove', $course->id_course) }}" method="POST" class="w-full">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full border border-red-500 text-red-500 py-3 rounded-xl font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5 text-rose-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                        </svg>
+                        Hapus dari Favorit
+                    </button>
+                </form>
+                @else
                 <form action="{{ route('mahasiswa.favorite.add') }}" method="POST" class="w-full">
                     @csrf
                     <input type="hidden" name="id_course" value="{{ $course->id_course }}">
                     <button type="submit" class="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700/50 transition flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5 text-rose-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                         Simpan ke Favorit
                     </button>
                 </form>
+                @endif
                 
                 {{-- Creator --}}
                 <div class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/50">
