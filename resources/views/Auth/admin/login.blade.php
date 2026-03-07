@@ -102,7 +102,7 @@
                             id="password-desktop"
                             required 
                             class="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
-                            placeholder="Password"
+                            placeholder="Kata Sandi"
                         >
                         <button 
                             type="button" 
@@ -119,14 +119,14 @@
                         </button>
                     </div>
 
-                    {{-- Remember Me & Forgot Password --}}
+                    {{-- Remember Me & Lupa Kata Sandi --}}
                     <div class="flex items-center justify-between animate-hidden animate-fade-in-up stagger-3">
                         <label class="flex items-center text-sm text-gray-600 cursor-pointer">
                             <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2 checkbox-animate">
                             Ingat saya
                         </label>
                         <a href="{{ route('admin.forgot-password') }}" class="text-sm text-blue-500 hover:text-blue-600 link-animate">
-                            Forgot Password?
+                            Lupa Kata Sandi?
                         </a>
                     </div>
 
@@ -141,8 +141,8 @@
 
                 {{-- Footer --}}
                 <div class="mt-8 flex items-center justify-between text-xs text-gray-400 footer-animate">
-                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
-                    <span>2025 © Universitas Terbuka</span>
+                    <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a>
+                    <span>{{ date('Y') }} © Universitas Terbuka</span>
                 </div>
             </div>
         </div>
@@ -225,7 +225,7 @@
                         id="password-mobile"
                         required 
                         class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Password"
+                        placeholder="Kata Sandi"
                     >
                     <button 
                         type="button" 
@@ -242,14 +242,14 @@
                     </button>
                 </div>
 
-                {{-- Remember Me & Forgot Password --}}
+                {{-- Remember Me & Lupa Kata Sandi --}}
                 <div class="flex items-center justify-between">
                     <label class="flex items-center text-xs text-gray-600 cursor-pointer">
                         <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2">
                         Ingat saya
                     </label>
                     <a href="{{ route('admin.forgot-password') }}" class="text-xs text-blue-500 hover:text-blue-600 hover:underline">
-                        Forgot Password?
+                        Lupa Kata Sandi?
                     </a>
                 </div>
 
@@ -264,8 +264,8 @@
 
             {{-- Footer --}}
             <div class="w-full mt-6 flex items-center justify-between text-[10px] text-gray-400">
-                <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
-                <span>2025 © Universitas Terbuka</span>
+                <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a>
+                <span>{{ date('Y') }} © Universitas Terbuka</span>
             </div>
         </div>
     </section>

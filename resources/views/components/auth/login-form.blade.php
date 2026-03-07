@@ -11,10 +11,10 @@
                 {{-- Header --}}
                 <div class="text-center mb-6 sm:mb-8 animate-hidden animate-fade-in-down">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
-                        Sign In Mahasiswa
+                        Masuk sebagai Mahasiswa
                     </h1>
                     <p class="text-gray-500 text-sm sm:text-base">
-                        Send, spend and save smarter
+                        Silakan masuk untuk mengakses pembelajaran
                     </p>
                 </div>
 
@@ -60,7 +60,7 @@
                             required 
                             autofocus
                             class="w-full border border-gray-300 rounded-lg pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
-                            placeholder="Nim Mahasiswa"
+                            placeholder="NIM Mahasiswa"
                         >
                     </div>
 
@@ -72,7 +72,7 @@
                             id="password"
                             required 
                             class="w-full border border-gray-300 rounded-lg px-4 py-2.5 sm:py-3 pr-12 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
-                            placeholder="Password"
+                            placeholder="Kata Sandi"
                         >
                         <button 
                             type="button" 
@@ -89,14 +89,14 @@
                         </button>
                     </div>
 
-                    {{-- Remember Me & Forgot Password --}}
+                    {{-- Remember Me & Lupa Kata Sandi --}}
                     <div class="flex items-center justify-between animate-hidden animate-fade-in-up stagger-3">
                         <label class="flex items-center text-xs sm:text-sm text-gray-600 cursor-pointer">
                             <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2 checkbox-animate">
-                            Remember me
+                            Ingat saya
                         </label>
                         <a href="{{ route('mahasiswa.forgot-password') }}" class="text-xs sm:text-sm text-blue-500 hover:text-blue-600 link-animate">
-                            Forgot Password?
+                            Lupa Kata Sandi?
                         </a>
                     </div>
 
@@ -110,14 +110,14 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span id="btn-text">Sign In</span>
+                        <span id="btn-text">Masuk Sekarang</span>
                     </button>
                 </form>
 
                 {{-- Footer --}}
                 <div class="w-full mt-6 sm:mt-8 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 footer-animate">
-                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
-                    <span>2025 © Universitas Terbuka</span>
+                    <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a>
+                    <span>{{ date('Y') }} © Universitas Terbuka</span>
                 </div>
             </div>
         </div>
@@ -168,6 +168,6 @@
         
         btn.disabled = true;
         spinner.classList.remove('hidden');
-        btnText.textContent = 'Loading...';
+        btnText.textContent = 'Memuat...';
     });
 </script>

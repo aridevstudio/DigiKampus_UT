@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Forgot Password Admin - SALUT</title>
+    <title>Lupa Kata Sandi Admin - SALUT</title>
     @vite('resources/css/app.css')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,7 +25,7 @@
             <div class="relative z-10 px-8">
                 <img 
                     src="{{ asset('assets/image/auth/Ilustrasi Login Admin.png') }}" 
-                    alt="Admin Forgot Password Illustration" 
+                    alt="Admin Lupa Kata Sandi Illustration" 
                     class="w-full max-w-md xl:max-w-lg object-contain"
                     style="filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));"
                 >
@@ -114,7 +114,7 @@
 
                 {{-- Footer --}}
                 <div class="mt-8 flex items-center justify-between text-xs text-gray-400">
-                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
+                    <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a>
                     <span>2025 © Universitas Terbuka</span>
                 </div>
             </div>
@@ -129,7 +129,7 @@
             <div class="w-full flex justify-center mb-6">
                 <img 
                     src="{{ asset('assets/image/auth/Ilustrasi Login Admin.png') }}" 
-                    alt="Admin Forgot Password Illustration" 
+                    alt="Admin Lupa Kata Sandi Illustration" 
                     class="w-48 sm:w-64 md:w-72 object-contain"
                     style="filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));"
                 >
@@ -213,7 +213,7 @@
 
             {{-- Footer --}}
             <div class="w-full mt-6 flex items-center justify-between text-[10px] text-gray-400">
-                <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
+                <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a>
                 <span>2025 © Universitas Terbuka</span>
             </div>
         </div>
@@ -230,7 +230,7 @@
             
             btn.disabled = true;
             spinner.classList.remove('hidden');
-            btnText.textContent = 'Loading...';
+            btnText.textContent = 'Memuat...';
         });
 
         // Mobile form loading
@@ -241,7 +241,7 @@
             
             btn.disabled = true;
             spinner.classList.remove('hidden');
-            btnText.textContent = 'Loading...';
+            btnText.textContent = 'Memuat...';
         });
     </script>
 </body>

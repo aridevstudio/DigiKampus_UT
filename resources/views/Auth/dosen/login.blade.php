@@ -130,7 +130,7 @@
                         </div>
                     </div>
 
-                    {{-- Remember Me & Forgot Password --}}
+                    {{-- Remember Me & Lupa Kata Sandi --}}
                     <div class="flex items-center justify-between animate-hidden animate-fade-in-up stagger-3">
                         <label class="flex items-center text-sm text-gray-600 cursor-pointer">
                             <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2 checkbox-animate">
@@ -159,8 +159,8 @@
 
                 {{-- Footer --}}
                 <div class="mt-8 flex items-center justify-between text-xs text-gray-400 footer-animate">
-                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
-                    <span>2025 © Universitas Terbuka</span>
+                    <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a>
+                    <span>{{ date('Y') }} © Universitas Terbuka</span>
                 </div>
             </div>
         </div>
@@ -271,7 +271,7 @@
                     </div>
                 </div>
 
-                {{-- Remember Me & Forgot Password --}}
+                {{-- Remember Me & Lupa Kata Sandi --}}
                 <div class="flex items-center justify-between">
                     <label class="flex items-center text-xs text-gray-600 cursor-pointer">
                         <input type="checkbox" name="remember" class="w-4 h-4 border-gray-300 rounded text-blue-500 focus:ring-blue-500 mr-2">
@@ -300,8 +300,8 @@
 
             {{-- Footer --}}
             <div class="w-full mt-6 flex items-center justify-between text-[10px] text-gray-400 footer-animate">
-                <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a>
-                <span>2025 © Universitas Terbuka</span>
+                <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a>
+                <span>{{ date('Y') }} © Universitas Terbuka</span>
             </div>
         </div>
     </section>
@@ -351,7 +351,7 @@
                 if (btn && spinner && btnText) {
                     btn.disabled = true;
                     spinner.classList.remove('hidden');
-                    btnText.textContent = 'Loading...';
+                    btnText.textContent = 'Memuat...';
                 }
             });
         });

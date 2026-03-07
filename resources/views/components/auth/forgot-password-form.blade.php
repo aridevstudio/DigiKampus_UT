@@ -6,7 +6,7 @@
         <div class="hidden lg:flex flex-1 justify-center items-center">
             <img 
                 src="{{ asset('assets/image/auth/Ilustrasi Survey Forget Password.png') }}" 
-                alt="Forgot Password Illustration" 
+                alt="Lupa Kata Sandi Illustration" 
                 class="w-full max-w-sm xl:max-w-md 2xl:max-w-lg object-contain"
             >
         </div>
@@ -15,7 +15,7 @@
         <div class="lg:hidden w-full flex justify-center mb-4">
             <img 
                 src="{{ asset('assets/image/auth/Ilustrasi Survey Forget Password.png') }}" 
-                alt="Forgot Password Illustration" 
+                alt="Lupa Kata Sandi Illustration" 
                 class="w-48 sm:w-64 md:w-80 object-contain"
             >
         </div>
@@ -26,10 +26,10 @@
                 {{-- Header --}}
                 <div class="text-center mb-6 sm:mb-8">
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
-                        Forgot Password Account
+                        Lupa Kata Sandi
                     </h1>
                     <p class="text-gray-500 text-sm sm:text-base">
-                        Send, spend and save smarter
+                        Silakan lengkapi formulir di bawah ini
                     </p>
                 </div>
 
@@ -88,7 +88,7 @@
 
                 {{-- Footer --}}
                 <div class="mt-6 sm:mt-8 text-center text-[10px] sm:text-xs text-gray-400">
-                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
+                    <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a> • 2025 © Universitas Terbuka
                 </div>
             </div>
         </div>
@@ -104,6 +104,6 @@
         
         btn.disabled = true;
         spinner.classList.remove('hidden');
-        btnText.textContent = 'Loading...';
+        btnText.textContent = 'Memuat...';
     });
 </script>

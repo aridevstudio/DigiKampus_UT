@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Reset Password Dosen - SALUT</title>
+    <title>Atur Ulang Kata Sandi Dosen - SALUT</title>
     @vite('resources/css/app.css')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,7 +25,7 @@
             <div class="relative z-10 px-8">
                 <img 
                     src="{{ asset('assets/image/auth/Ilustrasi Login Admin.png') }}" 
-                    alt="Admin Reset Password Illustration" 
+                    alt="Admin Atur Ulang Kata Sandi Illustration" 
                     class="w-full max-w-md xl:max-w-lg object-contain"
                     style="filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));"
                 >
@@ -38,10 +38,10 @@
                 {{-- Header --}}
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                        Reset Password Account
+                        Atur Ulang Kata Sandi Account
                     </h1>
                     <p class="text-gray-500 text-base">
-                        Send, spend and save smarter
+                        Silakan lengkapi formulir di bawah ini
                     </p>
                 </div>
 
@@ -107,7 +107,7 @@
                         </div>
                     </div>
 
-                    {{-- Confirm Password Input --}}
+                    {{-- Konfirmasi Kata Sandi Input --}}
                     <div class="relative">
                         <input 
                             type="password" 
@@ -116,7 +116,7 @@
                             required 
                             oninput="checkPasswordMatchDesktop()"
                             class="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                            placeholder="Confirm Password"
+                            placeholder="Konfirmasi Kata Sandi"
                         >
                         <button 
                             type="button" 
@@ -149,13 +149,13 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span id="btn-text-desktop">Reset Password</span>
+                        <span id="btn-text-desktop">Atur Ulang Kata Sandi</span>
                     </button>
                 </form>
 
                 {{-- Footer --}}
                 <div class="mt-8 text-center text-xs text-gray-400">
-                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
+                    <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a> • 2025 © Universitas Terbuka
                 </div>
             </div>
         </div>
@@ -169,7 +169,7 @@
             <div class="w-full flex justify-center mb-6">
                 <img 
                     src="{{ asset('assets/image/auth/Ilustrasi Login Admin.png') }}" 
-                    alt="Admin Reset Password Illustration" 
+                    alt="Admin Atur Ulang Kata Sandi Illustration" 
                     class="w-48 sm:w-64 md:w-72 object-contain"
                     style="filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));"
                 >
@@ -178,10 +178,10 @@
             {{-- Header --}}
             <div class="text-center mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
-                    Reset Password Account
+                    Atur Ulang Kata Sandi Account
                 </h1>
                 <p class="text-gray-500 text-sm px-4">
-                    Send, spend and save smarter
+                    Silakan lengkapi formulir di bawah ini
                 </p>
             </div>
 
@@ -247,7 +247,7 @@
                     </div>
                 </div>
 
-                {{-- Confirm Password Input --}}
+                {{-- Konfirmasi Kata Sandi Input --}}
                 <div class="relative">
                     <input 
                         type="password" 
@@ -256,7 +256,7 @@
                         required 
                         oninput="checkPasswordMatchMobile()"
                         class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Confirm Password"
+                        placeholder="Konfirmasi Kata Sandi"
                     >
                     <button 
                         type="button" 
@@ -289,13 +289,13 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span id="btn-text-mobile">Reset Password</span>
+                    <span id="btn-text-mobile">Atur Ulang Kata Sandi</span>
                 </button>
             </form>
 
             {{-- Footer --}}
             <div class="w-full mt-6 text-center text-[10px] text-gray-400">
-                <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
+                <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a> • 2025 © Universitas Terbuka
             </div>
         </div>
     </section>
@@ -421,7 +421,7 @@
             const btnText = document.getElementById('btn-text-desktop');
             btn.disabled = true;
             spinner.classList.remove('hidden');
-            btnText.textContent = 'Loading...';
+            btnText.textContent = 'Memuat...';
             
             return true;
         }
@@ -527,7 +527,7 @@
             const btnText = document.getElementById('btn-text-mobile');
             btn.disabled = true;
             spinner.classList.remove('hidden');
-            btnText.textContent = 'Loading...';
+            btnText.textContent = 'Memuat...';
             
             return true;
         }

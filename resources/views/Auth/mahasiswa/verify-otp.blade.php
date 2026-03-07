@@ -1,3 +1,3 @@
-<x-layouts.auth title="Verify OTP">
+<x-layouts.auth title="Verifikasi OTP">
     <x-auth.verify-otp-form />
 </x-layouts.auth>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password OTP - DigiKampus UT</title>
+    <title>Atur Ulang Kata Sandi OTP - DigiKampus UT</title>
     <style>
         * {
             margin: 0;
