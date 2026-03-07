@@ -4,11 +4,7 @@
 @endphp
 
 {{-- Flash Messages --}}
-@if(session('success'))
-<div class="mb-4 p-4 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 rounded-xl animate-fade-in-up">
-    {{ session('success') }}
-</div>
-@endif
+
 @if(session('error'))
 <div class="mb-4 p-4 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 rounded-xl animate-fade-in-up">
     {{ session('error') }}

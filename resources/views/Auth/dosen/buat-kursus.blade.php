@@ -1,6 +1,6 @@
 <x-layouts.dosen title="Buat Kursus Baru" active="buat-kursus">
     <div class="max-w-3xl mx-auto">
-        <form action="{{ route('dosen.kursus.store') }}" method="POST" enctype="multipart/form-data" id="buatKursusForm">
+        <form action="{{ route('dosen.kursus.store') }}" method="POST" enctype="multipart/form-data" id="buatKursusForm" x-data="{ isLoading: false }" @submit="isLoading = true">
             @csrf
             
             {{-- Page Header + Action Buttons --}}

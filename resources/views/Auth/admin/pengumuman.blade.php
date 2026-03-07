@@ -6,7 +6,7 @@
     </div>
 
     {{-- Actions Bar --}}
-    <form method="GET" action="{{ route('admin.pengumuman') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
+    <form method="GET" action="{{ route('admin.pengumuman') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
         <div class="flex flex-wrap items-center gap-3">
             <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25 hover:shadow-md hover:shadow-blue-500/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +183,7 @@
                 </div>
 
                 {{-- Form --}}
-                <form action="{{ route('admin.pengumuman.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.pengumuman.store') }}" method="POST" enctype="multipart/form-data" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     <input type="hidden" name="_modal" value="add">
                     <div class="px-6 py-5 space-y-5">
@@ -270,7 +270,7 @@
                 </div>
 
                 {{-- Form --}}
-                <form id="editForm" method="POST" enctype="multipart/form-data">
+                <form id="editForm" method="POST" enctype="multipart/form-data" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="_modal" value="edit">
@@ -361,7 +361,7 @@
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Hapus Pengumuman</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Apakah Anda yakin ingin menghapus pengumuman "<span id="delete_title" class="font-semibold text-gray-700 dark:text-gray-200"></span>"? Tindakan ini tidak dapat dibatalkan.</p>
-                    <form id="deleteForm" method="POST" class="flex justify-center gap-3">
+                    <form id="deleteForm" method="POST" class="flex justify-center gap-3" x-data="{ isLoading: false }" @submit="isLoading = true">
                         @csrf
                         @method('DELETE')
                         <button type="button" onclick="closeDeleteModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-500 transition">Batal</button>

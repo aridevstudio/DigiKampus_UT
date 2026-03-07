@@ -291,7 +291,7 @@
                     </svg>
                 </button>
 
-                <form id="scheduleForm" class="p-6" onsubmit="return submitScheduleForm(event)">
+                <form id="scheduleForm" class="p-6" onsubmit="return submitScheduleForm(event)" x-data="{ isLoading: false }" @submit="isLoading = true">
                     <h3 id="scheduleModalTitle" class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Jadwal Mengajar</h3>
 
                     <div class="space-y-4">

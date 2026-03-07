@@ -14,7 +14,7 @@
             <p class="text-gray-500 dark:text-gray-400 mt-1">Tambahkan video materi ke dalam kursus Anda.</p>
         </div>
 
-        <form @submit.prevent="saveVideo" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <form @submit.prevent="saveVideo" class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="{ isLoading: false }" @submit="isLoading = true">
             {{-- Left Column - 2/3 width --}}
             <div class="lg:col-span-2 space-y-6">
                 

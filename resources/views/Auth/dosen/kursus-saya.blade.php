@@ -14,7 +14,7 @@
     </div>
 
     {{-- Filters --}}
-    <form method="GET" action="{{ route('dosen.kursus') }}" class="flex flex-wrap items-center gap-4 mb-6">
+    <form method="GET" action="{{ route('dosen.kursus') }}" class="flex flex-wrap items-center gap-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
         {{-- Status Filter --}}
         <div class="flex items-center gap-2">
             <span class="text-sm text-gray-500 dark:text-gray-400">Filter:</span>

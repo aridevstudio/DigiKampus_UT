@@ -68,24 +68,10 @@
                     </p>
                 </div>
 
-                {{-- Session Status --}}
-                @if (session('status'))
-                    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p class="text-sm text-green-600">{{ session('status') }}</p>
-                    </div>
-                @endif
-
-                {{-- Error Messages --}}
-                @if ($errors->any())
-                    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                        @foreach ($errors->all() as $error)
-                            <p class="text-sm text-red-600">{{ $error }}</p>
-                        @endforeach
-                    </div>
-                @endif
+                <x-sweetalert />
 
                 {{-- Form --}}
-                <form method="POST" action="{{ route('admin.verify-otp.post') }}" class="space-y-6">
+                <form method="POST" action="{{ route('admin.verify-otp.post') }}" class="space-y-6" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
 
                     {{-- OTP Inputs --}}
@@ -165,24 +151,10 @@
                 </p>
             </div>
 
-            {{-- Session Status --}}
-            @if (session('status'))
-                <div class="w-full mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p class="text-xs text-green-600">{{ session('status') }}</p>
-                </div>
-            @endif
+            
 
-            {{-- Error Messages --}}
-            @if ($errors->any())
-                <div class="w-full mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    @foreach ($errors->all() as $error)
-                        <p class="text-xs text-red-600">{{ $error }}</p>
-                    @endforeach
-                </div>
-            @endif
-
-            {{-- Form --}}
-            <form method="POST" action="{{ route('admin.verify-otp.post') }}" class="w-full space-y-5">
+                {{-- Form --}}
+            <form method="POST" action="{{ route('admin.verify-otp.post') }}" class="w-full space-y-5" x-data="{ isLoading: false }" @submit="isLoading = true">
                 @csrf
 
                 {{-- OTP Inputs --}}

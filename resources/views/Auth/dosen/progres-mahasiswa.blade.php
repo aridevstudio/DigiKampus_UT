@@ -35,7 +35,7 @@
 
     {{-- Filter Section --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-5 mb-6">
-        <form id="filterForm" method="GET" action="{{ route('dosen.progres') }}">
+        <form id="filterForm" method="GET" action="{{ route('dosen.progres') }}" x-data="{ isLoading: false }" @submit="isLoading = true">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">

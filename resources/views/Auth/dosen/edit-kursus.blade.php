@@ -22,7 +22,7 @@
                     <h2 class="text-lg font-bold text-gray-900 dark:text-white">Informasi Kursus</h2>
                 </div>
 
-                <form action="{{ route('dosen.kursus.update', $course->id_course) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('dosen.kursus.update', $course- x-data="{ isLoading: false }" @submit="isLoading = true">id_course) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     
@@ -217,7 +217,7 @@
                             @if($module->materials->count() === 0)
                                 <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-4">
                                     <h4 class="font-semibold text-blue-700 dark:text-blue-300 mb-3 text-base">Tambah Konten Awal</h4>
-                                    <form action="{{ route('dosen.material.store', $course->id_course) }}" method="POST" class="initial-content-form">
+                                    <form action="{{ route('dosen.material.store', $course- x-data="{ isLoading: false }" @submit="isLoading = true">id_course) }}" method="POST" class="initial-content-form">
                                         @csrf
                                         <input type="hidden" name="id_module" value="{{ $module->id_module }}">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
@@ -355,7 +355,7 @@
                 <button onclick="closeAddModuleModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-                <form action="{{ route('dosen.module.store', $course->id_course) }}" method="POST" class="p-6">
+                <form action="{{ route('dosen.module.store', $course- x-data="{ isLoading: false }" @submit="isLoading = true">id_course) }}" method="POST" class="p-6">
                     @csrf
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Modul Baru</h3>
                     <div class="space-y-4">
@@ -385,7 +385,7 @@
                 <button onclick="closeEditModuleModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-                <form id="editModuleForm" method="POST" class="p-6">
+                <form id="editModuleForm" method="POST" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     @method('PUT')
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Edit Modul</h3>
@@ -421,7 +421,7 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Semua materi dalam modul ini juga akan dihapus. Data tidak dapat dikembalikan.</p>
                     <div class="flex justify-center gap-3">
                         <button onclick="closeDeleteModuleModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Batal</button>
-                        <form id="deleteModuleForm" method="POST" class="inline">
+                        <form id="deleteModuleForm" method="POST" class="inline" x-data="{ isLoading: false }" @submit="isLoading = true">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition">Hapus Modul</button>
@@ -440,7 +440,7 @@
                 <button onclick="closeAddMaterialModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-                <form id="addMaterialForm" action="{{ route('dosen.material.store', $course->id_course) }}" method="POST" class="p-6" onsubmit="return handleAddMaterialSubmit(event)">
+                <form id="addMaterialForm" action="{{ route('dosen.material.store', $course- x-data="{ isLoading: false }" @submit="isLoading = true">id_course) }}" method="POST" class="p-6" onsubmit="return handleAddMaterialSubmit(event)">
                     @csrf
                     <input type="hidden" name="id_module" id="add_material_module_id">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Materi Baru</h3>
@@ -489,7 +489,7 @@
                 <button onclick="closeEditMaterialModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-                <form id="editMaterialForm" method="POST" class="p-6">
+                <form id="editMaterialForm" method="POST" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     @method('PUT')
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Edit Materi</h3>
@@ -543,7 +543,7 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Materi akan dihapus permanen.</p>
                     <div class="flex justify-center gap-3">
                         <button onclick="closeDeleteMaterialModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Batal</button>
-                        <form id="deleteMaterialForm" method="POST" class="inline">
+                        <form id="deleteMaterialForm" method="POST" class="inline" x-data="{ isLoading: false }" @submit="isLoading = true">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition">Hapus</button>
@@ -554,49 +554,9 @@
         </div>
     </div>
 
-    {{-- Validation Errors --}}
-    @if($errors->any())
-    <div id="validationAlert" class="fixed top-4 right-4 z-[60] max-w-md bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg">
-        <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div class="flex-1">
-                <p class="font-semibold text-sm mb-1">Data gagal disimpan:</p>
-                <ul class="text-xs space-y-0.5 list-disc list-inside">
-                    @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            <button onclick="this.closest('#validationAlert').remove()" class="ml-2 shrink-0">&times;</button>
-        </div>
-    </div>
-    <script>setTimeout(() => document.getElementById('validationAlert')?.remove(), 8000);</script>
-    @endif
+    
 
-    {{-- Success/Error Messages --}}
-    @if(session('success'))
-    <div id="successAlert" class="fixed top-4 right-4 z-[60] bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        {{ session('success') }}
-        <button onclick="this.parentElement.remove()" class="ml-2">&times;</button>
-    </div>
-    <script>setTimeout(() => document.getElementById('successAlert')?.remove(), 5000);</script>
-    @endif
-
-    @if(session('error'))
-    <div id="errorAlert" class="fixed top-4 right-4 z-[60] bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-        {{ session('error') }}
-        <button onclick="this.parentElement.remove()" class="ml-2">&times;</button>
-    </div>
-    <script>setTimeout(() => document.getElementById('errorAlert')?.remove(), 5000);</script>
-    @endif
+    
 
     @push('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>

@@ -71,11 +71,7 @@
 }" class="space-y-6">
 
     {{-- Flash Messages --}}
-    @if(session('success'))
-    <div class="p-4 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-xl text-sm animate-fade-in-up">
-        {{ session('success') }}
-    </div>
-    @endif
+    
 
     {{-- Header Section --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in-up">

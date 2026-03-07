@@ -14,7 +14,7 @@
             <p class="text-gray-500 dark:text-gray-400 mt-1">Buat tugas dan atur pengumpulan untuk mahasiswa</p>
         </div>
 
-        <form @submit.prevent="saveTugas">
+        <form @submit.prevent="saveTugas" x-data="{ isLoading: false }" @submit="isLoading = true">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {{-- Left Column - Form --}}
                 <div class="lg:col-span-2 space-y-6">

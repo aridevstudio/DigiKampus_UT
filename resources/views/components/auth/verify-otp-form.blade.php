@@ -33,24 +33,10 @@
                     </p>
                 </div>
 
-                {{-- Session Status --}}
-                @if (session('status'))
-                    <div class="w-full mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p class="text-xs sm:text-sm text-green-600">{{ session('status') }}</p>
-                    </div>
-                @endif
-
-                {{-- Error Messages --}}
-                @if ($errors->any())
-                    <div class="w-full mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
-                        @foreach ($errors->all() as $error)
-                            <p class="text-xs sm:text-sm text-red-600">{{ $error }}</p>
-                        @endforeach
-                    </div>
-                @endif
+                <x-sweetalert />
 
                 {{-- Form --}}
-                <form id="otp-form" method="POST" action="{{ route('mahasiswa.verify-otp.post') }}" class="w-full space-y-4 sm:space-y-6">
+                <form id="otp-form" method="POST" action="{{ route('mahasiswa.verify-otp.post') }}" class="w-full space-y-4 sm:space-y-6" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     
                     {{-- Hidden OTP field that will be populated by JS --}}
@@ -112,16 +98,16 @@
                     </div>
 
                     {{-- Submit Button --}}
-                    <button 
+                    <button :disabled="isLoading" 
                         type="submit"
                         id="submit-btn"
                         class="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-medium py-2.5 sm:py-3 px-4 rounded-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        <svg id="loading-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg x-show="isLoading" style="display: none;" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span id="btn-text">Verifikasi OTP</span>
+                        <span x-text="isLoading ? 'Memuat...' : 'Verifikasi OTP'"></span>
                     </button>
                 </form>
 

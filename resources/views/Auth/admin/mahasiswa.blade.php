@@ -54,7 +54,7 @@
     </div>
 
     {{-- Actions Bar --}}
-    <form method="GET" action="{{ route('admin.mahasiswa') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
+    <form method="GET" action="{{ route('admin.mahasiswa') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
         <div class="flex flex-wrap items-center gap-3">
             <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -287,7 +287,7 @@
                     </svg>
                 </button>
                 
-                <form action="{{ route('admin.mahasiswa.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
+                <form action="{{ route('admin.mahasiswa.store') }}" method="POST" enctype="multipart/form-data" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     <input type="hidden" name="_modal" value="add">
                     
@@ -424,7 +424,7 @@
                     </svg>
                 </button>
                 
-                <form id="editMahasiswaForm" method="POST" enctype="multipart/form-data" class="p-6">
+                <form id="editMahasiswaForm" method="POST" enctype="multipart/form-data" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="_modal" value="edit">
@@ -557,7 +557,7 @@
                         <button onclick="closeDeleteModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
                             Batal
                         </button>
-                        <form id="deleteMahasiswaForm" method="POST" class="inline">
+                        <form id="deleteMahasiswaForm" method="POST" class="inline" x-data="{ isLoading: false }" @submit="isLoading = true">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition">
@@ -640,49 +640,9 @@
         </div>
     </div>
 
-    {{-- Validation Errors --}}
-    @if($errors->any())
-    <div id="validationAlert" class="fixed top-4 right-4 z-[60] max-w-md bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg">
-        <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div class="flex-1">
-                <p class="font-semibold text-sm mb-1">Data gagal disimpan:</p>
-                <ul class="text-xs space-y-0.5 list-disc list-inside">
-                    @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            <button onclick="this.closest('#validationAlert').remove()" class="ml-2 shrink-0">&times;</button>
-        </div>
-    </div>
-    <script>setTimeout(() => document.getElementById('validationAlert')?.remove(), 8000);</script>
-    @endif
+    
 
-    {{-- Success/Error Messages --}}
-    @if(session('success'))
-    <div id="successAlert" class="fixed top-4 right-4 z-[60] bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        {{ session('success') }}
-        <button onclick="this.parentElement.remove()" class="ml-2">&times;</button>
-    </div>
-    <script>setTimeout(() => document.getElementById('successAlert')?.remove(), 5000);</script>
-    @endif
-
-    @if(session('error'))
-    <div id="errorAlert" class="fixed top-4 right-4 z-[60] bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-        {{ session('error') }}
-        <button onclick="this.parentElement.remove()" class="ml-2">&times;</button>
-    </div>
-    <script>setTimeout(() => document.getElementById('errorAlert')?.remove(), 5000);</script>
-    @endif
+    
 
     @push('scripts')
     <script>

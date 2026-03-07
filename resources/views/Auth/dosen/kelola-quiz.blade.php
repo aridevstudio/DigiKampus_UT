@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <form @submit.prevent="saveQuiz">
+        <form @submit.prevent="saveQuiz" x-data="{ isLoading: false }" @submit="isLoading = true">
             <div class="space-y-6">
                 {{-- Daftar Soal Kuis --}}
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">

@@ -136,7 +136,7 @@
 
                     {{-- Message Input --}}
                     <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-                        <form @submit.prevent="sendMessage" class="flex items-end gap-3">
+                        <form @submit.prevent="sendMessage" class="flex items-end gap-3" x-data="{ isLoading: false }" @submit="isLoading = true">
                             <div class="flex-1 relative">
                                 <textarea x-model="newMessage" 
                                           @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"

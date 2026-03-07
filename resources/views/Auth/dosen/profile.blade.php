@@ -6,25 +6,11 @@
     <p class="text-gray-500 dark:text-gray-400">Kelola informasi akun dan password Anda</p>
 </div>
 
-{{-- Success Message --}}
-@if(session('success'))
-<div class="mb-6 p-4 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl text-green-700 dark:text-green-400 text-sm">
-    {{ session('success') }}
-</div>
-@endif
 
-{{-- Error Messages --}}
-@if($errors->any())
-<div class="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-700 dark:text-red-400 text-sm">
-    <ul class="list-disc list-inside">
-        @foreach($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
 
-<form action="{{ route('dosen.profile.update') }}" method="POST" enctype="multipart/form-data">
+
+
+<form action="{{ route('dosen.profile.update') }}" method="POST" enctype="multipart/form-data" x-data="{ isLoading: false }" @submit="isLoading = true">
     @csrf
     @method('PUT')
 
