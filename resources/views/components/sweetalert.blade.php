@@ -1,37 +1,51 @@
 @if (session('status') || session('success') || session('error') || session('alert') || session('info') || $errors->any())
 <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
+        const tailwindButtonClass = 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors';
+
         @if (session('status') || session('success'))
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil',
                 text: '{{ session('status') ?? session('success') }}',
-                confirmButtonColor: '#3B9BD9',
-                customClass: { container: 'font-inter' }
+                buttonsStyling: false,
+                customClass: { 
+                    container: 'font-inter',
+                    confirmButton: tailwindButtonClass
+                }
             });
         @elseif (session('error'))
             Swal.fire({
                 icon: 'error',
                 title: 'Terjadi Kesalahan',
                 text: '{{ session('error') }}',
-                confirmButtonColor: '#3B9BD9',
-                customClass: { container: 'font-inter' }
+                buttonsStyling: false,
+                customClass: { 
+                    container: 'font-inter',
+                    confirmButton: tailwindButtonClass
+                }
             });
         @elseif (session('alert'))
             Swal.fire({
                 icon: 'warning',
                 title: 'Perhatian',
                 text: '{{ session('alert') }}',
-                confirmButtonColor: '#3B9BD9',
-                customClass: { container: 'font-inter' }
+                buttonsStyling: false,
+                customClass: { 
+                    container: 'font-inter',
+                    confirmButton: tailwindButtonClass
+                }
             });
         @elseif (session('info'))
             Swal.fire({
                 icon: 'info',
                 title: 'Informasi',
                 text: '{{ session('info') }}',
-                confirmButtonColor: '#3B9BD9',
-                customClass: { container: 'font-inter' }
+                buttonsStyling: false,
+                customClass: { 
+                    container: 'font-inter',
+                    confirmButton: tailwindButtonClass
+                }
             });
         @elseif ($errors->any())
             Swal.fire({
@@ -44,8 +58,11 @@
                         @endforeach
                     </ul>
                 `,
-                confirmButtonColor: '#3B9BD9',
-                customClass: { container: 'font-inter' }
+                buttonsStyling: false,
+                customClass: { 
+                    container: 'font-inter',
+                    confirmButton: tailwindButtonClass
+                }
             });
         @endif
     });
