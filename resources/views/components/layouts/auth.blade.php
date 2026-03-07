@@ -7,7 +7,7 @@
     <title>{{ $title ?? 'Login DigiKampus UT' }}</title>
     <link rel="stylesheet" href="{{ asset('assets/css/globalFont.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700&display=swap" rel="stylesheet">
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body>
