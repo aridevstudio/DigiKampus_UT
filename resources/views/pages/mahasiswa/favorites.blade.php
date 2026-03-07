@@ -22,55 +22,66 @@
         @php $course = $favorite->course; @endphp
         @continue(!$course) {{-- Skip if course has been deleted --}}
         
-        <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden hover:shadow-lg transition animate-fade-in-up">
-            {{-- Course Image --}}
-            <div class="relative aspect-video">
-                <img src="{{ $course->thumbnail ? asset('storage/' . $course->thumbnail) : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop' }}" 
+        <div class="bg-white dark:bg-[#1f2937] rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
+            {{-- Course Image & Badge --}}
+            <div class="relative h-48 sm:h-52 w-full overflow-hidden">
+                <img src="{{ $course->thumbnail ? asset('storage/' . $course->thumbnail) : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop' }}" 
                      alt="{{ $course->nama_course }}" 
-                     class="w-full h-full object-cover">
-                <span class="absolute top-3 right-3 bg-rose-50 text-rose-500 font-semibold px-3 py-1 rounded-full text-xs flex items-center shadow-sm">
-                    <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                
+                {{-- Floating Favorit Badge --}}
+                <div class="absolute top-4 right-4 bg-rose-50 text-rose-500 font-semibold px-3 py-1.5 rounded-full text-xs flex items-center shadow-sm">
+                    <svg class="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
                     </svg>
                     Favorit
-                </span>
+                </div>
             </div>
             
-            {{-- Course Info --}}
-            <div class="p-5 flex flex-col h-[calc(100%-12rem)]">
-                <h3 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] mb-2 line-clamp-2 leading-snug">{{ $course->nama_course }}</h3>
-                <p class="text-gray-500 dark:text-gray-400 text-[13px] mb-3 line-clamp-2 leading-relaxed">{{ $course->deskripsi ?? 'Tidak ada deskripsi tersedia' }}</p>
+            {{-- Course Details --}}
+            <div class="p-5 flex flex-col flex-grow">
+                {{-- Title & Desc --}}
+                <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base mb-1.5 line-clamp-1" title="{{ $course->nama_course }}">
+                    {{ $course->nama_course }}
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mb-4 line-clamp-1" title="{{ $course->deskripsi ?? 'Tidak ada deskripsi' }}">
+                    {{ $course->deskripsi ?? 'Tidak ada deskripsi tersedia' }}
+                </p>
                 
                 {{-- Instructor --}}
-                <div class="flex items-center gap-2 mb-4 text-xs text-gray-500 dark:text-gray-400">
+                <div class="flex items-center gap-2 mb-6 text-sm text-gray-500 dark:text-gray-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     <span class="truncate">{{ $course->dosen->name ?? 'Instructor' }}</span>
                 </div>
                 
+                {{-- Price & Actions --}}
                 <div class="mt-auto">
-                    {{-- Price --}}
+                    {{-- Price Text --}}
                     <div class="mb-4">
                         @if($course->harga == 0)
                         <span class="text-green-500 font-bold text-lg">Gratis</span>
                         @else
-                        <span class="text-blue-600 dark:text-blue-400 font-bold text-lg">Rp {{ number_format($course->harga, 0, ',', '.') }}</span>
+                        <span class="text-blue-500 dark:text-blue-400 font-bold text-lg">Rp {{ number_format($course->harga, 0, ',', '.') }}</span>
                         @endif
                     </div>
                     
-                    {{-- Action Buttons --}}
-                    <div class="flex items-center gap-2">
+                    {{-- Button Row --}}
+                    <div class="flex items-center gap-3">
+                        {{-- View Detail Button --}}
                         <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" 
-                           class="flex-1 text-center bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-xl font-semibold transition text-[13px] shadow-sm">
+                           class="flex-1 text-center bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-xl font-semibold transition text-sm shadow-sm flex items-center justify-center">
                             Lihat Detail
                         </a>
-                        <form action="{{ route('mahasiswa.favorite.remove', $course->id_course) }}" method="POST">
+                        
+                        {{-- Delete Button --}}
+                        <form action="{{ route('mahasiswa.favorite.remove', $course->id_course) }}" method="POST" class="flex-shrink-0">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="p-2.5 border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 text-gray-500 hover:text-red-500 hover:border-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm" title="Hapus dari Favorit">
+                            <button type="submit" class="p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:text-rose-500 hover:border-rose-200 dark:hover:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500" title="Hapus dari Favorit">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                             </button>
                         </form>
