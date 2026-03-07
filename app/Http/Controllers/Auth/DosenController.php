@@ -30,15 +30,6 @@ class DosenController extends Controller
     }
 
     /**
-     * Show registration form
-     */
-    public function showRegisterForm()
-    {
-        $jurusans = \App\Models\Jurusan::orderBy('nama_jurusan')->get();
-        return view('Auth.dosen.register', compact('jurusans'));
-    }
-
-    /**
      * Handle registration
      */
     public function register(Request $request)
@@ -119,61 +110,6 @@ class DosenController extends Controller
 
         return redirect()->route('dosen.dashboard')
             ->with('status', 'Login berhasil. Selamat datang!');
-    }
-
-    /**
-     * Redirect to Google OAuth
-     */
-    public function redirectToGoogle()
-    {
-        return Socialite::driver('google')->redirect();
-    }
-
-    /**
-     * Handle Google OAuth callback
-     */
-    public function handleGoogleCallback()
-    {
-        try {
-            $googleUser = Socialite::driver('google')->user();
-            
-            $user = User::where('email', $googleUser->getEmail())
-                ->where('role', 'dosen')
-                ->first();
-
-            if (!$user) {
-                return redirect()->route('dosen.register')
-                    ->withInput([
-                        'name' => $googleUser->getName(),
-                        'email' => $googleUser->getEmail()
-                    ])
-                    ->with('google_id', $googleUser->getId())
-                    ->with('alert', 'Akun Anda belum terdaftar. Silakan lengkapi form pendaftaran.');
-            }
-
-            if ($user->status === 'pending') {
-                return redirect()->route('dosen.login')
-                    ->with('alert', 'Akun Anda sedang menunggu persetujuan admin.');
-            } elseif ($user->status !== 'aktif') {
-                return redirect()->route('dosen.login')
-                    ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi admin.');
-            }
-
-            // Update google_id if not set
-            if (!$user->google_id) {
-                $user->google_id = $googleUser->getId();
-                $user->save();
-            }
-
-            Auth::guard('dosen')->login($user, true);
-
-            return redirect()->route('dosen.dashboard')
-                ->with('status', 'Login dengan Google berhasil. Selamat datang!');
-
-        } catch (\Exception $e) {
-            return redirect()->route('dosen.login')
-                ->with('alert', 'Gagal login dengan Google. Silakan coba lagi.');
-        }
     }
 
     /**

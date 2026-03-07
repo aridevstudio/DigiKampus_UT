@@ -27,14 +27,6 @@ Route::prefix('dosen')
         Route::get('/login', [DosenController::class, 'showLoginForm'])->name('dosen.login');
         Route::post('/login', [DosenController::class, 'login'])->name('dosen.login.post');
         
-        // Registration
-        Route::get('/register', [DosenController::class, 'showRegisterForm'])->name('dosen.register');
-        Route::post('/register', [DosenController::class, 'register'])->name('dosen.register.post');
-        
-        // Google OAuth
-        Route::get('/auth/google', [DosenController::class, 'redirectToGoogle'])->name('dosen.google.redirect');
-        Route::get('/auth/google/callback', [DosenController::class, 'handleGoogleCallback'])->name('dosen.google.callback');
-        
         // Password Reset Flow
         Route::get('/forgot-password', [DosenController::class, 'showForgotPasswordForm'])->name('dosen.forgot-password');
         Route::post('/forgot-password', [DosenController::class, 'sendForgotPasswordOtp'])->name('dosen.forgot-password.post');
