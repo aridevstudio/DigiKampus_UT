@@ -6,7 +6,7 @@
         <div class="hidden lg:flex flex-1 justify-center items-center">
             <img 
                 src="{{ asset('assets/image/auth/Ilustrasi Survey Forget Password.png') }}" 
-                alt="Verify OTP Illustration" 
+                alt="Verifikasi OTP Illustration" 
                 class="w-full max-w-sm xl:max-w-md 2xl:max-w-lg object-contain"
             >
         </div>
@@ -15,7 +15,7 @@
         <div class="lg:hidden w-full flex justify-center mb-4">
             <img 
                 src="{{ asset('assets/image/auth/Ilustrasi Survey Forget Password.png') }}" 
-                alt="Verify OTP Illustration" 
+                alt="Verifikasi OTP Illustration" 
                 class="w-48 sm:w-64 md:w-80 object-contain"
             >
         </div>
@@ -127,7 +127,7 @@
 
                 {{-- Footer --}}
                 <div class="mt-6 sm:mt-8 text-center text-[10px] sm:text-xs text-gray-400">
-                    <a href="javascript:void(0)" class="hover:underline">Privacy Policy</a> • 2025 © Universitas Terbuka
+                    <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a> • 2025 © Universitas Terbuka
                 </div>
             </div>
         </div>
@@ -182,7 +182,7 @@
         const btnText = document.getElementById('btn-text');
         btn.disabled = true;
         spinner.classList.remove('hidden');
-        btnText.textContent = 'Loading...';
+        btnText.textContent = 'Memuat...';
     });
 
     // Countdown Timer (5 minutes to match backend expiry)
