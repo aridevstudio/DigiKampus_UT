@@ -6,7 +6,7 @@
     <title>DigiKampus UT — Platform Pembelajaran Digital</title>
     <meta name="description" content="Platform pembelajaran digital untuk Universitas Terbuka. Akses kursus, tugas, ujian, dan sertifikat — semua di satu tempat.">
     <link rel="stylesheet" href="{{ asset('assets/css/globalFont.css') }}">
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -375,10 +375,17 @@
                 <a href="#portal" style="font-size:14px;color:var(--c-text-muted);text-decoration:none;font-weight:500;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Portal</a>
                 <a href="#testimoni" style="font-size:14px;color:var(--c-text-muted);text-decoration:none;font-weight:500;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Testimoni</a>
             </div>
-            <a href="{{ route('mahasiswa.login') }}" class="btn-primary" style="padding:9px 20px;font-size:13px;border-radius:10px">
-                Masuk
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/></svg>
-            </a>
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" @click.away="open = false" class="btn-primary" style="padding:9px 20px;font-size:13px;border-radius:10px; display:inline-flex; align-items:center; gap:6px;">
+                    Masuk
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" :class="{'rotate-180': open}" style="transition: transform 0.2s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                </button>
+                <div x-show="open" x-transition.opacity.scale.95 style="display: none;" class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
+                    <a href="{{ route('mahasiswa.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Mahasiswa</a>
+                    <a href="{{ route('dosen.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Dosen</a>
+                    <a href="{{ route('admin.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Admin</a>
+                </div>
+            </div>
         </div>
     </nav>
 

@@ -16,14 +16,21 @@
             <a href="/#portal" class="text-sm text-gray-500 hover:text-blue-500 transition-colors duration-200" style="text-decoration:none;font-weight:500">Portal</a>
         </div>
         @if($loginRoute)
-        <a href="{{ $loginRoute }}" class="inline-flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md" style="text-decoration:none">
-            Masuk
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/></svg>
-        </a>
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" class="inline-flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md" style="text-decoration:none">
+                Masuk
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" :class="{'rotate-180': open}" class="transition-transform duration-200"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+            </button>
+            <div x-show="open" x-transition.opacity.scale.95 style="display: none;" class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
+                <a href="{{ route('mahasiswa.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Mahasiswa</a>
+                <a href="{{ route('dosen.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Dosen</a>
+                <a href="{{ route('admin.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Admin</a>
+            </div>
+        </div>
         @else
         <a href="/" class="inline-flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md" style="text-decoration:none">
             Beranda
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18m-9-9l9 9-9 9"/></svg>
         </a>
         @endif
     </div>
