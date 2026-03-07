@@ -388,7 +388,7 @@ class CourseController extends Controller
         
         $favorites = \App\Models\Favorite::with(['course', 'course.dosen'])
             ->whereHas('course', function ($query) {
-                $query->where('status', 'publish'); // Asumsi hanya menampilkan kursus yang di-publish
+                $query->where('status', 'aktif'); // Kursus menggunakan status 'aktif'
             })
             ->where('id_mahasiswa', $user->id)
             ->latest()
