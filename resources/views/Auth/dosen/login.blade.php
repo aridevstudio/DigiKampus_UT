@@ -48,7 +48,7 @@
                     </p>
                 </div>
 
-                <x-auth.sweetalert />
+                <x-sweetalert />
 
                 {{-- Login Form --}}
                 <form method="POST" action="{{ route('dosen.login.post') }}" class="space-y-4" x-data="{ isLoading: false }" @submit="isLoading = true">

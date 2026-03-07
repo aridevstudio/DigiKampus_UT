@@ -18,7 +18,7 @@
                     </p>
                 </div>
 
-                <x-auth.sweetalert />
+                <x-sweetalert />
 
                 {{-- Form --}}
                 <form method="POST" action="{{ route('mahasiswa.post') }}" class="w-full space-y-4 sm:space-y-5" x-data="{ isLoading: false }" @submit="isLoading = true">

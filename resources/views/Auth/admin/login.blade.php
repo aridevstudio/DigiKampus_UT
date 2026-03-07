@@ -48,7 +48,7 @@
                     </p>
                 </div>
 
-                <x-auth.sweetalert />
+                <x-sweetalert />
 
                 {{-- Login Form --}}
                 <form method="POST" action="{{ route('admin.login.post') }}" class="space-y-5" x-data="{ isLoading: false }" @submit="isLoading = true">
