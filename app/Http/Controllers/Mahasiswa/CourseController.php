@@ -147,6 +147,10 @@ class CourseController extends Controller
             ->pluck('count', 'kategori')
             ->toArray();
         
+        // Get recommended courses (courses user hasn't enrolled in)
+        $enrolledCourseIds = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->pluck('id_course');
+
         // Get user's active juridiction/ major to provide contextually-accurate recommendations.
         $userJurusanId = $user->profile->id_jurusan ?? null;
         
