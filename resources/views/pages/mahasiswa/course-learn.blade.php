@@ -286,6 +286,49 @@
                 </form>
                 @endif
             </div>
+
+            {{-- Dropdown Pre-test / Kuis Modul Ini --}}
+            @if($currentMaterial && isset($modules[$currentModuleIndex]) && !empty($modules[$currentModuleIndex]['quiz']))
+            <div class="mt-6 border border-gray-200 dark:border-gray-700/50 rounded-2xl overflow-hidden bg-white dark:bg-[#1f2937] shadow-sm">
+                <button onclick="togglePretest()" class="w-full flex items-center justify-between p-4 focus:outline-none hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center flex-shrink-0 text-yellow-600 dark:text-yellow-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base">Pre-test / Kuis Modul Ini</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Tutup video dan kerjakan pre-test untuk mengevaluasi pemahaman Anda.</p>
+                        </div>
+                    </div>
+                    <svg id="pretest-arrow" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                
+                <div id="pretest-content" class="hidden border-t border-gray-200 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/50 p-6">
+                    <div class="flex flex-col md:flex-row gap-6 items-center justify-between">
+                        <div>
+                            <h4 class="font-semibold text-gray-800 dark:text-gray-100 mb-1">{{ $modules[$currentModuleIndex]['quiz']['title'] ?? 'Pre-test / Kuis Akhir' }}</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Selesaikan kuis ini untuk memvalidasi pengetahuan Anda tentang materi di modul ini. Durasi pengerjaan: {{ $modules[$currentModuleIndex]['quiz']['duration'] ?? 30 }} menit.</p>
+                            
+                            @if($modules[$currentModuleIndex]['quiz_completed'] ?? false)
+                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-full">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                Sudah Dikerjakan
+                            </span>
+                            @endif
+                        </div>
+                        <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $modules[$currentModuleIndex]['quiz']['id']]) }}" class="flex-shrink-0 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-xl transition shadow-sm">
+                            Mulai Pre-test Sekarang
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
     
@@ -359,6 +402,14 @@
     function toggleModule(index) {
         const content = document.getElementById('module-' + index);
         const arrow = document.querySelector('.module-arrow-' + index);
+        
+        content.classList.toggle('hidden');
+        if (arrow) arrow.classList.toggle('rotate-180');
+    }
+    
+    function togglePretest() {
+        const content = document.getElementById('pretest-content');
+        const arrow = document.getElementById('pretest-arrow');
         
         content.classList.toggle('hidden');
         if (arrow) arrow.classList.toggle('rotate-180');
