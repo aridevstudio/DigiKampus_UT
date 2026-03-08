@@ -147,15 +147,31 @@ class CourseController extends Controller
             ->pluck('count', 'kategori')
             ->toArray();
         
-        // Get recommended courses (courses user hasn't enrolled in)
-        $enrolledCourseIds = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
-            ->pluck('id_course');
+        // Get user's active juridiction/ major to provide contextually-accurate recommendations.
+        $userJurusanId = $user->profile->id_jurusan ?? null;
+        
         $recommendedCourses = Course::with(['dosen'])
             ->whereNotIn('id_course', $enrolledCourseIds)
             ->aktif()
+            ->when($userJurusanId, function ($query) use ($userJurusanId) {
+                return $query->where('id_jurusan', $userJurusanId);
+            })
             ->orderBy('rating', 'desc')
             ->limit(3)
             ->get();
+            
+        // If we didn't find enough recommendations for their specific major, backfill with highly-rated courses
+        if ($recommendedCourses->count() < 3) {
+            $existingIds = $recommendedCourses->pluck('id_course')->merge($enrolledCourseIds);
+            $backfill = Course::with(['dosen'])
+                ->whereNotIn('id_course', $existingIds)
+                ->aktif()
+                ->orderBy('rating', 'desc')
+                ->limit(3 - $recommendedCourses->count())
+                ->get();
+                
+            $recommendedCourses = $recommendedCourses->merge($backfill);
+        }
         
         // Weekly target (simple calculation)
         $weeklyTarget = [
