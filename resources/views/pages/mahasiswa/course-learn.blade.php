@@ -343,28 +343,189 @@
             </div>
             
             {{-- Diskusi Tab --}}
-            <div id="tab-diskusi" class="tab-content p-4">
-                <div class="space-y-4" style="max-height: 300px; overflow-y: auto;">
-                    <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">
-                        Belum ada diskusi untuk materi ini.
-                    </p>
+            <div id="tab-diskusi" class="tab-content" x-data="{
+                newComment: '',
+                comments: [
+                    { id: 1, name: 'Budi Santoso', role: 'Mahasiswa', text: 'Permisi Pak/Bu, saya kurang paham di menit ke 4:20 mengenai variabel scope. Apakah variabel di dalam function tidak bisa diakses dari luar sama sekali?', time: '2 jam yang lalu', avatar: 'https://ui-avatars.com/api/?name=Budi+Santoso&background=random' },
+                    { id: 2, name: 'Dosen DigiKampus', role: 'Pengajar', text: 'Benar sekali Budi. Variabel yang dideklarasikan di dalam fungsi (local scope) hanya hidup selama fungsi tersebut dieksekusi. Ia tidak bisa diakses dari luar fungsi tersebut secara langsung.', time: '1 jam yang lalu', avatar: 'https://ui-avatars.com/api/?name=Dosen+DigiKampus&background=4F46E5&color=fff' }
+                ],
+                postComment() {
+                    if(this.newComment.trim() === '') return;
+                    this.comments.push({
+                        id: Date.now(),
+                        name: 'Anda (Mahasiswa)',
+                        role: 'Mahasiswa',
+                        text: this.newComment,
+                        time: 'Baru saja',
+                        avatar: 'https://ui-avatars.com/api/?name=Mahasiswa&background=0D9488&color=fff'
+                    });
+                    this.newComment = '';
+                    // Scroll to bottom
+                    setTimeout(() => {
+                        const container = document.getElementById('diskusi-container');
+                        container.scrollTop = container.scrollHeight;
+                    }, 50);
+                }
+            }">
+                {{-- Messages Container --}}
+                <div id="diskusi-container" class="p-4 space-y-5" style="height: 400px; overflow-y: auto;">
+                    <template x-for="comment in comments" :key="comment.id">
+                        <div class="flex gap-3">
+                            <img :src="comment.avatar" :alt="comment.name" class="w-8 h-8 rounded-full flex-shrink-0 object-cover border border-gray-200 dark:border-gray-700">
+                            <div class="flex-1">
+                                <div class="flex items-baseline justify-between mb-1">
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100" x-text="comment.name"></h4>
+                                        <span x-show="comment.role === 'Pengajar'" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-bold rounded">Pengajar</span>
+                                    </div>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500" x-text="comment.time"></span>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-800/60 rounded-r-xl rounded-bl-xl p-3 border border-gray-100 dark:border-gray-700/50">
+                                    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" x-text="comment.text"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <template x-if="comments.length === 0">
+                        <div class="flex flex-col items-center justify-center h-full text-center space-y-3">
+                            <div class="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Belum ada diskusi</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mulai percakapan atau tanyakan sesuatu</p>
+                            </div>
+                        </div>
+                    </template>
                 </div>
                 
                 {{-- Comment Input --}}
-                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700/50">
-                    <textarea placeholder="Tulis komentar Anda..." rows="2" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-[#111827] text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"></textarea>
-                    <button class="mt-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium text-sm transition">Kirim</button>
+                <div class="p-4 border-t border-gray-200 dark:border-gray-700/50 bg-white dark:bg-[#1f2937]">
+                    <textarea 
+                        x-model="newComment"
+                        @keydown.enter.prevent="postComment()"
+                        placeholder="Tulis pertanyaan atau komentar Anda... (Enter untuk kirim)" 
+                        rows="2" 
+                        class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-[#111827] text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none transition-all"></textarea>
+                    <div class="mt-3 flex justify-between items-center">
+                        <span class="text-[11px] text-gray-400"><span class="font-semibold">Bantuan:</span> Tekan Enter untuk mengirim</span>
+                        <button 
+                            @click="postComment()" 
+                            :disabled="newComment.trim() === ''"
+                            class="px-5 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2">
+                            Kirim
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
             
             {{-- Catatan Tab --}}
-            <div id="tab-catatan" class="tab-content hidden p-4">
-                <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Fitur catatan akan segera hadir</p>
+            <div id="tab-catatan" class="tab-content hidden" x-data="{
+                saving: false,
+                isSaved: true,
+                noteText: 'Mempelajari cara kerja React hooks.\n- useState: menyimpan data.\n- useEffect: menjalankan *side effect* saat nilai berubah.',
+                instructorNote: 'Perhatikan baik-baik di bagian useEffect dependencies agar tidak terjadi infinite loop rendering.',
+                
+                saveNote() {
+                    if (this.noteText.trim() === '') return;
+                    this.saving = true;
+                    this.isSaved = false;
+                    
+                    // Simulate API Call delay
+                    setTimeout(() => {
+                        this.saving = false;
+                        this.isSaved = true;
+                    }, 800);
+                }
+            }">
+                <div class="h-[400px] overflow-y-auto w-full flex flex-col">
+                    
+                    {{-- Dosen Pinned Note (If Exists) --}}
+                    <template x-if="instructorNote">
+                        <div class="p-4 border-b border-yellow-200 dark:border-yellow-900/50 bg-yellow-50/50 dark:bg-yellow-500/5">
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg class="w-4 h-4 text-yellow-600 dark:text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                                <span class="text-xs font-bold text-yellow-800 dark:text-yellow-400 uppercase tracking-widest">Catatan Dosen</span>
+                            </div>
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200/80 leading-relaxed italic" x-text="instructorNote"></p>
+                        </div>
+                    </template>
+                    
+                    {{-- Personal Notes Editor --}}
+                    <div class="p-4 flex-1 flex flex-col relative">
+                        <div class="flex items-center justify-between mb-3 text-sm">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-200">Catatan Pribadi</h4>
+                            
+                            {{-- Save State Indicators --}}
+                            <div class="flex items-center gap-1.5 text-xs font-medium">
+                                <span x-show="saving" x-transition class="text-blue-500 flex items-center gap-1">
+                                    <svg class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    Menyimpan...
+                                </span>
+                                <span x-show="isSaved && !saving" x-transition class="text-green-500 flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Tersimpan
+                                </span>
+                                <span x-show="!isSaved && !saving" x-transition class="text-gray-400">Belum Disimpan</span>
+                            </div>
+                        </div>
+
+                        <textarea 
+                            x-model="noteText"
+                            @input="isSaved = false"
+                            class="w-full h-full flex-1 min-h-[220px] bg-transparent border-0 resize-none text-sm text-gray-700 dark:text-gray-300 leading-relaxed focus:ring-0 p-0 placeholder-gray-400"
+                            placeholder="Ketik catatan pribadi Anda di sini... Catatan ini hanya bisa dilihat oleh Anda."
+                        ></textarea>
+                    </div>
+                </div>
+                
+                {{-- Floating Action Bar --}}
+                <div class="p-4 border-t border-gray-200 dark:border-gray-700/50 bg-white dark:bg-[#1f2937]">
+                    <button 
+                        @click="saveNote()" 
+                        :disabled="saving || isSaved || noteText.trim() === ''"
+                        class="w-full py-2.5 bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium text-sm transition-all"
+                        >
+                        <span x-text="saving ? 'Menyimpan...' : 'Simpan Catatan'"></span>
+                    </button>
+                    <p class="text-[11px] text-gray-400 text-center mt-3">Teks mendukung Markdown sederhana.</p>
+                </div>
             </div>
             
             {{-- Favorit Tab --}}
             <div id="tab-favorit" class="tab-content hidden p-4">
-                <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Belum ada materi favorit</p>
+                <div class="h-[400px] flex flex-col items-center justify-center text-center px-4">
+                    <div class="w-16 h-16 bg-rose-50 dark:bg-rose-900/20 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                    </div>
+                    <h4 class="font-bold text-gray-800 dark:text-gray-100 mb-1">Materi Favoritmu</h4>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
+                        Anda dapat menandai materi-materi penting dalam kursus ini agar lebih mudah dicari nanti.
+                    </p>
+                    
+                    <form action="{{ route('mahasiswa.favorite.add') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="id_course" value="{{ $course->id_course }}">
+                        <button type="submit" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-sm font-medium transition-colors">
+                            Favoritkan Kursus Ini
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
