@@ -267,6 +267,24 @@
                         </button>
                         {{-- Module Content (hidden by default) --}}
                         <div class="module-content hidden border-t border-gray-200 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/30">
+                            @if(count($module['contents']) > 20)
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4">
+                                @foreach($module['contents'] as $index => $content)
+                                <div class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center gap-2 transition hover:border-blue-300">
+                                    @if($content['type'] === 'video')
+                                    <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg></div>
+                                    @elseif($content['type'] === 'document')
+                                    <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
+                                    @elseif($content['type'] === 'quiz')
+                                    <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                    @else
+                                    <div class="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg></div>
+                                    @endif
+                                    <p class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2" title="{{ $content['title'] }}"><span class="font-bold mr-1">{{ $index + 1 }}.</span> {{ $content['title'] }}</p>
+                                </div>
+                                @endforeach
+                            </div>
+                            @else
                             @foreach($module['contents'] as $content)
                             <div class="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
                                 @if($content['type'] === 'video')
@@ -302,6 +320,7 @@
                                 @endif
                             </div>
                             @endforeach
+                            @endif
                         </div>
                     </div>
                     @endforeach
@@ -400,6 +419,31 @@
                         
                         {{-- Module Content Items --}}
                         <div class="divide-y divide-gray-200 dark:divide-gray-700/50">
+                            @if(count($module['contents']) > 20)
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
+                                @foreach($module['contents'] as $index => $content)
+                                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center gap-2 hover:shadow-sm transition">
+                                    @if($content['type'] === 'video')
+                                    <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg></div>
+                                    @elseif($content['type'] === 'document')
+                                    <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
+                                    @elseif($content['type'] === 'quiz')
+                                    <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                    @else
+                                    <div class="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg></div>
+                                    @endif
+                                    
+                                    <div class="flex-1 min-w-0 w-full mt-1">
+                                        <p class="text-xs font-medium text-gray-800 dark:text-gray-100 line-clamp-2" title="{{ $content['title'] }}">{{ $index + 1 }}. {{ $content['title'] }}</p>
+                                    </div>
+                                    
+                                    @if($content['duration'])
+                                    <span class="text-[10px] text-gray-400 flex-shrink-0 mt-auto">{{ $content['duration'] }}</span>
+                                    @endif
+                                </div>
+                                @endforeach
+                            </div>
+                            @else
                             @foreach($module['contents'] as $contentIndex => $content)
                             <div class="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
                                 {{-- Content Type Icon --}}
@@ -446,6 +490,7 @@
                                 </svg>
                             </div>
                             @endforeach
+                            @endif
                         </div>
                     </div>
                     @endforeach

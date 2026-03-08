@@ -58,53 +58,86 @@
                     
                     {{-- Materials List --}}
                     <div id="module-{{ $moduleIndex }}" class="{{ $loop->first ? '' : 'hidden' }} border-t border-gray-200 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/30">
-                        @foreach($module['materials'] as $material)
-                        <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $material['id']]) }}" 
-                           class="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition border-b border-gray-200 dark:border-gray-700/50 last:border-b-0 {{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'bg-blue-50 dark:bg-blue-500/10' : '' }}" style="{{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'border-left: 4px solid #3b82f6;' : '' }}">
-                            
-                            {{-- Status Icon --}}
-                            @if($material['is_completed'])
-                            <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
+                        @if(count($module['materials']) > 20)
+                            {{-- Compact 4-Column Grid for >20 materials --}}
+                            <div class="grid grid-cols-4 gap-2 p-3">
+                                @foreach($module['materials'] as $index => $material)
+                                <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $material['id']]) }}" 
+                                   title="{{ $material['title'] }}"
+                                   class="relative aspect-square flex flex-col items-center justify-center rounded-xl border transition-all hover:scale-105 {{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300' }}">
+                                    
+                                    <span class="text-xs font-bold {{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                                        {{ $index + 1 }}
+                                    </span>
+                                    
+                                    @if($material['is_completed'])
+                                    <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center border-2 border-white dark:border-gray-800">
+                                        <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                    @endif
+                                </a>
+                                @endforeach
                             </div>
-                            @elseif($currentMaterial && $currentMaterial['id'] == $material['id'])
-                            <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            @else
-                            <div class="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </div>
-                            @endif
-                            
-                            {{-- Material Info --}}
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm {{ $material['is_completed'] ? 'text-gray-500' : 'text-gray-800 dark:text-gray-100' }} truncate">{{ $material['title'] }}</p>
-                                <p class="text-xs {{ $material['is_completed'] ? 'text-green-500' : ($currentMaterial && $currentMaterial['id'] == $material['id'] ? 'text-blue-500' : 'text-gray-400') }}">
-                                    {{ $material['is_completed'] ? 'Selesai' : ($currentMaterial && $currentMaterial['id'] == $material['id'] ? 'Sedang berlangsung' : '') }}
-                                </p>
-                            </div>
-                        </a>
-                        @endforeach
+                        @else
+                            {{-- Standard List View --}}
+                            @foreach($module['materials'] as $material)
+                            <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $material['id']]) }}" 
+                               class="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition border-b border-gray-200 dark:border-gray-700/50 last:border-b-0 {{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'bg-blue-50 dark:bg-blue-500/10' : '' }}" style="{{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'border-left: 4px solid #3b82f6;' : '' }}">
+                                
+                                {{-- Status Icon --}}
+                                @if($material['is_completed'])
+                                <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                @elseif($currentMaterial && $currentMaterial['id'] == $material['id'])
+                                <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                @else
+                                <div class="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                @endif
+                                
+                                {{-- Material Info --}}
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm {{ $material['is_completed'] ? 'text-gray-500' : 'text-gray-800 dark:text-gray-100' }} truncate">{{ $material['title'] }}</p>
+                                    <p class="text-xs {{ $material['is_completed'] ? 'text-green-500' : ($currentMaterial && $currentMaterial['id'] == $material['id'] ? 'text-blue-500' : 'text-gray-400') }}">
+                                        {{ $material['is_completed'] ? 'Selesai' : ($currentMaterial && $currentMaterial['id'] == $material['id'] ? 'Sedang berlangsung' : '') }}
+                                    </p>
+                                </div>
+                            </a>
+                            @endforeach
+                        @endif
                         
                         {{-- Quiz Link --}}
                         @if(!empty($module['quiz']))
                         <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $module['quiz']['id']]) }}" 
                            class="flex items-center gap-3 p-3 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition bg-yellow-50/50 dark:bg-yellow-500/5 border-t border-yellow-200 dark:border-yellow-700/30">
-                            <div class="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                            <div class="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0 relative">
                                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                 </svg>
+                                @if($module['quiz_completed'] ?? false)
+                                <div class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 flex items-center justify-center border border-white dark:border-gray-800">
+                                </div>
+                                @endif
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-yellow-700 dark:text-yellow-400">{{ $module['quiz']['title'] ?? 'Kuis Akhir Modul' }}</p>
-                                <p class="text-xs text-yellow-600 dark:text-yellow-500">Durasi: {{ $module['quiz']['duration'] ?? 30 }} menit</p>
+                                <p class="text-xs text-yellow-600 dark:text-yellow-500">
+                                    @if($module['quiz_completed'] ?? false)
+                                        Selesai
+                                    @else
+                                        Durasi: {{ $module['quiz']['duration'] ?? 30 }} menit
+                                    @endif
+                                </p>
                             </div>
                             <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -116,14 +149,24 @@
                         @if(!empty($module['assignment']))
                         <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $module['assignment']['id']]) }}" 
                            class="flex items-center gap-3 p-3 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition bg-orange-50/50 dark:bg-orange-500/5 border-t border-orange-200 dark:border-orange-700/30">
-                            <div class="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                            <div class="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0 relative">
                                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
+                                @if($module['assignment_completed'] ?? false)
+                                <div class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 flex items-center justify-center border border-white dark:border-gray-800">
+                                </div>
+                                @endif
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-orange-700 dark:text-orange-400">{{ $module['assignment']['title'] ?? 'Tugas Akhir Modul' }}</p>
-                                <p class="text-xs text-orange-600 dark:text-orange-500">Kumpulkan tugas modul ini</p>
+                                <p class="text-xs text-orange-600 dark:text-orange-500">
+                                    @if($module['assignment_completed'] ?? false)
+                                        Selesai
+                                    @else
+                                        Kumpulkan tugas modul ini
+                                    @endif
+                                </p>
                             </div>
                             <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
