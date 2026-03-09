@@ -631,9 +631,15 @@ class AdminController extends Controller
             $query->where('status', $request->status);
         }
 
-        $mahasiswaPaginated = $query->paginate($perPage);
+        // Prodi filter
+        if ($request->filled('prodi')) {
+            $query->whereHas('profile', function($q) use ($request) {
+                $q->where('id_jurusan', $request->prodi);
+            });
+        }
 
-        // Transform data for view
+        $mahasiswaPaginated = $query->paginate($perPage);
+        $mahasiswaPaginated->appends($request->only(['search', 'status', 'prodi']));
         $mahasiswaList = $mahasiswaPaginated->map(function($mhs) {
             return [
                 'id' => $mhs->id,
@@ -668,6 +674,7 @@ class AdminController extends Controller
             'perPage' => $perPage,
             'search' => $request->search ?? '',
             'statusFilter' => $request->status ?? 'all',
+            'prodiFilter' => $request->prodi ?? '',
             'jurusanList' => $jurusanList,
             'courseList' => $courseList,
             'totalAll' => $totalAll,
