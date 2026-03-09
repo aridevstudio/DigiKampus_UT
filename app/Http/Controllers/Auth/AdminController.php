@@ -383,6 +383,17 @@ class AdminController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Program Studi (Jurusan) filter
+        if ($request->has('jurusan') && $request->jurusan !== 'all') {
+            $jurusanId = $request->jurusan;
+            $query->whereHas('profile', function($pq) use ($jurusanId) {
+                // Adjusting filter depending on whether the backend implements it as JSON or directly if still currently a scalar ID
+                $pq->where('id_jurusan', $jurusanId)
+                   ->orWhereJsonContains('id_jurusan', $jurusanId)
+                   ->orWhereJsonContains('id_jurusan', (string)$jurusanId);
+            });
+        }
+
         $dosenPaginated = $query->paginate($perPage);
 
         // Transform data for view
@@ -424,6 +435,7 @@ class AdminController extends Controller
             'perPage' => $perPage,
             'search' => $request->search ?? '',
             'statusFilter' => $request->status ?? 'all',
+            'jurusanFilter' => $request->jurusan ?? 'all',
             'jurusanList' => $jurusanList,
         ]);
     }

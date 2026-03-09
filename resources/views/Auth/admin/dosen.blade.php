@@ -46,6 +46,21 @@
                 </svg>
             </div>
             
+            {{-- Program Studi Filter --}}
+            <div class="relative">
+                <select name="jurusan" onchange="this.form.submit()" class="appearance-none px-4 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <option value="all" {{ ($jurusanFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Program Studi</option>
+                    @foreach($jurusanList as $jurusan)
+                        <option value="{{ $jurusan->id_jurusan }}" {{ ($jurusanFilter ?? '') == $jurusan->id_jurusan ? 'selected' : '' }}>
+                            {{ $jurusan->nama_jurusan }}
+                        </option>
+                    @endforeach
+                </select>
+                <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
+            
             {{-- Search --}}
             <div class="relative flex-1 min-w-[200px] max-w-sm ml-auto">
                 <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari dosen..." class="w-full px-4 py-2.5 pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
