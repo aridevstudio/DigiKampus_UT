@@ -68,10 +68,21 @@ Route::prefix('admin')
         Route::put('/kursus/{id}/material/{materialId}', [AdminController::class, 'updateMaterial'])->name('admin.material.update');
         Route::delete('/kursus/{id}/material/{materialId}', [AdminController::class, 'deleteMaterial'])->name('admin.material.delete');
 
+        // Quiz Management
+        Route::get('/kursus/{courseId}/module/{moduleId}/quiz', [AdminController::class, 'showKelolaQuiz'])->name('admin.quiz.kelola');
+        Route::post('/kursus/{courseId}/module/{moduleId}/quiz', [AdminController::class, 'storeQuiz'])->name('admin.quiz.store');
+        Route::post('/kursus/{courseId}/module/{moduleId}/pretest', [AdminController::class, 'togglePretest'])->name('admin.quiz.togglePretest');
+        Route::get('/kursus/{courseId}/quiz/{quizId}', [AdminController::class, 'getQuiz'])->name('admin.quiz.get');
+        Route::put('/kursus/{courseId}/quiz/{quizId}', [AdminController::class, 'updateQuiz'])->name('admin.quiz.update');
+        Route::delete('/kursus/{courseId}/quiz/{quizId}', [AdminController::class, 'deleteQuiz'])->name('admin.quiz.delete');
+        Route::post('/kursus/{courseId}/quiz/{quizId}/question', [AdminController::class, 'storeQuestion'])->name('admin.quiz.question.store');
+        Route::put('/kursus/{courseId}/quiz/{quizId}/question/reorder', [AdminController::class, 'reorderQuestions'])->name('admin.quiz.question.reorder');
+        Route::put('/kursus/{courseId}/quiz/{quizId}/question/{questionId}', [AdminController::class, 'updateQuestion'])->name('admin.quiz.question.update');
+        Route::delete('/kursus/{courseId}/quiz/{quizId}/question/{questionId}', [AdminController::class, 'deleteQuestion'])->name('admin.quiz.question.delete');
+
         // Admin Content Pages
         Route::prefix('konten')->group(function () {
             Route::view('/video', 'Auth.admin.kelola-video')->name('admin.kelola-video');
-            Route::view('/quiz', 'Auth.admin.kelola-quiz')->name('admin.kelola-quiz');
             Route::view('/bacaan', 'Auth.admin.kelola-bacaan')->name('admin.kelola-bacaan');
             Route::view('/tugas', 'Auth.admin.kelola-tugas')->name('admin.kelola-tugas');
         });

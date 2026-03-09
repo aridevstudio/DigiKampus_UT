@@ -22,4 +22,19 @@ class CourseModule extends Model
     {
         return $this->hasMany(CourseMaterial::class, 'id_module')->orderBy('urutan');
     }
+
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class, 'id_module', 'id_module')->orderBy('urutan');
+    }
+
+    public function pretest()
+    {
+        return $this->hasOne(Quiz::class, 'id_module', 'id_module')->where('is_pretest', true);
+    }
+
+    public function getVideoCountAttribute(): int
+    {
+        return $this->materials()->where('tipe', 'video')->count();
+    }
 }

@@ -1,238 +1,257 @@
-<x-layouts.admin title="Input Kuis">
+<x-layouts.admin title="Kelola Kuis">
     <div x-data="quizManager()" x-init="init()" class="pb-20">
-        {{-- Header with Filters --}}
+        {{-- Header --}}
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Input Kuis</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-1">Buat dan kelola soal kuis untuk modul pembelajaran</p>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Kelola Kuis</h1>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ $course['nama'] }}</span> &bull; {{ $module['judul'] }}
+                </p>
             </div>
-            
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="relative min-w-[200px]">
-                    <select x-model="selectedCourseId" :disabled="courseLocked" class="w-full px-4 py-2.5 pr-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none disabled:opacity-70 disabled:cursor-not-allowed">
-                        <option value="">-- Pilih Kursus --</option>
-                        <template x-for="course in courses" :key="course.id">
-                            <option :value="course.id" x-text="course.nama"></option>
-                        </template>
-                    </select>
-                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    <p x-show="courseLocked" class="text-xs text-blue-500 mt-1">Kursus disesuaikan otomatis dari halaman sebelumnya.</p>
-                </div>
-                
-                <button type="button" @click="showAddModal = true" class="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-xl flex items-center gap-2 transition">
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.kursus.modul', $course['id']) }}" class="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    Kembali ke Modul
+                </a>
+                <button type="button" @click="openCreateQuizModal()" class="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-xl flex items-center gap-2 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Tambah Soal
+                    Buat Kuis Baru
                 </button>
             </div>
         </div>
 
-        {{-- Quiz Info Section --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Informasi Kuis</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Judul Kuis <span class="text-red-500">*</span></label>
-                    <input type="text" x-model="form.judul_modul" placeholder="Contoh: Kuis Evaluasi Bab 1" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Durasi Pengerjaan (Menit)</label>
-                    <input type="number" x-model="form.durasi" min="5" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                </div>
-            </div>
-        </div>
-
-        <form @submit.prevent="saveQuiz" x-data="{ isLoading: false }" @submit="isLoading = true">
-            <div class="space-y-6">
-                {{-- Daftar Soal Kuis --}}
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-5">Daftar Soal Kuis</h2>
-                    
-                    <div class="space-y-3" id="questionsList">
-                        <template x-for="(question, index) in questions" :key="question.id">
-                            <div class="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-700">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400" x-text="'≡ Soal ' + (index + 1)"></span>
-                                    <span class="px-2 py-0.5 text-xs font-medium rounded-full" 
-                                          :class="question.type === 'pilihan_ganda' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'"
-                                          x-text="question.type === 'pilihan_ganda' ? 'Pilihan Ganda' : 'Benar-Salah'"></span>
-                                    <span class="text-xs text-gray-400" x-text="'Bobot: ' + question.bobot + ' poin'"></span>
+        {{-- Quiz List --}}
+        <template x-for="(quiz, qIdx) in quizzes" :key="quiz.id">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 mb-6 overflow-hidden">
+                {{-- Quiz Header --}}
+                <div class="p-6 border-b border-gray-100 dark:border-gray-700 cursor-pointer" @click="toggleQuiz(quiz.id)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="quiz.is_pretest ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-900/30'">
+                                <svg class="w-5 h-5" :class="quiz.is_pretest ? 'text-green-600' : 'text-yellow-600'" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-gray-900 dark:text-white" x-text="quiz.judul"></h2>
+                                <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                    <span x-show="quiz.is_pretest" class="px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full font-medium">Pretest</span>
+                                    <span x-text="quiz.jumlah_soal + ' soal'"></span>
+                                    <span>&bull;</span>
+                                    <span x-text="quiz.durasi_menit + ' menit'"></span>
+                                    <span>&bull;</span>
+                                    <span x-text="'Total ' + quiz.total_bobot + ' poin'"></span>
+                                    <span>&bull;</span>
+                                    <span x-text="'Passing: ' + quiz.passing_score + '%'"></span>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    {{-- Edit --}}
-                                    <button type="button" @click="editQuestion(index)" class="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition" title="Edit">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </button>
-                                    {{-- Duplicate --}}
-                                    <button type="button" @click="duplicateQuestion(index)" class="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition" title="Duplikat">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                    </button>
-                                    {{-- Delete --}}
-                                    <button type="button" @click="deleteQuestion(index)" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition" title="Hapus">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    </button>
-                                    {{-- Expand --}}
-                                    <button type="button" @click="previewIndex = index" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded transition" title="Preview">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click.stop="openEditQuizModal(quiz)" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition" title="Edit Kuis">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button type="button" @click.stop="deleteQuiz(quiz.id, qIdx)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition" title="Hapus Kuis">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200" :class="expandedQuiz === quiz.id ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Quiz Questions (Expanded) --}}
+                <div x-show="expandedQuiz === quiz.id" x-transition class="p-6">
+                    {{-- Questions List --}}
+                    <div class="space-y-3 mb-4">
+                        <template x-for="(question, qIndex) in quiz.questions" :key="question.id">
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400" x-text="'Soal ' + (qIndex + 1)"></span>
+                                            <span class="px-2 py-0.5 text-[10px] font-medium rounded-full"
+                                                  :class="question.tipe === 'pilihan_ganda' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'"
+                                                  x-text="question.tipe === 'pilihan_ganda' ? 'Pilihan Ganda' : 'Benar-Salah'"></span>
+                                            <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" x-text="question.bobot + ' poin'"></span>
+                                        </div>
+                                        <p class="text-sm text-gray-900 dark:text-white font-medium mb-3" x-text="question.pertanyaan"></p>
+
+                                        {{-- Options Display --}}
+                                        <div class="space-y-2">
+                                            <template x-for="(opt, optIdx) in question.opsi" :key="optIdx">
+                                                <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                                                     :class="String(optIdx) === String(question.jawaban_benar) || opt === question.jawaban_benar
+                                                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                                                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'">
+                                                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                                          :class="String(optIdx) === String(question.jawaban_benar) || opt === question.jawaban_benar
+                                                            ? 'bg-green-500 text-white'
+                                                            : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'"
+                                                          x-text="String.fromCharCode(65 + optIdx)"></span>
+                                                    <span x-text="opt"></span>
+                                                    <svg x-show="String(optIdx) === String(question.jawaban_benar) || opt === question.jawaban_benar" class="w-4 h-4 text-green-500 ml-auto" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        {{-- Explanation --}}
+                                        <div x-show="question.penjelasan" class="mt-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                                            <p class="text-xs text-blue-700 dark:text-blue-400"><strong>Penjelasan:</strong> <span x-text="question.penjelasan"></span></p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1 flex-shrink-0">
+                                        <button type="button" @click="openEditQuestionModal(quiz, qIndex)" class="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition" title="Edit">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </button>
+                                        <button type="button" @click="deleteQuestion(quiz, qIndex)" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition" title="Hapus">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </template>
-                        
-                        {{-- Empty State --}}
-                        <div x-show="questions.length === 0" class="text-center py-8 text-gray-400">
+
+                        {{-- Empty --}}
+                        <div x-show="quiz.questions.length === 0" class="text-center py-8 text-gray-400">
                             <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                             <p>Belum ada soal. Klik "Tambah Soal" untuk memulai.</p>
                         </div>
-                        
-                        {{-- Add Question Button --}}
-                        <button type="button" @click="showAddModal = true" class="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:text-blue-500 hover:border-blue-300 dark:hover:border-blue-700 transition flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <span>Tambah Soal Baru</span>
+                    </div>
+
+                    {{-- Add Question Button --}}
+                    <button type="button" @click="openAddQuestionModal(quiz)" class="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:text-blue-500 hover:border-blue-300 dark:hover:border-blue-700 transition flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span>Tambah Soal Baru</span>
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        {{-- Empty State --}}
+        <div x-show="quizzes.length === 0" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-12 text-center">
+            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Belum ada kuis</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-4">Buat kuis pertama untuk modul ini. Setiap soal memiliki poin seperti Google Form.</p>
+            <button type="button" @click="openCreateQuizModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Buat Kuis Baru
+            </button>
+        </div>
+
+        {{-- Create/Edit Quiz Modal --}}
+        <div x-show="showQuizModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
+            <div class="fixed inset-0 bg-black/50" @click="showQuizModal = false"></div>
+            <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="p-6">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-5" x-text="editingQuizId ? 'Edit Kuis' : 'Buat Kuis Baru'"></h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Judul Kuis <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="quizForm.judul" placeholder="Contoh: Kuis Evaluasi Bab 1" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Deskripsi</label>
+                            <textarea x-model="quizForm.deskripsi" rows="2" placeholder="Deskripsi kuis..." class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm resize-none"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Durasi (Menit)</label>
+                                <input type="number" x-model="quizForm.durasi_menit" min="1" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Passing Score (%)</label>
+                                <input type="number" x-model="quizForm.passing_score" min="0" max="100" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm">
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                <input type="checkbox" x-model="quizForm.acak_soal" class="rounded border-gray-300 text-blue-500 focus:ring-blue-500"> Acak Urutan Soal
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                <input type="checkbox" x-model="quizForm.tampilkan_nilai" class="rounded border-gray-300 text-blue-500 focus:ring-blue-500"> Tampilkan Nilai
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" @click="showQuizModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 text-sm">Batal</button>
+                        <button type="button" @click="saveQuiz()" :disabled="isSaving" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition">
+                            <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Kuis'"></span>
                         </button>
                     </div>
                 </div>
-
-                {{-- Preview Kuis --}}
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-5">Preview Kuis</h2>
-                    
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-                        {{-- Quiz Header --}}
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white" x-text="form.judul_modul || 'Judul Kuis Preview'"></h3>
-                            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span x-text="formatTime(form.durasi * 60)"></span>
-                            </div>
-                        </div>
-                        
-                        {{-- Progress --}}
-                        <div class="flex items-center justify-between text-sm mb-2">
-                            <span class="text-gray-500 dark:text-gray-400" x-text="'Soal ' + (previewIndex + 1) + ' dari ' + questions.length"></span>
-                            {{-- total bobot calculation optional --}}
-                        </div>
-                        <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6">
-                            <div class="h-full bg-blue-500 rounded-full transition-all" :style="'width: ' + ((previewIndex + 1) / Math.max(questions.length, 1) * 100) + '%'"></div>
-                        </div>
-                        
-                        {{-- Question --}}
-                        <div class="mb-6" x-show="questions.length > 0">
-                            <p class="text-gray-900 dark:text-white font-medium mb-4" x-text="currentQuestion?.pertanyaan || 'Pertanyaan akan muncul di sini'"></p>
-                            
-                            <div class="space-y-3">
-                                <template x-for="(option, optIndex) in currentQuestion?.options || []" :key="optIndex">
-                                    <label class="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-300 dark:hover:border-blue-700 cursor-pointer transition" :class="selectedAnswer === optIndex ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''">
-                                        <input type="radio" :name="'preview_answer_' + previewIndex" :value="optIndex" x-model="selectedAnswer" class="w-4 h-4 text-blue-500 border-gray-300 focus:ring-blue-500">
-                                        <span class="text-gray-700 dark:text-gray-300" x-text="String.fromCharCode(65 + optIndex) + '. ' + option"></span>
-                                    </label>
-                                </template>
-                            </div>
-                        </div>
-                        
-                        {{-- Empty Preview --}}
-                        <div x-show="questions.length === 0" class="py-8 text-center text-gray-400">
-                            <p>Tambahkan soal untuk melihat preview</p>
-                        </div>
-                        
-                        {{-- Navigation --}}
-                        <div class="flex items-center justify-between" x-show="questions.length > 0">
-                            <button type="button" @click="prevQuestion()" :disabled="previewIndex === 0" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-sm font-medium flex items-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                                Sebelumnya
-                            </button>
-                            <button type="button" @click="nextQuestion()" :disabled="previewIndex >= questions.length - 1" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-xl flex items-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                Selanjutnya
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
-
-            {{-- Footer Actions --}}
-            <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-                <button type="button" onclick="history.back()" class="px-5 py-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-sm font-medium transition">
-                    Batal
-                </button>
-                <button type="submit" :disabled="isSubmitting || !selectedCourseId" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition flex items-center gap-2">
-                    <svg x-show="!isSubmitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <svg x-show="isSubmitting" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span x-text="isSubmitting ? 'Menyimpan...' : 'Publikasikan Kuis'"></span>
-                </button>
-            </div>
-        </form>
+        </div>
 
         {{-- Add/Edit Question Modal --}}
-        <div x-show="showAddModal" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
-            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
-            
+        <div x-show="showQuestionModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
+            <div class="fixed inset-0 bg-black/50" @click="showQuestionModal = false"></div>
             <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
                 <div class="p-6">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-5" x-text="editingIndex !== null ? 'Edit Soal' : 'Tambah Soal Baru'"></h3>
-                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-5" x-text="editingQuestionId ? 'Edit Soal' : 'Tambah Soal Baru'"></h3>
                     <div class="space-y-4">
-                        {{-- Tipe Soal --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipe Soal</label>
-                            <select x-model="modalForm.type" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm">
+                            <select x-model="questionForm.tipe" @change="onQuestionTypeChange()" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm">
                                 <option value="pilihan_ganda">Pilihan Ganda</option>
                                 <option value="benar_salah">Benar-Salah</option>
                             </select>
                         </div>
-                        
-                        {{-- Pertanyaan --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Pertanyaan</label>
-                            <textarea x-model="modalForm.pertanyaan" rows="3" placeholder="Masukkan pertanyaan..." class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm resize-none"></textarea>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Pertanyaan <span class="text-red-500">*</span></label>
+                            <textarea x-model="questionForm.pertanyaan" rows="3" placeholder="Masukkan pertanyaan..." class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm resize-none"></textarea>
                         </div>
-                        
-                        {{-- Options --}}
-                        <div x-show="modalForm.type === 'pilihan_ganda'">
+
+                        {{-- Pilihan Ganda Options --}}
+                        <div x-show="questionForm.tipe === 'pilihan_ganda'">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Opsi Jawaban</label>
                             <div class="space-y-2">
-                                <template x-for="(opt, i) in modalForm.options" :key="i">
+                                <template x-for="(opt, i) in questionForm.opsi" :key="i">
                                     <div class="flex items-center gap-2">
-                                        <span class="text-sm text-gray-500 w-6" x-text="String.fromCharCode(65 + i) + '.'"></span>
-                                        <input type="text" x-model="modalForm.options[i]" :placeholder="'Opsi ' + String.fromCharCode(65 + i)" class="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm">
-                                        <input type="radio" :name="'correct_answer'" :value="i" x-model="modalForm.correctAnswer" class="w-4 h-4 text-green-500" title="Jawaban benar">
+                                        <span class="text-sm text-gray-500 w-6 flex-shrink-0" x-text="String.fromCharCode(65 + i) + '.'"></span>
+                                        <input type="text" x-model="questionForm.opsi[i]" :placeholder="'Opsi ' + String.fromCharCode(65 + i)" class="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm">
+                                        <label class="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0 cursor-pointer" :class="String(questionForm.jawaban_benar) === String(i) ? 'text-green-600 font-bold' : ''">
+                                            <input type="radio" name="jawaban_benar_modal" :value="String(i)" x-model="questionForm.jawaban_benar" class="w-4 h-4 text-green-500">
+                                            Benar
+                                        </label>
                                     </div>
                                 </template>
                             </div>
+                            <button type="button" @click="questionForm.opsi.push('')" x-show="questionForm.opsi.length < 6" class="mt-2 text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                Tambah Opsi
+                            </button>
                         </div>
-                        
+
                         {{-- Benar/Salah --}}
-                        <div x-show="modalForm.type === 'benar_salah'">
+                        <div x-show="questionForm.tipe === 'benar_salah'">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Jawaban Benar</label>
                             <div class="flex gap-4">
-                                <label class="flex items-center gap-2">
-                                    <input type="radio" name="benar_salah" value="true" x-model="modalForm.correctAnswer" class="w-4 h-4 text-blue-500">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Benar</span>
-                                </label>
-                                <label class="flex items-center gap-2">
-                                    <input type="radio" name="benar_salah" value="false" x-model="modalForm.correctAnswer" class="w-4 h-4 text-blue-500">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Salah</span>
-                                </label>
+                                <label class="flex items-center gap-2 text-sm"><input type="radio" name="bs_answer" value="0" x-model="questionForm.jawaban_benar" class="w-4 h-4 text-blue-500"> Benar</label>
+                                <label class="flex items-center gap-2 text-sm"><input type="radio" name="bs_answer" value="1" x-model="questionForm.jawaban_benar" class="w-4 h-4 text-blue-500"> Salah</label>
                             </div>
                         </div>
-                        
-                        {{-- Bobot --}}
+
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bobot (poin)</label>
-                            <input type="number" x-model="modalForm.bobot" min="1" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bobot (poin) <span class="text-red-500">*</span></label>
+                            <input type="number" x-model="questionForm.bobot" min="1" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm">
+                            <p class="text-xs text-gray-400 mt-1">Poin yang diberikan jika menjawab benar (seperti Google Form)</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Penjelasan Jawaban <span class="text-gray-400">(opsional)</span></label>
+                            <textarea x-model="questionForm.penjelasan" rows="2" placeholder="Penjelasan mengapa jawaban ini benar..." class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm resize-none"></textarea>
                         </div>
                     </div>
-                    
                     <div class="flex justify-end gap-3 mt-6">
-                        <button type="button" @click="closeModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 text-sm font-medium">Batal</button>
-                        <button type="button" @click="saveQuestion()" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-xl">Simpan</button>
+                        <button type="button" @click="showQuestionModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 text-sm">Batal</button>
+                        <button type="button" @click="saveQuestion()" :disabled="isSaving" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition">
+                            <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Soal'"></span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Toast Notification --}}
-        <div x-show="toast.show" x-transition class="fixed bottom-4 right-4 z-50" style="display: none;">
-            <div class="px-4 py-3 rounded-xl shadow-lg flex items-center gap-3" :class="toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'">
+        {{-- Toast --}}
+        <div x-show="toast.show" x-transition class="fixed bottom-4 right-4 z-[60]" style="display: none;">
+            <div class="px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-white text-sm font-medium" :class="toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'">
                 <span x-text="toast.message"></span>
             </div>
         </div>
@@ -242,246 +261,208 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('quizManager', () => ({
-                courses: [],
-                isLoading: false,
-                isSubmitting: false,
-                selectedCourseId: @json((string) request('course_id', '')),
-                lockedCourseId: @json((string) request('course_id', '')),
-                courseLocked: false,
-                form: {
-                    judul_modul: @json(request('modul_judul', '')),
-                    durasi: @json(request('modul_durasi', 15)),
-                    tipe: 'kuis',
-                    konten: ''
-                },
-                
-                // State for Quiz Content
-                questions: [],
-                
-                // Preview state
-                previewIndex: 0,
-                selectedAnswer: null,
+                courseId: @json($course['id']),
+                moduleId: @json($module['id']),
+                quizzes: @json($quizzes),
+                expandedQuiz: @json(request('focus_quiz') ? (int) request('focus_quiz') : null),
 
-                // Modal state
-                showAddModal: false,
-                editingIndex: null,
-                modalForm: {
-                    type: 'pilihan_ganda',
-                    pertanyaan: '',
-                    options: ['', '', '', ''],
-                    correctAnswer: 0,
-                    bobot: 10
-                },
+                // Quiz Modal
+                showQuizModal: false,
+                editingQuizId: null,
+                quizForm: { judul: '', deskripsi: '', durasi_menit: 15, passing_score: 60, acak_soal: false, tampilkan_nilai: true },
 
+                // Question Modal
+                showQuestionModal: false,
+                editingQuestionId: null,
+                currentQuizForQuestion: null,
+                questionForm: { pertanyaan: '', tipe: 'pilihan_ganda', opsi: ['', '', '', ''], jawaban_benar: '0', bobot: 10, penjelasan: '' },
+
+                isSaving: false,
                 toast: { show: false, message: '', type: 'success' },
 
                 init() {
-                    this.fetchCourses();
-                    this.stripSeedQueryParams();
-                },
-
-                stripSeedQueryParams() {
-                    if (!window?.location?.search) return;
-
-                    const paramsToStrip = [
-                        'course_id',
-                        'modul_judul',
-                        'modul_konten',
-                        'modul_video_url',
-                        'modul_durasi',
-                    ];
-
-                    const url = new URL(window.location.href);
-                    let changed = false;
-
-                    paramsToStrip.forEach((param) => {
-                        if (url.searchParams.has(param)) {
-                            url.searchParams.delete(param);
-                            changed = true;
-                        }
-                    });
-
-                    if (changed) {
-                        const query = url.searchParams.toString();
-                        const cleanUrl = `${url.pathname}${query ? `?${query}` : ''}`;
-                        window.history.replaceState({}, '', cleanUrl);
+                    // Auto-expand focus quiz
+                    if (this.expandedQuiz) {
+                        const q = this.quizzes.find(x => x.id === this.expandedQuiz);
+                        if (!q) this.expandedQuiz = null;
                     }
                 },
 
-                async fetchCourses() {
-                    this.isLoading = true;
-                    try {
-                        const response = await fetch('/admin/api/courses?sort=terbaru&per_page=100', {
-                            credentials: 'same-origin',
-                            headers: {
-                                'Accept': 'application/json'
-                            }
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                            this.courses = data.data.courses;
-                            this.applyLockedCourseSelection();
-                        }
-                    } catch (error) {
-                        console.error('Error fetching courses:', error);
-                    } finally {
-                        this.isLoading = false;
-                    }
+                toggleQuiz(id) {
+                    this.expandedQuiz = this.expandedQuiz === id ? null : id;
                 },
 
-                applyLockedCourseSelection() {
-                    const lockedId = String(this.lockedCourseId || '');
-                    if (!lockedId) {
-                        this.courseLocked = false;
-                        return;
-                    }
-
-                    const matchedCourse = this.courses.find((course) => String(course.id) === lockedId);
-                    if (!matchedCourse) {
-                        this.selectedCourseId = '';
-                        this.courseLocked = false;
-                        return;
-                    }
-
-                    this.selectedCourseId = lockedId;
-                    this.courses = [matchedCourse];
-                    this.courseLocked = true;
+                // ========================================
+                // Quiz CRUD
+                // ========================================
+                openCreateQuizModal() {
+                    this.editingQuizId = null;
+                    this.quizForm = { judul: '', deskripsi: '', durasi_menit: 15, passing_score: 60, acak_soal: false, tampilkan_nilai: true };
+                    this.showQuizModal = true;
                 },
 
-                formatTime(seconds) {
-                    const mins = Math.floor(seconds / 60);
-                    const secs = seconds % 60;
-                    return `${mins}:${secs.toString().padStart(2, '0')}`;
-                },
-                
-                get currentQuestion() {
-                    return this.questions[this.previewIndex] || null;
-                },
-
-                nextQuestion() {
-                    if (this.previewIndex < this.questions.length - 1) {
-                        this.previewIndex++;
-                        this.selectedAnswer = null;
-                    }
-                },
-                
-                prevQuestion() {
-                    if (this.previewIndex > 0) {
-                        this.previewIndex--;
-                        this.selectedAnswer = null;
-                    }
-                },
-
-                // Modal Actions
-                closeModal() {
-                    this.showAddModal = false;
-                    this.editingIndex = null;
-                    this.modalForm = {
-                        type: 'pilihan_ganda',
-                        pertanyaan: '',
-                        options: ['', '', '', ''],
-                        correctAnswer: 0,
-                        bobot: 10
+                openEditQuizModal(quiz) {
+                    this.editingQuizId = quiz.id;
+                    this.quizForm = {
+                        judul: quiz.judul,
+                        deskripsi: quiz.deskripsi || '',
+                        durasi_menit: quiz.durasi_menit,
+                        passing_score: quiz.passing_score,
+                        acak_soal: quiz.acak_soal,
+                        tampilkan_nilai: quiz.tampilkan_nilai,
                     };
-                },
-
-                editQuestion(index) {
-                    const q = this.questions[index];
-                    this.modalForm = JSON.parse(JSON.stringify(q)); // deep copy
-                    this.editingIndex = index;
-                    this.showAddModal = true;
-                },
-
-                duplicateQuestion(index) {
-                    const q = JSON.parse(JSON.stringify(this.questions[index]));
-                    q.id = Date.now();
-                    this.questions.splice(index + 1, 0, q);
-                    this.showToast('Soal berhasil diduplikat', 'success');
-                },
-
-                deleteQuestion(index) {
-                    if (confirm('Yakin ingin menghapus soal ini?')) {
-                        this.questions.splice(index, 1);
-                        if (this.previewIndex >= this.questions.length) {
-                            this.previewIndex = Math.max(0, this.questions.length - 1);
-                        }
-                        this.showToast('Soal dihapus');
-                    }
-                },
-
-                saveQuestion() {
-                    if (!this.modalForm.pertanyaan.trim()) {
-                        this.showToast('Pertanyaan tidak boleh kosong', 'error');
-                        return;
-                    }
-                    
-                    const question = {
-                        id: this.editingIndex !== null ? this.questions[this.editingIndex].id : Date.now(),
-                        ...this.modalForm
-                    };
-                    
-                    if (this.modalForm.type === 'benar_salah') {
-                        question.options = ['Benar', 'Salah'];
-                    }
-
-                    if (this.editingIndex !== null) {
-                        this.questions[this.editingIndex] = question;
-                    } else {
-                        this.questions.push(question);
-                    }
-                    
-                    this.closeModal();
-                    this.showToast('Soal tersimpan');
+                    this.showQuizModal = true;
                 },
 
                 async saveQuiz() {
-                    if (!this.selectedCourseId) {
-                        this.showToast('Pilih kursus terlebih dahulu.', 'error');
-                        return;
-                    }
-                    if (!this.form.judul_modul) {
-                        this.showToast('Judul kuis wajib diisi.', 'error');
-                        return;
-                    }
-                    if (this.questions.length === 0) {
-                        this.showToast('Minimal harus ada 1 soal kuis.', 'error');
-                        return;
-                    }
-
-                    // Serialize questions to JSON string for storage in 'konten'
-                    this.form.konten = JSON.stringify(this.questions);
-
-                    this.isSubmitting = true;
+                    if (!this.quizForm.judul.trim()) { this.showToast('Judul kuis wajib diisi.', 'error'); return; }
+                    this.isSaving = true;
                     try {
-                        const response = await fetch(`/admin/api/courses/${this.selectedCourseId}/modules`, {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify(this.form)
+                        const isEdit = this.editingQuizId !== null;
+                        const url = isEdit
+                            ? `/admin/kursus/${this.courseId}/quiz/${this.editingQuizId}`
+                            : `/admin/kursus/${this.courseId}/module/${this.moduleId}/quiz`;
+                        const method = isEdit ? 'PUT' : 'POST';
+
+                        const res = await fetch(url, {
+                            method, credentials: 'same-origin',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                            body: JSON.stringify(this.quizForm)
                         });
-                        
-                        const data = await response.json();
+                        const data = await res.json();
 
-                        if (response.ok && data.success) {
-                            this.showToast('Kursus berhasil diperbarui. Modul + kuis baru sudah ditambahkan.', 'success');
-                            setTimeout(() => {
-                                window.location.href = `/admin/kursus/${this.selectedCourseId}/modul`;
-                            }, 900);
-                            return;
+                        if (res.ok && data.success) {
+                            this.showToast(data.message, 'success');
+                            if (isEdit) {
+                                const idx = this.quizzes.findIndex(q => q.id === this.editingQuizId);
+                                if (idx !== -1) Object.assign(this.quizzes[idx], this.quizForm);
+                            } else {
+                                this.quizzes.push({ id: data.data.id, ...this.quizForm, questions: [], jumlah_soal: 0, total_bobot: 0 });
+                                this.expandedQuiz = data.data.id;
+                            }
+                            this.showQuizModal = false;
+                        } else {
+                            this.showToast(data.error || data.message || 'Gagal menyimpan.', 'error');
                         }
+                    } catch (e) { this.showToast('Terjadi kesalahan.', 'error'); }
+                    finally { this.isSaving = false; }
+                },
 
-                        const firstError = data?.errors ? Object.values(data.errors).flat()?.[0] : null;
-                        const errorMessage = firstError || data?.message || 'Gagal menyimpan kuis.';
-                        this.showToast(errorMessage, 'error');
-                    } catch (error) {
-                        this.showToast('Terjadi kesalahan saat menyimpan kuis.', 'error');
-                    } finally {
-                        this.isSubmitting = false;
+                async deleteQuiz(quizId, qIdx) {
+                    if (!confirm('Yakin ingin menghapus kuis ini beserta semua soalnya?')) return;
+                    try {
+                        const res = await fetch(`/admin/kursus/${this.courseId}/quiz/${quizId}`, {
+                            method: 'DELETE', credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            this.quizzes.splice(qIdx, 1);
+                            this.showToast('Kuis dihapus.', 'success');
+                        }
+                    } catch (e) { this.showToast('Gagal menghapus.', 'error'); }
+                },
+
+                // ========================================
+                // Question CRUD
+                // ========================================
+                openAddQuestionModal(quiz) {
+                    this.currentQuizForQuestion = quiz;
+                    this.editingQuestionId = null;
+                    this.questionForm = { pertanyaan: '', tipe: 'pilihan_ganda', opsi: ['', '', '', ''], jawaban_benar: '0', bobot: 10, penjelasan: '' };
+                    this.showQuestionModal = true;
+                },
+
+                openEditQuestionModal(quiz, qIndex) {
+                    const q = quiz.questions[qIndex];
+                    this.currentQuizForQuestion = quiz;
+                    this.editingQuestionId = q.id;
+                    this.questionForm = {
+                        pertanyaan: q.pertanyaan,
+                        tipe: q.tipe,
+                        opsi: q.tipe === 'benar_salah' ? ['Benar', 'Salah'] : [...(q.opsi || ['', '', '', ''])],
+                        jawaban_benar: String(q.jawaban_benar),
+                        bobot: q.bobot,
+                        penjelasan: q.penjelasan || '',
+                    };
+                    this.showQuestionModal = true;
+                },
+
+                onQuestionTypeChange() {
+                    if (this.questionForm.tipe === 'benar_salah') {
+                        this.questionForm.opsi = ['Benar', 'Salah'];
+                        this.questionForm.jawaban_benar = '0';
+                    } else {
+                        this.questionForm.opsi = ['', '', '', ''];
+                        this.questionForm.jawaban_benar = '0';
                     }
+                },
+
+                async saveQuestion() {
+                    if (!this.questionForm.pertanyaan.trim()) { this.showToast('Pertanyaan wajib diisi.', 'error'); return; }
+                    if (!this.currentQuizForQuestion) return;
+
+                    const quizId = this.currentQuizForQuestion.id;
+                    this.isSaving = true;
+
+                    const payload = {
+                        pertanyaan: this.questionForm.pertanyaan,
+                        tipe: this.questionForm.tipe,
+                        opsi: this.questionForm.tipe === 'benar_salah' ? ['Benar', 'Salah'] : this.questionForm.opsi.filter(o => o.trim()),
+                        jawaban_benar: String(this.questionForm.jawaban_benar),
+                        bobot: parseInt(this.questionForm.bobot) || 10,
+                        penjelasan: this.questionForm.penjelasan || null,
+                    };
+
+                    try {
+                        const isEdit = this.editingQuestionId !== null;
+                        const url = isEdit
+                            ? `/admin/kursus/${this.courseId}/quiz/${quizId}/question/${this.editingQuestionId}`
+                            : `/admin/kursus/${this.courseId}/quiz/${quizId}/question`;
+                        const method = isEdit ? 'PUT' : 'POST';
+
+                        const res = await fetch(url, {
+                            method, credentials: 'same-origin',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json();
+
+                        if (res.ok && data.success) {
+                            const quiz = this.quizzes.find(q => q.id === quizId);
+                            if (isEdit) {
+                                const idx = quiz.questions.findIndex(q => q.id === this.editingQuestionId);
+                                if (idx !== -1) quiz.questions[idx] = data.data;
+                            } else {
+                                quiz.questions.push(data.data);
+                            }
+                            quiz.jumlah_soal = quiz.questions.length;
+                            quiz.total_bobot = quiz.questions.reduce((sum, q) => sum + q.bobot, 0);
+                            this.showQuestionModal = false;
+                            this.showToast(data.message, 'success');
+                        } else {
+                            this.showToast(data.error || data.message || 'Gagal menyimpan soal.', 'error');
+                        }
+                    } catch (e) { this.showToast('Terjadi kesalahan.', 'error'); }
+                    finally { this.isSaving = false; }
+                },
+
+                async deleteQuestion(quiz, qIndex) {
+                    if (!confirm('Yakin ingin menghapus soal ini?')) return;
+                    const question = quiz.questions[qIndex];
+                    try {
+                        const res = await fetch(`/admin/kursus/${this.courseId}/quiz/${quiz.id}/question/${question.id}`, {
+                            method: 'DELETE', credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            quiz.questions.splice(qIndex, 1);
+                            quiz.jumlah_soal = quiz.questions.length;
+                            quiz.total_bobot = quiz.questions.reduce((sum, q) => sum + q.bobot, 0);
+                            this.showToast('Soal dihapus.', 'success');
+                        }
+                    } catch (e) { this.showToast('Gagal menghapus.', 'error'); }
                 },
 
                 showToast(message, type = 'success') {

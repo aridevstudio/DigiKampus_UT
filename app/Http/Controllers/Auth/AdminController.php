@@ -1132,24 +1132,64 @@ class AdminController extends Controller
     public function showKelolaModul($id)
     {
         $course = \App\Models\Course::where('id_course', $id)
-            ->with(['enrollments', 'materials' => function($q) {
-                $q->orderBy('urutan', 'asc');
-            }])
+            ->with([
+                'enrollments',
+                'modules' => function($q) {
+                    $q->orderBy('urutan', 'asc');
+                },
+                'modules.materials' => function($q) {
+                    $q->orderBy('urutan', 'asc');
+                },
+                'modules.quizzes' => function($q) {
+                    $q->orderBy('urutan', 'asc');
+                },
+                'modules.quizzes.questions',
+            ])
             ->first();
 
         if (!$course) {
             return redirect()->route('admin.kursus')->with('error', 'Kursus tidak ditemukan');
         }
 
-        $materials = $course->materials->map(function($material) {
+        $modules = $course->modules->map(function($module) {
+            $videoCount = $module->materials->where('tipe', 'video')->count();
+            $bacaanCount = $module->materials->where('tipe', 'bacaan')->count();
+            $pretest = $module->quizzes->where('is_pretest', true)->first();
+            $quizzes = $module->quizzes->where('is_pretest', false)->values();
+
             return [
-                'id' => $material->id_material,
-                'judul' => $material->judul_material,
-                'tipe' => $material->tipe,
-                'konten' => $material->konten,
-                'video_url' => $material->video_url,
-                'urutan' => $material->urutan,
-                'durasi' => $material->durasi,
+                'id' => $module->id_module,
+                'judul' => $module->judul_module,
+                'deskripsi' => $module->deskripsi,
+                'urutan' => $module->urutan,
+                'video_count' => $videoCount,
+                'bacaan_count' => $bacaanCount,
+                'has_pretest' => $pretest !== null,
+                'pretest' => $pretest ? [
+                    'id' => $pretest->id_quiz,
+                    'judul' => $pretest->judul,
+                    'jumlah_soal' => $pretest->questions->count(),
+                    'durasi' => $pretest->durasi_menit,
+                    'total_bobot' => $pretest->questions->sum('bobot'),
+                ] : null,
+                'quizzes' => $quizzes->map(function($quiz) {
+                    return [
+                        'id' => $quiz->id_quiz,
+                        'judul' => $quiz->judul,
+                        'jumlah_soal' => $quiz->questions->count(),
+                        'durasi' => $quiz->durasi_menit,
+                        'total_bobot' => $quiz->questions->sum('bobot'),
+                    ];
+                })->values()->all(),
+                'materials' => $module->materials->map(function($m) {
+                    return [
+                        'id' => $m->id_material,
+                        'judul' => $m->judul_material,
+                        'tipe' => $m->tipe,
+                        'durasi' => $m->durasi,
+                        'video_url' => $m->video_url,
+                    ];
+                })->values()->all(),
             ];
         });
 
@@ -1161,7 +1201,7 @@ class AdminController extends Controller
                 'status' => $course->status,
                 'mahasiswa_count' => $course->enrollments->count(),
             ],
-            'materials' => $materials,
+            'modules' => $modules,
         ]);
     }
 
@@ -1412,6 +1452,421 @@ class AdminController extends Controller
         $material->delete();
 
         return back()->with('success', 'Material berhasil dihapus');
+    }
+
+    // ========================================
+    // Quiz Management
+    // ========================================
+
+    /**
+     * Show quiz management page for a module
+     */
+    public function showKelolaQuiz($courseId, $moduleId)
+    {
+        $course = \App\Models\Course::where('id_course', $courseId)->first();
+        $module = \App\Models\CourseModule::where('id_module', $moduleId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$course || !$module) {
+            return redirect()->route('admin.kursus')->with('error', 'Data tidak ditemukan');
+        }
+
+        $quizzes = \App\Models\Quiz::where('id_module', $moduleId)
+            ->with('questions')
+            ->orderBy('urutan')
+            ->get()
+            ->map(function($quiz) {
+                return [
+                    'id' => $quiz->id_quiz,
+                    'judul' => $quiz->judul,
+                    'deskripsi' => $quiz->deskripsi,
+                    'durasi_menit' => $quiz->durasi_menit,
+                    'is_pretest' => $quiz->is_pretest,
+                    'is_active' => $quiz->is_active,
+                    'passing_score' => $quiz->passing_score,
+                    'acak_soal' => $quiz->acak_soal,
+                    'tampilkan_nilai' => $quiz->tampilkan_nilai,
+                    'total_bobot' => $quiz->questions->sum('bobot'),
+                    'jumlah_soal' => $quiz->questions->count(),
+                    'questions' => $quiz->questions->map(function($q) {
+                        return [
+                            'id' => $q->id_question,
+                            'pertanyaan' => $q->pertanyaan,
+                            'tipe' => $q->tipe,
+                            'opsi' => $q->opsi,
+                            'jawaban_benar' => $q->jawaban_benar,
+                            'bobot' => $q->bobot,
+                            'penjelasan' => $q->penjelasan,
+                            'urutan' => $q->urutan,
+                        ];
+                    })->values()->all(),
+                ];
+            });
+
+        return view('Auth.admin.kelola-quiz', [
+            'course' => [
+                'id' => $course->id_course,
+                'nama' => $course->nama_course,
+            ],
+            'module' => [
+                'id' => $module->id_module,
+                'judul' => $module->judul_module,
+            ],
+            'quizzes' => $quizzes,
+        ]);
+    }
+
+    /**
+     * Store a new quiz for a module
+     */
+    public function storeQuiz(Request $request, $courseId, $moduleId)
+    {
+        $module = \App\Models\CourseModule::where('id_module', $moduleId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$module) {
+            return response()->json(['error' => 'Modul tidak ditemukan'], 404);
+        }
+
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'durasi_menit' => 'nullable|integer|min:1|max:300',
+            'is_pretest' => 'nullable|boolean',
+            'passing_score' => 'nullable|integer|min:0|max:100',
+            'acak_soal' => 'nullable|boolean',
+            'tampilkan_nilai' => 'nullable|boolean',
+        ]);
+
+        // Jika is_pretest, pastikan belum ada pretest lain di modul ini
+        if ($request->boolean('is_pretest')) {
+            $existingPretest = \App\Models\Quiz::where('id_module', $moduleId)
+                ->where('is_pretest', true)->first();
+            if ($existingPretest) {
+                return response()->json(['error' => 'Modul ini sudah memiliki pretest. Hapus yang lama terlebih dahulu.'], 422);
+            }
+        }
+
+        $lastOrder = \App\Models\Quiz::where('id_module', $moduleId)->max('urutan') ?? 0;
+
+        $quiz = \App\Models\Quiz::create([
+            'id_module' => $moduleId,
+            'id_course' => $courseId,
+            'judul' => $request->judul,
+            'deskripsi' => $request->deskripsi,
+            'durasi_menit' => $request->durasi_menit ?? 15,
+            'is_pretest' => $request->boolean('is_pretest'),
+            'passing_score' => $request->passing_score ?? 60,
+            'acak_soal' => $request->boolean('acak_soal'),
+            'tampilkan_nilai' => $request->boolean('tampilkan_nilai', true),
+            'urutan' => $lastOrder + 1,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Quiz berhasil dibuat.',
+            'data' => [
+                'id' => $quiz->id_quiz,
+                'judul' => $quiz->judul,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Get quiz detail with questions
+     */
+    public function getQuiz($courseId, $quizId)
+    {
+        $quiz = \App\Models\Quiz::where('id_quiz', $quizId)
+            ->where('id_course', $courseId)
+            ->with('questions')
+            ->first();
+
+        if (!$quiz) {
+            return response()->json(['error' => 'Quiz tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'id' => $quiz->id_quiz,
+            'judul' => $quiz->judul,
+            'deskripsi' => $quiz->deskripsi,
+            'durasi_menit' => $quiz->durasi_menit,
+            'is_pretest' => $quiz->is_pretest,
+            'is_active' => $quiz->is_active,
+            'passing_score' => $quiz->passing_score,
+            'acak_soal' => $quiz->acak_soal,
+            'tampilkan_nilai' => $quiz->tampilkan_nilai,
+            'total_bobot' => $quiz->questions->sum('bobot'),
+            'questions' => $quiz->questions->map(function($q) {
+                return [
+                    'id' => $q->id_question,
+                    'pertanyaan' => $q->pertanyaan,
+                    'tipe' => $q->tipe,
+                    'opsi' => $q->opsi,
+                    'jawaban_benar' => $q->jawaban_benar,
+                    'bobot' => $q->bobot,
+                    'penjelasan' => $q->penjelasan,
+                    'urutan' => $q->urutan,
+                ];
+            })->values()->all(),
+        ]);
+    }
+
+    /**
+     * Update quiz settings
+     */
+    public function updateQuiz(Request $request, $courseId, $quizId)
+    {
+        $quiz = \App\Models\Quiz::where('id_quiz', $quizId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$quiz) {
+            return response()->json(['error' => 'Quiz tidak ditemukan'], 404);
+        }
+
+        $request->validate([
+            'judul' => 'sometimes|required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'durasi_menit' => 'nullable|integer|min:1|max:300',
+            'is_pretest' => 'nullable|boolean',
+            'passing_score' => 'nullable|integer|min:0|max:100',
+            'acak_soal' => 'nullable|boolean',
+            'tampilkan_nilai' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $quiz->update($request->only([
+            'judul', 'deskripsi', 'durasi_menit', 'is_pretest',
+            'passing_score', 'acak_soal', 'tampilkan_nilai', 'is_active',
+        ]));
+
+        return response()->json(['success' => true, 'message' => 'Quiz berhasil diperbarui.']);
+    }
+
+    /**
+     * Delete quiz
+     */
+    public function deleteQuiz($courseId, $quizId)
+    {
+        $quiz = \App\Models\Quiz::where('id_quiz', $quizId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$quiz) {
+            return response()->json(['error' => 'Quiz tidak ditemukan'], 404);
+        }
+
+        $quiz->delete();
+
+        return response()->json(['success' => true, 'message' => 'Quiz berhasil dihapus.']);
+    }
+
+    // ========================================
+    // Quiz Question Management
+    // ========================================
+
+    /**
+     * Store a new question to a quiz
+     */
+    public function storeQuestion(Request $request, $courseId, $quizId)
+    {
+        $quiz = \App\Models\Quiz::where('id_quiz', $quizId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$quiz) {
+            return response()->json(['error' => 'Quiz tidak ditemukan'], 404);
+        }
+
+        $request->validate([
+            'pertanyaan' => 'required|string',
+            'tipe' => 'required|in:pilihan_ganda,benar_salah',
+            'opsi' => 'required_if:tipe,pilihan_ganda|array|min:2',
+            'opsi.*' => 'required_if:tipe,pilihan_ganda|string|max:1000',
+            'jawaban_benar' => 'required|string',
+            'bobot' => 'nullable|integer|min:1',
+            'penjelasan' => 'nullable|string',
+        ]);
+
+        $lastOrder = \App\Models\QuizQuestion::where('id_quiz', $quizId)->max('urutan') ?? 0;
+
+        $opsi = $request->tipe === 'benar_salah' ? ['Benar', 'Salah'] : $request->opsi;
+
+        $question = \App\Models\QuizQuestion::create([
+            'id_quiz' => $quizId,
+            'pertanyaan' => $request->pertanyaan,
+            'tipe' => $request->tipe,
+            'opsi' => $opsi,
+            'jawaban_benar' => $request->jawaban_benar,
+            'bobot' => $request->bobot ?? 10,
+            'penjelasan' => $request->penjelasan,
+            'urutan' => $lastOrder + 1,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Soal berhasil ditambahkan.',
+            'data' => [
+                'id' => $question->id_question,
+                'pertanyaan' => $question->pertanyaan,
+                'tipe' => $question->tipe,
+                'opsi' => $question->opsi,
+                'jawaban_benar' => $question->jawaban_benar,
+                'bobot' => $question->bobot,
+                'penjelasan' => $question->penjelasan,
+                'urutan' => $question->urutan,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Update a question
+     */
+    public function updateQuestion(Request $request, $courseId, $quizId, $questionId)
+    {
+        $question = \App\Models\QuizQuestion::where('id_question', $questionId)
+            ->whereHas('quiz', function($q) use ($courseId) {
+                $q->where('id_course', $courseId);
+            })
+            ->where('id_quiz', $quizId)
+            ->first();
+
+        if (!$question) {
+            return response()->json(['error' => 'Soal tidak ditemukan'], 404);
+        }
+
+        $request->validate([
+            'pertanyaan' => 'sometimes|required|string',
+            'tipe' => 'sometimes|required|in:pilihan_ganda,benar_salah',
+            'opsi' => 'required_if:tipe,pilihan_ganda|array|min:2',
+            'opsi.*' => 'required_if:tipe,pilihan_ganda|string|max:1000',
+            'jawaban_benar' => 'sometimes|required|string',
+            'bobot' => 'nullable|integer|min:1',
+            'penjelasan' => 'nullable|string',
+        ]);
+
+        $data = $request->only(['pertanyaan', 'tipe', 'jawaban_benar', 'bobot', 'penjelasan']);
+
+        if ($request->has('tipe') && $request->tipe === 'benar_salah') {
+            $data['opsi'] = ['Benar', 'Salah'];
+        } elseif ($request->has('opsi')) {
+            $data['opsi'] = $request->opsi;
+        }
+
+        $question->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Soal berhasil diperbarui.',
+            'data' => [
+                'id' => $question->id_question,
+                'pertanyaan' => $question->pertanyaan,
+                'tipe' => $question->tipe,
+                'opsi' => $question->opsi,
+                'jawaban_benar' => $question->jawaban_benar,
+                'bobot' => $question->bobot,
+                'penjelasan' => $question->penjelasan,
+                'urutan' => $question->urutan,
+            ],
+        ]);
+    }
+
+    /**
+     * Delete a question
+     */
+    public function deleteQuestion($courseId, $quizId, $questionId)
+    {
+        $question = \App\Models\QuizQuestion::where('id_question', $questionId)
+            ->whereHas('quiz', function($q) use ($courseId) {
+                $q->where('id_course', $courseId);
+            })
+            ->where('id_quiz', $quizId)
+            ->first();
+
+        if (!$question) {
+            return response()->json(['error' => 'Soal tidak ditemukan'], 404);
+        }
+
+        $question->delete();
+
+        return response()->json(['success' => true, 'message' => 'Soal berhasil dihapus.']);
+    }
+
+    /**
+     * Reorder questions in a quiz
+     */
+    public function reorderQuestions(Request $request, $courseId, $quizId)
+    {
+        $quiz = \App\Models\Quiz::where('id_quiz', $quizId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$quiz) {
+            return response()->json(['error' => 'Quiz tidak ditemukan'], 404);
+        }
+
+        $order = $request->input('order');
+        if (!is_array($order)) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+
+        foreach ($order as $index => $questionId) {
+            \App\Models\QuizQuestion::where('id_question', $questionId)
+                ->where('id_quiz', $quizId)
+                ->update(['urutan' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Toggle pretest for a module (create or remove)
+     */
+    public function togglePretest(Request $request, $courseId, $moduleId)
+    {
+        $module = \App\Models\CourseModule::where('id_module', $moduleId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$module) {
+            return response()->json(['error' => 'Modul tidak ditemukan'], 404);
+        }
+
+        $existingPretest = \App\Models\Quiz::where('id_module', $moduleId)
+            ->where('is_pretest', true)
+            ->first();
+
+        if ($existingPretest) {
+            // Hapus pretest
+            $existingPretest->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Pretest berhasil dihapus.',
+                'has_pretest' => false,
+            ]);
+        }
+
+        // Buat pretest baru
+        $quiz = \App\Models\Quiz::create([
+            'id_module' => $moduleId,
+            'id_course' => $courseId,
+            'judul' => 'Pretest - ' . $module->judul_module,
+            'deskripsi' => 'Pretest untuk modul ' . $module->judul_module,
+            'durasi_menit' => 15,
+            'is_pretest' => true,
+            'passing_score' => 0,
+            'urutan' => 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pretest berhasil dibuat. Silakan tambahkan soal.',
+            'has_pretest' => true,
+            'quiz_id' => $quiz->id_quiz,
+        ]);
     }
 
     /**

@@ -373,9 +373,8 @@
                                         @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
-                                        <input type="text" name="kode_course" id="add_kode_course" required placeholder="Contoh: CS101" value="{{ old('_modal') === 'add' ? old('kode_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-gray-300 dark:text-gray-600">(otomatis)</span></label>
+                                        <input type="text" name="kode_course" id="add_kode_course" readonly value="{{ old('_modal') === 'add' ? old('kode_course') : ($nextKursusCode ?? 'KRS01') }}" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white cursor-not-allowed">
                                     </div>
                                 </div>
                                 
@@ -391,23 +390,30 @@
                                 </div>
                                 
                                 <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
+                                    <div x-data="dosenSearch('add')" class="relative">
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                        <input type="hidden" name="id_dosen" :value="selectedId" id="add_id_dosen">
                                         <div class="relative">
-                                            <select name="id_dosen" id="add_id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                                <option value="">Pilih Dosen</option>
-                                                @foreach($dosenList as $dosen)
-                                                <option value="{{ $dosen->id }}" {{ old('_modal') === 'add' && old('id_dosen') == $dosen->id ? 'selected' : '' }}>{{ $dosen->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            <input type="text" x-model="search" @focus="open = true" @click="open = true" @input="open = true" placeholder="Cari dosen..." autocomplete="off" class="w-full px-3 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <button type="button" x-show="selectedId" @click="clear()" class="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                        </div>
+                                        <div x-show="open && filteredItems().length > 0" @click.outside="open = false" x-transition class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto" style="display:none">
+                                            <template x-for="item in filteredItems()" :key="item.id">
+                                                <button type="button" @click="select(item)" class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-900 dark:text-white flex items-center gap-2 transition">
+                                                    <span class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0" x-text="item.name.charAt(0).toUpperCase()"></span>
+                                                    <span x-text="item.name"></span>
+                                                </button>
+                                            </template>
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <div class="relative">
                                             <select name="id_jurusan" id="add_id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                                <option value="">Pilih Jurusan</option>
+                                                <option value="">Pilih Prodi</option>
                                                 @foreach($jurusanList as $jurusan)
                                                 <option value="{{ $jurusan->id_jurusan }}" {{ old('_modal') === 'add' && old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
                                                 @endforeach
@@ -419,7 +425,7 @@
                                 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan</label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <div class="relative">
                                             <select name="level" id="add_level" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                 <option value="">Pilih Tingkat</option>
@@ -596,21 +602,13 @@
 
                 <form action="{{ route('admin.kursus.store') }}" method="POST" enctype="multipart/form-data" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
-                    {{-- Hidden: force kategori to webinar --}}
                     <input type="hidden" name="kategori" value="webinar">
                     <input type="hidden" name="_modal" value="add_webinar">
 
                     {{-- Modal Header --}}
-                    <div class="mb-4 flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Webinar Baru</h3>
-                            <p class="text-sm text-purple-500">Lengkapi informasi webinar yang akan dilaksanakan.</p>
-                        </div>
+                    <div class="mb-4">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Webinar Baru</h3>
+                        <p class="text-sm text-purple-500">Lengkapi informasi webinar yang akan dilaksanakan.</p>
                     </div>
 
                     {{-- Buttons --}}
@@ -627,49 +625,55 @@
                     </div>
 
                     <div class="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
-
-                        {{-- 1. Informasi Dasar --}}
+                        {{-- 1. Informasi Dasar Webinar --}}
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">1</span>
                                 Informasi Dasar Webinar
                             </h4>
+
                             <div class="space-y-4">
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Webinar <span class="text-red-400">*</span></label>
-                                        <input type="text" name="nama_course" required placeholder="Masukkan judul webinar" value="{{ old('_modal') === 'add_webinar' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                        <input type="text" name="nama_course" id="webinar_nama_course" required placeholder="Masukkan judul webinar" value="{{ old('_modal') === 'add_webinar' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                         @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Webinar <span class="text-red-400">*</span></label>
-                                        <input type="text" name="kode_course" required placeholder="Contoh: WBN001" value="{{ old('_modal') === 'add_webinar' ? old('kode_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                                        @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Webinar <span class="text-gray-300 dark:text-gray-600">(otomatis)</span></label>
+                                        <input type="text" name="kode_course" id="webinar_kode_course" readonly value="{{ old('_modal') === 'add_webinar' ? old('kode_course') : ($nextWebinarCode ?? 'WEB01') }}" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white cursor-not-allowed">
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Webinar</label>
-                                    <textarea name="deskripsi" rows="3" placeholder="Jelaskan topik dan manfaat webinar ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none">{{ old('_modal') === 'add_webinar' ? old('deskripsi') : '' }}</textarea>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Webinar <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <textarea name="deskripsi" id="webinar_deskripsi" rows="3" placeholder="Jelaskan topik dan manfaat webinar ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none">{{ old('_modal') === 'add_webinar' ? old('deskripsi') : '' }}</textarea>
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pembicara / Dosen</label>
+                                    <div x-data="dosenSearch('webinar')" class="relative">
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pembicara / Dosen <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                        <input type="hidden" name="id_dosen" :value="selectedId" id="webinar_id_dosen">
                                         <div class="relative">
-                                            <select name="id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                                                <option value="">Pilih Pembicara</option>
-                                                @foreach($dosenList as $dosen)
-                                                <option value="{{ $dosen->id }}" {{ old('_modal') === 'add_webinar' && old('id_dosen') == $dosen->id ? 'selected' : '' }}>{{ $dosen->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            <input type="text" x-model="search" @focus="open = true" @click="open = true" @input="open = true" placeholder="Cari dosen..." autocomplete="off" class="w-full px-3 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                            <button type="button" x-show="selectedId" @click="clear()" class="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                        </div>
+                                        <div x-show="open && filteredItems().length > 0" @click.outside="open = false" x-transition class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto" style="display:none">
+                                            <template x-for="item in filteredItems()" :key="item.id">
+                                                <button type="button" @click="select(item)" class="w-full text-left px-3 py-2 text-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 text-gray-900 dark:text-white flex items-center gap-2 transition">
+                                                    <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0" x-text="item.name.charAt(0).toUpperCase()"></span>
+                                                    <span x-text="item.name"></span>
+                                                </button>
+                                            </template>
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi</label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <div class="relative">
-                                            <select name="id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                            <select name="id_jurusan" id="webinar_id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                                 <option value="">Pilih Prodi</option>
                                                 @foreach($jurusanList as $jurusan)
                                                 <option value="{{ $jurusan->id_jurusan }}" {{ old('_modal') === 'add_webinar' && old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
@@ -682,7 +686,7 @@
 
                                 {{-- Thumbnail --}}
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Webinar</label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Webinar <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                     <div class="flex items-center gap-4">
                                         <div id="webinarThumbnailPreview" class="w-20 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
                                             <svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -707,39 +711,83 @@
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">2</span>
                                 Jadwal Pelaksanaan
-                                <span class="text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full">Khusus Webinar</span>
                             </h4>
                             <div class="space-y-4">
                                 <div class="grid grid-cols-3 gap-4">
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Pelaksanaan</label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <input type="date" name="tanggal_webinar" value="{{ old('_modal') === 'add_webinar' ? old('tanggal_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai</label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <input type="time" name="jam_mulai_webinar" value="{{ old('_modal') === 'add_webinar' ? old('jam_mulai_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai</label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <input type="time" name="jam_selesai_webinar" value="{{ old('_modal') === 'add_webinar' ? old('jam_selesai_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Platform Meeting (Zoom / Google Meet / dll.)</label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Meeting <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                     <div class="relative">
                                         <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
                                         <input type="url" name="youtube_playlist" placeholder="https://zoom.us/j/... atau https://meet.google.com/..." value="{{ old('_modal') === 'add_webinar' ? old('youtube_playlist') : '' }}" class="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     </div>
-                                    <p class="text-[11px] text-gray-400 mt-1">Link meeting akan dibagikan ke peserta yang terdaftar. <span class="text-amber-500">⚠ Backend perlu menyimpan ke kolom yang tepat.</span></p>
+                                    <p class="text-[11px] text-gray-400 mt-1">Link Zoom / Google Meet akan dibagikan ke peserta yang terdaftar.</p>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- 3. Harga & Akses --}}
+                        {{-- 3. Pengaturan Webinar --}}
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                                <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">3</span>
+                                <span class="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold flex items-center justify-center">3</span>
+                                Pengaturan Webinar
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                        <div>
+                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">Status</h5>
+                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Aktif atau simpan draft</p>
+                                        </div>
+                                        <input type="hidden" name="status" id="webinar_status_input" value="{{ old('_modal') === 'add_webinar' ? old('status', 'draft') : 'draft' }}">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="webinar_status_toggle" class="sr-only peer" {{ old('_modal') === 'add_webinar' && old('status') === 'aktif' ? 'checked' : '' }}>
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                        <div>
+                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">Akses Publik</h5>
+                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Tampil untuk semua</p>
+                                        </div>
+                                        <input type="hidden" name="akses_publik" value="0">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="akses_publik" value="1" class="sr-only peer" {{ old('_modal') === 'add_webinar' ? (old('akses_publik') ? 'checked' : '') : 'checked' }}>
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
+                                    <div>
+                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Kehadiran</h5>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
+                                    </div>
+                                    <input type="hidden" name="sertifikat" value="0">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="sertifikat" value="1" class="sr-only peer" {{ old('_modal') === 'add_webinar' && old('sertifikat') ? 'checked' : '' }}>
+                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- 4. Harga & Akses --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center">4</span>
                                 Harga & Akses
                             </h4>
                             <div class="grid grid-cols-3 gap-4 items-end">
@@ -749,7 +797,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Diskon (%)</label>
-                                    <input type="number" name="diskon" min="0" max="100" placeholder="0" value="{{ old('_modal') === 'add_webinar' ? old('diskon', 0) : 0 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <input type="number" name="diskon" id="webinar_diskon" min="0" max="100" placeholder="0" value="{{ old('_modal') === 'add_webinar' ? old('diskon', 0) : 0 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                 </div>
                                 <div class="flex items-center gap-2 py-2.5">
                                     <input type="hidden" name="tipe" id="webinar_tipe_input" value="{{ old('_modal') === 'add_webinar' ? old('tipe', 'berbayar') : 'berbayar' }}">
@@ -761,7 +809,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </form>
             </div>
@@ -833,23 +880,30 @@
                                 </div>
                                 
                                 <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu</label>
+                                    <div x-data="dosenSearch('edit')" x-ref="editDosenWrap" class="relative">
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                        <input type="hidden" name="id_dosen" :value="selectedId" id="edit_id_dosen">
                                         <div class="relative">
-                                            <select name="id_dosen" id="edit_id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                                <option value="">Pilih Dosen</option>
-                                                @foreach($dosenList as $dosen)
-                                                <option value="{{ $dosen->id }}">{{ $dosen->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            <input type="text" x-model="search" @focus="open = true" @click="open = true" @input="open = true" placeholder="Cari dosen..." autocomplete="off" class="w-full px-3 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <button type="button" x-show="selectedId" @click="clear()" class="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                        </div>
+                                        <div x-show="open && filteredItems().length > 0" @click.outside="open = false" x-transition class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto" style="display:none">
+                                            <template x-for="item in filteredItems()" :key="item.id">
+                                                <button type="button" @click="select(item)" class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-900 dark:text-white flex items-center gap-2 transition">
+                                                    <span class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0" x-text="item.name.charAt(0).toUpperCase()"></span>
+                                                    <span x-text="item.name"></span>
+                                                </button>
+                                            </template>
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <div class="relative">
                                             <select name="id_jurusan" id="edit_id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                                <option value="">Pilih Jurusan</option>
+                                                <option value="">Pilih Prodi</option>
                                                 @foreach($jurusanList as $jurusan)
                                                 <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->nama_jurusan }}</option>
                                                 @endforeach
@@ -861,7 +915,7 @@
                                 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan</label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <div class="relative">
                                             <select name="level" id="edit_level" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                 <option value="">Pilih Tingkat</option>
@@ -1065,6 +1119,39 @@
     @push('scripts')
     <script>
         // ============================================================
+        // Dosen Search data
+        // ============================================================
+        const dosenItems = @json($dosenList->map(fn($d) => ['id' => $d->id, 'name' => $d->name])->values());
+
+        // Alpine component for searchable dosen dropdown
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('dosenSearch', (prefix) => ({
+                search: '',
+                selectedId: '',
+                open: false,
+                items: dosenItems,
+                filteredItems() {
+                    if (!this.search) return this.items;
+                    const q = this.search.toLowerCase();
+                    return this.items.filter(i => i.name.toLowerCase().includes(q));
+                },
+                select(item) {
+                    this.selectedId = item.id;
+                    this.search = item.name;
+                    this.open = false;
+                },
+                clear() {
+                    this.selectedId = '';
+                    this.search = '';
+                },
+                setById(id) {
+                    const found = this.items.find(i => String(i.id) === String(id));
+                    if (found) { this.selectedId = found.id; this.search = found.name; }
+                    else { this.selectedId = ''; this.search = ''; }
+                }
+            }));
+        });
+        // ============================================================
         // Form Data Persistence (sessionStorage)
         // ============================================================
         const ADD_FORM_KEY = 'kursus_add_draft';
@@ -1129,6 +1216,21 @@
                 const thumbId = storageKey === ADD_FORM_KEY ? 'thumbnailPreview' : 'editThumbnailPreview';
                 if (data['_thumbHTML']) {
                     document.getElementById(thumbId).innerHTML = data['_thumbHTML'];
+                }
+                // Restore dosen searchable dropdown via Alpine
+                const dosenFieldId = storageKey === ADD_FORM_KEY ? 'add_id_dosen' : 'edit_id_dosen';
+                const dosenVal = data[dosenFieldId];
+                if (dosenVal) {
+                    setTimeout(() => {
+                        const hiddenInput = document.getElementById(dosenFieldId);
+                        if (hiddenInput) {
+                            const wrapper = hiddenInput.closest('[x-data]');
+                            if (wrapper) {
+                                const alpineData = Alpine.$data(wrapper);
+                                if (alpineData && alpineData.setById) alpineData.setById(dosenVal);
+                            }
+                        }
+                    }, 50);
                 }
                 return true;
             } catch (e) { return false; }
@@ -1303,7 +1405,17 @@
                         document.getElementById('edit_kode_course').value = data.kode_course || '';
                         document.getElementById('edit_deskripsi').value = data.deskripsi || '';
                         document.getElementById('edit_persyaratan').value = data.persyaratan || '';
-                        document.getElementById('edit_id_dosen').value = data.id_dosen || '';
+                        
+                        // Set dosen via Alpine searchable dropdown
+                        const editDosenEl = document.querySelector('[x-ref="editDosenWrap"]');
+                        if (editDosenEl && editDosenEl.__x) {
+                            editDosenEl.__x.$data.setById(data.id_dosen || '');
+                        } else if (editDosenEl) {
+                            // Fallback: use Alpine.$data
+                            const alpineData = Alpine.$data(editDosenEl);
+                            if (alpineData) alpineData.setById(data.id_dosen || '');
+                        }
+                        
                         document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
                         document.getElementById('edit_level').value = data.level || '';
                         document.getElementById('edit_estimasi_waktu').value = data.estimasi_waktu || 20;
@@ -1428,22 +1540,37 @@
             }
         }
 
+        // Webinar Status toggle
+        const webinarStatusToggle = document.getElementById('webinar_status_toggle');
+        if (webinarStatusToggle) {
+            const webinarStatusInput = document.getElementById('webinar_status_input');
+            webinarStatusToggle.addEventListener('change', function() {
+                webinarStatusInput.value = this.checked ? 'aktif' : 'draft';
+            });
+        }
+
         // Webinar Gratis toggle
         const webinarGratisToggle = document.getElementById('webinar_gratis_toggle');
         if (webinarGratisToggle) {
             const webinarTipeInput = document.getElementById('webinar_tipe_input');
             const webinarHargaInput = document.getElementById('webinar_harga');
+            const webinarDiskonInput = document.getElementById('webinar_diskon');
             webinarGratisToggle.addEventListener('change', function() {
                 if (this.checked) {
                     webinarTipeInput.value = 'gratis';
                     if (webinarHargaInput) { webinarHargaInput.value = 0; webinarHargaInput.disabled = true; }
+                    if (webinarDiskonInput) { webinarDiskonInput.value = 0; webinarDiskonInput.disabled = true; }
                 } else {
                     webinarTipeInput.value = 'berbayar';
                     if (webinarHargaInput) { webinarHargaInput.disabled = false; }
+                    if (webinarDiskonInput) { webinarDiskonInput.disabled = false; }
                 }
             });
             // Init state
-            if (webinarGratisToggle.checked && webinarHargaInput) webinarHargaInput.disabled = true;
+            if (webinarGratisToggle.checked) {
+                if (webinarHargaInput) webinarHargaInput.disabled = true;
+                if (webinarDiskonInput) webinarDiskonInput.disabled = true;
+            }
         }
     </script>
     @endpush
