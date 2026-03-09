@@ -359,17 +359,14 @@
                             
                             {{-- Program Studi --}}
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi</label>
-                                <div class="relative">
-                                    <select name="id_jurusan" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                        <option value="" class="text-gray-400">Pilih program studi</option>
-                                        @foreach($jurusanList as $jurusan)
-                                        <option value="{{ $jurusan->id_jurusan }}" {{ old('_modal') === 'add' && old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
-                                        @endforeach
-                                    </select>
-                                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi (Bisa pilih lebih dari satu)</label>
+                                <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
+                                    @foreach($jurusanList as $jurusan)
+                                    <label class="flex items-center gap-2 cursor-pointer group">
+                                        <input type="checkbox" name="id_jurusan[]" value="{{ $jurusan->id_jurusan }}" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{{ $jurusan->nama_jurusan }}</span>
+                                    </label>
+                                    @endforeach
                                 </div>
                             </div>
                             
@@ -486,17 +483,14 @@
                             </div>
                             
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi</label>
-                                <div class="relative">
-                                    <select name="id_jurusan" id="edit_id_jurusan" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                        <option value="">Pilih program studi</option>
-                                        @foreach($jurusanList as $jurusan)
-                                        <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->nama_jurusan }}</option>
-                                        @endforeach
-                                    </select>
-                                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi (Bisa pilih lebih dari satu)</label>
+                                <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
+                                    @foreach($jurusanList as $jurusan)
+                                    <label class="flex items-center gap-2 cursor-pointer group">
+                                        <input type="checkbox" name="id_jurusan[]" value="{{ $jurusan->id_jurusan }}" class="edit_id_jurusan_checkbox w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{{ $jurusan->nama_jurusan }}</span>
+                                    </label>
+                                    @endforeach
                                 </div>
                             </div>
                             
@@ -673,9 +667,19 @@
                     document.getElementById('edit_name').value = data.name || '';
                     document.getElementById('edit_email').value = data.email || '';
                     document.getElementById('edit_nip').value = data.nip || '';
-                    document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
                     document.getElementById('edit_no_hp').value = data.no_hp || '';
                     document.getElementById('edit_status').checked = data.status === 'aktif';
+                    
+                    // Uncheck all jurusan checkboxes first
+                    document.querySelectorAll('.edit_id_jurusan_checkbox').forEach(cb => cb.checked = false);
+                    // Check according to data.id_jurusan. For now assuming single value returned from old logic, but in future it could be an array
+                    if (data.id_jurusan) {
+                        const jurusans = Array.isArray(data.id_jurusan) ? data.id_jurusan : [data.id_jurusan];
+                        jurusans.forEach(j_id => {
+                            const cb = document.querySelector(`.edit_id_jurusan_checkbox[value="${j_id}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
                     
                     // Show existing photo if available
                     const preview = document.getElementById('editPhotoPreview');
@@ -838,7 +842,14 @@
                 document.getElementById('edit_nip').value = '{{ old('nip') }}';
                 document.getElementById('edit_email').value = '{{ old('email') }}';
                 document.getElementById('edit_no_hp').value = '{{ old('no_hp') }}';
-                document.getElementById('edit_id_jurusan').value = '{{ old('id_jurusan') }}';
+                
+                // Set checked status for jurusan checkboxes
+                const oldJurusan = @json(old('id_jurusan', []));
+                const jurusans = Array.isArray(oldJurusan) ? oldJurusan : [oldJurusan];
+                document.querySelectorAll('.edit_id_jurusan_checkbox').forEach(cb => {
+                    cb.checked = jurusans.includes(cb.value) || jurusans.includes(Number(cb.value));
+                });
+                
                 document.getElementById('edit_status').checked = '{{ old('status') }}' === 'aktif';
             }
             document.getElementById('editDosenModal').classList.remove('hidden');
