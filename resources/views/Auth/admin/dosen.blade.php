@@ -358,15 +358,26 @@
                             </div>
                             
                             {{-- Program Studi --}}
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi (Bisa pilih lebih dari satu)</label>
-                                <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
-                                    @foreach($jurusanList as $jurusan)
-                                    <label class="flex items-center gap-2 cursor-pointer group">
-                                        <input type="checkbox" name="id_jurusan[]" value="{{ $jurusan->id_jurusan }}" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
-                                        <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{{ $jurusan->nama_jurusan }}</span>
-                                    </label>
-                                    @endforeach
+                            <div x-data="{ open: false, selectedCount: 0 }" x-init="
+                                $watch('open', () => { 
+                                    selectedCount = $el.querySelectorAll('input[type=checkbox]:checked').length; 
+                                });
+                                setTimeout(() => selectedCount = $el.querySelectorAll('input[type=checkbox]:checked').length, 100);
+                            ">
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi</label>
+                                <div class="relative">
+                                    <button type="button" @click="open = !open" @click.away="open = false" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-left text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 flex justify-between items-center ring-1 ring-inset ring-gray-200 dark:ring-gray-600 transition-all">
+                                        <span x-text="selectedCount > 0 ? selectedCount + ' Program Studi Terpilih' : 'Pilih program studi...'" :class="selectedCount > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-400'">Pilih program studi...</span>
+                                        <svg class="w-4 h-4 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </button>
+                                    <div x-show="open" style="display: none;" x-transition class="absolute z-[60] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl py-1.5 max-h-56 overflow-y-auto">
+                                        @foreach($jurusanList as $jurusan)
+                                        <label class="flex items-center gap-3 px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer group transition-colors">
+                                            <input type="checkbox" name="id_jurusan[]" value="{{ $jurusan->id_jurusan }}" @change="selectedCount = $el.closest('[x-data]').querySelectorAll('input[type=checkbox]:checked').length" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600 transition-colors">
+                                            <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{{ $jurusan->nama_jurusan }}</span>
+                                        </label>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                             
@@ -482,15 +493,31 @@
                                 <input type="text" name="nip" id="edit_nip" required placeholder="Masukkan NIP" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                             
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi (Bisa pilih lebih dari satu)</label>
-                                <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
-                                    @foreach($jurusanList as $jurusan)
-                                    <label class="flex items-center gap-2 cursor-pointer group">
-                                        <input type="checkbox" name="id_jurusan[]" value="{{ $jurusan->id_jurusan }}" class="edit_id_jurusan_checkbox w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
-                                        <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{{ $jurusan->nama_jurusan }}</span>
-                                    </label>
-                                    @endforeach
+                            <div x-data="{ open: false, selectedCount: 0 }" x-init="
+                                $watch('open', () => { 
+                                    selectedCount = $el.querySelectorAll('input[type=checkbox]:checked').length; 
+                                });
+                                // also listen for external changes from the script popping open the modal
+                                document.addEventListener('DOMContentLoaded', () => {
+                                    setInterval(() => {
+                                        if(!open) selectedCount = $el.querySelectorAll('input[type=checkbox]:checked').length;
+                                    }, 200);
+                                });
+                            ">
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi</label>
+                                <div class="relative">
+                                    <button type="button" @click="open = !open" @click.away="open = false" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-left text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 flex justify-between items-center ring-1 ring-inset ring-gray-200 dark:ring-gray-600 transition-all">
+                                        <span x-text="selectedCount > 0 ? selectedCount + ' Program Studi Terpilih' : 'Pilih program studi...'" :class="selectedCount > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-400'">Pilih program studi...</span>
+                                        <svg class="w-4 h-4 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </button>
+                                    <div x-show="open" style="display: none;" x-transition class="absolute z-[60] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl py-1.5 max-h-56 overflow-y-auto">
+                                        @foreach($jurusanList as $jurusan)
+                                        <label class="flex items-center gap-3 px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer group transition-colors">
+                                            <input type="checkbox" name="id_jurusan[]" value="{{ $jurusan->id_jurusan }}" @change="selectedCount = $el.closest('[x-data]').querySelectorAll('input[type=checkbox]:checked').length" class="edit_id_jurusan_checkbox w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600 transition-colors">
+                                            <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{{ $jurusan->nama_jurusan }}</span>
+                                        </label>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                             
