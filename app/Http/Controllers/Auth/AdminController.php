@@ -917,6 +917,7 @@ class AdminController extends Controller
                 'tipe' => $kursus->tipe,
                 'kategori' => $kursus->kategori,
                 'harga' => $kursus->harga,
+                'diskon' => $kursus->diskon,
                 'status' => $kursus->status,
                 'rating' => $kursus->rating,
                 'jumlah_ulasan' => $kursus->jumlah_ulasan,

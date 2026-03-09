@@ -191,7 +191,20 @@
                         {{-- Harga --}}
                         <td class="px-5 py-4 text-center">
                             @if(($kursus['harga'] ?? 0) > 0)
-                                <span class="text-sm font-semibold text-gray-900 dark:text-white">Rp {{ number_format($kursus['harga'], 0, ',', '.') }}</span>
+                                @if(($kursus['diskon'] ?? 0) > 0)
+                                    @php
+                                        $hargaDiskon = $kursus['harga'] - ($kursus['harga'] * $kursus['diskon'] / 100);
+                                    @endphp
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-sm font-bold text-gray-900 dark:text-white">Rp {{ number_format($hargaDiskon, 0, ',', '.') }}</span>
+                                        <div class="flex items-center gap-1.5 mt-0.5">
+                                            <span class="text-[10px] font-medium text-red-500 uppercase tracking-wider bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded">Diskon {{ $kursus['diskon'] }}%</span>
+                                            <span class="text-xs text-gray-400 dark:text-gray-500 line-through">Rp {{ number_format($kursus['harga'], 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-sm font-semibold text-gray-900 dark:text-white">Rp {{ number_format($kursus['harga'], 0, ',', '.') }}</span>
+                                @endif
                             @else
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
