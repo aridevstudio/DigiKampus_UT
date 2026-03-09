@@ -2388,6 +2388,105 @@ class AdminController extends Controller
     // ========================
     // News/Pengumuman Management
     // ========================
+    // PRODI (JURUSAN) MANAGEMENT
+    // ========================
+
+    public function showProdi(Request $request)
+    {
+        $admin = Auth::guard('admin')->user();
+        $perPage = 10;
+
+        $query = \App\Models\Jurusan::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama_jurusan', 'like', "%{$search}%")
+                  ->orWhere('kode_jurusan', 'like', "%{$search}%")
+                  ->orWhere('fakultas', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('jenjang')) {
+            $query->where('jenjang', $request->jenjang);
+        }
+
+        if ($request->filled('fakultas')) {
+            $query->where('fakultas', $request->fakultas);
+        }
+
+        $prodiPaginated = $query->withCount('profiles')->orderBy('nama_jurusan')->paginate($perPage);
+        $prodiPaginated->appends($request->only(['search', 'jenjang', 'fakultas']));
+
+        $totalAll = \App\Models\Jurusan::count();
+        $jenjangList = \App\Models\Jurusan::select('jenjang')->distinct()->orderBy('jenjang')->pluck('jenjang');
+        $fakultasList = \App\Models\Jurusan::select('fakultas')->distinct()->orderBy('fakultas')->pluck('fakultas');
+
+        return view('Auth.admin.prodi', [
+            'admin' => $admin,
+            'prodiPaginated' => $prodiPaginated,
+            'totalAll' => $totalAll,
+            'search' => $request->search ?? '',
+            'jenjangFilter' => $request->jenjang ?? '',
+            'fakultasFilter' => $request->fakultas ?? '',
+            'jenjangList' => $jenjangList,
+            'fakultasList' => $fakultasList,
+        ]);
+    }
+
+    public function storeProdi(Request $request)
+    {
+        $request->validate([
+            'kode_jurusan' => 'required|string|max:20|unique:jurusans,kode_jurusan',
+            'nama_jurusan' => 'required|string|max:255',
+            'fakultas' => 'required|string|max:255',
+            'jenjang' => 'required|string|max:10',
+        ]);
+
+        \App\Models\Jurusan::create($request->only(['kode_jurusan', 'nama_jurusan', 'fakultas', 'jenjang']));
+
+        return redirect()->route('admin.prodi')->with('success', 'Program Studi berhasil ditambahkan.');
+    }
+
+    public function getProdi($id)
+    {
+        $prodi = \App\Models\Jurusan::findOrFail($id);
+        return response()->json($prodi);
+    }
+
+    public function updateProdi(Request $request, $id)
+    {
+        $prodi = \App\Models\Jurusan::findOrFail($id);
+
+        $request->validate([
+            'kode_jurusan' => 'required|string|max:20|unique:jurusans,kode_jurusan,' . $id . ',id_jurusan',
+            'nama_jurusan' => 'required|string|max:255',
+            'fakultas' => 'required|string|max:255',
+            'jenjang' => 'required|string|max:10',
+        ]);
+
+        $prodi->update($request->only(['kode_jurusan', 'nama_jurusan', 'fakultas', 'jenjang']));
+
+        return redirect()->route('admin.prodi')->with('success', 'Program Studi berhasil diperbarui.');
+    }
+
+    public function deleteProdi($id)
+    {
+        $prodi = \App\Models\Jurusan::findOrFail($id);
+
+        $mahasiswaCount = $prodi->profiles()->count();
+        if ($mahasiswaCount > 0) {
+            return redirect()->route('admin.prodi')->with('error', "Tidak dapat menghapus prodi ini karena masih memiliki {$mahasiswaCount} mahasiswa terdaftar.");
+        }
+
+        $prodi->delete();
+
+        return redirect()->route('admin.prodi')->with('success', 'Program Studi berhasil dihapus.');
+    }
+
+    // ========================
+    // PENGUMUMAN MANAGEMENT
+    // ========================
 
     /**
      * Show Pengumuman page

@@ -107,6 +107,13 @@ Route::prefix('admin')
 
         // News/Pengumuman Management
         Route::get('/pengumuman', [AdminController::class, 'showPengumuman'])->name('admin.pengumuman');
+
+        // Prodi (Jurusan) Management
+        Route::get('/prodi', [AdminController::class, 'showProdi'])->name('admin.prodi');
+        Route::post('/prodi', [AdminController::class, 'storeProdi'])->name('admin.prodi.store');
+        Route::get('/prodi/{id}', [AdminController::class, 'getProdi'])->name('admin.prodi.get');
+        Route::put('/prodi/{id}', [AdminController::class, 'updateProdi'])->name('admin.prodi.update');
+        Route::delete('/prodi/{id}', [AdminController::class, 'deleteProdi'])->name('admin.prodi.delete');
         Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('admin.pengumuman.store');
         Route::get('/pengumuman/{id}', [AdminController::class, 'getPengumuman'])->name('admin.pengumuman.get');
         Route::put('/pengumuman/{id}', [AdminController::class, 'updatePengumuman'])->name('admin.pengumuman.update');
