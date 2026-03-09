@@ -14,6 +14,13 @@
                 </svg>
                 Tambah Kursus
             </button>
+
+            <button type="button" onclick="openAddWebinarModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-sm font-medium rounded-xl transition shadow-sm shadow-purple-500/25 hover:shadow-md hover:shadow-purple-500/30">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Tambah Webinar
+            </button>
             
             <div class="w-px h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
@@ -570,6 +577,191 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Add Webinar Modal --}}
+    <div id="addWebinarModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeAddWebinarModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all my-auto">
+                <button onclick="closeAddWebinarModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition z-10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <form action="{{ route('admin.kursus.store') }}" method="POST" enctype="multipart/form-data" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
+                    @csrf
+                    {{-- Hidden: force kategori to webinar --}}
+                    <input type="hidden" name="kategori" value="webinar">
+                    <input type="hidden" name="_modal" value="add_webinar">
+
+                    {{-- Modal Header --}}
+                    <div class="mb-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Webinar Baru</h3>
+                            <p class="text-sm text-purple-500">Lengkapi informasi webinar yang akan dilaksanakan.</p>
+                        </div>
+                    </div>
+
+                    {{-- Buttons --}}
+                    <div class="flex items-center justify-end gap-2 mb-6">
+                        <button type="button" onclick="closeAddWebinarModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
+                            Batal
+                        </button>
+                        <button type="submit" name="add_status_btn" value="draft" class="px-4 py-2 bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
+                            Simpan Draft
+                        </button>
+                        <button type="submit" name="add_status_btn" value="aktif" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-lg transition shadow-sm shadow-purple-500/25">
+                            Publikasikan
+                        </button>
+                    </div>
+
+                    <div class="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+
+                        {{-- 1. Informasi Dasar --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">1</span>
+                                Informasi Dasar Webinar
+                            </h4>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Webinar <span class="text-red-400">*</span></label>
+                                        <input type="text" name="nama_course" required placeholder="Masukkan judul webinar" value="{{ old('_modal') === 'add_webinar' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                        @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Webinar <span class="text-red-400">*</span></label>
+                                        <input type="text" name="kode_course" required placeholder="Contoh: WBN001" value="{{ old('_modal') === 'add_webinar' ? old('kode_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                        @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Webinar</label>
+                                    <textarea name="deskripsi" rows="3" placeholder="Jelaskan topik dan manfaat webinar ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none">{{ old('_modal') === 'add_webinar' ? old('deskripsi') : '' }}</textarea>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pembicara / Dosen</label>
+                                        <div class="relative">
+                                            <select name="id_dosen" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                                <option value="">Pilih Pembicara</option>
+                                                @foreach($dosenList as $dosen)
+                                                <option value="{{ $dosen->id }}" {{ old('_modal') === 'add_webinar' && old('id_dosen') == $dosen->id ? 'selected' : '' }}>{{ $dosen->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi</label>
+                                        <div class="relative">
+                                            <select name="id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                                <option value="">Pilih Prodi</option>
+                                                @foreach($jurusanList as $jurusan)
+                                                <option value="{{ $jurusan->id_jurusan }}" {{ old('_modal') === 'add_webinar' && old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
+                                                @endforeach
+                                            </select>
+                                            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Thumbnail --}}
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Webinar</label>
+                                    <div class="flex items-center gap-4">
+                                        <div id="webinarThumbnailPreview" class="w-20 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
+                                            <svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="file" name="thumbnail" id="webinarThumbnailInput" accept="image/*" onchange="previewWebinarThumbnail(event)" class="hidden">
+                                            <label for="webinarThumbnailInput" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg cursor-pointer transition">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                                Unggah Gambar
+                                            </label>
+                                            <p class="text-[11px] text-gray-400 mt-1">JPG, PNG, maks 5MB. Rasio 16:9 disarankan.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- 2. Jadwal Pelaksanaan --}}
+                        <div class="border border-purple-200 dark:border-purple-800/50 rounded-xl p-5 bg-purple-50/30 dark:bg-purple-900/10">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">2</span>
+                                Jadwal Pelaksanaan
+                                <span class="text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full">Khusus Webinar</span>
+                            </h4>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Pelaksanaan</label>
+                                        <input type="date" name="tanggal_webinar" value="{{ old('_modal') === 'add_webinar' ? old('tanggal_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai</label>
+                                        <input type="time" name="jam_mulai_webinar" value="{{ old('_modal') === 'add_webinar' ? old('jam_mulai_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai</label>
+                                        <input type="time" name="jam_selesai_webinar" value="{{ old('_modal') === 'add_webinar' ? old('jam_selesai_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Platform Meeting (Zoom / Google Meet / dll.)</label>
+                                    <div class="relative">
+                                        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                        <input type="url" name="youtube_playlist" placeholder="https://zoom.us/j/... atau https://meet.google.com/..." value="{{ old('_modal') === 'add_webinar' ? old('youtube_playlist') : '' }}" class="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    </div>
+                                    <p class="text-[11px] text-gray-400 mt-1">Link meeting akan dibagikan ke peserta yang terdaftar. <span class="text-amber-500">⚠ Backend perlu menyimpan ke kolom yang tepat.</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- 3. Harga & Akses --}}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">3</span>
+                                Harga & Akses
+                            </h4>
+                            <div class="grid grid-cols-3 gap-4 items-end">
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
+                                    <input type="number" name="harga" id="webinar_harga" min="0" placeholder="0" value="{{ old('_modal') === 'add_webinar' ? old('harga', 0) : 0 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Diskon (%)</label>
+                                    <input type="number" name="diskon" min="0" max="100" placeholder="0" value="{{ old('_modal') === 'add_webinar' ? old('diskon', 0) : 0 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                </div>
+                                <div class="flex items-center gap-2 py-2.5">
+                                    <input type="hidden" name="tipe" id="webinar_tipe_input" value="{{ old('_modal') === 'add_webinar' ? old('tipe', 'berbayar') : 'berbayar' }}">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="webinar_gratis_toggle" class="sr-only peer" {{ old('_modal') === 'add_webinar' && old('tipe') === 'gratis' ? 'checked' : '' }}>
+                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                                    </label>
+                                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Gratis</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </form>
             </div>
@@ -1207,7 +1399,52 @@
             document.getElementById('editKursusModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         });
+        @elseif($errors->any() && old('_modal') === 'add_webinar')
+        document.addEventListener('DOMContentLoaded', () => openAddWebinarModal());
         @endif
+
+        // ============================================================
+        // Add Webinar Modal
+        // ============================================================
+        function openAddWebinarModal() {
+            document.getElementById('addWebinarModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAddWebinarModal() {
+            document.getElementById('addWebinarModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function previewWebinarThumbnail(event) {
+            const input = event.target;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('webinarThumbnailPreview');
+                    preview.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Webinar Gratis toggle
+        const webinarGratisToggle = document.getElementById('webinar_gratis_toggle');
+        if (webinarGratisToggle) {
+            const webinarTipeInput = document.getElementById('webinar_tipe_input');
+            const webinarHargaInput = document.getElementById('webinar_harga');
+            webinarGratisToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    webinarTipeInput.value = 'gratis';
+                    if (webinarHargaInput) { webinarHargaInput.value = 0; webinarHargaInput.disabled = true; }
+                } else {
+                    webinarTipeInput.value = 'berbayar';
+                    if (webinarHargaInput) { webinarHargaInput.disabled = false; }
+                }
+            });
+            // Init state
+            if (webinarGratisToggle.checked && webinarHargaInput) webinarHargaInput.disabled = true;
+        }
     </script>
     @endpush
 </x-layouts.admin>
