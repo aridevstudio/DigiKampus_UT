@@ -674,16 +674,34 @@
                 </p>
                 
                 {{-- Buttons --}}
-                <form action="{{ route('mahasiswa.cart.add') }}" method="POST" class="mb-3">
-                    @csrf
-                    <input type="hidden" name="course_id" value="{{ $course->id_course }}">
-                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition btn-pulse flex items-center justify-center gap-2">
+                @if($isEnrolled)
+                    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 mb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Tambah ke Keranjang
-                    </button>
-                </form>
+                        {{ $enrollment && $enrollment->progress >= 100 ? 'Lihat Kembali Materi' : 'Lanjutkan Belajar' }}
+                    </a>
+                    @if($enrollment && $enrollment->progress >= 100)
+                        <button onclick="openReviewModal()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 mb-3">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            Beri Ulasan Kursus
+                        </button>
+                    @endif
+                @else
+                    <form action="{{ route('mahasiswa.cart.add') }}" method="POST" class="mb-3">
+                        @csrf
+                        <input type="hidden" name="course_id" value="{{ $course->id_course }}">
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition btn-pulse flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Tambah ke Keranjang
+                        </button>
+                    </form>
+                @endif
                 
                 @if($isFavorited)
                 <form action="{{ route('mahasiswa.favorite.remove', $course->id_course) }}" method="POST" class="w-full">
@@ -723,6 +741,28 @@
 
 @push('scripts')
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Auto show specific tab if present in URL
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            showTab(tabParam);
+        } else {
+            // Check hash as fallback to support #tab=ulasan etc
+            const hash = window.location.hash;
+            if (hash === '#ulasan' || hash === '#tab-ulasan') {
+                showTab('ulasan');
+            }
+        }
+        
+        // Auto open review modal if requested
+        if (urlParams.get('review') === 'true') {
+            showTab('ulasan');
+            openReviewModal();
+        }
+    });
+
     function showTab(tabName) {
         // Hide all tab contents
         document.querySelectorAll('.tab-content').forEach(content => {
@@ -751,7 +791,111 @@
         arrow.classList.toggle('rotate-90');
         content.classList.toggle('hidden');
     }
+
+    // Modal Review
+    function openReviewModal() {
+        document.getElementById('reviewModal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+    
+    function closeReviewModal() {
+        document.getElementById('reviewModal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    // Star Rating Logic
+    document.addEventListener('DOMContentLoaded', function() {
+        const stars = document.querySelectorAll('.star-rating');
+        const ratingInput = document.getElementById('rating-input');
+
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                ratingInput.value = value;
+                
+                stars.forEach(s => {
+                    if (s.getAttribute('data-value') <= value) {
+                        s.classList.remove('text-gray-300', 'dark:text-gray-600');
+                        s.classList.add('text-yellow-400');
+                    } else {
+                        s.classList.add('text-gray-300', 'dark:text-gray-600');
+                        s.classList.remove('text-yellow-400');
+                    }
+                });
+            });
+            
+            // Optional: Hover effect
+            star.addEventListener('mouseenter', function() {
+                const value = this.getAttribute('data-value');
+                stars.forEach(s => {
+                    if (s.getAttribute('data-value') <= value) {
+                        s.classList.add('text-yellow-300');
+                    }
+                });
+            });
+            
+            star.addEventListener('mouseleave', function() {
+                stars.forEach(s => {
+                    s.classList.remove('text-yellow-300');
+                });
+            });
+        });
+    });
 </script>
 @endpush
+
+{{-- Modal Beri Ulasan --}}
+<div id="reviewModal" class="fixed inset-0 z-[100] hidden">
+    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" onclick="closeReviewModal()"></div>
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+        <div class="relative bg-white dark:bg-[#1f2937] rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full">
+            <form action="{{ route('mahasiswa.course.review', $course->id_course) }}" method="POST">
+                @csrf
+                <div class="px-6 pt-6 pb-4">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Berikan Ulasan Anda</h3>
+                        <button type="button" onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <span class="sr-only">Close</span>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        {{-- Rating Stars --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Penilaian Anda</label>
+                            <div class="flex items-center gap-2">
+                                <input type="hidden" name="rating" id="rating-input" value="5" required>
+                                @for($i = 1; $i <= 5; $i++)
+                                <button type="button" class="star-rating focus:outline-none text-yellow-400 transition" data-value="{{ $i }}">
+                                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                </button>
+                                @endfor
+                            </div>
+                        </div>
+
+                        {{-- Review Text --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tuliskan pengalaman Anda</label>
+                            <textarea name="ulasan" rows="4" class="w-full bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 dark:text-gray-100" placeholder="Apa yang Anda pelajari dari kursus ini? Bagaimana penyampaian materinya?" required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 rounded-b-2xl">
+                    <button type="button" onclick="closeReviewModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-500 border border-transparent rounded-xl hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition w-full sm:w-auto">
+                        Kirim Ulasan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 </x-layouts.dashboard>

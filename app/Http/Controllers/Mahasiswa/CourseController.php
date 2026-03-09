@@ -870,6 +870,52 @@ class CourseController extends Controller
         ]);
     }
 
+    /**
+     * Submit a course review
+     */
+    public function submitCourseReview(Request $request, $courseId)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'ulasan' => 'required|string|min:5',
+        ]);
+        
+        // Ensure student is enrolled
+        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->first();
+            
+        if (!$enrollment) {
+            return back()->with('error', 'Anda harus terdaftar di kursus ini untuk memberikan ulasan.');
+        }
+        
+        if ($enrollment->progress < 100) {
+            return back()->with('error', 'Anda harus menyelesaikan kursus terlebih dahulu untuk memberikan ulasan.');
+        }
+        
+        $existingReview = \App\Models\Rating::where('id_course', $courseId)
+            ->where('id_mahasiswa', $user->id)
+            ->first();
+            
+        if ($existingReview) {
+            $existingReview->update([
+                'rating' => $request->rating,
+                'ulasan' => $request->ulasan,
+            ]);
+        } else {
+            \App\Models\Rating::create([
+                'id_course' => $courseId,
+                'id_mahasiswa' => $user->id,
+                'rating' => $request->rating,
+                'ulasan' => $request->ulasan,
+            ]);
+        }
+        
+        return back()->with('success', 'Terima kasih! Ulasan Anda telah tersimpan.');
+    }
+
     private function normalizeMaterialType(?string $type): string
     {
         return match ($type) {

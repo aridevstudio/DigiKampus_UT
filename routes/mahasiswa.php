@@ -50,6 +50,7 @@ Route::prefix('mahasiswa')
         Route::get('/get-courses', [CourseController::class, 'index'])->name('mahasiswa.get-courses');
         Route::get('/course/{id}', [CourseController::class, 'show'])->name('mahasiswa.course-detail');
         Route::get('/course/{id}/learn', [CourseController::class, 'learn'])->name('mahasiswa.course-learn');
+        Route::post('/course/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.course.review');
         Route::post('/course/material/{id}/complete', [CourseController::class, 'completeMaterial'])->name('mahasiswa.material.complete');
         Route::get('/course/{courseId}/quiz/{quizId}', [CourseController::class, 'quiz'])->name('mahasiswa.course-quiz');
         Route::post('/course/{courseId}/quiz/{quizId}/answer', [CourseController::class, 'saveQuizAnswer'])->name('mahasiswa.quiz-answer');
