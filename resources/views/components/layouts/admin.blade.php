@@ -35,8 +35,9 @@
         }
 
         #admin-main-content .admin-data-table {
-            width: max-content;
-            min-width: 100%;
+            width: 100%;
+            min-width: 0;
+            table-layout: auto;
         }
 
         @media (max-width: 1024px) {
@@ -98,6 +99,11 @@
             #admin-main-content .admin-data-table th,
             #admin-main-content .admin-data-table td {
                 padding: 0.625rem 0.75rem !important;
+            }
+
+            #admin-main-content .admin-data-table {
+                width: max-content;
+                min-width: max(100%, 680px);
             }
 
             #admin-main-content .admin-data-table th {
@@ -569,13 +575,18 @@
         // Ensure all admin tables remain scrollable on small screens.
         function ensureResponsiveAdminTables() {
             const tables = document.querySelectorAll('#admin-main-content table');
+            const isSmallScreen = window.matchMedia('(max-width: 640px)').matches;
 
             tables.forEach((table) => {
                 table.classList.add('admin-data-table');
 
                 if (table.closest('.overflow-x-auto')) {
-                    if (!table.style.minWidth && !table.className.includes('min-w-')) {
+                    if (isSmallScreen && !table.style.minWidth && !table.className.includes('min-w-')) {
                         table.style.minWidth = '680px';
+                        table.dataset.autoMinWidth = 'true';
+                    } else if (!isSmallScreen && table.dataset.autoMinWidth === 'true') {
+                        table.style.minWidth = '';
+                        delete table.dataset.autoMinWidth;
                     }
                     return;
                 }
@@ -592,8 +603,9 @@
                 parent.insertBefore(wrapper, table);
                 wrapper.appendChild(table);
 
-                if (!table.className.includes('min-w-')) {
+                if (isSmallScreen && !table.className.includes('min-w-')) {
                     table.style.minWidth = '680px';
+                    table.dataset.autoMinWidth = 'true';
                 }
             });
         }
@@ -603,6 +615,8 @@
         } else {
             ensureResponsiveAdminTables();
         }
+
+        window.addEventListener('resize', ensureResponsiveAdminTables);
     </script>
     
     @stack('scripts')
