@@ -65,20 +65,33 @@
             }
 
             #admin-main-content .admin-responsive-toolbar {
-                display: grid;
-                grid-template-columns: 1fr;
+                display: flex;
+                flex-wrap: wrap;
                 align-items: stretch;
                 gap: 0.75rem;
             }
 
             #admin-main-content .admin-responsive-toolbar > * {
-                width: 100% !important;
-                max-width: none !important;
                 margin-left: 0 !important;
+                min-width: 0;
             }
 
-            #admin-main-content .admin-responsive-toolbar button,
-            #admin-main-content .admin-responsive-toolbar a {
+            #admin-main-content .admin-responsive-toolbar > .w-px {
+                display: none;
+            }
+
+            #admin-main-content .admin-responsive-toolbar > .relative {
+                width: 100%;
+            }
+
+            #admin-main-content .admin-responsive-toolbar > .relative > select,
+            #admin-main-content .admin-responsive-toolbar > .relative > input {
+                width: 100%;
+            }
+
+            #admin-main-content .admin-responsive-toolbar > button,
+            #admin-main-content .admin-responsive-toolbar > a {
+                width: 100%;
                 justify-content: center;
             }
 
