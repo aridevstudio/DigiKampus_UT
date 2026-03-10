@@ -101,6 +101,13 @@
                     </svg>
                     <span class="font-medium">Kelola Prodi</span>
                 </a>
+
+                <a href="#" onclick="return false" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'kategori' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10H7V7zm-4 4h4m10 0h4M11 3v4m0 10v4" />
+                    </svg>
+                    <span class="font-medium">Kelola Kategori</span>
+                </a>
                 
                 <a href="{{ route('admin.pengumuman') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'pengumuman' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
