@@ -1,13 +1,19 @@
 <x-layouts.dosen title="Buat Kursus Baru" active="buat-kursus">
     <div class="max-w-3xl mx-auto">
-        <form action="{{ route('dosen.kursus.store') }}" method="POST" enctype="multipart/form-data" id="buatKursusForm" x-data="{ isLoading: false }" @submit="isLoading = true">
+        <form action="{{ route('dosen.kursus.store') }}" method="POST" enctype="multipart/form-data" id="buatKursusForm" x-data="{ isLoading: false, selectedKategori: '{{ old('kategori', 'kursus') }}' }" @submit="isLoading = true">
             @csrf
             
             {{-- Page Header + Action Buttons --}}
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6">
                 <div class="mb-4">
-                    <h1 class="text-lg font-bold text-gray-900 dark:text-white">Buat Kursus Baru</h1>
-                    <p class="text-sm text-blue-500">Lengkapi informasi berikut untuk membuat kursus baru.</p>
+                    <h1 class="text-lg font-bold text-gray-900 dark:text-white">
+                        <span x-show="selectedKategori !== 'webinar'">Buat Kursus Baru</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Buat Webinar Baru</span>
+                    </h1>
+                    <p class="text-sm text-blue-500">
+                        <span x-show="selectedKategori !== 'webinar'">Lengkapi informasi berikut untuk membuat kursus baru.</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Lengkapi informasi berikut untuk mengajukan webinar baru.</span>
+                    </p>
                 </div>
                 
                 <div class="flex items-center justify-end gap-2">
@@ -18,7 +24,8 @@
                         Simpan Draft
                     </button>
                     <button type="submit" name="status_btn" value="aktif" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition shadow-sm shadow-blue-500/25">
-                        Buat Kursus
+                        <span x-show="selectedKategori !== 'webinar'">Buat Kursus</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Ajukan Webinar</span>
                     </button>
                 </div>
             </div>
@@ -111,10 +118,13 @@
                                 </div>
                             </div>
 
-                            {{-- Playlist YouTube --}}
+                            {{-- Playlist YouTube / Link Meeting --}}
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Playlist YouTube (Opsional)</label>
-                                <input type="url" name="youtube_playlist" id="add_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('youtube_playlist') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                                    <span x-show="selectedKategori !== 'webinar'">Link Playlist YouTube (Opsional)</span>
+                                    <span x-show="selectedKategori === 'webinar'" x-cloak>Link Meeting (Zoom/Google Meet) <span class="text-red-400">*</span></span>
+                                </label>
+                                <input type="url" name="youtube_playlist" id="add_youtube_playlist" :placeholder="selectedKategori === 'webinar' ? 'https://zoom.us/j/... atau https://meet.google.com/...' : 'https://www.youtube.com/playlist?list=...'" value="{{ old('youtube_playlist') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @error('youtube_playlist')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
@@ -142,8 +152,46 @@
                         </div>
                     </div>
 
-                    {{-- 2. Struktur Modul Awal --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                    {{-- 2. Jadwal Pelaksanaan (Webinar Only) --}}
+                    <div x-show="selectedKategori === 'webinar'" x-transition x-cloak class="border border-indigo-200 dark:border-indigo-700/50 rounded-xl p-5 bg-indigo-50/30 dark:bg-indigo-900/10">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center justify-center">2</span>
+                            Jadwal Pelaksanaan
+                        </h4>
+                        
+                        <div class="space-y-4">
+                            {{-- Tanggal Webinar --}}
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Webinar <span class="text-red-400">*</span></label>
+                                <input type="date" name="tanggal_webinar" value="{{ old('tanggal_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('tanggal_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Jam Mulai & Jam Selesai --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-red-400">*</span></label>
+                                    <input type="time" name="jam_mulai_webinar" value="{{ old('jam_mulai_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('jam_mulai_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-red-400">*</span></label>
+                                    <input type="time" name="jam_selesai_webinar" value="{{ old('jam_selesai_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('jam_selesai_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+
+                            {{-- Kuota Peserta --}}
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta (Opsional)</label>
+                                <input type="number" name="kuota_peserta" min="0" placeholder="Kosongkan jika tidak dibatasi" value="{{ old('kuota_peserta') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('kuota_peserta')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- 2. Struktur Modul Awal (Hidden for Webinar) --}}
+                    <div x-show="selectedKategori !== 'webinar'" x-transition class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">2</span>
                             Struktur Modul Awal
@@ -247,7 +295,7 @@
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
                                 <div class="relative">
-                                    <select name="kategori" id="add_kategori" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <select name="kategori" id="add_kategori" required x-model="selectedKategori" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         <option value="kursus" {{ old('kategori') === 'kursus' ? 'selected' : '' }}>Kursus</option>
                                         <option value="webinar" {{ old('kategori') === 'webinar' ? 'selected' : '' }}>Webinar</option>
                                         <option value="tiket" {{ old('kategori') === 'tiket' ? 'selected' : '' }}>Tiket</option>

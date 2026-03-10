@@ -1,6 +1,9 @@
 <x-layouts.dosen title="Edit Kursus" active="kursus-saya">
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Edit Kursus</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white" x-data="{ kat: '{{ old('kategori', $course->kategori ?? 'kursus') }}' }">
+            <span x-show="kat !== 'webinar'">Edit Kursus</span>
+            <span x-show="kat === 'webinar'" x-cloak>Edit Webinar</span>
+        </h1>
         <p class="text-gray-500 dark:text-gray-400 mt-1">Perbarui informasi dan struktur materi kursus Anda</p>
     </div>
 
@@ -22,7 +25,7 @@
                     <h2 class="text-lg font-bold text-gray-900 dark:text-white">Informasi Kursus</h2>
                 </div>
 
-                <form action="{{ route('dosen.kursus.update', $course->id_course) }}" method="POST" enctype="multipart/form-data" x-data="{ isLoading: false }" @submit="isLoading = true">
+                <form action="{{ route('dosen.kursus.update', $course->id_course) }}" method="POST" enctype="multipart/form-data" x-data="{ isLoading: false, selectedKategori: '{{ old('kategori', $course->kategori ?? 'kursus') }}' }" @submit="isLoading = true">
                     @csrf
                     @method('PUT')
                     
@@ -103,7 +106,7 @@
                         {{-- Kategori Kursus (Kursus/Webinar/Tiket) --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jenis Kursus</label>
-                            <select name="kategori" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <select name="kategori" x-model="selectedKategori" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="kursus" {{ old('kategori', $course->kategori) === 'kursus' ? 'selected' : '' }}>Kursus</option>
                                 <option value="webinar" {{ old('kategori', $course->kategori) === 'webinar' ? 'selected' : '' }}>Webinar</option>
                                 <option value="tiket" {{ old('kategori', $course->kategori) === 'tiket' ? 'selected' : '' }}>Tiket</option>
@@ -112,9 +115,42 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL Playlist YouTube (Opsional)</label>
-                            <input type="url" name="youtube_playlist" value="{{ old('youtube_playlist', $course->youtube_playlist) }}" placeholder="https://www.youtube.com/playlist?list=..." class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <span x-show="selectedKategori !== 'webinar'">URL Playlist YouTube (Opsional)</span>
+                                <span x-show="selectedKategori === 'webinar'" x-cloak>Link Meeting (Zoom/Google Meet)</span>
+                            </label>
+                            <input type="url" name="youtube_playlist" value="{{ old('youtube_playlist', $course->youtube_playlist) }}" :placeholder="selectedKategori === 'webinar' ? 'https://zoom.us/j/... atau https://meet.google.com/...' : 'https://www.youtube.com/playlist?list=...'" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             @error('youtube_playlist')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
+
+                        {{-- Jadwal Pelaksanaan (Webinar Only) --}}
+                        <div x-show="selectedKategori === 'webinar'" x-transition x-cloak class="rounded-xl border border-indigo-200 dark:border-indigo-700/50 bg-indigo-50/30 dark:bg-indigo-900/10 p-4 space-y-4">
+                            <h5 class="text-sm font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                Jadwal Pelaksanaan
+                            </h5>
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Webinar <span class="text-red-400">*</span></label>
+                                <input type="date" name="tanggal_webinar" value="{{ old('tanggal_webinar', $course->tanggal_webinar ?? '') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('tanggal_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-red-400">*</span></label>
+                                    <input type="time" name="jam_mulai_webinar" value="{{ old('jam_mulai_webinar', $course->jam_mulai_webinar ?? '') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('jam_mulai_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-red-400">*</span></label>
+                                    <input type="time" name="jam_selesai_webinar" value="{{ old('jam_selesai_webinar', $course->jam_selesai_webinar ?? '') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('jam_selesai_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta (Opsional)</label>
+                                <input type="number" name="kuota_peserta" min="0" placeholder="Kosongkan jika tidak dibatasi" value="{{ old('kuota_peserta', $course->kuota_peserta ?? '') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('kuota_peserta')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
                         </div>
 
                         {{-- Harga (condisional, muncul kalau Berbayar) --}}
