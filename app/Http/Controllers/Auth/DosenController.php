@@ -212,6 +212,38 @@ class DosenController extends Controller
             ->values()
             ->all();
 
+        // Auto-create notifications for schedules within the next 24 hours
+        $upcoming24h = Agenda::query()
+            ->where('id_dosen', $dosen->id)
+            ->whereDate('tanggal', '>=', now()->toDateString())
+            ->whereDate('tanggal', '<=', now()->addDay()->toDateString())
+            ->with('course')
+            ->get();
+
+        foreach ($upcoming24h as $schedule) {
+            $notifKey = 'jadwal_' . $schedule->id_agenda;
+
+            $exists = DosenNotification::where('dosen_id', $dosen->id)
+                ->where('konten', $notifKey)
+                ->exists();
+
+            if (!$exists) {
+                $courseName = $schedule->course?->nama_course ?? $schedule->judul ?? 'Jadwal Mengajar';
+                $tanggal = $schedule->tanggal?->translatedFormat('d M Y') ?? '-';
+                $waktu = $this->formatScheduleTime($schedule->waktu_mulai);
+                $timeLabel = $waktu ? "pukul {$waktu} WIB" : '';
+
+                DosenNotification::notifyDosen(
+                    $dosen->id,
+                    "Jadwal mengajar terdekat: {$courseName}",
+                    $notifKey,
+                    'info',
+                    'calendar',
+                    $schedule->id_course ? route('dosen.kursus.detail', $schedule->id_course) : null
+                );
+            }
+        }
+
         return view('Auth.dosen.dashboard', [
             'dosen' => $dosen,
             'totalCourses' => $totalCourses,
