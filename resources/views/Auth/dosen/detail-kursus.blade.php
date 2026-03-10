@@ -151,23 +151,44 @@
                 </div>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Mahasiswa Terbaru</h2>
-                <div class="space-y-3">
-                    @forelse($course->enrollments->take(5) as $enrollment)
-                        <div class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/40">
-                            <div class="min-w-0">
-                                <p class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">
-                                    {{ $enrollment->mahasiswa?->name ?? 'Mahasiswa' }}
-                                </p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $enrollment->mahasiswa?->profile?->nim ?? '-' }}</p>
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800" x-data="{ search: '' }">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Daftar Mahasiswa</h2>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ $course->enrollments->count() }} terdaftar</span>
+                </div>
+
+                @if($course->enrollments->count() > 5)
+                <div class="mb-3">
+                    <input type="text" x-model="search" placeholder="Cari nama atau NIM..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                @endif
+
+                <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
+                    @forelse($course->enrollments as $enrollment)
+                        <div class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2.5 dark:bg-gray-700/40"
+                             x-show="!search || '{{ strtolower($enrollment->mahasiswa?->name ?? '') }} {{ strtolower($enrollment->mahasiswa?->profile?->nim ?? '') }}'.includes(search.toLowerCase())"
+                             x-transition>
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                    <span class="text-xs font-bold text-blue-600 dark:text-blue-400">{{ strtoupper(substr($enrollment->mahasiswa?->name ?? 'M', 0, 1)) }}</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">
+                                        {{ $enrollment->mahasiswa?->name ?? 'Mahasiswa' }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $enrollment->mahasiswa?->profile?->nim ?? '-' }}</p>
+                                </div>
                             </div>
-                            <span class="ml-3 shrink-0 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                                {{ (int) round($enrollment->progress ?? 0) }}%
-                            </span>
+                            <div class="ml-3 shrink-0 flex items-center gap-2">
+                                @php $prog = (int) round($enrollment->progress ?? 0); @endphp
+                                <div class="w-16 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full {{ $prog >= 100 ? 'bg-green-500' : ($prog >= 50 ? 'bg-blue-500' : 'bg-amber-500') }}" style="width: {{ $prog }}%"></div>
+                                </div>
+                                <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 w-8 text-right">{{ $prog }}%</span>
+                            </div>
                         </div>
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada mahasiswa terdaftar.</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">Belum ada mahasiswa terdaftar.</p>
                     @endforelse
                 </div>
             </div>
