@@ -201,7 +201,7 @@
                         {{-- Action --}}
                         <td class="px-5 py-3.5 text-center">
                             <div class="relative" x-data="{ open: false }">
-                                <button @click="open = !open" @click.outside="open = false" type="button" class="p-1.5 text-gray-300 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition opacity-0 group-hover:opacity-100">
+                                <button @click="open = !open" @click.outside="open = false" type="button" class="p-1.5 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                                 </button>
                                 
