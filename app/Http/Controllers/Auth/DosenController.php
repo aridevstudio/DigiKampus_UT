@@ -817,15 +817,6 @@ class DosenController extends Controller
     {
         $dosen = Auth::guard('dosen')->user();
 
-        $typeRoutes = [
-            'video' => 'dosen.kelola-video',
-            'bacaan' => 'dosen.kelola-bacaan',
-            'kuis' => 'dosen.kelola-quiz',
-            'tugas' => 'dosen.kelola-tugas',
-        ];
-
-        $redirectToTypedPage = $request->filled('modul_judul') && isset($typeRoutes[$request->modul_tipe]);
-        
         $request->validate([
             'nama_course' => [
                 'required',
@@ -859,7 +850,7 @@ class DosenController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
         }
 
-        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath, $redirectToTypedPage) {
+        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath) {
             $durasiSatuan = null;
             if ($request->filled('estimasi_waktu')) {
                 $durasiSatuan = $request->durasi_satuan ?: 'Jam';
@@ -904,7 +895,7 @@ class DosenController extends Controller
                 // If title provided, create first material inside the main module.
                 // Prevent duplicate first material:
                 // when user is redirected to typed content page, that page will create the material.
-                if ($request->filled('modul_judul') && !$redirectToTypedPage) {
+                if ($request->filled('modul_judul')) {
                     $materialType = $request->modul_tipe ?? 'video';
 
                     \App\Models\CourseMaterial::create([
@@ -923,23 +914,8 @@ class DosenController extends Controller
             return $course;
         });
 
-        if ($redirectToTypedPage) {
-            $redirectParams = array_filter([
-                'course_id' => $course->id_course,
-                'modul_judul' => $request->modul_judul,
-                'modul_konten' => $request->modul_konten,
-                'modul_video_url' => $request->modul_video_url,
-                'modul_durasi' => $request->modul_durasi,
-            ], static function ($value) {
-                return $value !== null && $value !== '';
-            });
-
-            return redirect()->route($typeRoutes[$request->modul_tipe], $redirectParams)
-                ->with('success', 'Kursus berhasil dibuat! Lanjutkan pengelolaan konten sesuai tipe modul.');
-        }
-
-        return redirect()->route('dosen.kursus.modul', $course->id_course)
-            ->with('success', 'Kursus berhasil dibuat! Silakan tambahkan modul.');
+        return redirect()->route('dosen.kursus')
+            ->with('success', 'Kursus berhasil dibuat dan tampil di Kursus Saya.');
     }
 
     /**

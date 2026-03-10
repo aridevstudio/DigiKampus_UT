@@ -145,6 +145,19 @@ jobs:
           sudo -u www-data php artisan view:cache
 
           echo "✅ DigiKampusUT optimization completed!"
+  
+    - name: Restart PHP-FPM
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: 22
+        script: |
+          echo "Restarting PHP-FPM..."
+          sudo systemctl restart php8.2-fpm
+          sudo systemctl restart nginx
+            echo "✅ PHP-FPM and Nginx restarted successfully!"
 
     - name: Deployment Summary
       if: always()
