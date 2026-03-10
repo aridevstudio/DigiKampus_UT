@@ -217,7 +217,7 @@
                             @if($module->materials->count() === 0)
                                 <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-4">
                                     <h4 class="font-semibold text-blue-700 dark:text-blue-300 mb-3 text-base">Tambah Konten Awal</h4>
-                                    <form action="{{ route('dosen.material.store', $course- x-data="{ isLoading: false }" @submit="isLoading = true">id_course) }}" method="POST" class="initial-content-form">
+                                    <form action="{{ route('dosen.material.store', $course->id_course) }}" method="POST" class="initial-content-form" x-data="{ isLoading: false }" @submit="isLoading = true">
                                         @csrf
                                         <input type="hidden" name="id_module" value="{{ $module->id_module }}">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
@@ -355,7 +355,7 @@
                 <button onclick="closeAddModuleModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-                <form action="{{ route('dosen.module.store', $course- x-data="{ isLoading: false }" @submit="isLoading = true">id_course) }}" method="POST" class="p-6">
+                <form action="{{ route('dosen.module.store', $course->id_course) }}" method="POST" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Modul Baru</h3>
                     <div class="space-y-4">
@@ -440,7 +440,7 @@
                 <button onclick="closeAddMaterialModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-                <form id="addMaterialForm" action="{{ route('dosen.material.store', $course- x-data="{ isLoading: false }" @submit="isLoading = true">id_course) }}" method="POST" class="p-6" onsubmit="return handleAddMaterialSubmit(event)">
+                <form id="addMaterialForm" action="{{ route('dosen.material.store', $course->id_course) }}" method="POST" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true" onsubmit="return handleAddMaterialSubmit(event)">
                     @csrf
                     <input type="hidden" name="id_module" id="add_material_module_id">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Materi Baru</h3>
