@@ -38,6 +38,27 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Durasi Pengerjaan (Menit)</label>
                     <input type="number" x-model="form.durasi" min="5" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Passing Score (%)</label>
+                    <input type="number" x-model="form.passing_score" min="0" max="100" placeholder="60" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                </div>
+                <div class="flex items-end">
+                    <label class="flex items-center gap-3 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/50 rounded-xl cursor-pointer w-full">
+                        <input type="checkbox" x-model="form.is_pretest" class="rounded border-gray-300 text-green-500 focus:ring-green-500 w-4 h-4">
+                        <div>
+                            <span class="text-sm font-medium text-green-700 dark:text-green-400">Jadikan Pretest</span>
+                            <p class="text-xs text-green-600/70 dark:text-green-500/70">Kuis ini akan menjadi tes awal sebelum materi</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <input type="checkbox" x-model="form.acak_soal" class="rounded border-gray-300 text-blue-500 focus:ring-blue-500"> Acak Urutan Soal
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <input type="checkbox" x-model="form.tampilkan_nilai" class="rounded border-gray-300 text-blue-500 focus:ring-blue-500"> Tampilkan Nilai Setelah Selesai
+                </label>
             </div>
         </div>
 
@@ -45,7 +66,13 @@
             <div class="space-y-6">
                 {{-- Daftar Soal Kuis --}}
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-5">Daftar Soal Kuis</h2>
+                    <div class="flex items-center justify-between mb-5">
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Daftar Soal Kuis</h2>
+                        <div class="flex items-center gap-3 text-sm" x-show="questions.length > 0">
+                            <span class="text-gray-500 dark:text-gray-400" x-text="questions.length + ' soal'"></span>
+                            <span class="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium" x-text="'Total: ' + questions.reduce((sum, q) => sum + Number(q.bobot), 0) + ' poin'"></span>
+                        </div>
+                    </div>
                     
                     <div class="space-y-3" id="questionsList">
                         <template x-for="(question, index) in questions" :key="question.id">
@@ -217,8 +244,17 @@
                         
                         {{-- Bobot --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bobot (poin)</label>
-                            <input type="number" x-model="modalForm.bobot" min="1" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bobot Poin</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" x-model="modalForm.bobot" min="1" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm">
+                                <span class="text-sm text-gray-400 flex-shrink-0">poin</span>
+                            </div>
+                        </div>
+
+                        {{-- Penjelasan --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Penjelasan Jawaban <span class="text-gray-400 font-normal">(opsional)</span></label>
+                            <textarea x-model="modalForm.penjelasan" rows="2" placeholder="Penjelasan mengapa jawaban tersebut benar..." class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm resize-none"></textarea>
                         </div>
                     </div>
                     
@@ -252,7 +288,11 @@
                     judul_modul: @json(request('modul_judul', '')),
                     durasi: @json(request('modul_durasi', 15)),
                     tipe: 'kuis',
-                    konten: ''
+                    konten: '',
+                    is_pretest: false,
+                    passing_score: 60,
+                    acak_soal: false,
+                    tampilkan_nilai: true
                 },
                 
                 // State for Quiz Content
@@ -270,7 +310,8 @@
                     pertanyaan: '',
                     options: ['', '', '', ''],
                     correctAnswer: 0,
-                    bobot: 10
+                    bobot: 10,
+                    penjelasan: ''
                 },
 
                 toast: { show: false, message: '', type: 'success' },
@@ -381,7 +422,8 @@
                         pertanyaan: '',
                         options: ['', '', '', ''],
                         correctAnswer: 0,
-                        bobot: 10
+                        bobot: 10,
+                        penjelasan: ''
                     };
                 },
 
