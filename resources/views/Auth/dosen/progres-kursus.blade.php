@@ -87,11 +87,11 @@
     </div>
 
     <div class="mt-6">
-        <a href="{{ route('dosen.kursus.modul', $course->id_course) }}" class="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600">
+        <a href="{{ route('dosen.kursus') }}" class="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-            Kembali ke Kelola Modul
+            Kembali ke Kursus Saya
         </a>
     </div>
 </x-layouts.dosen>

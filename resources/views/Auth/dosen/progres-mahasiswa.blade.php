@@ -244,7 +244,7 @@
                 Menampilkan <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $enrollments->firstItem() ?? 0 }}</span>-<span class="font-semibold text-gray-700 dark:text-gray-300">{{ $enrollments->lastItem() ?? 0 }}</span> dari <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $enrollments->total() }}</span> data
             </p>
             <div class="flex items-center gap-1.5">
-                {{ $enrollments->onEachSide(1)->links('vendor.pagination.tailwind') }}
+                {{ $enrollments->onEachSide(1)->links() }}
             </div>
         </div>
         @endif

@@ -1066,7 +1066,7 @@ class DosenController extends Controller
             ->where('id_dosen', $dosen->id)
             ->with(['materials' => function($q) {
                 $q->orderBy('urutan');
-            }, 'enrollments', 'jurusan'])
+            }, 'enrollments.mahasiswa.profile', 'jurusan'])
             ->first();
 
         if (!$course) {

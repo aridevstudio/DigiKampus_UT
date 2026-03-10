@@ -1,11 +1,11 @@
 <x-layouts.dosen title="Preview Kursus" active="kursus-saya">
     {{-- Back --}}
     <div class="mb-6">
-        <a href="{{ route('dosen.kursus.modul', $course->id_course) }}" class="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-blue-500">
+        <a href="{{ route('dosen.kursus') }}" class="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-blue-500">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-            Kembali ke Kelola Modul
+            Kembali ke Kursus Saya
         </a>
     </div>
 
@@ -124,6 +124,52 @@
             <div class="text-center py-8 text-gray-500 dark:text-gray-400">
                 <p>Belum ada modul dalam kursus ini</p>
             </div>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- Mahasiswa Terdaftar --}}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mt-6" x-data="{ search: '' }">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Mahasiswa Terdaftar</h2>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ $course->enrollments->count() }} mahasiswa</span>
+        </div>
+
+        @if($course->enrollments->count() > 5)
+        <div class="mb-3">
+            <input type="text" x-model="search" placeholder="Cari nama atau NIM..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+        @endif
+
+        <div class="space-y-2 max-h-80 overflow-y-auto">
+            @forelse($course->enrollments as $enrollment)
+                <div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-gray-700/50 px-4 py-3"
+                     x-show="!search || '{{ strtolower($enrollment->mahasiswa?->name ?? '') }} {{ strtolower($enrollment->mahasiswa?->profile?->nim ?? '') }}'.includes(search.toLowerCase())"
+                     x-transition>
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                            <span class="text-xs font-bold text-blue-600 dark:text-blue-400">{{ strtoupper(substr($enrollment->mahasiswa?->name ?? 'M', 0, 1)) }}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">{{ $enrollment->mahasiswa?->name ?? 'Mahasiswa' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $enrollment->mahasiswa?->profile?->nim ?? '-' }}</p>
+                        </div>
+                    </div>
+                    <div class="ml-3 shrink-0 flex items-center gap-2">
+                        @php $prog = (int) round($enrollment->progress ?? 0); @endphp
+                        <div class="w-16 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full {{ $prog >= 100 ? 'bg-green-500' : ($prog >= 50 ? 'bg-blue-500' : 'bg-amber-500') }}" style="width: {{ $prog }}%"></div>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 w-8 text-right">{{ $prog }}%</span>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-6 text-gray-500 dark:text-gray-400">
+                    <svg class="w-10 h-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <p class="text-sm">Belum ada mahasiswa terdaftar</p>
+                </div>
             @endforelse
         </div>
     </div>
