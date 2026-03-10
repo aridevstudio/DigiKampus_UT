@@ -91,8 +91,8 @@
 
             #admin-main-content .admin-responsive-toolbar > button,
             #admin-main-content .admin-responsive-toolbar > a {
-                width: 100%;
-                justify-content: center;
+                max-width: 100%;
+                flex: 0 1 auto;
             }
 
             #admin-main-content .admin-data-table th,
