@@ -92,7 +92,7 @@
             'red' => ['bg' => 'bg-red-50 dark:bg-red-900/20', 'icon' => 'text-red-500 dark:text-red-400', 'text' => 'text-red-700 dark:text-red-300', 'border' => 'border-red-100 dark:border-red-800/30'],
         ];
     @endphp
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         @foreach($dosenStatItems as $stat)
         <div class="flex items-center gap-3 p-3.5 rounded-xl {{ $dosenColorMap[$stat['color']]['bg'] }} border {{ $dosenColorMap[$stat['color']]['border'] }}">
             <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">

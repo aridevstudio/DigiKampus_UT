@@ -79,7 +79,7 @@
 
     {{-- Summary Stats --}}
     @if($totalKursus > 0)
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         @php
             $kategoriStats = collect($kursusList)->groupBy('kategori')->map->count();
             $statItems = [

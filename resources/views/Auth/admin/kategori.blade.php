@@ -13,7 +13,7 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">UI frontend untuk tambah, edit, filter, dan hapus kategori.</p>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
             <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ count($sampleKategori) }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">Total Kategori (UI)</p>

@@ -65,12 +65,12 @@
                 right: 0;
             }
 
-            /* Toolbar: use CSS grid for smart 2-column layout */
+            /* Toolbar: compact flex layout, buttons stay small */
             #admin-main-content .admin-responsive-toolbar {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
+                display: flex;
+                flex-wrap: wrap;
                 gap: 0.5rem;
-                align-items: stretch;
+                align-items: center;
             }
 
             /* Hide dividers on mobile */
@@ -78,22 +78,20 @@
                 display: none;
             }
 
-            /* Buttons: auto-fit within grid, don't stretch */
+            /* Buttons: compact auto-width, NOT full-width */
             #admin-main-content .admin-responsive-toolbar > button,
             #admin-main-content .admin-responsive-toolbar > a {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 2.5rem;
-                white-space: nowrap;
+                flex: 0 0 auto;
                 font-size: 0.8125rem;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding: 0.5rem 0.75rem;
+                white-space: nowrap;
             }
 
-            /* Filter dropdowns: each takes one grid cell */
+            /* Filter dropdowns: 2 per row */
             #admin-main-content .admin-responsive-toolbar > .relative {
+                flex: 1 1 calc(50% - 0.25rem);
                 min-width: 0;
+                max-width: calc(50% - 0.25rem);
             }
 
             #admin-main-content .admin-responsive-toolbar > .relative > select,
@@ -104,9 +102,9 @@
                 padding-bottom: 0.5rem;
             }
 
-            /* Search bar group: span full width (both columns) */
+            /* Search group: full width */
             #admin-main-content .admin-responsive-toolbar > .admin-search-group {
-                grid-column: 1 / -1;
+                flex: 1 1 100%;
                 max-width: none;
             }
 
