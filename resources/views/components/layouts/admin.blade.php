@@ -40,11 +40,6 @@
             table-layout: auto;
         }
 
-        @media (max-width: 1024px) {
-            #admin-main-content .admin-responsive-toolbar {
-                row-gap: 0.5rem;
-            }
-        }
 
         @media (max-width: 640px) {
             #admin-main-content {
@@ -52,96 +47,17 @@
             }
 
             #admin-main-content h1 {
-                font-size: 1.35rem;
+                font-size: 1.25rem;
                 line-height: 1.25;
+            }
+
+            #admin-main-content h1 + p {
+                font-size: 0.75rem;
             }
 
             #notifDropdown {
                 width: min(20rem, calc(100vw - 1rem));
                 right: 0;
-            }
-
-            /* Toolbar: compact flex layout, buttons stay small */
-            #admin-main-content .admin-responsive-toolbar {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.375rem;
-                align-items: center;
-            }
-
-            /* Dividers become invisible line-breakers on mobile */
-            #admin-main-content .admin-responsive-toolbar > .w-px {
-                flex: 0 0 100%;
-                height: 0;
-                visibility: hidden;
-                overflow: hidden;
-                margin: 0;
-                padding: 0;
-                border: 0;
-            }
-
-            /* Buttons: compact auto-width, NOT full-width */
-            #admin-main-content .admin-responsive-toolbar > button:not([type="submit"]),
-            #admin-main-content .admin-responsive-toolbar > a {
-                flex: 0 0 auto;
-                font-size: 0.75rem;
-                padding: 0.4rem 0.625rem;
-                white-space: nowrap;
-            }
-
-            /* Filter dropdowns: 2 per row */
-            #admin-main-content .admin-responsive-toolbar > .relative {
-                flex: 1 1 calc(50% - 0.1875rem);
-                min-width: 0;
-                max-width: calc(50% - 0.1875rem);
-            }
-
-            #admin-main-content .admin-responsive-toolbar > .relative > select,
-            #admin-main-content .admin-responsive-toolbar > .relative > input {
-                width: 100%;
-                font-size: 0.75rem;
-                padding: 0.4rem 2rem 0.4rem 0.625rem;
-            }
-
-            /* Search group: full width row */
-            #admin-main-content .admin-responsive-toolbar > .admin-search-group {
-                flex: 1 1 100%;
-                max-width: none;
-            }
-
-            #admin-main-content .admin-responsive-toolbar > .admin-search-group input {
-                font-size: 0.75rem;
-                padding-top: 0.4rem;
-                padding-bottom: 0.4rem;
-            }
-
-            #admin-main-content .admin-responsive-toolbar > .admin-search-group button {
-                font-size: 0.75rem;
-                padding: 0.4rem 0.75rem;
-            }
-
-            /* Toolbar container padding compact */
-            #admin-main-content .admin-responsive-toolbar {
-                padding: 0;
-            }
-
-            /* Stat card grids: tighter on mobile */
-            #admin-main-content .grid[class*="grid-cols-2"] {
-                gap: 0.5rem;
-            }
-
-            /* Page subtitle smaller */
-            #admin-main-content h1 + p {
-                font-size: 0.75rem;
-            }
-
-            /* White card panels: less padding on mobile */
-            #admin-main-content > .bg-white,
-            #admin-main-content > form > .bg-white,
-            #admin-main-content > form.bg-white,
-            #admin-main-content > .bg-white.dark\\:bg-gray-800,
-            #admin-main-content form.bg-white {
-                padding: 0.625rem;
             }
 
             #admin-main-content .admin-data-table th,
