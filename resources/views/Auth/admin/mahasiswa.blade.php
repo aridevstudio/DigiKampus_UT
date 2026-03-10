@@ -6,7 +6,7 @@
     </div>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -55,7 +55,7 @@
 
     {{-- Actions Bar --}}
     <form method="GET" action="{{ route('admin.mahasiswa') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="admin-responsive-toolbar flex flex-wrap items-center gap-3">
             <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -620,7 +620,7 @@
                         <p class="text-xs text-gray-400 mt-1">Maks 5MB. Format: .xlsx, .xls, .csv | Password default: password123</p>
                     </div>
                     <div id="importUploadStatus" class="mb-4 hidden"></div>
-                    <div class="flex justify-end gap-3">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-3">
                         <button type="button" onclick="closeImportModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">Batal</button>
                         <button type="button" onclick="previewImportFile('mahasiswa')" id="previewBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">Preview</button>
                     </div>

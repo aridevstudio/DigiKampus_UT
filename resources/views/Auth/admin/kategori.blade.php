@@ -13,7 +13,7 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">UI frontend untuk tambah, edit, filter, dan hapus kategori.</p>
     </div>
 
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
             <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ count($sampleKategori) }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">Total Kategori (UI)</p>
@@ -29,7 +29,7 @@
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="admin-responsive-toolbar flex flex-wrap items-center gap-3">
             <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                 Tambah Kategori
@@ -135,7 +135,7 @@
                             <span class="text-sm text-gray-600 dark:text-gray-300">Status aktif</span>
                         </label>
                     </div>
-                    <div class="flex justify-end gap-2 mt-6">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-2 mt-6">
                         <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg text-sm">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm">Simpan</button>
                     </div>
@@ -174,7 +174,7 @@
                             <span class="text-sm text-gray-600 dark:text-gray-300">Status aktif</span>
                         </label>
                     </div>
-                    <div class="flex justify-end gap-2 mt-6">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-2 mt-6">
                         <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg text-sm">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm">Simpan</button>
                     </div>

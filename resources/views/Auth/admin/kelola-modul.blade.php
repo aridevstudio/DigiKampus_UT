@@ -10,15 +10,15 @@
         <div class="w-full lg:w-auto lg:min-w-[280px] bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
             <h3 class="font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-2 mb-3">{{ $course['nama'] }}</h3>
             <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
+                <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 dark:text-gray-400">Kode:</span>
                     <span class="text-gray-900 dark:text-white font-medium">{{ $course['kode'] }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 dark:text-gray-400">Mahasiswa:</span>
                     <span class="text-gray-900 dark:text-white font-medium">{{ $course['mahasiswa_count'] }} mahasiswa</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 dark:text-gray-400">Status:</span>
                     @php
                         $statusColors = [
@@ -57,12 +57,12 @@
         @forelse($modules ?? [] as $index => $module)
         <div data-id="{{ $module['id'] }}" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
             {{-- Module Header --}}
-            <div class="flex items-center gap-4 p-5 border-b border-gray-100 dark:border-gray-700">
+            <div class="flex flex-col items-start gap-4 p-5 border-b border-gray-100 dark:border-gray-700 sm:flex-row sm:items-center">
                 <div class="text-gray-400 cursor-move handle p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" /></svg>
                 </div>
                 <div class="flex-1">
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
                         <span class="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold rounded-lg">Modul {{ $index + 1 }}</span>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ $module['judul'] }}</h3>
                     </div>
@@ -92,7 +92,7 @@
                         @endif
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 self-end sm:self-auto">
                     <button onclick="toggleModule({{ $module['id'] }})" class="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
                         <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="icon-module-{{ $module['id'] }}"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                     </button>
@@ -109,8 +109,8 @@
             <div id="details-module-{{ $module['id'] }}" class="hidden">
                 {{-- Pretest Section --}}
                 <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div class="flex items-start gap-3 sm:items-center">
                             <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                             <div>
                                 <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Pretest <span class="text-gray-400 font-normal">(Opsional)</span></h4>
@@ -123,7 +123,7 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2 md:justify-end">
                             @if($module['has_pretest'])
                             <a href="{{ route('admin.quiz.kelola', ['courseId' => $course['id'], 'moduleId' => $module['id']]) }}?focus_quiz={{ $module['pretest']['id'] }}" class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition">Kelola Soal Pretest</a>
                             @endif
@@ -136,7 +136,7 @@
 
                 {{-- Materials --}}
                 <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-                    <div class="flex items-center justify-between mb-3">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                             <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" /></svg>
                             Materi (Video & Bacaan)
@@ -149,7 +149,7 @@
                     @if(count($module['materials']) > 0)
                     <div class="space-y-2">
                         @foreach($module['materials'] as $matIndex => $material)
-                        <div class="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <div class="flex flex-col items-start gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700 sm:flex-row sm:items-center">
                             <span class="text-xs text-gray-400 w-6">{{ $matIndex + 1 }}.</span>
                             @if($material['tipe'] === 'video')
                             <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" /></svg>
@@ -163,7 +163,7 @@
                                 @endif
                             </div>
                             <span class="px-2 py-0.5 text-[10px] font-medium rounded {{ $material['tipe'] === 'video' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }}">{{ ucfirst($material['tipe']) }}</span>
-                            <button onclick="confirmDeleteMaterial({{ $material['id'] }})" class="p-1 text-gray-400 hover:text-red-500 rounded transition">
+                            <button onclick="confirmDeleteMaterial({{ $material['id'] }})" class="p-1 text-gray-400 hover:text-red-500 rounded transition self-end sm:self-auto">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                         </div>
@@ -176,7 +176,7 @@
 
                 {{-- Quizzes --}}
                 <div class="px-5 py-4">
-                    <div class="flex items-center justify-between mb-3">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                             <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
                             Kuis (setiap soal memiliki poin)
@@ -189,13 +189,13 @@
                     @if(count($module['quizzes']) > 0)
                     <div class="space-y-2">
                         @foreach($module['quizzes'] as $quiz)
-                        <div class="flex items-center gap-3 px-4 py-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-100 dark:border-yellow-900/30">
+                        <div class="flex flex-col items-start gap-3 px-4 py-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-100 dark:border-yellow-900/30 sm:flex-row sm:items-center">
                             <svg class="w-4 h-4 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
                             <div class="flex-1">
                                 <span class="text-sm text-gray-900 dark:text-white font-medium">{{ $quiz['judul'] }}</span>
                                 <span class="text-xs text-gray-400 ml-2">{{ $quiz['jumlah_soal'] }} soal &bull; {{ $quiz['durasi'] }} menit &bull; Total {{ $quiz['total_bobot'] }} poin</span>
                             </div>
-                            <a href="{{ route('admin.quiz.kelola', ['courseId' => $course['id'], 'moduleId' => $module['id']]) }}?focus_quiz={{ $quiz['id'] }}" class="px-2.5 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-[10px] font-medium rounded-lg transition">Kelola Soal</a>
+                            <a href="{{ route('admin.quiz.kelola', ['courseId' => $course['id'], 'moduleId' => $module['id']]) }}?focus_quiz={{ $quiz['id'] }}" class="px-2.5 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-[10px] font-medium rounded-lg transition self-end sm:self-auto">Kelola Soal</a>
                         </div>
                         @endforeach
                     </div>
@@ -239,7 +239,7 @@
                             <textarea name="deskripsi" rows="3" placeholder="Deskripsi modul..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-2 mt-6">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-2 mt-6">
                         <button type="button" onclick="closeAddModuleModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">Simpan Modul</button>
                     </div>
@@ -270,7 +270,7 @@
                             <textarea name="deskripsi" id="edit_module_deskripsi" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-2 mt-6">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-2 mt-6">
                         <button type="button" onclick="closeEditModuleModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">Simpan</button>
                     </div>
@@ -316,7 +316,7 @@
                             <input type="number" name="durasi" min="0" placeholder="0" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                    <div class="flex justify-end gap-2 mt-6">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-2 mt-6">
                         <button type="button" onclick="closeAddMaterialModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">Simpan Materi</button>
                     </div>

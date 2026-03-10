@@ -7,7 +7,7 @@
 
     {{-- Actions Bar --}}
     <form method="GET" action="{{ route('admin.dosen') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="admin-responsive-toolbar flex flex-wrap items-center gap-3">
             <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25 hover:shadow-md hover:shadow-blue-500/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -90,7 +90,7 @@
             'red' => ['bg' => 'bg-red-50 dark:bg-red-900/20', 'icon' => 'text-red-500 dark:text-red-400', 'text' => 'text-red-700 dark:text-red-300', 'border' => 'border-red-100 dark:border-red-800/30'],
         ];
     @endphp
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         @foreach($dosenStatItems as $stat)
         <div class="flex items-center gap-3 p-3.5 rounded-xl {{ $dosenColorMap[$stat['color']]['bg'] }} border {{ $dosenColorMap[$stat['color']]['border'] }}">
             <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">
@@ -247,11 +247,11 @@
         
         {{-- Pagination --}}
         @if($totalDosen > 0)
-        <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/20">
+        <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/20 admin-responsive-pagination">
             <p class="text-sm text-gray-500 dark:text-gray-400">
                 Menampilkan <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $dosenPaginated->firstItem() ?? 0 }}</span>-<span class="font-semibold text-gray-700 dark:text-gray-300">{{ $dosenPaginated->lastItem() ?? 0 }}</span> dari <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $totalDosen }}</span> dosen
             </p>
-            <div class="flex flex-wrap items-center justify-center gap-1">
+            <div class="flex flex-wrap items-center justify-center gap-1 admin-responsive-actions">
                 {{-- Previous --}}
                 @if($dosenPaginated->onFirstPage())
                 <button class="p-2 text-gray-300 dark:text-gray-600 rounded-lg cursor-not-allowed" disabled>
@@ -635,7 +635,7 @@
                         <p class="text-xs text-gray-400 mt-1">Maks 5MB. Format: .xlsx, .xls, .csv | Password default: password123</p>
                     </div>
                     <div id="importUploadStatus" class="mb-4 hidden"></div>
-                    <div class="flex justify-end gap-3">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-3">
                         <button type="button" onclick="closeImportModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">Batal</button>
                         <button type="button" onclick="previewImportFile('dosen')" id="previewBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">Preview</button>
                     </div>

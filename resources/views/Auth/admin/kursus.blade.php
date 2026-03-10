@@ -7,7 +7,7 @@
 
     {{-- Actions Bar --}}
     <form method="GET" action="{{ route('admin.kursus') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="admin-responsive-toolbar flex flex-wrap items-center gap-3">
             <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25 hover:shadow-md hover:shadow-blue-500/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -77,7 +77,7 @@
 
     {{-- Summary Stats --}}
     @if($totalKursus > 0)
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         @php
             $kategoriStats = collect($kursusList)->groupBy('kategori')->map->count();
             $statItems = [
@@ -276,11 +276,11 @@
         
         {{-- Pagination --}}
         @if($totalKursus > 0)
-        <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/20">
+        <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/20 admin-responsive-pagination">
             <p class="text-sm text-gray-500 dark:text-gray-400">
                 Menampilkan <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $kursusPaginated->firstItem() ?? 0 }}</span>-<span class="font-semibold text-gray-700 dark:text-gray-300">{{ $kursusPaginated->lastItem() ?? 0 }}</span> dari <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $totalKursus }}</span> kursus
             </p>
-            <div class="flex items-center gap-1">
+            <div class="flex flex-wrap items-center gap-1 admin-responsive-actions">
                 @if($kursusPaginated->onFirstPage())
                 <button class="p-2 text-gray-300 dark:text-gray-600 rounded-lg cursor-not-allowed" disabled>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

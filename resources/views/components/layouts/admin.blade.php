@@ -30,10 +30,84 @@
             box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.15);
         }
 
+        #admin-main-content {
+            overflow-x: hidden;
+        }
+
+        #admin-main-content .admin-data-table {
+            width: max-content;
+            min-width: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            #admin-main-content .admin-responsive-toolbar {
+                row-gap: 0.75rem;
+            }
+
+            #admin-main-content .admin-responsive-toolbar > .w-px {
+                display: none;
+            }
+        }
+
         @media (max-width: 640px) {
+            #admin-main-content {
+                padding: 0.75rem;
+            }
+
+            #admin-main-content h1 {
+                font-size: 1.35rem;
+                line-height: 1.25;
+            }
+
             #notifDropdown {
                 width: min(20rem, calc(100vw - 1rem));
                 right: 0;
+            }
+
+            #admin-main-content .admin-responsive-toolbar {
+                display: grid;
+                grid-template-columns: 1fr;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+            #admin-main-content .admin-responsive-toolbar > * {
+                width: 100% !important;
+                max-width: none !important;
+                margin-left: 0 !important;
+            }
+
+            #admin-main-content .admin-responsive-toolbar button,
+            #admin-main-content .admin-responsive-toolbar a {
+                justify-content: center;
+            }
+
+            #admin-main-content .admin-data-table th,
+            #admin-main-content .admin-data-table td {
+                padding: 0.625rem 0.75rem !important;
+            }
+
+            #admin-main-content .admin-data-table th {
+                font-size: 0.65rem;
+                letter-spacing: 0.04em;
+            }
+
+            #admin-main-content .admin-data-table td {
+                font-size: 0.75rem;
+            }
+
+            #admin-main-content .admin-responsive-modal-actions {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.625rem;
+            }
+
+            #admin-main-content .admin-responsive-modal-actions > * {
+                width: 100%;
+            }
+
+            #admin-main-content [class*='fixed inset-0 z-50'] .relative.w-full {
+                max-height: calc(100dvh - 1rem);
             }
 
             #admin-main-content .admin-responsive-pagination {
@@ -484,7 +558,12 @@
             const tables = document.querySelectorAll('#admin-main-content table');
 
             tables.forEach((table) => {
+                table.classList.add('admin-data-table');
+
                 if (table.closest('.overflow-x-auto')) {
+                    if (!table.style.minWidth && !table.className.includes('min-w-')) {
+                        table.style.minWidth = '680px';
+                    }
                     return;
                 }
 
@@ -501,7 +580,7 @@
                 wrapper.appendChild(table);
 
                 if (!table.className.includes('min-w-')) {
-                    table.style.minWidth = '640px';
+                    table.style.minWidth = '680px';
                 }
             });
         }

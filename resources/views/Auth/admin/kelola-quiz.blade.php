@@ -8,7 +8,7 @@
                     <span class="font-medium text-gray-700 dark:text-gray-300">{{ $course['nama'] }}</span> &bull; {{ $module['judul'] }}
                 </p>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3 admin-responsive-toolbar">
                 <a href="{{ route('admin.kursus.modul', $course['id']) }}" class="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     Kembali ke Modul
@@ -25,14 +25,14 @@
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 mb-6 overflow-hidden">
                 {{-- Quiz Header --}}
                 <div class="p-6 border-b border-gray-100 dark:border-gray-700 cursor-pointer" @click="toggleQuiz(quiz.id)">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
+                    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div class="flex items-start gap-3 sm:items-center">
                             <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="quiz.is_pretest ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-900/30'">
                                 <svg class="w-5 h-5" :class="quiz.is_pretest ? 'text-green-600' : 'text-yellow-600'" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
                             </div>
                             <div>
                                 <h2 class="text-lg font-bold text-gray-900 dark:text-white" x-text="quiz.judul"></h2>
-                                <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-gray-500">
                                     <span x-show="quiz.is_pretest" class="px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full font-medium">Pretest</span>
                                     <span x-text="quiz.jumlah_soal + ' soal'"></span>
                                     <span>&bull;</span>
@@ -44,7 +44,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 self-end md:self-auto">
                             <button type="button" @click.stop="openEditQuizModal(quiz)" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition" title="Edit Kuis">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
@@ -62,7 +62,7 @@
                     <div class="space-y-3 mb-4">
                         <template x-for="(question, qIndex) in quiz.questions" :key="question.id">
                             <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                                <div class="flex items-start justify-between gap-4">
+                                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-2">
                                             <span class="text-xs font-bold text-gray-500 dark:text-gray-400" x-text="'Soal ' + (qIndex + 1)"></span>
@@ -96,7 +96,7 @@
                                             <p class="text-xs text-blue-700 dark:text-blue-400"><strong>Penjelasan:</strong> <span x-text="question.penjelasan"></span></p>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-1 flex-shrink-0">
+                                    <div class="flex items-center gap-1 flex-shrink-0 self-end sm:self-auto">
                                         <button type="button" @click="openEditQuestionModal(quiz, qIndex)" class="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition" title="Edit">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         </button>
@@ -169,7 +169,7 @@
                             </label>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-3 mt-6">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-3 mt-6">
                         <button type="button" @click="showQuizModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 text-sm">Batal</button>
                         <button type="button" @click="saveQuiz()" :disabled="isSaving" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition">
                             <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Kuis'"></span>
@@ -239,7 +239,7 @@
                             <textarea x-model="questionForm.penjelasan" rows="2" placeholder="Penjelasan mengapa jawaban ini benar..." class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm resize-none"></textarea>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-3 mt-6">
+                    <div class="admin-responsive-modal-actions flex justify-end gap-3 mt-6">
                         <button type="button" @click="showQuestionModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 text-sm">Batal</button>
                         <button type="button" @click="saveQuestion()" :disabled="isSaving" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition">
                             <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Soal'"></span>

@@ -220,7 +220,7 @@
                         </div>
                     </div>
 
-                    <div class="mt-6 flex justify-end gap-2">
+                    <div class="mt-6 admin-responsive-modal-actions flex justify-end gap-2">
                         <button id="btnCancelCertModal" type="button" class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm">Batal</button>
                         <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">Simpan</button>
                     </div>

@@ -7,7 +7,7 @@
 
     {{-- Actions Bar --}}
     <form method="GET" action="{{ route('admin.pengumuman') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="admin-responsive-toolbar flex flex-wrap items-center gap-3">
             <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25 hover:shadow-md hover:shadow-blue-500/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -159,7 +159,7 @@
 
         {{-- Pagination --}}
         @if($newsList->hasPages())
-        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50">
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 admin-responsive-pagination">
             {{ $newsList->links() }}
         </div>
         @endif
@@ -243,7 +243,7 @@
                     </div>
 
                     {{-- Footer --}}
-                    <div class="sticky bottom-0 bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 rounded-b-2xl flex justify-end gap-3">
+                    <div class="sticky bottom-0 bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 rounded-b-2xl admin-responsive-modal-actions flex justify-end gap-3">
                         <button type="button" onclick="closeAddModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-500 transition">Batal</button>
                         <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl shadow-sm shadow-blue-500/25 transition">Simpan</button>
                     </div>
@@ -337,7 +337,7 @@
                     </div>
 
                     {{-- Footer --}}
-                    <div class="sticky bottom-0 bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 rounded-b-2xl flex justify-end gap-3">
+                    <div class="sticky bottom-0 bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 rounded-b-2xl admin-responsive-modal-actions flex justify-end gap-3">
                         <button type="button" onclick="closeEditModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-500 transition">Batal</button>
                         <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl shadow-sm shadow-blue-500/25 transition">Simpan Perubahan</button>
                     </div>
