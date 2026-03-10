@@ -114,6 +114,11 @@ Route::prefix('admin')
         Route::get('/prodi/{id}', [AdminController::class, 'getProdi'])->name('admin.prodi.get');
         Route::put('/prodi/{id}', [AdminController::class, 'updateProdi'])->name('admin.prodi.update');
         Route::delete('/prodi/{id}', [AdminController::class, 'deleteProdi'])->name('admin.prodi.delete');
+
+        // Frontend-only pages
+        Route::view('/kategori', 'Auth.admin.kategori')->name('admin.kategori');
+        Route::view('/sertifikasi', 'Auth.admin.sertifikasi')->name('admin.sertifikasi');
+
         Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('admin.pengumuman.store');
         Route::get('/pengumuman/{id}', [AdminController::class, 'getPengumuman'])->name('admin.pengumuman.get');
         Route::put('/pengumuman/{id}', [AdminController::class, 'updatePengumuman'])->name('admin.pengumuman.update');
