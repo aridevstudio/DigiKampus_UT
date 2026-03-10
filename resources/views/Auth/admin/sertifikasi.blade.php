@@ -68,17 +68,54 @@
 
                     <div id="certificateCanvas" class="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner">
                         <div id="certificateBgLayer" class="absolute inset-0"></div>
+                        <div class="absolute inset-0 bg-white/70"></div>
 
-                        <div class="absolute inset-0 p-4 sm:p-6 md:p-10 flex flex-col items-center justify-center text-center">
-                            <p class="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-gray-600">Sertifikat Penghargaan</p>
-                            <h3 class="mt-3 text-xl sm:text-3xl font-extrabold text-gray-800">Diberikan Kepada</h3>
+                        <div class="absolute inset-3 sm:inset-4 rounded-lg border-4 border-amber-300/90"></div>
+                        <div class="absolute inset-5 sm:inset-7 rounded-md border border-amber-400/80"></div>
 
-                            <p id="previewNama" class="mt-4 font-bold text-gray-900 leading-tight" style="font-size: 52px;">Nama Peserta</p>
-                            <p class="mt-2 text-gray-700 text-sm sm:text-base">atas partisipasi pada program</p>
-                            <p id="previewProgram" class="mt-1 font-semibold text-gray-800 text-base sm:text-lg">Nama Program</p>
+                        <div class="absolute inset-0 px-6 py-5 sm:px-10 sm:py-7 md:px-14 md:py-9 flex flex-col text-gray-800">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <img
+                                        src="{{ asset('assets/image/Logo/Logo_Universitas_Terbuka.png') }}"
+                                        alt="Universitas Terbuka"
+                                        class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain"
+                                    >
+                                    <div class="min-w-0">
+                                        <p class="text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.14em] uppercase">Universitas Terbuka</p>
+                                        <p class="text-[10px] sm:text-[11px] text-gray-600">Pusat Sertifikasi Kompetensi</p>
+                                    </div>
+                                </div>
 
-                            <p id="previewNomor" class="mt-8 font-semibold text-gray-700" style="font-size: 28px;">No. SRT-XXXX</p>
-                            <p id="previewTanggal" class="mt-1 text-gray-600 text-sm">Tanggal</p>
+                                <div class="text-right">
+                                    <p class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600">Nomor Sertifikat</p>
+                                    <p id="previewNomor" class="font-semibold leading-tight text-gray-800" style="font-size: 28px;">SRT-XXXX</p>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 flex flex-col items-center justify-center text-center px-2 sm:px-8">
+                                <p class="text-[10px] sm:text-xs uppercase tracking-[0.42em] text-gray-600">Sertifikat</p>
+                                <h3 class="mt-1 text-2xl sm:text-4xl md:text-5xl font-black tracking-wide" style="font-family: 'Times New Roman', serif;">PENGHARGAAN</h3>
+                                <p class="mt-2 text-[11px] sm:text-sm text-gray-600">Diberikan kepada</p>
+
+                                <p id="previewNama" class="mt-3 sm:mt-4 text-gray-900 leading-tight" style="font-family: 'Times New Roman', serif; font-size: 52px; font-weight: 700;">Nama Peserta</p>
+
+                                <p class="mt-2 text-[11px] sm:text-sm text-gray-700">atas keberhasilan menyelesaikan program</p>
+                                <p id="previewProgram" class="mt-1 px-4 text-sm sm:text-base md:text-lg font-semibold text-gray-800">Nama Program</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 sm:gap-6 text-center">
+                                <div>
+                                    <p class="text-[10px] sm:text-xs text-gray-600">Tanggal Terbit</p>
+                                    <p id="previewTanggal" class="mt-0.5 text-[11px] sm:text-sm font-medium">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs text-gray-600">Direktur Program</p>
+                                    <div class="mt-6 sm:mt-8 border-t border-gray-500/70 pt-1.5">
+                                        <p class="text-[10px] sm:text-xs font-semibold tracking-wide">SALUT DIGITAL CAMPUS</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -315,7 +352,7 @@
                 const cert = getCertById(selectedCertificateId);
                 if (!cert) {
                     previewNama.textContent = 'Nama Peserta';
-                    previewNomor.textContent = 'No. SRT-XXXX';
+                    previewNomor.textContent = 'SRT-XXXX';
                     previewProgram.textContent = 'Nama Program';
                     previewTanggal.textContent = '-';
                     previewMeta.textContent = 'Belum ada data';
@@ -337,7 +374,7 @@
                 }
 
                 previewNama.textContent = cert.nama;
-                previewNomor.textContent = `No. ${cert.nomor}`;
+                previewNomor.textContent = cert.nomor;
                 previewProgram.textContent = cert.program;
                 previewTanggal.textContent = formatDateIndonesia(cert.tanggal);
                 previewMeta.textContent = `${cert.nomor} - ${cert.nama}`;
