@@ -53,7 +53,7 @@
                         </div>
 
                         {{-- Baris 1: Kategori & Tingkat Kesulitan --}}
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
                                 <select name="id_jurusan" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -77,7 +77,7 @@
                         </div>
 
                         {{-- Baris 2: Estimasi Waktu Belajar & Tipe Harga (sejajar 2 kolom sesuai wireframe) --}}
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estimasi Waktu Belajar</label>
                                 <div class="grid grid-cols-2 gap-3">
@@ -240,7 +240,7 @@
                                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
                                             <textarea name="konten" rows="2" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
                                         </div>
-                                        <div class="grid grid-cols-2 gap-4 mb-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                                             <div class="initial-video-group">
                                                 <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
                                                 <input type="url" name="video_url" class="initial-video-input w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">

@@ -25,10 +25,10 @@
 </div>
 
 {{-- Main 3-Column Layout --}}
-<div class="course-learn-layout" style="display: flex; flex-direction: row; gap: 1.5rem; flex-wrap: nowrap;">
+<div class="course-learn-layout flex flex-col lg:flex-row gap-6">
     
     {{-- LEFT SIDEBAR: Module List --}}
-    <div class="course-sidebar-left" style="width: 250px; min-width: 250px; flex-shrink: 0;">
+    <div class="course-sidebar-left w-full lg:w-[250px] lg:min-w-[250px] lg:flex-shrink-0">
         <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sticky top-24">
             <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-2">Modul Pembelajaran</h2>
             
@@ -74,7 +74,7 @@
                     <div id="module-{{ $moduleIndex }}" class="{{ $loop->first ? '' : 'hidden' }} border-t border-gray-200 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/30">
                         @if(count($module['materials']) > 20)
                             {{-- Compact 4-Column Grid for >20 materials --}}
-                            <div class="grid grid-cols-4 gap-2 p-3">
+                            <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-4 gap-2 p-3">
                                 @foreach($module['materials'] as $index => $material)
                                 <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $material['id']]) }}" 
                                    title="{{ $material['title'] }}"
@@ -228,7 +228,7 @@
     </div>
     
     {{-- CENTER: Content Area --}}
-    <div class="course-content-center" style="flex: 1; min-width: 0;">
+    <div class="course-content-center flex-1 min-w-0">
         <div class="space-y-4">
             {{-- Course Title --}}
             <div>
@@ -390,7 +390,7 @@
     </div>
     
     {{-- RIGHT SIDEBAR: Discussion/Notes/Favorites --}}
-    <div class="course-sidebar-right" style="width: 280px; min-width: 280px; flex-shrink: 0;">
+    <div class="course-sidebar-right w-full lg:w-[280px] lg:min-w-[280px] lg:flex-shrink-0">
         <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden sticky top-24">
             {{-- Tabs --}}
             <div class="flex border-b border-gray-200 dark:border-gray-700/50">
@@ -589,23 +589,25 @@
 </div>
 
 {{-- Bottom Navigation --}}
-<div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1f2937] border-t border-gray-200 dark:border-gray-700/50 px-6 py-4 z-40">
-    <div style="max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;">
-        <button class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 transition">
+<div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1f2937] border-t border-gray-200 dark:border-gray-700/50 px-4 sm:px-6 py-3 sm:py-4 z-40">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <button class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 transition text-sm sm:text-base">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Modul Sebelumnya
+            <span class="hidden sm:inline">Modul Sebelumnya</span>
+            <span class="sm:hidden">Prev</span>
         </button>
         
-        <div style="flex: 1; max-width: 400px; margin: 0 2rem;">
+        <div class="flex-1 max-w-[400px] mx-4 sm:mx-8 hidden sm:block">
             <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div class="h-full bg-blue-500 rounded-full transition-all" style="width: {{ $progressPercent }}%"></div>
             </div>
         </div>
         
-        <button class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 transition">
-            Modul Berikutnya
+        <button class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 transition text-sm sm:text-base">
+            <span class="hidden sm:inline">Modul Berikutnya</span>
+            <span class="sm:hidden">Next</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
@@ -613,7 +615,7 @@
     </div>
 </div>
 
-<div style="height: 80px;"></div>
+<div class="h-20"></div>
 
 @push('scripts')
 <script>

@@ -89,7 +89,7 @@
 
                                 <div class="text-right">
                                     <p class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600">Nomor Sertifikat</p>
-                                    <p id="previewNomor" class="font-semibold leading-tight text-gray-800" style="font-size: 28px;">SRT-XXXX</p>
+                                    <p id="previewNomor" class="font-semibold leading-tight text-gray-800" style="font-size: clamp(14px, 3vw, 28px);">SRT-XXXX</p>
                                 </div>
                             </div>
 
@@ -98,7 +98,7 @@
                                 <h3 class="mt-1 text-2xl sm:text-4xl md:text-5xl font-black tracking-wide" style="font-family: 'Times New Roman', serif;">PENGHARGAAN</h3>
                                 <p class="mt-2 text-[11px] sm:text-sm text-gray-600">Diberikan kepada</p>
 
-                                <p id="previewNama" class="mt-3 sm:mt-4 text-gray-900 leading-tight" style="font-family: 'Times New Roman', serif; font-size: 52px; font-weight: 700;">Nama Peserta</p>
+                                <p id="previewNama" class="mt-3 sm:mt-4 text-gray-900 leading-tight" style="font-family: 'Times New Roman', serif; font-size: clamp(20px, 5vw, 52px); font-weight: 700;">Nama Peserta</p>
 
                                 <p class="mt-2 text-[11px] sm:text-sm text-gray-700">atas keberhasilan menyelesaikan program</p>
                                 <p id="previewProgram" class="mt-1 px-4 text-sm sm:text-base md:text-lg font-semibold text-gray-800">Nama Program</p>

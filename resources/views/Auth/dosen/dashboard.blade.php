@@ -1,62 +1,62 @@
 <x-layouts.dosen title="Dashboard" active="dashboard">
     {{-- Welcome Header --}}
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Selamat Datang Kembali, {{ $dosen->name ?? 'Dosen' }}!</h1>
-        <p class="text-gray-500 dark:text-gray-400 mt-1">Berikut ringkasan aktivitas pengajaran Anda hari ini</p>
+    <div class="mb-4 sm:mb-6 lg:mb-8">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Selamat Datang Kembali, {{ $dosen->name ?? 'Dosen' }}!</h1>
+        <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1">Berikut ringkasan aktivitas pengajaran Anda hari ini</p>
     </div>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
         {{-- Total Kursus --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm hover-lift">
-            <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
-                <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm hover-lift">
+            <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-2 sm:mb-3">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             </div>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $totalCourses ?? 0 }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Total Kursus</p>
+            <p class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{{ $totalCourses ?? 0 }}</p>
+            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total Kursus</p>
         </div>
         
         {{-- Mahasiswa Terdaftar --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm hover-lift">
-            <div class="w-12 h-12 rounded-xl bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mb-3">
-                <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm hover-lift">
+            <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mb-2 sm:mb-3">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
             </div>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $totalMahasiswa ?? 0 }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Mahasiswa Terdaftar</p>
+            <p class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{{ $totalMahasiswa ?? 0 }}</p>
+            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">Mahasiswa Terdaftar</p>
         </div>
         
         {{-- Rata-rata Progres --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm hover-lift">
-            <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
-                <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm hover-lift">
+            <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-2 sm:mb-3">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
             </div>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $avgProgress ?? 0 }}%</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Rata-rata Progres</p>
+            <p class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{{ $avgProgress ?? 0 }}%</p>
+            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">Rata-rata Progres</p>
         </div>
         
         {{-- Sesi Terdekat --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm hover-lift">
-            <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-3">
-                <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm hover-lift">
+            <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-2 sm:mb-3">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
             </div>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ count($upcomingSchedules ?? []) }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Sesi Terdekat</p>
+            <p class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{{ count($upcomingSchedules ?? []) }}</p>
+            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Sesi Terdekat</p>
         </div>
     </div>
 
     {{-- Kursus yang Kamu Kelola --}}
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Kursus yang Kamu Kelola</h2>
-            <a href="{{ route('dosen.kursus.buat') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">
+    <div class="mb-4 sm:mb-6 lg:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 sm:mb-4">
+            <h2 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Kursus yang Kamu Kelola</h2>
+            <a href="{{ route('dosen.kursus.buat') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition w-full sm:w-auto">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -74,26 +74,26 @@
                 ];
                 $colorSet = $colors[$index % 3];
             @endphp
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden hover-lift">
-                <div class="h-32 bg-gradient-to-br {{ $colorSet[0] }} {{ $colorSet[1] }} p-5 flex items-center justify-center">
-                    <svg class="w-12 h-12 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm overflow-hidden hover-lift">
+                <div class="h-28 sm:h-32 bg-gradient-to-br {{ $colorSet[0] }} {{ $colorSet[1] }} p-4 sm:p-5 flex items-center justify-center">
+                    <svg class="w-10 h-10 sm:w-12 sm:h-12 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
                 </div>
-                <div class="p-5">
-                    <h3 class="font-semibold text-gray-900 dark:text-white mb-1">{{ $course['nama'] }}</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ $course['mahasiswa_count'] }} Mahasiswa terdaftar</p>
+                <div class="p-4 sm:p-5">
+                    <h3 class="font-semibold text-sm sm:text-base text-gray-900 dark:text-white mb-1 line-clamp-1">{{ $course['nama'] }}</h3>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">{{ $course['mahasiswa_count'] }} Mahasiswa terdaftar</p>
                     
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-sm text-gray-500 dark:text-gray-400">Progres Rata-rata</span>
-                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $course['progress_avg'] }}%</span>
+                    <div class="flex items-center justify-between mb-3 sm:mb-4">
+                        <span class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Progres Rata-rata</span>
+                        <span class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{{ $course['progress_avg'] }}%</span>
                     </div>
-                    <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-4">
+                    <div class="w-full h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-3 sm:mb-4">
                         <div class="h-full bg-gradient-to-r {{ $colorSet[0] }} {{ $colorSet[1] }} rounded-full" style="width: {{ $course['progress_avg'] }}%"></div>
                     </div>
                     
-                    <div class="mt-4 flex gap-2">
-                        <a href="{{ route('dosen.kursus.edit', $course['id']) }}" class="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-center">
+                    <div class="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2">
+                        <a href="{{ route('dosen.kursus.edit', $course['id']) }}" class="flex-1 px-3 py-1.5 sm:py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-center">
                             Kelola Kursus & Modul
                         </a>
                         <a href="{{ route('dosen.kursus.preview', $course['id']) }}" class="px-3 py-2 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" title="Lihat Detail">
@@ -123,28 +123,28 @@
     </div>
 
     {{-- Bottom Section: Progress & Schedule --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {{-- Progres Mahasiswa Terbaru --}}
-        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-            <h3 class="font-bold text-gray-900 dark:text-white mb-4">Progres Mahasiswa Terbaru</h3>
+        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">Progres Mahasiswa Terbaru</h3>
             
-            <div class="space-y-4">
+            <div class="space-y-3 sm:space-y-4">
                 @forelse($recentProgress ?? [] as $progress)
-                <div class="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                <div class="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg sm:rounded-xl">
                     @if($progress['foto'])
-                        <img src="{{ asset('storage/' . $progress['foto']) }}" alt="{{ $progress['nama'] }}" class="w-10 h-10 rounded-full object-cover">
+                        <img src="{{ asset('storage/' . $progress['foto']) }}" alt="{{ $progress['nama'] }}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0">
                     @else
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-xs sm:text-sm flex-shrink-0">
                             {{ strtoupper(substr($progress['nama'], 0, 1)) }}
                         </div>
                     @endif
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ $progress['nama'] }}</p>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $progress['course'] }}</p>
+                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-0.5 sm:gap-2">
+                            <div class="min-w-0">
+                                <p class="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">{{ $progress['nama'] }}</p>
+                                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{{ $progress['course'] }}</p>
                             </div>
-                            <span class="text-xs text-gray-400">{{ $progress['updated'] }}</span>
+                            <span class="text-[10px] sm:text-xs text-gray-400 whitespace-nowrap">{{ $progress['updated'] }}</span>
                         </div>
                         <div class="mt-2">
                             <div class="flex items-center justify-between mb-1">
@@ -178,9 +178,9 @@
         </div>
         
         {{-- Jadwal Mengajar Terdekat --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-gray-900 dark:text-white">Jadwal Mengajar Terdekat</h3>
+        <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Jadwal Mengajar Terdekat</h3>
                 <button
                     type="button"
                     onclick="openScheduleModal()"
@@ -193,39 +193,40 @@
                 </button>
             </div>
             
-            <div class="space-y-4">
+            <div class="space-y-3 sm:space-y-4">
                 @forelse($upcomingSchedules ?? [] as $index => $schedule)
                 @php
                     $colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500'];
                     $bgColor = $colors[$index % 3];
                 @endphp
-                <div class="flex gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                    <div class="w-10 h-10 rounded-lg {{ $bgColor }} flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg sm:rounded-xl">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg {{ $bgColor }} flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="font-medium text-gray-900 dark:text-white">{{ $schedule['course'] }}</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $schedule['tanggal'] }}</p>
-                        <div class="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                        <p class="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate">{{ $schedule['course'] }}</p>
+                        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{{ $schedule['tanggal'] }}</p>
+                        <div class="flex items-center gap-1 mt-1 text-[10px] sm:text-xs text-gray-400">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             {{ $schedule['waktu'] }}
                         </div>
                         @if(!empty($schedule['mahasiswa']))
-                            <div class="flex items-center gap-1 mt-1 text-xs text-emerald-600 dark:text-emerald-300">
+                            <div class="flex items-center gap-1 mt-1 text-[10px] sm:text-xs text-emerald-600 dark:text-emerald-300">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.369 0 4.602.589 6.599 1.627M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                Untuk: {{ $schedule['mahasiswa'] }}
+                                <span class="truncate">Untuk: {{ $schedule['mahasiswa'] }}</span>
                             </div>
                         @endif
-                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-2">
                             @if(!empty($schedule['id_course']))
-                                <a href="{{ route('dosen.kursus.detail', $schedule['id_course']) }}" class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 text-xs font-medium">
-                                    Lihat Detail Jadwal
+                                <a href="{{ route('dosen.kursus.detail', $schedule['id_course']) }}" class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 text-[10px] sm:text-xs font-medium">
+                                    <span class="hidden sm:inline">Lihat Detail Jadwal</span>
+                                    <span class="sm:hidden">Detail</span>
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                     </svg>
@@ -253,14 +254,14 @@
                                 <button
                                     type="button"
                                     onclick='openScheduleModal(@json($editSchedulePayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT))'
-                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition"
+                                    class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] sm:text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition"
                                 >
                                     Edit
                                 </button>
                                 <button
                                     type="button"
                                     onclick='openScheduleDeleteModal(@json($deleteSchedulePayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT))'
-                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition"
+                                    class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 text-[10px] sm:text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition"
                                 >
                                     Hapus
                                 </button>

@@ -172,6 +172,55 @@
         .notif-pulse {
             animation: notifPulse 2s ease-in-out infinite;
         }
+
+        #mhs-main-content {
+            overflow-x: hidden;
+        }
+
+        @media (max-width: 640px) {
+            #mhs-main-content {
+                padding: 0.75rem;
+            }
+
+            #mhs-main-content h1 {
+                font-size: 1.35rem;
+                line-height: 1.25;
+            }
+
+            #mhs-main-content .mhs-responsive-toolbar {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+            #mhs-main-content .mhs-responsive-toolbar > * {
+                margin-left: 0 !important;
+                min-width: 0;
+                width: 100%;
+                max-width: none !important;
+                flex: 1 1 100%;
+            }
+
+            #mhs-main-content .mhs-data-table th,
+            #mhs-main-content .mhs-data-table td {
+                padding: 0.625rem 0.75rem !important;
+            }
+
+            #mhs-main-content .mhs-data-table {
+                width: max-content;
+                min-width: max(100%, 680px);
+            }
+
+            #mhs-main-content .mhs-data-table th {
+                font-size: 0.65rem;
+                letter-spacing: 0.04em;
+            }
+
+            #mhs-main-content .mhs-data-table td {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#111827]">
@@ -188,7 +237,7 @@
             <x-dashboard.header />
 
             {{-- Page Content --}}
-            <main class="flex-1 p-4 sm:p-6">
+            <main id="mhs-main-content" class="flex-1 p-4 sm:p-6">
                 <x-sweetalert />
 
                 {{ $slot }}

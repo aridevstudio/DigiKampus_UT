@@ -151,7 +151,7 @@
         <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 animate-fade-in-up delay-200 hover-lift">
             <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Informasi Akademik</h3>
             
-            <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Program Studi</p>
                     <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $programStudi ?? '-' }}</p>

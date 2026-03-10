@@ -313,9 +313,9 @@ if (isset($agenda) && count($agenda) > 0) {
     </div>
 
     {{-- Main Content: 2 Column Layout --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
         {{-- Calendar Section (Left - 2 columns) --}}
-        <div class="lg:col-span-2 bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50">
+        <div class="md:col-span-2 lg:col-span-2 bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700/50">
             {{-- Calendar Header --}}
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-2">
@@ -343,13 +343,13 @@ if (isset($agenda) && count($agenda) > 0) {
 
             {{-- Calendar Grid --}}
             <div class="overflow-x-auto">
-                <div class="grid grid-cols-7 gap-1 mb-2 min-w-[500px]">
+                <div class="grid grid-cols-7 gap-1 mb-2 min-w-[420px]">
                     @foreach(['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as $day)
                     <div class="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2">{{ $day }}</div>
                     @endforeach
                 </div>
 
-                <div class="grid grid-cols-7 gap-1 min-w-[500px]">
+                <div class="grid grid-cols-7 gap-1 min-w-[420px]">
                     @php
                         $calToday = now()->day;
                         $calDaysInMonth = now()->daysInMonth;
@@ -520,9 +520,9 @@ if (isset($agenda) && count($agenda) > 0) {
     <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">Lihat semua pemberitahuan terbaru seputar kursus, jadwal, dan aktivitas belajar kamu.</p>
 
     {{-- Main Content --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
         {{-- Notifications List (Left - 2 columns) --}}
-        <div class="lg:col-span-2 space-y-4">
+        <div class="md:col-span-2 lg:col-span-2 space-y-4">
             {{-- Search Bar --}}
             <div class="relative">
                 <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

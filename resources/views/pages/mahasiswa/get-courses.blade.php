@@ -23,21 +23,21 @@
     @php
         $currentTipe = $selectedTipe ?? 'semua';
     @endphp
-    <div class="flex items-center gap-2 bg-white dark:bg-[#1f2937] rounded-lg p-1 border border-gray-200 dark:border-gray-700/50">
+    <div class="flex items-center gap-2 bg-white dark:bg-[#1f2937] rounded-lg p-1 border border-gray-200 dark:border-gray-700/50 overflow-x-auto">
         <a href="{{ route('mahasiswa.get-courses') }}" 
-           class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'semua' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
+           class="filter-tab whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'semua' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
             Semua
         </a>
         <a href="{{ route('mahasiswa.get-courses', ['tipe' => 'webinar']) }}" 
-           class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'webinar' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
+           class="filter-tab whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'webinar' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
             Webinar
         </a>
         <a href="{{ route('mahasiswa.get-courses', ['tipe' => 'tiket']) }}" 
-           class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'tiket' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
+           class="filter-tab whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'tiket' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
             Tiket
         </a>
         <a href="{{ route('mahasiswa.get-courses', ['tipe' => 'kursus']) }}" 
-           class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'kursus' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
+           class="filter-tab whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'kursus' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
             Kursus
         </a>
     </div>

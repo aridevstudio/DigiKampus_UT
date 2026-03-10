@@ -4,24 +4,24 @@
 @endphp
 
 {{-- Step Indicator --}}
-<div class="flex items-center justify-center gap-4 mb-8 animate-fade-in-up">
-    <div class="flex items-center gap-2">
+<div class="flex items-center justify-center gap-2 sm:gap-4 mb-8 animate-fade-in-up overflow-x-auto">
+    <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
             </svg>
         </div>
-        <span class="text-sm text-gray-500 dark:text-gray-400">Keranjang</span>
+        <span class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Keranjang</span>
     </div>
-    <div class="w-16 h-0.5 bg-blue-500"></div>
-    <div class="flex items-center gap-2">
+    <div class="w-8 sm:w-16 h-0.5 bg-blue-500 flex-shrink-0"></div>
+    <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">2</div>
-        <span class="text-sm font-medium text-blue-600 dark:text-blue-400">Pembayaran</span>
+        <span class="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">Pembayaran</span>
     </div>
-    <div class="w-16 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
-    <div class="flex items-center gap-2">
+    <div class="w-8 sm:w-16 h-0.5 bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
+    <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <div class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 flex items-center justify-center text-sm font-bold">3</div>
-        <span class="text-sm text-gray-500 dark:text-gray-400">Selesai</span>
+        <span class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Selesai</span>
     </div>
 </div>
 

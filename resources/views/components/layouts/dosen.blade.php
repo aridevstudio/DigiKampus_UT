@@ -29,6 +29,91 @@
             transform: translateY(-4px);
             box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.15);
         }
+
+        #dosen-main-content {
+            overflow-x: hidden;
+        }
+
+        #dosen-main-content .dosen-data-table {
+            width: 100%;
+            min-width: 0;
+            table-layout: auto;
+        }
+
+        @media (max-width: 1024px) {
+            #dosen-main-content .dosen-responsive-toolbar {
+                row-gap: 0.75rem;
+            }
+            #dosen-main-content .dosen-responsive-toolbar > .w-px {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            #dosen-main-content {
+                padding: 0.75rem;
+            }
+
+            #dosen-main-content h1 {
+                font-size: 1.35rem;
+                line-height: 1.25;
+            }
+
+            #dosen-main-content .dosen-responsive-toolbar {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+            #dosen-main-content .dosen-responsive-toolbar > * {
+                margin-left: 0 !important;
+                min-width: 0;
+                width: 100%;
+                max-width: none !important;
+                flex: 1 1 100%;
+            }
+
+            #dosen-main-content .dosen-responsive-toolbar > .w-px {
+                display: none;
+            }
+
+            #dosen-main-content .dosen-data-table th,
+            #dosen-main-content .dosen-data-table td {
+                padding: 0.625rem 0.75rem !important;
+            }
+
+            #dosen-main-content .dosen-data-table {
+                width: max-content;
+                min-width: max(100%, 680px);
+            }
+
+            #dosen-main-content .dosen-data-table th {
+                font-size: 0.65rem;
+                letter-spacing: 0.04em;
+            }
+
+            #dosen-main-content .dosen-data-table td {
+                font-size: 0.75rem;
+            }
+
+            #dosen-main-content .dosen-responsive-modal-actions {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.625rem;
+            }
+
+            #dosen-main-content .dosen-responsive-modal-actions > * {
+                width: 100%;
+            }
+
+            #dosen-main-content .dosen-responsive-pagination {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#111827]">
@@ -220,7 +305,7 @@
             </header>
 
             {{-- Page Content --}}
-            <main class="flex-1 p-4 sm:p-6">
+            <main id="dosen-main-content" class="flex-1 p-4 sm:p-6">
                 <x-sweetalert />
 
                 {{ $slot }}

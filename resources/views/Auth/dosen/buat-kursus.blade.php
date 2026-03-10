@@ -63,7 +63,7 @@
                             </div>
 
                             {{-- Kategori & Tingkat Kesulitan --}}
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
                                     <div class="relative">
@@ -92,7 +92,7 @@
                             </div>
 
                             {{-- Estimasi Waktu --}}
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar</label>
                                     <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" min="0" placeholder="20" value="{{ old('estimasi_waktu', 20) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -193,7 +193,7 @@
                         </h4>
                         
                         <div class="space-y-3">
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {{-- Status Kursus Toggle --}}
                                 <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                     <div>
@@ -257,7 +257,7 @@
                                 @error('kategori')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
-                            <div class="grid grid-cols-3 gap-3 items-end">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
                                     <input type="number" name="harga" id="harga_input" min="0" placeholder="0" value="{{ old('harga', 0) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
