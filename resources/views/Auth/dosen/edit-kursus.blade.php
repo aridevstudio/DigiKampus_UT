@@ -22,7 +22,7 @@
                     <h2 class="text-lg font-bold text-gray-900 dark:text-white">Informasi Kursus</h2>
                 </div>
 
-                <form action="{{ route('dosen.kursus.update', $course- x-data="{ isLoading: false }" @submit="isLoading = true">id_course) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('dosen.kursus.update', $course->id_course) }}" method="POST" enctype="multipart/form-data" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
                     @method('PUT')
                     
