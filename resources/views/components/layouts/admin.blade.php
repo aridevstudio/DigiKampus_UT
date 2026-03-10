@@ -75,6 +75,9 @@
             #admin-main-content .admin-responsive-toolbar > * {
                 margin-left: 0 !important;
                 min-width: 0;
+                width: 100%;
+                max-width: none !important;
+                flex: 1 1 100%;
             }
 
             #admin-main-content .admin-responsive-toolbar > .w-px {
@@ -92,8 +95,11 @@
 
             #admin-main-content .admin-responsive-toolbar > button,
             #admin-main-content .admin-responsive-toolbar > a {
-                max-width: 100%;
-                flex: 0 1 auto;
+                display: inline-flex;
+                align-items: center;
+                justify-content: flex-start;
+                min-height: 2.625rem;
+                white-space: normal;
             }
 
             #admin-main-content .admin-data-table th,
