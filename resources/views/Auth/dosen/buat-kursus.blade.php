@@ -62,10 +62,10 @@
                                 @error('persyaratan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
-                            {{-- Kategori & Tingkat Kesulitan --}}
+                            {{-- Jurusan/Prodi & Tingkat Kesulitan --}}
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jurusan/Prodi</label>
                                     <div class="relative">
                                         <select name="id_jurusan" id="add_id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                             <option value="">Pilih Jurusan</option>
