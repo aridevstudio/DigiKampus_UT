@@ -102,14 +102,14 @@
                     <span class="font-medium">Kelola Prodi</span>
                 </a>
 
-                <a href="{{ route('admin.kategori') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.kategori') ? route('admin.kategori') : '#' }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10H7V7zm-4 4h4m10 0h4M11 3v4m0 10v4" />
                     </svg>
                     <span class="font-medium">Kelola Kategori</span>
                 </a>
 
-                <a href="{{ route('admin.sertifikasi') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.sertifikasi') ? route('admin.sertifikasi') : '#' }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.591 21 9c0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
