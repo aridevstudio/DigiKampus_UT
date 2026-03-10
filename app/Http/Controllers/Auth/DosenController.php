@@ -75,18 +75,20 @@ class DosenController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'email'],
+            'nip' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('email', $request->email)
-            ->where('role', 'dosen')
+        $user = User::where('role', 'dosen')
+            ->whereHas('profile', function ($query) use ($request) {
+                $query->where('nim', $request->nip);
+            })
             ->first();
 
         if (!$user) {
             return back()
                 ->withInput()
-                ->with('alert', 'Email tidak terdaftar sebagai dosen.');
+                ->with('alert', 'NIP tidak terdaftar sebagai dosen.');
         }
 
         if (!Hash::check($request->password, $user->password)) {
