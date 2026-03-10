@@ -29,6 +29,27 @@
             transform: translateY(-4px);
             box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.15);
         }
+
+        @media (max-width: 640px) {
+            #notifDropdown {
+                width: min(20rem, calc(100vw - 1rem));
+                right: 0;
+            }
+
+            #admin-main-content .admin-responsive-pagination {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            #admin-main-content .admin-responsive-actions {
+                display: flex;
+                flex-wrap: wrap;
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#111827]">
@@ -235,7 +256,7 @@
             </header>
 
             {{-- Page Content --}}
-            <main class="flex-1 p-4 sm:p-6">
+            <main id="admin-main-content" class="flex-1 p-4 sm:p-6">
                 <x-sweetalert />
 
                 {{ $slot }}
@@ -457,6 +478,39 @@
         fetch('/admin/notifications/count').then(r => r.json()).then(data => {
             updateBadge(data.count);
         }).catch(() => {});
+
+        // Ensure all admin tables remain scrollable on small screens.
+        function ensureResponsiveAdminTables() {
+            const tables = document.querySelectorAll('#admin-main-content table');
+
+            tables.forEach((table) => {
+                if (table.closest('.overflow-x-auto')) {
+                    return;
+                }
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'overflow-x-auto';
+                wrapper.setAttribute('data-table-scroll-wrapper', 'true');
+
+                const parent = table.parentNode;
+                if (!parent) {
+                    return;
+                }
+
+                parent.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+
+                if (!table.className.includes('min-w-')) {
+                    table.style.minWidth = '640px';
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', ensureResponsiveAdminTables);
+        } else {
+            ensureResponsiveAdminTables();
+        }
     </script>
     
     @stack('scripts')

@@ -63,7 +63,7 @@
             </div>
             
             {{-- Search --}}
-            <div class="relative flex-1 min-w-[200px] max-w-sm ml-auto">
+            <div class="relative w-full sm:flex-1 sm:min-w-[200px] max-w-sm sm:ml-auto">
                 <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari kursus..." class="w-full px-4 py-2.5 pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                 <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -366,7 +366,7 @@
                             </h4>
                             
                             <div class="space-y-4">
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
                                         <input type="text" name="nama_course" id="add_nama_course" required placeholder="Masukkan judul kursus" value="{{ old('_modal') === 'add' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -389,7 +389,7 @@
                                     <p class="text-xs text-gray-400 mt-1">Tulis satu persyaratan per baris.</p>
                                 </div>
                                 
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div x-data="dosenSearch('add')" class="relative">
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <input type="hidden" name="id_dosen" :value="selectedId" id="add_id_dosen">
@@ -423,7 +423,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <div class="relative">
@@ -436,7 +436,7 @@
                                             <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         <div>
                                             <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu</label>
                                             <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" min="0" placeholder="20" value="{{ old('_modal') === 'add' ? old('estimasi_waktu', 20) : 20 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -500,7 +500,7 @@
                             </h4>
                             
                             <div class="space-y-3">
-                                <div class="grid grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {{-- Status Kursus Toggle --}}
                                     <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                         <div>
@@ -563,7 +563,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="grid grid-cols-3 gap-3 items-end">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
                                         <input type="number" name="harga" id="add_harga" min="0" placeholder="0" value="{{ old('_modal') === 'add' ? old('harga', 0) : 0 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -633,7 +633,7 @@
                             </h4>
 
                             <div class="space-y-4">
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Webinar <span class="text-red-400">*</span></label>
                                         <input type="text" name="nama_course" id="webinar_nama_course" required placeholder="Masukkan judul webinar" value="{{ old('_modal') === 'add_webinar' ? old('nama_course') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
@@ -650,7 +650,7 @@
                                     <textarea name="deskripsi" id="webinar_deskripsi" rows="3" placeholder="Jelaskan topik dan manfaat webinar ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none">{{ old('_modal') === 'add_webinar' ? old('deskripsi') : '' }}</textarea>
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div x-data="dosenSearch('webinar')" class="relative">
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pembicara / Dosen <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <input type="hidden" name="id_dosen" :value="selectedId" id="webinar_id_dosen">
@@ -713,7 +713,7 @@
                                 Jadwal Pelaksanaan
                             </h4>
                             <div class="space-y-4">
-                                <div class="grid grid-cols-3 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <input type="date" name="tanggal_webinar" value="{{ old('_modal') === 'add_webinar' ? old('tanggal_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
@@ -746,7 +746,7 @@
                                 Pengaturan Webinar
                             </h4>
                             <div class="space-y-3">
-                                <div class="grid grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                         <div>
                                             <h5 class="font-medium text-gray-900 dark:text-white text-xs">Status</h5>
@@ -790,7 +790,7 @@
                                 <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center">4</span>
                                 Harga & Akses
                             </h4>
-                            <div class="grid grid-cols-3 gap-4 items-end">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
                                     <input type="number" name="harga" id="webinar_harga" min="0" placeholder="0" value="{{ old('_modal') === 'add_webinar' ? old('harga', 0) : 0 }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
@@ -857,7 +857,7 @@
                             </h4>
                             
                             <div class="space-y-4">
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
                                         <input type="text" name="nama_course" id="edit_nama_course" required placeholder="Masukkan judul kursus" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -879,7 +879,7 @@
                                     <p class="text-xs text-gray-400 mt-1">Tulis satu persyaratan per baris.</p>
                                 </div>
                                 
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div x-data="dosenSearch('edit')" x-ref="editDosenWrap" class="relative">
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <input type="hidden" name="id_dosen" :value="selectedId" id="edit_id_dosen">
@@ -913,7 +913,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <div class="relative">
@@ -926,7 +926,7 @@
                                             <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         <div>
                                             <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu</label>
                                             <input type="number" name="estimasi_waktu" id="edit_estimasi_waktu" min="0" placeholder="20" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -993,7 +993,7 @@
                             </h4>
                             
                             <div class="space-y-3">
-                                <div class="grid grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {{-- Status Kursus Toggle --}}
                                     <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                         <div>
@@ -1056,7 +1056,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="grid grid-cols-3 gap-3 items-end">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                                     <div>
                                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Harga (Rp)</label>
                                         <input type="number" name="harga" id="edit_harga" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">

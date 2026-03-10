@@ -91,7 +91,7 @@
             </div>
 
             {{-- Search --}}
-            <div class="relative flex-1 min-w-[200px] max-w-xs ml-auto">
+            <div class="relative w-full sm:flex-1 sm:min-w-[200px] max-w-xs sm:ml-auto">
                 <input type="text" name="search" value="{{ $search }}" placeholder="Cari kode, nama prodi, fakultas..." class="w-full px-4 py-2 pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                 <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
@@ -185,11 +185,11 @@
 
         {{-- Pagination --}}
         @if($prodiPaginated->total() > 0)
-        <div class="px-6 py-3.5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
+        <div class="px-6 py-3.5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between admin-responsive-pagination">
             <p class="text-xs text-gray-500 dark:text-gray-400">
                 Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300">{{ $prodiPaginated->firstItem() ?? 0 }}-{{ $prodiPaginated->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ $prodiPaginated->total() }}</span> prodi
             </p>
-            <div class="flex items-center gap-1">
+            <div class="flex items-center gap-1 admin-responsive-actions">
                 @if($prodiPaginated->onFirstPage())
                 <button class="p-1.5 text-gray-300 dark:text-gray-600 rounded-lg cursor-not-allowed" disabled>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
@@ -255,7 +255,7 @@
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Informasi Program Studi</h4>
                         <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Prodi <span class="text-red-400">*</span></label>
                                     <input type="text" name="kode_jurusan" required placeholder="Contoh: TI" value="{{ old('_modal') === 'add' ? old('kode_jurusan') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -328,7 +328,7 @@
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Informasi Program Studi</h4>
                         <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Prodi <span class="text-red-400">*</span></label>
                                     <input type="text" name="kode_jurusan" id="edit_kode_jurusan" required placeholder="Contoh: TI" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">

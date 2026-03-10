@@ -46,12 +46,12 @@
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Sertifikat Otomatis</h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Frontend UI untuk upload blangko, atur ukuran teks, kelola sertifikat otomatis, dan export PDF.</p>
             </div>
-            <div class="flex items-center gap-2">
-                <button id="btnOpenCreateCert" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button id="btnOpenCreateCert" type="button" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Tambah Sertif Otomatis
                 </button>
-                <button id="btnExportCurrentPdf" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
+                <button id="btnExportCurrentPdf" type="button" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M4 17a2 2 0 002 2h12a2 2 0 002-2M4 7a2 2 0 012-2h8l6 6v6a2 2 0 01-2 2"/></svg>
                     PDF Hasil Sertif
                 </button>
@@ -104,7 +104,7 @@
                                 <p id="previewProgram" class="mt-1 px-4 text-sm sm:text-base md:text-lg font-semibold text-gray-800">Nama Program</p>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4 sm:gap-6 text-center">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-center">
                                 <div>
                                     <p class="text-[10px] sm:text-xs text-gray-600">Tanggal Terbit</p>
                                     <p id="previewTanggal" class="mt-0.5 text-[11px] sm:text-sm font-medium">-</p>
