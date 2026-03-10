@@ -66,53 +66,74 @@
                         <span id="previewMeta" class="text-xs text-gray-500 dark:text-gray-400"></span>
                     </div>
 
-                    <div id="certificateCanvas" class="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner">
+                    <div id="certificateCanvas" class="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner bg-slate-100">
                         <div id="certificateBgLayer" class="absolute inset-0"></div>
-                        <div class="absolute inset-0 bg-white/70"></div>
+                        <div class="absolute inset-0 bg-slate-100/92"></div>
 
-                        <div class="absolute inset-3 sm:inset-4 rounded-lg border-4 border-amber-300/90"></div>
-                        <div class="absolute inset-5 sm:inset-7 rounded-md border border-amber-400/80"></div>
+                        <div class="absolute -top-4 -right-8 w-52 h-24 bg-blue-400/35 rotate-[18deg]"></div>
+                        <div class="absolute -top-8 -right-4 w-44 h-20 bg-blue-600/45 rotate-[18deg]"></div>
+                        <div class="absolute -bottom-8 -left-8 w-64 h-24 bg-blue-500/40 -rotate-[20deg]"></div>
+                        <div class="absolute -bottom-10 -left-2 w-48 h-20 bg-cyan-400/35 -rotate-[20deg]"></div>
 
-                        <div class="absolute inset-0 px-6 py-5 sm:px-10 sm:py-7 md:px-14 md:py-9 flex flex-col text-gray-800">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-center gap-3 min-w-0">
+                        <div class="absolute inset-4 sm:inset-5 border-[6px] border-blue-700/80"></div>
+                        <div class="absolute inset-7 sm:inset-9 border-[5px] border-blue-100/90"></div>
+
+                        <div class="absolute inset-0 px-7 py-6 sm:px-12 sm:py-8 md:px-16 md:py-10 flex flex-col items-center text-center text-slate-800">
+                            <div class="w-full flex items-start justify-between">
+                                <div class="flex flex-col items-center gap-0.5">
                                     <img
                                         src="{{ asset('assets/image/Logo/Logo_Universitas_Terbuka.png') }}"
-                                        alt="Universitas Terbuka"
-                                        class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain"
+                                        alt="Logo Universitas Terbuka Kiri"
+                                        class="w-9 h-9 sm:w-11 sm:h-11 object-contain"
                                     >
-                                    <div class="min-w-0">
-                                        <p class="text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.14em] uppercase">Universitas Terbuka</p>
-                                        <p class="text-[10px] sm:text-[11px] text-gray-600">Pusat Sertifikasi Kompetensi</p>
+                                    <span class="text-[10px] font-semibold tracking-[0.14em] text-slate-500">LOGO</span>
+                                </div>
+
+                                <div class="flex-1 px-3 sm:px-8">
+                                    <h3 class="text-3xl sm:text-5xl font-black tracking-[0.12em] text-[#1d355d]">SERTIFIKAT</h3>
+                                    <p class="mt-1 text-base sm:text-3xl tracking-[0.08em] text-[#1d355d]" style="font-family: 'Times New Roman', serif;">PENGHARGAAN</p>
+                                </div>
+
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <img
+                                        src="{{ asset('assets/image/Logo/Logo_Universitas_Terbuka.png') }}"
+                                        alt="Logo Universitas Terbuka Kanan"
+                                        class="w-9 h-9 sm:w-11 sm:h-11 object-contain"
+                                    >
+                                    <span class="text-[10px] font-semibold tracking-[0.14em] text-slate-500">LOGO</span>
+                                </div>
+                            </div>
+
+                            <p class="mt-4 text-sm sm:text-2xl text-slate-700">Dengan bangga diberikan kepada:</p>
+
+                            <p id="previewNama" class="mt-2 leading-tight text-[#c79b3b]" style="font-family: 'Brush Script MT', 'Times New Roman', serif; font-size: 52px; font-weight: 400;">Nama Peserta</p>
+                            <div class="w-40 sm:w-96 border-t border-slate-400/80 mt-1"></div>
+
+                            <p class="mt-3 text-sm sm:text-2xl text-slate-700">Sebagai :</p>
+                            <p id="previewRole" class="mt-1 text-xl sm:text-5xl font-black italic tracking-wide text-[#1d355d]">PESERTA PROGRAM</p>
+
+                            <p id="previewProgram" class="mt-4 px-4 max-w-3xl text-xs sm:text-xl text-slate-700 leading-relaxed">
+                                Telah menyelesaikan aktivitas pembelajaran pada platform LMS dengan hasil yang sangat baik.
+                            </p>
+
+                            <div class="mt-auto w-full grid grid-cols-3 items-end gap-3 sm:gap-6">
+                                <div class="text-center">
+                                    <div class="border-t border-slate-500/80 pt-1.5">
+                                        <p class="text-sm sm:text-2xl font-bold text-[#1d355d]">NAMA</p>
+                                        <p class="text-xs sm:text-lg text-slate-700">Pimpinan Yayasan</p>
                                     </div>
                                 </div>
 
-                                <div class="text-right">
-                                    <p class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600">Nomor Sertifikat</p>
-                                    <p id="previewNomor" class="font-semibold leading-tight text-gray-800" style="font-size: 28px;">SRT-XXXX</p>
+                                <div class="text-center pb-1">
+                                    <p class="text-2xl sm:text-5xl text-amber-500 leading-none">❦</p>
+                                    <p id="previewNomor" class="mt-1 text-[10px] sm:text-sm font-semibold tracking-wide text-slate-700">SRT-XXXX</p>
+                                    <p id="previewTanggal" class="text-[10px] sm:text-sm text-slate-600">-</p>
                                 </div>
-                            </div>
 
-                            <div class="flex-1 flex flex-col items-center justify-center text-center px-2 sm:px-8">
-                                <p class="text-[10px] sm:text-xs uppercase tracking-[0.42em] text-gray-600">Sertifikat</p>
-                                <h3 class="mt-1 text-2xl sm:text-4xl md:text-5xl font-black tracking-wide" style="font-family: 'Times New Roman', serif;">PENGHARGAAN</h3>
-                                <p class="mt-2 text-[11px] sm:text-sm text-gray-600">Diberikan kepada</p>
-
-                                <p id="previewNama" class="mt-3 sm:mt-4 text-gray-900 leading-tight" style="font-family: 'Times New Roman', serif; font-size: 52px; font-weight: 700;">Nama Peserta</p>
-
-                                <p class="mt-2 text-[11px] sm:text-sm text-gray-700">atas keberhasilan menyelesaikan program</p>
-                                <p id="previewProgram" class="mt-1 px-4 text-sm sm:text-base md:text-lg font-semibold text-gray-800">Nama Program</p>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4 sm:gap-6 text-center">
-                                <div>
-                                    <p class="text-[10px] sm:text-xs text-gray-600">Tanggal Terbit</p>
-                                    <p id="previewTanggal" class="mt-0.5 text-[11px] sm:text-sm font-medium">-</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] sm:text-xs text-gray-600">Direktur Program</p>
-                                    <div class="mt-6 sm:mt-8 border-t border-gray-500/70 pt-1.5">
-                                        <p class="text-[10px] sm:text-xs font-semibold tracking-wide">SALUT DIGITAL CAMPUS</p>
+                                <div class="text-center">
+                                    <div class="border-t border-slate-500/80 pt-1.5">
+                                        <p class="text-sm sm:text-2xl font-bold text-[#1d355d]">NAMA</p>
+                                        <p class="text-xs sm:text-lg text-slate-700">Ketua Panitia</p>
                                     </div>
                                 </div>
                             </div>
@@ -249,6 +270,7 @@
             const previewMeta = document.getElementById('previewMeta');
             const previewNama = document.getElementById('previewNama');
             const previewNomor = document.getElementById('previewNomor');
+            const previewRole = document.getElementById('previewRole');
             const previewProgram = document.getElementById('previewProgram');
             const previewTanggal = document.getElementById('previewTanggal');
             const certificateBgLayer = document.getElementById('certificateBgLayer');
@@ -290,6 +312,29 @@
                 if (!isoDate) return '-';
                 const dt = new Date(isoDate);
                 return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+            }
+
+            function getLmsCertificateCopy(programName) {
+                const text = (programName || '').toLowerCase();
+
+                if (text.includes('webinar')) {
+                    return {
+                        role: 'PESERTA WEBINAR',
+                        statement: `Telah mengikuti webinar ${programName} pada platform LMS dan menunjukkan partisipasi yang sangat baik.`,
+                    };
+                }
+
+                if (text.includes('kursus') || text.includes('course')) {
+                    return {
+                        role: 'LULUS COURSE',
+                        statement: `Telah menyelesaikan course ${programName} pada platform LMS sesuai standar kelulusan yang ditetapkan.`,
+                    };
+                }
+
+                return {
+                    role: 'PESERTA PROGRAM',
+                    statement: `Telah menjalankan program ${programName} pada platform LMS dengan dedikasi dan performa yang baik.`,
+                };
             }
 
             function renderTemplateOptions() {
@@ -353,7 +398,8 @@
                 if (!cert) {
                     previewNama.textContent = 'Nama Peserta';
                     previewNomor.textContent = 'SRT-XXXX';
-                    previewProgram.textContent = 'Nama Program';
+                    previewRole.textContent = 'PESERTA PROGRAM';
+                    previewProgram.textContent = 'Telah menjalankan aktivitas pembelajaran pada platform LMS dengan hasil yang sangat baik.';
                     previewTanggal.textContent = '-';
                     previewMeta.textContent = 'Belum ada data';
                     return;
@@ -373,9 +419,12 @@
                     }
                 }
 
+                const copy = getLmsCertificateCopy(cert.program);
+
                 previewNama.textContent = cert.nama;
                 previewNomor.textContent = cert.nomor;
-                previewProgram.textContent = cert.program;
+                previewRole.textContent = copy.role;
+                previewProgram.textContent = copy.statement;
                 previewTanggal.textContent = formatDateIndonesia(cert.tanggal);
                 previewMeta.textContent = `${cert.nomor} - ${cert.nama}`;
             }
