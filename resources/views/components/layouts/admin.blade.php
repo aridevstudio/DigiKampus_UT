@@ -65,41 +65,49 @@
                 right: 0;
             }
 
+            /* Toolbar: use CSS grid for smart 2-column layout */
             #admin-main-content .admin-responsive-toolbar {
-                display: flex;
-                flex-wrap: wrap;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
                 align-items: stretch;
-                gap: 0.75rem;
             }
 
-            #admin-main-content .admin-responsive-toolbar > * {
-                margin-left: 0 !important;
-                min-width: 0;
-                width: 100%;
-                max-width: none !important;
-                flex: 1 1 100%;
-            }
-
+            /* Hide dividers on mobile */
             #admin-main-content .admin-responsive-toolbar > .w-px {
                 display: none;
             }
 
+            /* Buttons: auto-fit within grid, don't stretch */
+            #admin-main-content .admin-responsive-toolbar > button,
+            #admin-main-content .admin-responsive-toolbar > a {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 2.5rem;
+                white-space: nowrap;
+                font-size: 0.8125rem;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            /* Filter dropdowns: each takes one grid cell */
             #admin-main-content .admin-responsive-toolbar > .relative {
-                width: 100%;
+                min-width: 0;
             }
 
             #admin-main-content .admin-responsive-toolbar > .relative > select,
             #admin-main-content .admin-responsive-toolbar > .relative > input {
                 width: 100%;
+                font-size: 0.8125rem;
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
             }
 
-            #admin-main-content .admin-responsive-toolbar > button,
-            #admin-main-content .admin-responsive-toolbar > a {
-                display: inline-flex;
-                align-items: center;
-                justify-content: flex-start;
-                min-height: 2.625rem;
-                white-space: normal;
+            /* Search bar group: span full width (both columns) */
+            #admin-main-content .admin-responsive-toolbar > .admin-search-group {
+                grid-column: 1 / -1;
+                max-width: none;
             }
 
             #admin-main-content .admin-data-table th,
