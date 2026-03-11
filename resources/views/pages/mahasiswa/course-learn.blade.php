@@ -1,4 +1,49 @@
 <x-layouts.dashboard :active="'courses'">
+@php
+    $extractYoutubeId = static function (?string $url): ?string {
+        if (!$url) {
+            return null;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST) ?? '';
+        $path = parse_url($url, PHP_URL_PATH) ?? '';
+
+        if (str_contains($host, 'youtu.be')) {
+            $id = trim($path, '/');
+            return $id !== '' ? $id : null;
+        }
+
+        if (str_contains($host, 'youtube.com')) {
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+            if (!empty($query['v'])) {
+                return $query['v'];
+            }
+
+            $segments = array_values(array_filter(explode('/', trim($path, '/'))));
+            $embedIndex = array_search('embed', $segments, true);
+            if ($embedIndex !== false && !empty($segments[$embedIndex + 1])) {
+                return $segments[$embedIndex + 1];
+            }
+
+            $shortsIndex = array_search('shorts', $segments, true);
+            if ($shortsIndex !== false && !empty($segments[$shortsIndex + 1])) {
+                return $segments[$shortsIndex + 1];
+            }
+        }
+
+        return null;
+    };
+
+    $courseVideoIds = collect($modules ?? [])
+        ->flatMap(fn ($module) => collect($module['materials'] ?? []))
+        ->filter(fn ($material) => ($material['type'] ?? null) === 'video' && !empty($material['video_url']))
+        ->map(fn ($material) => $extractYoutubeId($material['video_url']))
+        ->filter()
+        ->values()
+        ->all();
+
+    $isPlaylistMode = request('play') === 'pack';
+@endphp
 
 {{-- Back Link & Title Row --}}
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6 animate-fade-in-up">
@@ -251,27 +296,39 @@
             </div>
             
             {{-- Video/Content Area --}}
-            <div class="bg-gray-900 rounded-2xl overflow-hidden relative" style="aspect-ratio: 16/9;">
+            <div id="video-protected-player" tabindex="0" class="bg-gray-900 rounded-2xl overflow-hidden relative focus:outline-none" style="aspect-ratio: 16/9;">
                 @if($currentMaterial)
                     @if($currentMaterial['type'] == 'video' && !empty($currentMaterial['video_url']))
                         @php
                             $videoUrl = $currentMaterial['video_url'];
                             $embedUrl = '';
-                            if (str_contains($videoUrl, 'youtube.com/watch?v=')) {
-                                parse_str(parse_url($videoUrl, PHP_URL_QUERY), $params);
-                                $videoId = $params['v'] ?? '';
-                                $embedUrl = "https://www.youtube.com/embed/{$videoId}";
-                            } elseif (str_contains($videoUrl, 'youtu.be/')) {
-                                $videoId = basename(parse_url($videoUrl, PHP_URL_PATH));
-                                $embedUrl = "https://www.youtube.com/embed/{$videoId}";
+                            $videoId = $extractYoutubeId($videoUrl);
+                            $isPackPlayable = $videoId && in_array($videoId, $courseVideoIds, true) && count($courseVideoIds) > 1;
+
+                            if ($videoId) {
+                                $playlistIds = array_values(array_filter($courseVideoIds, fn ($id) => $id !== $videoId));
+                                $params = [
+                                    'rel' => '0',
+                                    'modestbranding' => '1',
+                                    'playsinline' => '1',
+                                ];
+
+                                if ($isPlaylistMode && $isPackPlayable) {
+                                    $params['autoplay'] = '1';
+                                    if (!empty($playlistIds)) {
+                                        $params['playlist'] = implode(',', $playlistIds);
+                                    }
+                                }
+
+                                $embedUrl = "https://www.youtube-nocookie.com/embed/{$videoId}?" . http_build_query($params);
                             }
                         @endphp
 
                         @if($embedUrl)
-                            <iframe src="{{ $embedUrl }}" title="Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe>
+                            <iframe src="{{ $embedUrl }}" title="Video Player" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe>
                         @else
                             {{-- Fallback for non-YouTube or direct files --}}
-                            <video controls class="w-full h-full">
+                            <video controls controlsList="nodownload noplaybackrate" disablePictureInPicture oncontextmenu="return false" class="w-full h-full">
                                 <source src="{{ $videoUrl }}" type="video/mp4">
                                 Browser Anda tidak mendukung tag video.
                             </video>
@@ -317,6 +374,24 @@
                 </div>
                 @endif
             </div>
+
+            @if($currentMaterial && $currentMaterial['type'] == 'video' && count($courseVideoIds) > 1)
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $currentMaterial['id'], 'play' => 'pack']) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition {{ $isPlaylistMode ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.868v4.264a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h4m-4 6h16" />
+                    </svg>
+                    Putar 1 Paket Video
+                </a>
+                <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $currentMaterial['id']]) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition {{ !$isPlaylistMode ? 'bg-gray-900 text-white dark:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300' }}">
+                    Mode Single
+                </a>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Mode paket memutar video YouTube berurutan otomatis.</span>
+            </div>
+            @endif
             
             {{-- Action Buttons --}}
             <div class="flex flex-wrap items-center gap-3">
@@ -649,6 +724,25 @@
             }
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const playerBox = document.getElementById('video-protected-player');
+        if (!playerBox) return;
+
+        const block = (event) => event.preventDefault();
+        playerBox.addEventListener('contextmenu', block);
+        playerBox.addEventListener('copy', block);
+        playerBox.addEventListener('cut', block);
+        playerBox.addEventListener('dragstart', block);
+        playerBox.addEventListener('selectstart', block);
+
+        playerBox.addEventListener('keydown', function (event) {
+            const key = (event.key || '').toLowerCase();
+            if ((event.ctrlKey || event.metaKey) && ['c', 'x', 'u', 's'].includes(key)) {
+                event.preventDefault();
+            }
+        });
+    });
 </script>
 @endpush
 

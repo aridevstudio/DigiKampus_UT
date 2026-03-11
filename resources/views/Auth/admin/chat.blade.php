@@ -48,10 +48,9 @@
                         @change="applyFilters()"
                         class="w-full px-3 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                        <option value="all">Semua Status</option>
+                        <option value="active">Semua Chat Aktif</option>
                         <option value="ongoing">Sedang Chat</option>
                         <option value="active24h">Aktif 24 Jam</option>
-                        <option value="idle">Idle</option>
                     </select>
                 </div>
             </div>
@@ -227,7 +226,7 @@
                 messages: [],
                 adminMessage: '',
                 search: '',
-                statusFilter: 'all',
+                statusFilter: 'active',
                 isLoadingConversations: false,
                 isLoadingMessages: false,
                 isSendingMessage: false,
@@ -304,8 +303,11 @@
 
                 applyFilters() {
                     const query = this.search.trim().toLowerCase();
+                    const activeStatuses = ['ongoing', 'active24h'];
+
                     this.filteredConversations = this.conversations.filter((conv) => {
-                        if (this.statusFilter !== 'all' && conv.status !== this.statusFilter) return false;
+                        if (!activeStatuses.includes(conv.status)) return false;
+                        if (this.statusFilter !== 'active' && conv.status !== this.statusFilter) return false;
                         if (!query) return true;
                         return [conv.student_name, conv.lecturer_name, conv.last_message]
                             .join(' ')
