@@ -96,27 +96,112 @@
 
 {{-- Announcements & Quick Actions --}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-    {{-- Announcements --}}
-    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between mb-3 sm:mb-4">
-            <h2 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">Pengumuman Admin</h2>
-            <a href="{{ route('admin.pengumuman') }}" class="text-blue-600 hover:text-blue-700 text-xs sm:text-sm">Lihat Semua</a>
-        </div>
-        <div class="space-y-3 sm:space-y-4">
-            @forelse($recentNews as $news)
-            <div class="p-3 sm:p-4 border border-gray-100 dark:border-gray-700 rounded-lg">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-1">
-                    <h3 class="font-medium text-sm sm:text-base text-gray-800 dark:text-white line-clamp-1">{{ $news->judul }}</h3>
-                    <span class="text-[10px] sm:text-xs text-gray-400 whitespace-nowrap">{{ $news->tanggal_publish->format('d M Y') }}</span>
+    {{-- Broadcast Announcements --}}
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700/60">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h2 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">Broadcast Pengumuman</h2>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Ringkasan broadcast terbaru untuk mahasiswa.</p>
                 </div>
-                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{{ Str::limit(strip_tags($news->konten), 120) }}</p>
-                <span class="inline-block px-2 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] sm:text-xs rounded">{{ $news->kategori ?? 'Umum' }}</span>
+                <a href="{{ route('admin.pengumuman') }}"
+                    class="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                    Kelola Broadcast
+                </a>
             </div>
-            @empty
-            <div class="text-center py-6 sm:py-8">
-                <p class="text-sm text-gray-400">Belum ada pengumuman</p>
+            <div class="mt-4 rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-700/20 px-3 sm:px-4 py-2 flex items-center justify-between gap-3">
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Menampilkan broadcast terbaru yang sudah aktif</p>
+                <span class="text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400">Total: {{ $recentNews->count() }}</span>
             </div>
-            @endforelse
+        </div>
+
+        <div class="overflow-x-auto responsive-table">
+            <table class="w-full responsive-data-table text-sm">
+                <thead>
+                    <tr class="bg-gradient-to-r from-gray-50 to-gray-100/60 dark:from-gray-700/60 dark:to-gray-700/20">
+                        <th class="px-4 sm:px-6 py-3 text-left text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
+                        <th class="px-4 sm:px-6 py-3 text-left text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Judul</th>
+                        <th class="px-4 sm:px-6 py-3 text-left text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kategori</th>
+                        <th class="px-4 sm:px-6 py-3 text-left text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal Publish</th>
+                        <th class="px-4 sm:px-6 py-3 text-left text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="px-4 sm:px-6 py-3 text-center text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700/60">
+                    @forelse($recentNews as $index => $news)
+                    <tr class="hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-colors">
+                        <td class="px-4 sm:px-6 py-4">
+                            <span class="font-medium text-gray-500 dark:text-gray-400">{{ $index + 1 }}</span>
+                        </td>
+                        <td class="px-4 sm:px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-gray-800 dark:text-white truncate max-w-[130px] sm:max-w-[220px] lg:max-w-[320px]">{{ $news->judul }}</p>
+                                    <p class="text-xs text-gray-400 truncate max-w-[130px] sm:max-w-[220px] lg:max-w-[320px]">{{ Str::limit(strip_tags($news->konten), 65) }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 sm:px-6 py-4">
+                            @php
+                                $kategoriColors = [
+                                    'pengumuman' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+                                    'berita' => 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400',
+                                    'event' => 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
+                                ];
+                            @endphp
+                            <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold {{ $kategoriColors[$news->kategori] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' }}">
+                                {{ ucfirst($news->kategori ?? 'Umum') }}
+                            </span>
+                        </td>
+                        <td class="px-4 sm:px-6 py-4">
+                            <span class="text-gray-600 dark:text-gray-300">{{ $news->tanggal_publish->format('d M Y, H:i') }}</span>
+                        </td>
+                        <td class="px-4 sm:px-6 py-4">
+                            @if($news->is_active)
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Aktif
+                            </span>
+                            @else
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                Nonaktif
+                            </span>
+                            @endif
+                        </td>
+                        <td class="px-4 sm:px-6 py-4 text-center">
+                            <a href="{{ route('admin.pengumuman') }}"
+                                class="inline-flex items-center justify-center p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10 rounded-lg transition"
+                                title="Kelola Pengumuman">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                            </svg>
+                            <p class="text-gray-400 dark:text-gray-500 font-medium">Belum ada broadcast pengumuman</p>
+                            <a href="{{ route('admin.pengumuman') }}" class="inline-flex items-center mt-3 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                Buka halaman kelola pengumuman
+                            </a>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
     
