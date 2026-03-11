@@ -240,6 +240,13 @@
                     </svg>
                     <span class="font-medium">Manajemen Chat</span>
                 </a>
+
+                <a href="{{ route('admin.finance-report') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'finance-report' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 13l3-3 3 2 4-5" />
+                    </svg>
+                    <span class="font-medium">Finance Report</span>
+                </a>
             </nav>
         </aside>
 

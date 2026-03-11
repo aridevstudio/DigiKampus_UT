@@ -119,6 +119,7 @@ Route::prefix('admin')
         Route::view('/kategori', 'Auth.admin.kategori')->name('admin.kategori');
         Route::view('/sertifikasi', 'Auth.admin.sertifikasi')->name('admin.sertifikasi');
         Route::view('/chat', 'Auth.admin.chat')->name('admin.chat');
+        Route::view('/finance-report', 'Auth.admin.finance-report')->name('admin.finance-report');
 
         Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('admin.pengumuman.store');
         Route::get('/pengumuman/{id}', [AdminController::class, 'getPengumuman'])->name('admin.pengumuman.get');

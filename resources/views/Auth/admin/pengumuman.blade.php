@@ -25,9 +25,11 @@
                 <div class="relative">
                     <select name="kategori" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($kategoriFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Kategori</option>
-                        <option value="pengumuman" {{ ($kategoriFilter ?? '') === 'pengumuman' ? 'selected' : '' }}>Pengumuman</option>
-                        <option value="berita" {{ ($kategoriFilter ?? '') === 'berita' ? 'selected' : '' }}>Berita</option>
-                        <option value="event" {{ ($kategoriFilter ?? '') === 'event' ? 'selected' : '' }}>Event</option>
+                        <option value="umum" {{ ($kategoriFilter ?? '') === 'umum' ? 'selected' : '' }}>Umum</option>
+                        <option value="akademik" {{ ($kategoriFilter ?? '') === 'akademik' ? 'selected' : '' }}>Akademik</option>
+                        <option value="keungan" {{ ($kategoriFilter ?? '') === 'keungan' ? 'selected' : '' }}>Keungan</option>
+                        <option value="registrasi" {{ ($kategoriFilter ?? '') === 'registrasi' ? 'selected' : '' }}>Registrasi</option>
+                        <option value="kemahasiswaan" {{ ($kategoriFilter ?? '') === 'kemahasiswaan' ? 'selected' : '' }}>Kemahasiswaan</option>
                     </select>
                     <svg class="w-4 h-4 absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -101,6 +103,11 @@
                         <td class="px-6 py-4">
                             @php
                                 $kategoriColors = [
+                                    'umum' => 'bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300',
+                                    'akademik' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+                                    'keungan' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
+                                    'registrasi' => 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+                                    'kemahasiswaan' => 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300',
                                     'pengumuman' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
                                     'berita' => 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400',
                                     'event' => 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
@@ -210,9 +217,11 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Kategori <span class="text-red-500">*</span></label>
                                 <select name="kategori" required
                                     class="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                                    <option value="pengumuman" {{ old('_modal') === 'add' && old('kategori') === 'pengumuman' ? 'selected' : '' }}>Pengumuman</option>
-                                    <option value="berita" {{ old('_modal') === 'add' && old('kategori') === 'berita' ? 'selected' : '' }}>Berita</option>
-                                    <option value="event" {{ old('_modal') === 'add' && old('kategori') === 'event' ? 'selected' : '' }}>Event</option>
+                                    <option value="umum" {{ old('_modal') === 'add' && old('kategori', 'umum') === 'umum' ? 'selected' : '' }}>Umum</option>
+                                    <option value="akademik" {{ old('_modal') === 'add' && old('kategori') === 'akademik' ? 'selected' : '' }}>Akademik</option>
+                                    <option value="keungan" {{ old('_modal') === 'add' && old('kategori') === 'keungan' ? 'selected' : '' }}>Keungan</option>
+                                    <option value="registrasi" {{ old('_modal') === 'add' && old('kategori') === 'registrasi' ? 'selected' : '' }}>Registrasi</option>
+                                    <option value="kemahasiswaan" {{ old('_modal') === 'add' && old('kategori') === 'kemahasiswaan' ? 'selected' : '' }}>Kemahasiswaan</option>
                                 </select>
                             </div>
 
@@ -299,9 +308,11 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Kategori <span class="text-red-500">*</span></label>
                                 <select name="kategori" id="edit_kategori" required
                                     class="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                                    <option value="pengumuman">Pengumuman</option>
-                                    <option value="berita">Berita</option>
-                                    <option value="event">Event</option>
+                                    <option value="umum">Umum</option>
+                                    <option value="akademik">Akademik</option>
+                                    <option value="keungan">Keungan</option>
+                                    <option value="registrasi">Registrasi</option>
+                                    <option value="kemahasiswaan">Kemahasiswaan</option>
                                 </select>
                             </div>
 
