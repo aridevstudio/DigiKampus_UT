@@ -1248,11 +1248,6 @@ class DosenController extends Controller
 
         // Average quiz score across all enrollments
         $allQuizScores = \App\Models\QuizAttempt::query()
-            ->whereHas('mahasiswa', function ($q) use ($courses) {
-                $q->whereHas('enrollments', function ($eq) use ($courses) {
-                    $eq->whereIn('id_course', $courses);
-                });
-            })
             ->where('status', 'selesai')
             ->whereHas('quiz', function ($q) use ($courses) {
                 $q->whereIn('id_course', $courses);
