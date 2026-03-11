@@ -140,6 +140,27 @@
                 font-size: 0.8125rem;
             }
         }
+
+        .dosen-cs-widget {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 60;
+        }
+
+        .dosen-cs-panel {
+            width: min(22rem, calc(100vw - 2rem));
+            border-radius: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+        }
+
+        @media (max-width: 640px) {
+            .dosen-cs-widget {
+                right: 0.75rem;
+                bottom: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#111827]">
@@ -330,6 +351,42 @@
                 {{ $slot }}
             </main>
         </div>
+    </div>
+
+    <div class="dosen-cs-widget" id="dosen-cs-widget">
+        <div id="dosen-cs-panel" class="dosen-cs-panel hidden mb-3 bg-white dark:bg-[#1f2937] p-4">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">Live Chat CS</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Butuh bantuan terkait dashboard dosen?</p>
+                </div>
+                <button type="button" onclick="toggleDosenCsWidget(false)" class="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                <span class="inline-flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                    CS Online
+                </span>
+                <p class="mt-1">Klik tombol di bawah untuk terhubung ke chat support.</p>
+            </div>
+            <a href="{{ route('dosen.pesan') }}" class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-blue-600">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                Buka Live Chat
+            </a>
+        </div>
+
+        <button id="dosen-cs-trigger" type="button" onclick="toggleDosenCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            Chat CS
+        </button>
     </div>
 
     @vite('resources/js/app.js')
@@ -742,6 +799,28 @@
 
         // Poll every 30 seconds for fresh counts
         setInterval(loadDosenHeaderCounts, 30000);
+
+        function toggleDosenCsWidget(forceOpen = null) {
+            const panel = document.getElementById('dosen-cs-panel');
+            if (!panel) return;
+
+            const shouldOpen = forceOpen === null ? panel.classList.contains('hidden') : forceOpen;
+            if (shouldOpen) {
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('click', (event) => {
+            const widget = document.getElementById('dosen-cs-widget');
+            const panel = document.getElementById('dosen-cs-panel');
+            if (!widget || !panel) return;
+            if (panel.classList.contains('hidden')) return;
+            if (!widget.contains(event.target)) {
+                panel.classList.add('hidden');
+            }
+        });
     </script>
     
     @stack('scripts')

@@ -259,6 +259,27 @@
         #mhs-main-content .chart-container {
             height: clamp(180px, 30vw, 280px);
         }
+
+        .mhs-cs-widget {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 60;
+        }
+
+        .mhs-cs-panel {
+            width: min(22rem, calc(100vw - 2rem));
+            border-radius: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+        }
+
+        @media (max-width: 640px) {
+            .mhs-cs-widget {
+                right: 0.75rem;
+                bottom: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#111827]">
@@ -281,6 +302,42 @@
                 {{ $slot }}
             </main>
         </div>
+    </div>
+
+    <div class="mhs-cs-widget" id="mhs-cs-widget">
+        <div id="mhs-cs-panel" class="mhs-cs-panel hidden mb-3 bg-white dark:bg-[#1f2937] p-4">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">Live Chat CS</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Tim support siap bantu 24/7.</p>
+                </div>
+                <button type="button" onclick="toggleMahasiswaCsWidget(false)" class="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                <span class="inline-flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                    CS Online
+                </span>
+                <p class="mt-1">Klik tombol di bawah untuk mulai chat dengan CS.</p>
+            </div>
+            <a href="{{ route('mahasiswa.chat') }}" class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-blue-600">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Buka Live Chat
+            </a>
+        </div>
+
+        <button id="mhs-cs-trigger" type="button" onclick="toggleMahasiswaCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            Chat CS
+        </button>
     </div>
 
     @vite('resources/js/app.js')
@@ -523,6 +580,28 @@
         window.addEventListener('resize', () => {
             ensureResponsiveMahasiswaTables();
             initMahasiswaFileSizeGuards();
+        });
+
+        function toggleMahasiswaCsWidget(forceOpen = null) {
+            const panel = document.getElementById('mhs-cs-panel');
+            if (!panel) return;
+
+            const shouldOpen = forceOpen === null ? panel.classList.contains('hidden') : forceOpen;
+            if (shouldOpen) {
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('click', (event) => {
+            const widget = document.getElementById('mhs-cs-widget');
+            const panel = document.getElementById('mhs-cs-panel');
+            if (!widget || !panel) return;
+            if (panel.classList.contains('hidden')) return;
+            if (!widget.contains(event.target)) {
+                panel.classList.add('hidden');
+            }
         });
     </script>
     
