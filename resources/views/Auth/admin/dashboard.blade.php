@@ -119,7 +119,7 @@
         </div>
 
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table text-sm">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list text-sm">
                 <thead>
                     <tr class="bg-gradient-to-r from-gray-50 to-gray-100/60 dark:from-gray-700/60 dark:to-gray-700/20">
                         <th class="px-4 sm:px-6 py-3 text-left text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -304,3 +304,4 @@ document.addEventListener('DOMContentLoaded', function() {
 @endpush
 
 </x-layouts.admin>
+

@@ -31,7 +31,8 @@
         }
 
         #admin-main-content {
-            overflow-x: auto;
+            overflow-x: hidden;
+            width: 100%;
         }
 
         #admin-main-content .admin-data-table {
@@ -46,7 +47,7 @@
         }
 
 
-        @media (max-width: 640px) {
+        @media (max-width: 639px) {
             #admin-main-content {
                 padding: 0.75rem;
             }
@@ -73,6 +74,12 @@
             #admin-main-content .admin-data-table {
                 width: max-content;
                 min-width: max(100%, 560px);
+            }
+
+            #admin-main-content .admin-mobile-list {
+                width: 100% !important;
+                min-width: 100% !important;
+                table-layout: fixed;
             }
 
             #admin-main-content .admin-data-table th {
@@ -113,7 +120,7 @@
             }
         }
 
-        @media (min-width: 641px) and (max-width: 1023px) {
+        @media (min-width: 640px) and (max-width: 1023px) {
             #admin-main-content .admin-data-table {
                 width: max-content;
                 min-width: max(100%, 640px);
@@ -404,6 +411,108 @@
                 if (darkIcon) darkIcon.classList.add('hidden');
             }
         })();
+
+        function showAppAlert(message, icon = 'info', title = 'Informasi', options = {}) {
+            const text = typeof message === 'string' ? message : String(message ?? '');
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                const isToast = Boolean(options.toast);
+                return window.Swal.fire({
+                    icon,
+                    title,
+                    text,
+                    toast: isToast,
+                    position: isToast ? (options.position || 'top-end') : 'center',
+                    timer: isToast ? (options.timer || 2600) : undefined,
+                    timerProgressBar: isToast ? true : undefined,
+                    showConfirmButton: isToast ? false : true,
+                    buttonsStyling: !isToast,
+                    customClass: {
+                        container: 'font-inter',
+                        confirmButton: isToast ? '' : 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors'
+                    }
+                });
+            }
+
+            const nativeAlert = window.__nativeAlert || window.alert.bind(window);
+            return nativeAlert(text);
+        }
+
+        (function patchNativeAlertToSweetAlert() {
+            if (window.__alertPatchedToSweetAlert) return;
+            window.__nativeAlert = window.__nativeAlert || window.alert.bind(window);
+            window.alert = (message) => showAppAlert(message, 'warning', 'Perhatian', { toast: true });
+            window.__alertPatchedToSweetAlert = true;
+        })();
+
+        function initAdminFileSizeGuards() {
+            const fileInputs = document.querySelectorAll('#admin-main-content input[type="file"][data-max-size-mb]');
+
+            const isFileOversize = (inputEl) => {
+                const maxMb = Number(inputEl.dataset.maxSizeMb || 0);
+                if (!maxMb || !inputEl.files || inputEl.files.length === 0) {
+                    return null;
+                }
+
+                const maxBytes = maxMb * 1024 * 1024;
+                const oversize = Array.from(inputEl.files).find((f) => f.size > maxBytes);
+                if (!oversize) return null;
+
+                return { maxMb, oversize };
+            };
+
+            fileInputs.forEach((input) => {
+                if (input.dataset.sizeGuardBound === '1') return;
+                input.dataset.sizeGuardBound = '1';
+
+                input.addEventListener('change', function () {
+                    const invalid = isFileOversize(this);
+                    if (!invalid) return;
+
+                    alert(`File terlalu besar. Maksimal ${invalid.maxMb}MB per file.`);
+                    this.value = '';
+                    this.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
+
+            const forms = document.querySelectorAll('#admin-main-content form');
+            forms.forEach((form) => {
+                if (form.dataset.sizeGuardSubmitBound === '1') return;
+                form.dataset.sizeGuardSubmitBound = '1';
+
+                form.addEventListener('submit', (event) => {
+                    const formFileInputs = form.querySelectorAll('input[type="file"][data-max-size-mb]');
+                    for (const input of formFileInputs) {
+                        const invalid = isFileOversize(input);
+                        if (!invalid) continue;
+
+                        event.preventDefault();
+                        alert(`File "${invalid.oversize.name}" terlalu besar. Maksimal ${invalid.maxMb}MB.`);
+                        input.value = '';
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        return;
+                    }
+                });
+            });
+
+            if (!document.body.dataset.adminFileGuardCaptureBound) {
+                document.addEventListener('change', (event) => {
+                    const input = event.target;
+                    if (!(input instanceof HTMLInputElement)) return;
+                    if (!input.matches('#admin-main-content input[type="file"][data-max-size-mb]')) return;
+
+                    const invalid = isFileOversize(input);
+                    if (!invalid) return;
+
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    alert(`File "${invalid.oversize.name}" terlalu besar. Maksimal ${invalid.maxMb}MB.`);
+                    input.value = '';
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }, true);
+
+                document.body.dataset.adminFileGuardCaptureBound = '1';
+            }
+        }
         // Notifications
         let notifLoaded = false;
 
@@ -565,8 +674,8 @@
         // Ensure all admin tables remain scrollable on small screens.
         function ensureResponsiveAdminTables() {
             const tables = document.querySelectorAll('#admin-main-content table');
-            const isSmallScreen = window.matchMedia('(max-width: 640px)').matches;
-            const isTabletScreen = window.matchMedia('(min-width: 641px) and (max-width: 1023px)').matches;
+            const isSmallScreen = window.matchMedia('(max-width: 639px)').matches;
+            const isTabletScreen = window.matchMedia('(min-width: 640px) and (max-width: 1023px)').matches;
 
             const getAutoMinWidth = () => {
                 if (isSmallScreen) return '560px';
@@ -575,7 +684,31 @@
             };
 
             tables.forEach((table) => {
+                const isResponsiveListTable =
+                    table.classList.contains('responsive-data-table') ||
+                    table.classList.contains('admin-mobile-list') ||
+                    table.closest('.responsive-table');
+
+                if (!isResponsiveListTable) {
+                    return;
+                }
+
                 table.classList.add('admin-data-table', 'responsive-data-table');
+
+                // Build per-cell labels from headers so mobile card rows remain readable.
+                const headerCells = Array.from(table.querySelectorAll('thead th'));
+                if (headerCells.length > 0) {
+                    const labels = headerCells.map((th) => (th.textContent || '').trim() || 'Kolom');
+                    const rows = table.querySelectorAll('tbody tr');
+                    rows.forEach((row) => {
+                        const cells = row.querySelectorAll('td');
+                        cells.forEach((cell, index) => {
+                            if (!cell.dataset.label) {
+                                cell.dataset.label = labels[index] || 'Detail';
+                            }
+                        });
+                    });
+                }
 
                 if (table.closest('.overflow-x-auto')) {
                     const wrapper = table.closest('.overflow-x-auto');
@@ -619,13 +752,30 @@
             });
         }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', ensureResponsiveAdminTables);
-        } else {
-            ensureResponsiveAdminTables();
+        function ensureAdminResponsiveToolbars() {
+            const toolbars = document.querySelectorAll("#admin-main-content form[method='GET'], #admin-main-content form[method='get']");
+            toolbars.forEach((form) => {
+                form.classList.add('admin-toolbar-responsive');
+            });
         }
 
-        window.addEventListener('resize', ensureResponsiveAdminTables);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                ensureResponsiveAdminTables();
+                ensureAdminResponsiveToolbars();
+                initAdminFileSizeGuards();
+            });
+        } else {
+            ensureResponsiveAdminTables();
+            ensureAdminResponsiveToolbars();
+            initAdminFileSizeGuards();
+        }
+
+        window.addEventListener('resize', () => {
+            ensureResponsiveAdminTables();
+            ensureAdminResponsiveToolbars();
+            initAdminFileSizeGuards();
+        });
     </script>
     
     @stack('scripts')

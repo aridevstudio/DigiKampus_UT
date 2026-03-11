@@ -333,6 +333,38 @@
             }
         })();
 
+        function showAppAlert(message, icon = 'info', title = 'Informasi', options = {}) {
+            const text = typeof message === 'string' ? message : String(message ?? '');
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                const isToast = Boolean(options.toast);
+                return window.Swal.fire({
+                    icon,
+                    title,
+                    text,
+                    toast: isToast,
+                    position: isToast ? (options.position || 'top-end') : 'center',
+                    timer: isToast ? (options.timer || 2600) : undefined,
+                    timerProgressBar: isToast ? true : undefined,
+                    showConfirmButton: isToast ? false : true,
+                    buttonsStyling: !isToast,
+                    customClass: {
+                        container: 'font-inter',
+                        confirmButton: isToast ? '' : 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors'
+                    }
+                });
+            }
+
+            const nativeAlert = window.__nativeAlert || window.alert.bind(window);
+            return nativeAlert(text);
+        }
+
+        (function patchNativeAlertToSweetAlert() {
+            if (window.__alertPatchedToSweetAlert) return;
+            window.__nativeAlert = window.__nativeAlert || window.alert.bind(window);
+            window.alert = (message) => showAppAlert(message, 'warning', 'Perhatian', { toast: true });
+            window.__alertPatchedToSweetAlert = true;
+        })();
+
         // Notification toggle - placeholder for pages without notification view
         function toggleNotificationView() {
             const notificationView = document.getElementById('notification-view');
@@ -410,13 +442,88 @@
             });
         }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', ensureResponsiveMahasiswaTables);
-        } else {
-            ensureResponsiveMahasiswaTables();
+        function initMahasiswaFileSizeGuards() {
+            const fileInputs = document.querySelectorAll('#mhs-main-content input[type="file"][data-max-size-mb]');
+            const isFileOversize = (inputEl) => {
+                const maxSizeMb = Number(inputEl.dataset.maxSizeMb || 0);
+                if (!maxSizeMb || !inputEl.files || inputEl.files.length === 0) return null;
+
+                const maxBytes = maxSizeMb * 1024 * 1024;
+                const oversizedFile = Array.from(inputEl.files).find((file) => file.size > maxBytes);
+                if (!oversizedFile) return null;
+
+                return { maxSizeMb, oversizedFile };
+            };
+
+            fileInputs.forEach((input) => {
+                if (input.dataset.maxSizeBound === 'true') return;
+
+                input.addEventListener('change', () => {
+                    const invalid = isFileOversize(input);
+                    if (invalid) {
+                        alert(`File "${invalid.oversizedFile.name}" melebihi batas ${invalid.maxSizeMb}MB.`);
+                        input.value = '';
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+
+                input.dataset.maxSizeBound = 'true';
+            });
+
+            const forms = document.querySelectorAll('#mhs-main-content form');
+            forms.forEach((form) => {
+                if (form.dataset.sizeGuardSubmitBound === '1') return;
+                form.dataset.sizeGuardSubmitBound = '1';
+
+                form.addEventListener('submit', (event) => {
+                    const formFileInputs = form.querySelectorAll('input[type="file"][data-max-size-mb]');
+                    for (const input of formFileInputs) {
+                        const invalid = isFileOversize(input);
+                        if (!invalid) continue;
+
+                        event.preventDefault();
+                        alert(`File "${invalid.oversizedFile.name}" melebihi batas ${invalid.maxSizeMb}MB.`);
+                        input.value = '';
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        return;
+                    }
+                });
+            });
+
+            if (!document.body.dataset.mahasiswaFileGuardCaptureBound) {
+                document.addEventListener('change', (event) => {
+                    const input = event.target;
+                    if (!(input instanceof HTMLInputElement)) return;
+                    if (!input.matches('#mhs-main-content input[type="file"][data-max-size-mb]')) return;
+
+                    const invalid = isFileOversize(input);
+                    if (!invalid) return;
+
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    alert(`File "${invalid.oversizedFile.name}" melebihi batas ${invalid.maxSizeMb}MB.`);
+                    input.value = '';
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }, true);
+
+                document.body.dataset.mahasiswaFileGuardCaptureBound = '1';
+            }
         }
 
-        window.addEventListener('resize', ensureResponsiveMahasiswaTables);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                ensureResponsiveMahasiswaTables();
+                initMahasiswaFileSizeGuards();
+            });
+        } else {
+            ensureResponsiveMahasiswaTables();
+            initMahasiswaFileSizeGuards();
+        }
+
+        window.addEventListener('resize', () => {
+            ensureResponsiveMahasiswaTables();
+            initMahasiswaFileSizeGuards();
+        });
     </script>
     
     @stack('scripts')

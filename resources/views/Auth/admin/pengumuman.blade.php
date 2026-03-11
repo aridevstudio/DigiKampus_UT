@@ -6,7 +6,7 @@
     </div>
 
     {{-- Actions Bar --}}
-    <form method="GET" action="{{ route('admin.pengumuman') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
+    <form method="GET" action="{{ route('admin.pengumuman') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
         <div class="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
             {{-- Buttons --}}
             <div class="flex flex-wrap gap-1.5 sm:contents">
@@ -64,7 +64,7 @@
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table text-sm">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list text-sm">
                 <thead>
                     <tr class="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-700/30">
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -228,7 +228,7 @@
                         {{-- Thumbnail --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Thumbnail</label>
-                            <input type="file" name="thumbnail" accept="image/*"
+                            <input type="file" name="thumbnail" accept="image/*" data-max-size-mb="2"
                                 class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-500/10 dark:file:text-blue-400 file:font-medium file:cursor-pointer hover:file:bg-blue-100 dark:hover:file:bg-blue-500/20 transition">
                             <p class="mt-1 text-xs text-gray-400">JPG, PNG, WebP. Maks 2MB.</p>
                         </div>
@@ -322,7 +322,7 @@
                         {{-- Thumbnail --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ganti Thumbnail</label>
-                            <input type="file" name="thumbnail" accept="image/*"
+                            <input type="file" name="thumbnail" accept="image/*" data-max-size-mb="2"
                                 class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-500/10 dark:file:text-blue-400 file:font-medium file:cursor-pointer hover:file:bg-blue-100 dark:hover:file:bg-blue-500/20 transition">
                             <p class="mt-1 text-xs text-gray-400">Kosongkan jika tidak ingin mengganti. JPG, PNG, WebP. Maks 2MB.</p>
                         </div>
@@ -375,6 +375,16 @@
 
 @push('scripts')
 <script>
+    const pengumumanEndpoints = {
+        show: @json(route('admin.pengumuman.get', ['id' => '__ID__'], false)),
+        update: @json(route('admin.pengumuman.update', ['id' => '__ID__'], false)),
+        destroy: @json(route('admin.pengumuman.delete', ['id' => '__ID__'], false)),
+    };
+
+    function resolvePengumumanUrl(template, id) {
+        return template.replace('__ID__', encodeURIComponent(String(id)));
+    }
+
     // Add Modal
     function openAddModal() {
         document.getElementById('addModal').classList.remove('hidden');
@@ -387,13 +397,26 @@
 
     // Edit Modal
     function openEditModal(id) {
-        fetch(`{{ url('admin/pengumuman') }}/${id}`)
-            .then(res => {
-                if (!res.ok) throw new Error('Gagal memuat data');
+        fetch(resolvePengumumanUrl(pengumumanEndpoints.show, id), {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    let message = 'Gagal memuat data';
+                    try {
+                        const errData = await res.json();
+                        message = errData.message || message;
+                    } catch (_) {}
+                    throw new Error(message);
+                }
                 return res.json();
             })
             .then(data => {
-                document.getElementById('editForm').action = `{{ url('admin/pengumuman') }}/${id}`;
+                document.getElementById('editForm').action = resolvePengumumanUrl(pengumumanEndpoints.update, id);
                 document.getElementById('edit_news_id').value = id;
                 document.getElementById('edit_judul').value = data.judul;
                 document.getElementById('edit_konten').value = data.konten;
@@ -424,7 +447,7 @@
 
     // Delete Modal
     function openDeleteModal(id, title) {
-        document.getElementById('deleteForm').action = `{{ url('admin/pengumuman') }}/${id}`;
+        document.getElementById('deleteForm').action = resolvePengumumanUrl(pengumumanEndpoints.destroy, id);
         document.getElementById('delete_title').textContent = title;
         document.getElementById('deleteModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -444,7 +467,7 @@
                 const oldId = '{{ old('_id') }}';
                 if (oldId) {
                     // Re-populate from old values
-                    document.getElementById('editForm').action = `{{ url('admin/pengumuman') }}/${oldId}`;
+                    document.getElementById('editForm').action = resolvePengumumanUrl(pengumumanEndpoints.update, oldId);
                     document.getElementById('edit_news_id').value = oldId;
                     document.getElementById('edit_judul').value = '{{ old('judul') }}';
                     document.getElementById('edit_konten').value = `{{ old('konten') }}`;
@@ -461,3 +484,4 @@
 @endpush
 
 </x-layouts.admin>
+

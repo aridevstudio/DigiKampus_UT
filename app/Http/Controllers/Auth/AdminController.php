@@ -394,7 +394,10 @@ class AdminController extends Controller
             });
         }
 
-        $dosenPaginated = $query->paginate($perPage);
+        $dosenPaginated = $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage);
 
         // Transform data for view
         $dosenList = $dosenPaginated->map(function($dosen) {
@@ -638,7 +641,10 @@ class AdminController extends Controller
             });
         }
 
-        $mahasiswaPaginated = $query->paginate($perPage);
+        $mahasiswaPaginated = $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage);
         $mahasiswaPaginated->appends($request->only(['search', 'status', 'prodi']));
         $mahasiswaList = $mahasiswaPaginated->map(function($mhs) {
             return [
@@ -942,6 +948,7 @@ class AdminController extends Controller
             'id' => $kursus->id_course,
             'kode' => $kursus->kode_course,
             'nama' => $kursus->nama_course,
+            'dosen' => $kursus->dosen?->name ?? '-',
             'thumbnail' => $kursus->thumbnail,
             'video_thumbnail' => $videoThumb,
             'module_count' => $moduleCount,
@@ -997,7 +1004,7 @@ class AdminController extends Controller
             'level' => 'nullable|in:Pemula,Menengah,Mahir',
             'estimasi_waktu' => 'nullable|numeric|min:0',
             'durasi_satuan' => 'nullable|in:Jam,Minggu',
-            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'youtube_playlist' => 'nullable|url|max:500',
         ]);
 
@@ -1099,7 +1106,7 @@ class AdminController extends Controller
             'level' => 'nullable|in:Pemula,Menengah,Mahir',
             'estimasi_waktu' => 'nullable|numeric|min:0',
             'durasi_satuan' => 'nullable|in:Jam,Minggu',
-            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'youtube_playlist' => 'nullable|url|max:500',
         ]);
 
@@ -2439,7 +2446,11 @@ class AdminController extends Controller
             $query->where('fakultas', $request->fakultas);
         }
 
-        $prodiPaginated = $query->withCount('profiles')->orderBy('nama_jurusan')->paginate($perPage);
+        $prodiPaginated = $query
+            ->withCount('profiles')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id_jurusan')
+            ->paginate($perPage);
         $prodiPaginated->appends($request->only(['search', 'jenjang', 'fakultas']));
 
         $totalAll = \App\Models\Jurusan::count();
@@ -2542,7 +2553,11 @@ class AdminController extends Controller
             });
         }
 
-        $newsPaginated = $query->orderByDesc('tanggal_publish')->paginate(10)->withQueryString();
+        $newsPaginated = $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id_news')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('Auth.admin.pengumuman', [
             'newsList' => $newsPaginated,

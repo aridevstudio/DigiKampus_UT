@@ -6,10 +6,10 @@
     </div>
 
     {{-- Actions Bar --}}
-    <form method="GET" action="{{ route('admin.kursus') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
-        <div class="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+    <form method="GET" action="{{ route('admin.kursus') }}" class="admin-toolbar-responsive admin-toolbar-kursus bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
+        <div class="admin-toolbar-kursus-row space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
             {{-- Buttons --}}
-            <div class="flex flex-wrap gap-1.5 sm:contents">
+            <div class="admin-toolbar-kursus-buttons flex flex-wrap gap-1.5">
                 <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs sm:text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -24,10 +24,10 @@
                 </button>
             </div>
 
-            <div class="w-px h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
+            <div class="admin-toolbar-kursus-divider w-px h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
             {{-- Filters --}}
-            <div class="grid grid-cols-2 gap-1.5 sm:contents">
+            <div class="admin-toolbar-kursus-filters grid grid-cols-2 gap-1.5 sm:contents">
                 <div class="relative">
                     <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($statusFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
@@ -63,7 +63,7 @@
             </div>
 
             {{-- Search --}}
-            <div class="flex gap-1.5 md:flex-1 md:min-w-[220px] md:max-w-sm md:ml-auto">
+            <div class="admin-toolbar-kursus-search flex gap-1.5 md:flex-1 md:min-w-[220px] md:max-w-sm md:ml-auto">
                 <div class="relative flex-1">
                     <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari kursus..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2.5 sm:pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     <svg class="w-4 h-4 absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +79,7 @@
 
     {{-- Summary Stats --}}
     @if($totalKursus > 0)
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="responsive-grid-stats mb-6">
         @php
             $kategoriStats = collect($kursusList)->groupBy('kategori')->map->count();
             $statItems = [
@@ -114,7 +114,7 @@
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-900/40">
                         <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -466,9 +466,9 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                                 </svg>
                                                 Upload Thumbnail
-                                                <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewThumbnail(this)">
+                                                <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="5" class="hidden" onchange="previewThumbnail(this)">
                                             </label>
-                                            <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG</p>
+                                            <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG/WebP</p>
                                         </div>
                                     </div>
                                 </div>
@@ -691,7 +691,7 @@
                                             </svg>
                                         </div>
                                         <div class="flex-1">
-                                            <input type="file" name="thumbnail" id="webinarThumbnailInput" accept="image/*" onchange="previewWebinarThumbnail(event)" class="hidden">
+                                            <input type="file" name="thumbnail" id="webinarThumbnailInput" accept="image/*" data-max-size-mb="5" onchange="previewWebinarThumbnail(event)" class="hidden">
                                             <label for="webinarThumbnailInput" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg cursor-pointer transition">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                                                 Unggah Gambar
@@ -959,9 +959,9 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                                 </svg>
                                                 Upload Thumbnail
-                                                <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="previewEditThumbnail(this)">
+                                                <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="5" class="hidden" onchange="previewEditThumbnail(this)">
                                             </label>
-                                            <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG</p>
+                                            <p class="text-xs text-gray-400 mt-1">Maksimal 5MB, JPG/PNG/WebP</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1585,3 +1585,4 @@
     </script>
     @endpush
 </x-layouts.admin>
+

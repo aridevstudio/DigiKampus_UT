@@ -178,11 +178,11 @@
                                 </div>
                                 <div class="flex-1">
                                     <h4 class="font-medium text-gray-900 dark:text-white text-sm mb-1">Ganti Thumbnail</h4>
-                                    <p class="text-xs text-gray-500 mb-3">PNG, JPG hingga 5MB. Rasio 16:9 direkomendasikan</p>
+                                    <p class="text-xs text-gray-500 mb-3">PNG, JPG, WebP hingga 2MB. Rasio 16:9 direkomendasikan</p>
                                     <label class="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer transition">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                                         Upload Gambar
-                                        <input type="file" name="thumbnail" accept="image/*" class="hidden" onchange="previewImage(this)">
+                                        <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" class="hidden" onchange="previewImage(this)">
                                     </label>
                                 </div>
                             </div>

@@ -346,6 +346,14 @@ section img {
         white-space: nowrap;
         vertical-align: middle;
     }
+
+    .admin-toolbar-responsive {
+        width: 100%;
+    }
+
+    .admin-desktop-table {
+        width: 100%;
+    }
 }
 
 @media (min-width: 640px) {
@@ -405,5 +413,177 @@ section img {
     table.responsive-data-table td {
         font-size: 0.8125rem;
         padding: 0.75rem 1rem;
+    }
+}
+
+@media (max-width: 639px) {
+    .admin-toolbar-responsive {
+        padding: 0.75rem;
+    }
+
+    .admin-toolbar-responsive > div {
+        gap: 0.5rem !important;
+    }
+
+    .admin-toolbar-responsive button,
+    .admin-toolbar-responsive a,
+    .admin-toolbar-responsive select,
+    .admin-toolbar-responsive input[type='text'] {
+        min-height: 2.5rem;
+        font-size: 0.75rem;
+    }
+
+    .admin-toolbar-responsive .sm\:contents,
+    .admin-toolbar-responsive .sm\:flex-1,
+    .admin-toolbar-responsive .sm\:min-w-\[200px\],
+    .admin-toolbar-responsive .sm\:max-w-xs,
+    .admin-toolbar-responsive .md\:flex-1,
+    .admin-toolbar-responsive .md\:min-w-\[220px\],
+    .admin-toolbar-responsive .md\:max-w-sm {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .admin-toolbar-responsive .flex.gap-1\.5,
+    .admin-toolbar-responsive .flex.gap-2 {
+        width: 100%;
+    }
+
+    .admin-mobile-list {
+        width: 100% !important;
+        min-width: 100% !important;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0 0.625rem;
+    }
+
+    .admin-mobile-list thead {
+        display: none;
+    }
+
+    .admin-mobile-list tbody {
+        display: block;
+    }
+
+    .admin-mobile-list tbody tr {
+        display: block;
+        background: rgb(255 255 255);
+        border: 1px solid rgb(229 231 235);
+        border-radius: 0.875rem;
+        overflow: hidden;
+        margin-bottom: 0.625rem;
+        box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+    }
+
+    .dark .admin-mobile-list tbody tr {
+        background: rgb(31 41 55 / 0.85);
+        border-color: rgb(55 65 81);
+    }
+
+    .admin-mobile-list tbody td {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        width: 100%;
+        padding: 0.65rem 0.8rem !important;
+        white-space: normal !important;
+        text-align: left !important;
+        gap: 0.4rem;
+        border-bottom: 1px solid rgb(243 244 246);
+    }
+
+    .dark .admin-mobile-list tbody td {
+        border-bottom-color: rgb(55 65 81 / 0.75);
+    }
+
+    .admin-mobile-list tbody td:last-child {
+        border-bottom: 0;
+    }
+
+    .admin-mobile-list tbody td[colspan] {
+        display: block;
+        text-align: center !important;
+        border-bottom: 0;
+    }
+
+    .admin-mobile-list tbody td[colspan]::before {
+        display: none;
+    }
+
+    .admin-mobile-list tbody td::before {
+        content: attr(data-label);
+        display: block;
+        text-align: left;
+        font-size: 0.72rem;
+        line-height: 1.25;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: rgb(107 114 128);
+        flex-shrink: 0;
+    }
+
+    .admin-mobile-list tbody td > * {
+        max-width: 100%;
+    }
+
+    .admin-mobile-list .inline-flex,
+    .admin-mobile-list .flex {
+        justify-content: flex-start;
+    }
+
+    .admin-mobile-list .truncate {
+        white-space: normal !important;
+    }
+
+    .admin-mobile-list .group:hover {
+        background: transparent !important;
+    }
+}
+
+@media (min-width: 640px) {
+    .admin-toolbar-kursus .admin-toolbar-kursus-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.625rem;
+        align-items: center;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-search {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0 !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .admin-toolbar-kursus .admin-toolbar-kursus-row {
+        grid-template-columns: auto minmax(0, 1fr) minmax(280px, 380px);
+        column-gap: 0.75rem;
+        row-gap: 0.75rem;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-divider {
+        display: none !important;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-buttons {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        white-space: nowrap;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-filters {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.5rem;
+        min-width: 0;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-search {
+        justify-self: end;
     }
 }

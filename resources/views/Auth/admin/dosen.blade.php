@@ -6,7 +6,7 @@
     </div>
 
     {{-- Actions Bar --}}
-    <form method="GET" action="{{ route('admin.dosen') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
+    <form method="GET" action="{{ route('admin.dosen') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
         <div class="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
             {{-- Buttons --}}
             <div class="flex flex-wrap gap-1.5 sm:contents">
@@ -95,7 +95,7 @@
             'red' => ['bg' => 'bg-red-50 dark:bg-red-900/20', 'icon' => 'text-red-500 dark:text-red-400', 'text' => 'text-red-700 dark:text-red-300', 'border' => 'border-red-100 dark:border-red-800/30'],
         ];
     @endphp
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="responsive-grid-stats mb-6">
         @foreach($dosenStatItems as $stat)
         <div class="flex items-center gap-3 p-3.5 rounded-xl {{ $dosenColorMap[$stat['color']]['bg'] }} border {{ $dosenColorMap[$stat['color']]['border'] }}">
             <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">
@@ -115,7 +115,7 @@
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-900/40">
                         <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -343,7 +343,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                     </svg>
                                     Upload Foto
-                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden" onchange="previewPhoto(this)">
+                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" class="hidden" onchange="previewPhoto(this)">
                                 </label>
                                 <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
                             </div>
@@ -480,7 +480,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                     </svg>
                                     Upload Foto
-                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden" onchange="previewEditPhoto(this)">
+                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" class="hidden" onchange="previewEditPhoto(this)">
                                 </label>
                                 <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
                             </div>
@@ -635,7 +635,7 @@
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm text-gray-600 dark:text-gray-400 mb-2">Pilih File Excel</label>
-                        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
+                            <input type="file" id="importFile" accept=".xlsx,.xls,.csv" data-max-size-mb="5" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
                         <p class="text-xs text-gray-400 mt-1">Maks 5MB. Format: .xlsx, .xls, .csv | Password default: password123</p>
                     </div>
                     <div id="importUploadStatus" class="mb-4 hidden"></div>
@@ -700,6 +700,9 @@
                     preview.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
                 }
                 reader.readAsDataURL(input.files[0]);
+            } else {
+                const preview = document.getElementById('photoPreview');
+                preview.innerHTML = '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
             }
         }
         
@@ -757,6 +760,9 @@
                     preview.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
                 }
                 reader.readAsDataURL(input.files[0]);
+            } else {
+                const preview = document.getElementById('editPhotoPreview');
+                preview.innerHTML = '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
             }
         }
         
@@ -905,3 +911,4 @@
     </script>
     @endpush
 </x-layouts.admin>
+

@@ -79,6 +79,7 @@
                                 x-ref="lampiranInput"
                                 type="file"
                                 accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt,.jpg,.jpeg,.png,.webp"
+                                data-max-size-mb="10"
                                 @change="onLampiranChange($event)"
                                 class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm"
                             >

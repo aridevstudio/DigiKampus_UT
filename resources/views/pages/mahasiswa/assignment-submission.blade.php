@@ -36,7 +36,7 @@
             
             {{-- Upload Area --}}
             <div id="dropzone" style="border: 2px dashed #d1d5db; border-radius: 12px; padding: 48px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#d1d5db'; this.style.background='white'" onclick="document.getElementById('fileInput').click()">
-                <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.doc,.zip" onchange="handleFileSelect(this)">
+                <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.doc,.zip" data-max-size-mb="10" onchange="handleFileSelect(this)">
                 <svg style="width: 48px; height: 48px; color: #9ca3af; margin: 0 auto 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
@@ -113,6 +113,13 @@
 function handleFileSelect(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
+        const maxBytes = 10 * 1024 * 1024;
+        if (file.size > maxBytes) {
+            alert('Ukuran file maksimal 10MB.');
+            input.value = '';
+            document.getElementById('selectedFile').style.display = 'none';
+            return;
+        }
         document.getElementById('fileName').textContent = file.name;
         document.getElementById('fileSize').textContent = formatFileSize(file.size);
         document.getElementById('selectedFile').style.display = 'block';

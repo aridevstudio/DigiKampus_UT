@@ -127,7 +127,7 @@
                     </div>
 
                     <div class="overflow-x-auto responsive-table">
-                        <table class="w-full responsive-data-table min-w-[620px] lg:min-w-full">
+                        <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list min-w-[620px] lg:min-w-full">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-gray-700/40 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                     <th class="text-left px-4 py-3">Nomor</th>
@@ -579,3 +579,4 @@
     </script>
     @endpush
 </x-layouts.admin>
+

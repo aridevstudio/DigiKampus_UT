@@ -28,7 +28,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                     </label>
-                    <input type="file" id="foto_profile" name="foto_profile" class="hidden" accept="image/*" onchange="previewImage(this)">
+                    <input type="file" id="foto_profile" name="foto_profile" class="hidden" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" onchange="previewImage(this)">
                 </div>
                 <label for="foto_profile" class="text-blue-500 hover:text-blue-600 text-sm font-medium cursor-pointer">Ganti Foto</label>
                 @error('foto_profile')
