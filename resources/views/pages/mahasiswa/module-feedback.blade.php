@@ -58,7 +58,14 @@
         <div style="height: 100%; width: {{ $feedback['total_score'] }}%; background: linear-gradient(90deg, #3b82f6, #06b6d4); border-radius: 4px;"></div>
     </div>
     
-    <p style="color: #6b7280; font-size: 14px;">Nilai ini merupakan hasil evaluasi dari kuis dan tugas akhir.</p>
+    <p style="color: #6b7280; font-size: 14px;">
+        Nilai ini merupakan hasil evaluasi dari
+        @if(!empty($feedback['has_assignment']))
+            kuis dan tugas akhir.
+        @else
+            kuis.
+        @endif
+    </p>
 </div>
 
 {{-- Grade Breakdown --}}

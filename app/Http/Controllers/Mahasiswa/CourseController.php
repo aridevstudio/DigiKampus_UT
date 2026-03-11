@@ -697,12 +697,17 @@ class CourseController extends Controller
         
         // Get course info
         $course = \App\Models\Course::findOrFail($courseId);
-        
-        // Dummy assignment data
+        $assignmentMaterial = $this->resolveAssignmentMaterial((int) $courseId, (int) $assignmentId);
+        if (!$assignmentMaterial) {
+            return redirect()->route('mahasiswa.course-learn', $courseId)
+                ->with('info', 'Modul ini tidak memiliki tugas akhir (opsional oleh dosen).');
+        }
+
+        // Assignment data (frontend-first placeholder, sourced from real assignment material)
         $assignment = [
-            'id' => $assignmentId,
-            'title' => 'Analisis Sistem Informasi Perusahaan',
-            'description' => 'Buatlah analisis mendalam tentang sistem informasi pada perusahaan pilihan Anda. Fokus pada identifikasi masalah, solusi yang direkomendasikan, dan implementasi yang dapat diterapkan.',
+            'id' => $assignmentMaterial->id_material,
+            'title' => $assignmentMaterial->judul_material ?? $assignmentMaterial->judul ?? 'Tugas Akhir',
+            'description' => $assignmentMaterial->konten ?: 'Kerjakan tugas akhir sesuai instruksi dosen pada modul ini.',
             'deadline' => now()->addDays(7),
             'weight' => 40,
             'format' => 'PDF, DOCX, ZIP',
@@ -740,13 +745,26 @@ class CourseController extends Controller
     public function assignmentSubmission($courseId, $assignmentId)
     {
         $user = Auth::guard('mahasiswa')->user();
-        
+
+        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->first();
+        if (!$enrollment) {
+            return redirect()->route('mahasiswa.course-detail', $courseId)
+                ->with('error', 'Anda belum terdaftar di kursus ini.');
+        }
+
         // Get course and assignment
         $course = \App\Models\Course::findOrFail($courseId);
-        
+        $assignmentMaterial = $this->resolveAssignmentMaterial((int) $courseId, (int) $assignmentId);
+        if (!$assignmentMaterial) {
+            return redirect()->route('mahasiswa.course-learn', $courseId)
+                ->with('info', 'Modul ini tidak memiliki tugas akhir (opsional oleh dosen).');
+        }
+
         $assignment = [
-            'id' => $assignmentId,
-            'title' => 'Analisis Sistem Informasi Perusahaan',
+            'id' => $assignmentMaterial->id_material,
+            'title' => $assignmentMaterial->judul_material ?? $assignmentMaterial->judul ?? 'Tugas Akhir',
             'deadline' => now()->addDays(7),
             'weight' => 40,
             'format' => 'PDF, DOCX, ZIP',
@@ -765,13 +783,27 @@ class CourseController extends Controller
     public function assignmentStatus($courseId, $assignmentId)
     {
         $user = Auth::guard('mahasiswa')->user();
+
+        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->first();
+        if (!$enrollment) {
+            return redirect()->route('mahasiswa.course-detail', $courseId)
+                ->with('error', 'Anda belum terdaftar di kursus ini.');
+        }
+
         $course = \App\Models\Course::findOrFail($courseId);
+        $assignmentMaterial = $this->resolveAssignmentMaterial((int) $courseId, (int) $assignmentId);
+        if (!$assignmentMaterial) {
+            return redirect()->route('mahasiswa.course-learn', $courseId)
+                ->with('info', 'Modul ini tidak memiliki tugas akhir (opsional oleh dosen).');
+        }
         
         // Dummy submission data
         $submission = [
             'id' => 1,
             'assignment_id' => $assignmentId,
-            'assignment_title' => 'Analisis Sistem Informasi Perusahaan',
+            'assignment_title' => $assignmentMaterial->judul_material ?? $assignmentMaterial->judul ?? 'Tugas Akhir',
             'status' => 'pending', // pending, graded
             'submitted_at' => now()->subDays(2),
             'file_name' => 'Analisis_SI.pdf',
@@ -795,6 +827,18 @@ class CourseController extends Controller
     public function moduleFeedback($courseId, $moduleId)
     {
         $course = \App\Models\Course::findOrFail($courseId);
+
+        $hasAssignment = CourseMaterial::where('id_course', $courseId)
+            ->where('modul', $moduleId)
+            ->get()
+            ->contains(fn ($material) => $this->normalizeMaterialType($material->tipe) === 'tugas');
+
+        $gradeBreakdown = [
+            ['name' => 'Kuis', 'weight' => $hasAssignment ? 40 : 100, 'score' => 80, 'max_score' => 100],
+        ];
+        if ($hasAssignment) {
+            $gradeBreakdown[] = ['name' => 'Tugas Akhir', 'weight' => 60, 'score' => 88, 'max_score' => 100];
+        }
         
         // Dummy feedback data
         $feedback = [
@@ -807,10 +851,8 @@ class CourseController extends Controller
             'total_score' => 85,
             'max_score' => 100,
             'is_passed' => true,
-            'grade_breakdown' => [
-                ['name' => 'Kuis', 'weight' => 40, 'score' => 80, 'max_score' => 100],
-                ['name' => 'Tugas Akhir', 'weight' => 60, 'score' => 88, 'max_score' => 100],
-            ],
+            'has_assignment' => $hasAssignment,
+            'grade_breakdown' => $gradeBreakdown,
             'instructor_feedback' => [
                 'date' => now()->subDays(5),
                 'text' => 'Pemahaman Anda terhadap konsep database design sudah sangat baik. Khususnya dalam menerapkan normalisasi dan ERD. Namun, perlu ditingkatkan pada bagian analisis studi kasus dan implementasi query optimization. Untuk kedepannya, saya sarankan untuk lebih banyak berlatih dengan kasus nyata dan memahami best practices dalam database performance tuning.',
@@ -834,6 +876,25 @@ class CourseController extends Controller
      */
     public function submitAssignment(Request $request, $courseId, $assignmentId)
     {
+        $user = auth('mahasiswa')->user();
+        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->first();
+        if (!$enrollment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda belum terdaftar di kursus ini.',
+            ], 403);
+        }
+
+        $assignmentMaterial = $this->resolveAssignmentMaterial((int) $courseId, (int) $assignmentId);
+        if (!$assignmentMaterial) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tugas akhir tidak tersedia pada modul ini.',
+            ], 422);
+        }
+
         // Store uploaded file if present
         if ($request->hasFile('file')) {
             $request->validate([
@@ -841,14 +902,15 @@ class CourseController extends Controller
             ]);
 
             $file = $request->file('file');
-            $userId = auth('mahasiswa')->id();
+            $userId = $user->id;
             $fileName = "assignment_{$courseId}_{$assignmentId}_{$userId}_" . time() . '.' . $file->getClientOriginalExtension();
             $file->storeAs('assignments', $fileName, 'public');
         }
 
-        // Mark assignment as completed in session
+        // Mark assignment as completed in session (use module key so it matches learn() logic)
         $completedAssignments = session('completed_assignments', []);
-        $key = $courseId . '_' . $assignmentId;
+        $assignmentModule = $assignmentMaterial?->modul ?: $assignmentId;
+        $key = $courseId . '_' . $assignmentModule;
         if (!in_array($key, $completedAssignments)) {
             $completedAssignments[] = $key;
             session(['completed_assignments' => $completedAssignments]);
@@ -929,5 +991,18 @@ class CourseController extends Controller
             'bacaan', 'text' => 'bacaan',
             default => 'bacaan',
         };
+    }
+
+    private function resolveAssignmentMaterial(int $courseId, int $assignmentId): ?CourseMaterial
+    {
+        $material = CourseMaterial::where('id_material', $assignmentId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$material) {
+            return null;
+        }
+
+        return $this->normalizeMaterialType($material->tipe) === 'tugas' ? $material : null;
     }
 }

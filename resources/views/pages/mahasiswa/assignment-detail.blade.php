@@ -12,7 +12,7 @@
 {{-- Page Header --}}
 <div style="margin-bottom: 24px;">
     <h1 style="font-size: 28px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Tugas Akhir</h1>
-    <p style="color: #6b7280;">Kumpulkan tugas akhir untuk menyelesaikan modul ini</p>
+    <p style="color: #6b7280;">Tugas akhir bersifat opsional untuk modul ini.</p>
 </div>
 
 {{-- Informasi Tugas Section --}}

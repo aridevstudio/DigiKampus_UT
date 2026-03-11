@@ -208,7 +208,7 @@
                                     <option value="video" {{ old('modul_tipe') == 'video' ? 'selected' : '' }}>Video</option>
                                     <option value="bacaan" {{ old('modul_tipe') == 'bacaan' ? 'selected' : '' }}>Bacaan</option>
                                     <option value="kuis" {{ old('modul_tipe') == 'kuis' ? 'selected' : '' }}>Kuis</option>
-                                    <option value="tugas" {{ old('modul_tipe') == 'tugas' ? 'selected' : '' }}>Tugas</option>
+                                    <option value="tugas" {{ old('modul_tipe') == 'tugas' ? 'selected' : '' }}>Tugas Akhir (Opsional)</option>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                     Jika Judul Modul diisi, setelah kursus dibuat Anda akan diarahkan ke halaman kelola sesuai tipe ini.
@@ -433,12 +433,12 @@
                         hint: 'Tipe Kuis cocok untuk evaluasi belajar dengan batas waktu.',
                     },
                     tugas: {
-                        kontenLabel: 'Instruksi Tugas',
-                        kontenPlaceholder: 'Tuliskan instruksi pengerjaan, format pengumpulan, dan kriteria penilaian...',
+                        kontenLabel: 'Instruksi Tugas Akhir (Opsional)',
+                        kontenPlaceholder: 'Tuliskan instruksi pengerjaan, format pengumpulan, dan kriteria penilaian tugas akhir...',
                         showVideoUrl: false,
                         showDurasi: false,
                         durasiLabel: 'Durasi (menit)',
-                        hint: 'Tipe Tugas menampilkan instruksi tanpa URL video dan durasi.',
+                        hint: 'Tugas akhir bersifat opsional: dosen bebas menambahkan atau tidak.',
                     },
                 };
 

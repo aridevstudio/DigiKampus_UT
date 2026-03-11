@@ -139,12 +139,18 @@
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                             <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" /></svg>
-                            Materi (Video & Bacaan)
+                            Materi (Video, Bacaan, Tugas)
                         </h4>
-                        <button onclick="openAddMaterialModal({{ $module['id'] }})" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                            Tambah Materi
-                        </button>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="openAddMaterialModal({{ $module['id'] }})" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                Tambah Materi
+                            </button>
+                            <button onclick="openAddFinalTaskModal({{ $module['id'] }})" class="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-300 text-xs font-medium rounded-lg transition flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M8 4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" /></svg>
+                                Tambah Tugas Akhir (Opsional)
+                            </button>
+                        </div>
                     </div>
                     @if(count($module['materials']) > 0)
                     <div class="space-y-2">
@@ -153,6 +159,8 @@
                             <span class="text-xs text-gray-400 w-6">{{ $matIndex + 1 }}.</span>
                             @if($material['tipe'] === 'video')
                             <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" /></svg>
+                            @elseif($material['tipe'] === 'tugas')
+                            <svg class="w-4 h-4 text-purple-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" /></svg>
                             @else
                             <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" /></svg>
                             @endif
@@ -162,7 +170,13 @@
                                 <span class="text-xs text-gray-400 ml-2">{{ $material['durasi'] }} menit</span>
                                 @endif
                             </div>
-                            <span class="px-2 py-0.5 text-[10px] font-medium rounded {{ $material['tipe'] === 'video' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }}">{{ ucfirst($material['tipe']) }}</span>
+                            <span class="px-2 py-0.5 text-[10px] font-medium rounded {{
+                                $material['tipe'] === 'video'
+                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                    : ($material['tipe'] === 'tugas'
+                                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400')
+                            }}">{{ ucfirst($material['tipe']) }}</span>
                             <button onclick="confirmDeleteMaterial({{ $material['id'] }})" class="p-1 text-gray-400 hover:text-red-500 rounded transition self-end sm:self-auto">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
@@ -170,7 +184,7 @@
                         @endforeach
                     </div>
                     @else
-                    <p class="text-center py-6 text-sm text-gray-400">Belum ada materi. Tambahkan video atau bacaan.</p>
+                    <p class="text-center py-6 text-sm text-gray-400">Belum ada materi. Tambahkan video, bacaan, atau tugas akhir opsional.</p>
                     @endif
                 </div>
 
@@ -301,7 +315,9 @@
                             <select name="tipe" id="add_mat_tipe" onchange="onMatTypeChange()" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                 <option value="video">Video</option>
                                 <option value="bacaan">Bacaan</option>
+                                <option value="tugas">Tugas Akhir (Opsional)</option>
                             </select>
+                            <p id="add_mat_type_hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                         </div>
                         <div id="mat_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video</label>
@@ -425,16 +441,30 @@
         }
         function closeDeleteModuleModal() { document.getElementById('deleteModuleModal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
 
-        function openAddMaterialModal(moduleId) {
+        function openAddMaterialModal(moduleId, preferredType = 'video') {
             document.getElementById('add_material_module_id').value = moduleId;
+            const typeSelect = document.getElementById('add_mat_tipe');
+            if (typeSelect && ['video', 'bacaan', 'tugas'].includes(preferredType)) {
+                typeSelect.value = preferredType;
+            }
             document.getElementById('addMaterialModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             onMatTypeChange();
+        }
+        function openAddFinalTaskModal(moduleId) {
+            openAddMaterialModal(moduleId, 'tugas');
         }
         function closeAddMaterialModal() { document.getElementById('addMaterialModal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
         function onMatTypeChange() {
             const t = document.getElementById('add_mat_tipe').value;
             document.getElementById('mat_video_group').classList.toggle('hidden', t !== 'video');
+            const hint = document.getElementById('add_mat_type_hint');
+            if (!hint) return;
+            hint.textContent = t === 'tugas'
+                ? 'Tugas akhir bersifat opsional: admin/dosen bisa menambahkan atau tidak.'
+                : (t === 'video'
+                    ? 'Gunakan URL video untuk materi video.'
+                    : 'Materi bacaan menggunakan konten teks/deskripsi.');
         }
 
         function confirmDeleteMaterial(materialId) {

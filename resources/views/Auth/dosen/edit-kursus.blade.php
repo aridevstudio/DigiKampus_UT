@@ -271,7 +271,7 @@
                                                     <option value="video">Video</option>
                                                     <option value="bacaan">Bacaan</option>
                                                     <option value="kuis">Kuis</option>
-                                                    <option value="tugas">Tugas</option>
+                                                    <option value="tugas">Tugas Akhir (Opsional)</option>
                                                 </select>
                                                 <p class="initial-type-hint mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                                             </div>
@@ -357,10 +357,16 @@
                             @endforeach
                         </div>
 
-                        <button onclick="openAddMaterialModal({{ $module->id_module }})" class="mt-4 w-full flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 bg-white dark:bg-gray-800 transition">
-                            <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                            Tambah Konten
-                        </button>
+                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button onclick="openAddMaterialModal({{ $module->id_module }})" class="w-full flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 bg-white dark:bg-gray-800 transition">
+                                <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                Tambah Konten
+                            </button>
+                            <button onclick="openAddFinalTaskModal({{ $module->id_module }})" class="w-full flex items-center justify-center gap-2 text-sm text-purple-700 dark:text-purple-300 font-medium px-4 py-2.5 border border-purple-200 dark:border-purple-600/40 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition">
+                                <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M8 4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" /></svg>
+                                Tambah Tugas Akhir (Opsional)
+                            </button>
+                        </div>
                     </div>
                 </div>
                 @empty
@@ -495,7 +501,7 @@
                                 <option value="video">Video</option>
                                 <option value="bacaan">Bacaan</option>
                                 <option value="kuis">Kuis</option>
-                                <option value="tugas">Tugas</option>
+                                <option value="tugas">Tugas Akhir (Opsional)</option>
                             </select>
                             <p id="add_material_type_hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                         </div>
@@ -544,7 +550,7 @@
                                 <option value="video">Video</option>
                                 <option value="bacaan">Bacaan</option>
                                 <option value="kuis">Kuis</option>
-                                <option value="tugas">Tugas</option>
+                                <option value="tugas">Tugas Akhir (Opsional)</option>
                             </select>
                             <p id="edit_material_type_hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
                         </div>
@@ -922,15 +928,23 @@
         }
 
         // Material Modal Functions
-        function openAddMaterialModal(moduleId) {
+        function openAddMaterialModal(moduleId, preferredType = 'video') {
             const form = document.getElementById('addMaterialForm');
             if (form) {
                 form.reset();
             }
             document.getElementById('add_material_module_id').value = moduleId;
+            const typeSelect = document.getElementById('add_material_tipe');
+            if (typeSelect && ['video', 'bacaan', 'kuis', 'tugas'].includes(preferredType)) {
+                typeSelect.value = preferredType;
+            }
             onAddMaterialTypeChange();
             document.getElementById('addMaterialModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+        }
+
+        function openAddFinalTaskModal(moduleId) {
+            openAddMaterialModal(moduleId, 'tugas');
         }
         function closeAddMaterialModal() {
             document.getElementById('addMaterialModal').classList.add('hidden');
@@ -997,3 +1011,4 @@
     </script>
     @endpush
 </x-layouts.dosen>
+

@@ -223,7 +223,7 @@
                                     @if($module['assignment_completed'] ?? false)
                                         Selesai
                                     @else
-                                        Kumpulkan tugas modul ini
+                                        Opsional (boleh dikumpulkan)
                                     @endif
                                 </p>
                             </div>
@@ -233,7 +233,7 @@
                         </a>
                         @endif
                         
-                        {{-- Feedback & Nilai Link - Only show if module is complete (materials, quiz, assignment) --}}
+                        {{-- Feedback & Nilai Link - Module complete without requiring assignment (assignment is optional) --}}
                         @php
                             $completedMaterials = collect($module['materials'])->where('is_completed', true)->count();
                             $totalMaterials = count($module['materials']);
@@ -241,7 +241,7 @@
                             $hasQuiz = !empty($module['quiz']);
                             $hasAssignment = !empty($module['assignment']);
                             $quizComplete = !$hasQuiz || ($module['quiz_completed'] ?? false);
-                            $assignmentComplete = !$hasAssignment || ($module['assignment_completed'] ?? false);
+                            $assignmentComplete = true; // assignment optional
                             $isModuleComplete = $materialsComplete && $quizComplete && $assignmentComplete;
                         @endphp
                         @if($isModuleComplete)
