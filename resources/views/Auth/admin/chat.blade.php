@@ -178,6 +178,39 @@
                                 </div>
                             </template>
                         </div>
+
+                        <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                            <form @submit.prevent="sendAdminMessage" class="space-y-2">
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <div class="flex-1">
+                                        <textarea
+                                            x-model="adminMessage"
+                                            @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); sendAdminMessage(); }"
+                                            rows="1"
+                                            placeholder="Balas langsung di riwayat percakapan ini..."
+                                            class="w-full px-3 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                        ></textarea>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        :disabled="isSendingMessage || !adminMessage.trim()"
+                                        class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    >
+                                        <svg x-show="!isSendingMessage" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <svg x-show="isSendingMessage" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        Kirim
+                                    </button>
+                                </div>
+                                <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                                    Pesan admin akan masuk ke riwayat percakapan yang sedang dipilih.
+                                </p>
+                            </form>
+                        </div>
                     </div>
                 </template>
             </div>
@@ -192,10 +225,12 @@
                 filteredConversations: [],
                 activeConversationId: null,
                 messages: [],
+                adminMessage: '',
                 search: '',
                 statusFilter: 'all',
                 isLoadingConversations: false,
                 isLoadingMessages: false,
+                isSendingMessage: false,
                 poller: null,
                 stats: {
                     total: 0,
@@ -320,7 +355,7 @@
                     return items.map((item, idx) => ({
                         id: item.id || `msg-${idx + 1}`,
                         sender_name: item.sender_name || 'User',
-                        sender_role: item.sender_role || 'student',
+                        sender_role: item.sender_role || this.mapSenderTypeToRole(item.sender_type),
                         content: item.content || '',
                         created_at: item.created_at || new Date().toISOString(),
                     }));
@@ -360,6 +395,80 @@
                         this.messages = previous;
                         this.showToast('Backend hapus chat belum aktif. UI hanya simulasi.', 'info');
                     }
+                },
+
+                async sendAdminMessage() {
+                    if (!this.activeConversation || !this.adminMessage.trim() || this.isSendingMessage) return;
+                    this.isSendingMessage = true;
+
+                    const content = this.adminMessage.trim();
+                    const optimisticMessage = {
+                        id: `tmp-admin-${Date.now()}`,
+                        sender_name: 'Admin',
+                        sender_role: 'admin',
+                        content,
+                        created_at: new Date().toISOString(),
+                    };
+
+                    this.messages.push(optimisticMessage);
+                    this.adminMessage = '';
+                    this.$nextTick(() => this.scrollToBottom());
+
+                    try {
+                        const response = await fetch('/admin/messages/send', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                Accept: 'application/json',
+                            },
+                            body: JSON.stringify({
+                                conversation_id: this.activeConversationId,
+                                content,
+                            }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Send endpoint not ready');
+                        }
+
+                        const payload = await response.json();
+                        const sentMessage = payload?.data ? this.normalizeMessages([payload.data])[0] : null;
+                        if (sentMessage) {
+                            this.messages = this.messages.filter((m) => m.id !== optimisticMessage.id);
+                            this.messages.push(sentMessage);
+                        }
+                        this.showToast('Pesan admin terkirim.', 'success');
+                    } catch (error) {
+                        // Keep optimistic message for frontend-first flow.
+                        this.showToast('Backend kirim chat belum aktif. Pesan tampil sebagai simulasi frontend.', 'info');
+                    } finally {
+                        this.touchActiveConversation(content);
+                        this.recalculateStats();
+                        this.isSendingMessage = false;
+                        this.$nextTick(() => this.scrollToBottom());
+                    }
+                },
+
+                touchActiveConversation(lastMessage) {
+                    const idx = this.conversations.findIndex((c) => c.id === this.activeConversationId);
+                    if (idx === -1) return;
+                    const updated = {
+                        ...this.conversations[idx],
+                        last_message: lastMessage,
+                        last_message_at: new Date().toISOString(),
+                        status: 'ongoing',
+                        message_count: Number(this.conversations[idx].message_count || 0) + 1,
+                    };
+                    this.conversations.splice(idx, 1, updated);
+                    this.applyFilters();
+                },
+
+                mapSenderTypeToRole(senderType) {
+                    if (senderType === 'admin') return 'admin';
+                    if (senderType === 'dosen' || senderType === 'lecturer') return 'lecturer';
+                    return 'student';
                 },
 
                 confirmDelete(message) {
@@ -405,7 +514,7 @@
 
                 bubbleClass(role) {
                     if (role === 'admin') return 'bg-red-50 text-red-900 border-red-200 dark:bg-red-500/10 dark:text-red-200 dark:border-red-500/30';
-                    if (role === 'lecturer') return 'bg-blue-50 text-blue-900 border-blue-200 dark:bg-blue-500/10 dark:text-blue-200 dark:border-blue-500/30';
+                    if (role === 'lecturer' || role === 'dosen') return 'bg-blue-50 text-blue-900 border-blue-200 dark:bg-blue-500/10 dark:text-blue-200 dark:border-blue-500/30';
                     return 'bg-white text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700';
                 },
 
