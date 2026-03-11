@@ -44,6 +44,7 @@
                     'real_rating' => floatval($course->real_rating ?? 0),
                     'real_jumlah_ulasan' => intval($course->real_jumlah_ulasan ?? 0),
                     'harga' => floatval($course->harga ?? 0),
+                    'diskon' => floatval($course->diskon ?? 0),
                     'video_count' => $module->materials->where('tipe', 'video')->count(),
                 ]);
             }
@@ -60,6 +61,7 @@
                 'real_rating' => floatval($course->real_rating ?? 0),
                 'real_jumlah_ulasan' => intval($course->real_jumlah_ulasan ?? 0),
                 'harga' => floatval($course->harga ?? 0),
+                'diskon' => floatval($course->diskon ?? 0),
                 'video_count' => 0,
             ]);
         }
@@ -188,13 +190,31 @@
             </div>
             
             {{-- Price --}}
-            <p class="text-blue-600 dark:text-blue-400 font-bold text-lg">
-                @if($card->harga > 0)
-                    Rp {{ number_format($card->harga, 0, ',', '.') }}
-                @else
-                    Gratis
-                @endif
-            </p>
+            @php
+                $basePrice = max(0, (float) ($card->harga ?? 0));
+                $discountPercent = max(0, min(100, (float) ($card->diskon ?? 0)));
+                $hasDiscount = $basePrice > 0 && $discountPercent > 0;
+                $finalPrice = $hasDiscount ? ($basePrice * (100 - $discountPercent) / 100) : $basePrice;
+            @endphp
+            @if($basePrice > 0)
+                <div class="space-y-1">
+                    <p class="text-blue-600 dark:text-blue-400 font-bold text-2xl leading-tight">
+                        Rp {{ number_format($finalPrice, 0, ',', '.') }}
+                    </p>
+                    @if($hasDiscount)
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600 dark:bg-red-900/20 dark:text-red-300">
+                                Diskon {{ rtrim(rtrim(number_format($discountPercent, 2, '.', ''), '0'), '.') }}%
+                            </span>
+                            <span class="text-sm text-gray-400 line-through dark:text-gray-500">
+                                Rp {{ number_format($basePrice, 0, ',', '.') }}
+                            </span>
+                        </div>
+                    @endif
+                </div>
+            @else
+                <p class="text-emerald-600 dark:text-emerald-400 font-bold text-lg">Gratis</p>
+            @endif
         </div>
     </a>
     @empty
