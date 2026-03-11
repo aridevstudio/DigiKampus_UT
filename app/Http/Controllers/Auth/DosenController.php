@@ -1159,9 +1159,10 @@ class DosenController extends Controller
         
         $search = $request->input('search');
         $courseFilter = $request->input('course', 'all');
+        $jurusanFilter = $request->input('prodi', 'all');
         
         $query = \App\Models\Enrollment::whereIn('id_course', $courses)
-            ->with(['mahasiswa.profile', 'course']);
+            ->with(['mahasiswa.profile.jurusan', 'course']);
         
         if ($search) {
             $query->whereHas('mahasiswa', function($q) use ($search) {
@@ -1172,12 +1173,69 @@ class DosenController extends Controller
         if ($courseFilter !== 'all') {
             $query->where('id_course', $courseFilter);
         }
+
+        if ($jurusanFilter !== 'all') {
+            $query->whereHas('mahasiswa.profile', function ($q) use ($jurusanFilter) {
+                $q->where('id_jurusan', $jurusanFilter);
+            });
+        }
         
         $enrollments = $query->orderBy('updated_at', 'desc')->paginate(10)->withQueryString();
+
+        // Calculate accumulated quiz scores per enrollment
+        $enrollmentIds = $enrollments->pluck('id_mahasiswa')->unique()->toArray();
+        $courseIds = $enrollments->pluck('id_course')->unique()->toArray();
+
+        // Get best quiz attempt per quiz per mahasiswa for relevant courses
+        $quizScores = \App\Models\QuizAttempt::query()
+            ->whereIn('id_mahasiswa', $enrollmentIds)
+            ->where('status', 'selesai')
+            ->whereHas('quiz', function ($q) use ($courseIds) {
+                $q->whereIn('id_course', $courseIds);
+            })
+            ->with('quiz:id_quiz,id_course')
+            ->get()
+            ->groupBy(function ($attempt) {
+                return $attempt->id_mahasiswa . '_' . $attempt->quiz->id_course;
+            })
+            ->map(function ($attempts) {
+                // Group by quiz, take best attempt per quiz
+                $byQuiz = $attempts->groupBy('id_quiz');
+                $totalSkor = 0;
+                $totalPoin = 0;
+                $quizCount = $byQuiz->count();
+                foreach ($byQuiz as $quizAttempts) {
+                    $best = $quizAttempts->sortByDesc('persentase')->first();
+                    $totalSkor += $best->skor ?? 0;
+                    $totalPoin += $best->total_poin ?? 0;
+                }
+                return [
+                    'skor' => $totalSkor,
+                    'total_poin' => $totalPoin,
+                    'persentase' => $totalPoin > 0 ? round(($totalSkor / $totalPoin) * 100) : 0,
+                    'quiz_count' => $quizCount,
+                ];
+            });
+
+        // Attach scores to enrollments
+        $enrollments->getCollection()->transform(function ($enrollment) use ($quizScores) {
+            $key = $enrollment->id_mahasiswa . '_' . $enrollment->id_course;
+            $enrollment->quiz_score = $quizScores[$key] ?? null;
+            return $enrollment;
+        });
         
         $coursesForFilter = \App\Models\Course::where('id_dosen', $dosen->id)
             ->select('id_course', 'nama_course')
             ->get();
+
+        // Get jurusan list from enrolled mahasiswa
+        $jurusanIds = \App\Models\Enrollment::whereIn('id_course', $courses)
+            ->with('mahasiswa.profile')
+            ->get()
+            ->pluck('mahasiswa.profile.id_jurusan')
+            ->filter()
+            ->unique();
+        $jurusanList = \App\Models\Jurusan::whereIn('id_jurusan', $jurusanIds)->orderBy('nama_jurusan')->get();
 
         // Stats counts
         $totalEnrollments = \App\Models\Enrollment::whereIn('id_course', $courses)->count();
@@ -1188,17 +1246,34 @@ class DosenController extends Controller
             ? round(\App\Models\Enrollment::whereIn('id_course', $courses)->avg('progress'))
             : 0;
 
+        // Average quiz score across all enrollments
+        $allQuizScores = \App\Models\QuizAttempt::query()
+            ->whereHas('mahasiswa', function ($q) use ($courses) {
+                $q->whereHas('enrollments', function ($eq) use ($courses) {
+                    $eq->whereIn('id_course', $courses);
+                });
+            })
+            ->where('status', 'selesai')
+            ->whereHas('quiz', function ($q) use ($courses) {
+                $q->whereIn('id_course', $courses);
+            })
+            ->avg('persentase');
+        $avgNilai = round($allQuizScores ?? 0);
+
         return view('Auth.dosen.progres-mahasiswa', [
             'dosen' => $dosen,
             'enrollments' => $enrollments,
             'coursesForFilter' => $coursesForFilter,
             'search' => $search,
             'courseFilter' => $courseFilter,
+            'jurusanFilter' => $jurusanFilter,
+            'jurusanList' => $jurusanList,
             'totalEnrollments' => $totalEnrollments,
             'selesaiCount' => $selesaiCount,
             'aktifCount' => $aktifCount,
             'tidakAktifCount' => $tidakAktifCount,
             'avgProgress' => $avgProgress,
+            'avgNilai' => $avgNilai,
         ]);
     }
 

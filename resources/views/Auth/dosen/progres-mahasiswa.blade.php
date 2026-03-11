@@ -7,7 +7,7 @@
 
     {{-- Summary Stats --}}
     @if(($totalEnrollments ?? 0) > 0)
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         @php
             $stats = [
                 ['label' => 'Total Enrollment', 'count' => $totalEnrollments ?? 0, 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', 'color' => 'blue'],
@@ -15,6 +15,7 @@
                 ['label' => 'Selesai', 'count' => $selesaiCount ?? 0, 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'color' => 'green'],
                 ['label' => 'Tidak Aktif', 'count' => $tidakAktifCount ?? 0, 'icon' => 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'color' => 'gray'],
                 ['label' => 'Rata-rata Progress', 'count' => ($avgProgress ?? 0) . '%', 'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'color' => 'purple'],
+                ['label' => 'Rata-rata Nilai', 'count' => ($avgNilai ?? 0) . '%', 'icon' => 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z', 'color' => 'rose'],
             ];
         @endphp
         @foreach($stats as $stat)
@@ -52,7 +53,7 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 {{-- Pilih Kursus --}}
                 <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Pilih Kursus</label>
@@ -67,12 +68,15 @@
                     </div>
                 </div>
 
-                {{-- Pilih Modul --}}
+                {{-- Pilih Prodi --}}
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Pilih Modul</label>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Program Studi</label>
                     <div class="relative">
-                        <select name="modul" class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none pr-10">
-                            <option value="all">Semua Modul</option>
+                        <select name="prodi" class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none pr-10">
+                            <option value="all">Semua Prodi</option>
+                            @foreach($jurusanList ?? [] as $jurusan)
+                            <option value="{{ $jurusan->id_jurusan }}" {{ ($jurusanFilter ?? '') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
+                            @endforeach
                         </select>
                         <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
@@ -114,6 +118,7 @@
                         <th class="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Kursus</th>
                         <th class="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider hidden lg:table-cell">Modul Terakhir</th>
                         <th class="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Progress</th>
+                        <th class="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Nilai</th>
                         <th class="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider hidden md:table-cell">Waktu Akses</th>
                         <th class="px-5 py-3.5 text-center text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-16"></th>
@@ -185,6 +190,25 @@
                             </div>
                         </td>
                         
+                        {{-- Nilai Akumulasi --}}
+                        <td class="px-5 py-3.5">
+                            @if($enrollment->quiz_score && $enrollment->quiz_score['quiz_count'] > 0)
+                                @php
+                                    $nilai = $enrollment->quiz_score['persentase'];
+                                    $nilaiColor = $nilai >= 80 ? 'text-green-600 dark:text-green-400' : ($nilai >= 60 ? 'text-blue-600 dark:text-blue-400' : ($nilai >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'));
+                                    $nilaiBg = $nilai >= 80 ? 'bg-green-50 dark:bg-green-900/20' : ($nilai >= 60 ? 'bg-blue-50 dark:bg-blue-900/20' : ($nilai >= 40 ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-red-50 dark:bg-red-900/20'));
+                                @endphp
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold {{ $nilaiColor }} {{ $nilaiBg }}">
+                                        {{ $nilai }}%
+                                    </span>
+                                    <span class="text-[10px] text-gray-400">{{ $enrollment->quiz_score['quiz_count'] }} kuis</span>
+                                </div>
+                            @else
+                                <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
+                            @endif
+                        </td>
+                        
                         {{-- Status --}}
                         <td class="px-5 py-3.5">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border {{ $statusBg }}">
@@ -220,7 +244,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-20 text-center">
+                        <td colspan="8" class="px-6 py-20 text-center">
                             <div class="flex flex-col items-center">
                                 <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center mb-4">
                                     <svg class="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
