@@ -139,7 +139,12 @@
                         <td class="px-5 py-4">
                             <div class="flex items-center gap-3.5">
                                 <div class="flex-shrink-0 relative">
-                                    @if($kursus['thumbnail'])
+                                    @if($kursus['video_thumbnail'] ?? null)
+                                        <img src="{{ $kursus['video_thumbnail'] }}" alt="{{ $kursus['nama'] }}" class="w-14 h-14 rounded-xl object-cover ring-1 ring-gray-200 dark:ring-gray-600 shadow-sm">
+                                        <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-sm" title="Video Preview">
+                                            <svg class="w-3 h-3 text-white ml-px" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </span>
+                                    @elseif($kursus['thumbnail'])
                                         <img src="{{ asset('storage/' . $kursus['thumbnail']) }}" alt="{{ $kursus['nama'] }}" class="w-14 h-14 rounded-xl object-cover ring-1 ring-gray-200 dark:ring-gray-600 shadow-sm">
                                     @else
                                         <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 ring-1 ring-blue-200/50 dark:ring-blue-700/30 flex items-center justify-center shadow-sm">
@@ -148,7 +153,7 @@
                                             </svg>
                                         </div>
                                     @endif
-                                    @if($kursus['has_youtube'])
+                                    @if($kursus['has_youtube'] && !($kursus['video_thumbnail'] ?? null))
                                         <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-sm" title="YouTube Playlist">
                                             <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
                                         </span>
@@ -157,6 +162,9 @@
                                 <div class="min-w-0">
                                     <p class="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[240px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ $kursus['nama'] }}</p>
                                     <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{{ $kursus['kode'] }}</p>
+                                    @if(($kursus['module_count'] ?? 0) > 0)
+                                    <p class="text-[10px] text-blue-500 dark:text-blue-400 mt-0.5 font-medium">{{ $kursus['module_count'] }} modul</p>
+                                    @endif
                                 </div>
                             </div>
                         </td>

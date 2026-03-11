@@ -31,7 +31,11 @@ class CourseController extends Controller
         }
         
         // Get courses from database (exclude enrolled courses)
-        $courses = Course::with(['dosen', 'jurusan'])
+        $courses = Course::with(['dosen', 'jurusan', 'modules' => function ($q) {
+                $q->orderBy('urutan');
+            }, 'modules.materials' => function ($q) {
+                $q->orderBy('urutan');
+            }])
             ->withCount('ratings as real_jumlah_ulasan')
             ->withAvg('ratings as real_rating', 'rating')
             ->aktif() // Only active courses

@@ -9,6 +9,61 @@
     
     // Default image if thumbnail is empty
     $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop';
+
+    // Helper to extract YouTube video ID
+    function extractYoutubeId($url) {
+        if (!$url) return null;
+        if (str_contains($url, 'youtube.com/watch?v=')) {
+            parse_str(parse_url($url, PHP_URL_QUERY), $params);
+            return $params['v'] ?? null;
+        } elseif (str_contains($url, 'youtu.be/')) {
+            return basename(parse_url($url, PHP_URL_PATH));
+        }
+        return null;
+    }
+
+    // Build flat list of module cards from courses
+    $moduleCards = collect();
+    foreach ($courses as $course) {
+        if ($course->modules && $course->modules->count() > 0) {
+            foreach ($course->modules as $module) {
+                $firstVideo = $module->materials->where('tipe', 'video')->whereNotNull('video_url')->first();
+                $videoId = $firstVideo ? extractYoutubeId($firstVideo->video_url) : null;
+                $thumbnail = $videoId
+                    ? "https://img.youtube.com/vi/{$videoId}/mqdefault.jpg"
+                    : ($course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage);
+
+                $moduleCards->push((object)[
+                    'id_course' => $course->id_course,
+                    'nama_course' => $course->nama_course,
+                    'kategori' => $course->kategori ?? 'kursus',
+                    'judul_module' => $module->judul_module,
+                    'deskripsi' => $module->deskripsi ?? $course->deskripsi,
+                    'thumbnail' => $thumbnail,
+                    'has_video' => $videoId !== null,
+                    'real_rating' => floatval($course->real_rating ?? 0),
+                    'real_jumlah_ulasan' => intval($course->real_jumlah_ulasan ?? 0),
+                    'harga' => floatval($course->harga ?? 0),
+                    'video_count' => $module->materials->where('tipe', 'video')->count(),
+                ]);
+            }
+        } else {
+            // Course without modules — show as single card
+            $moduleCards->push((object)[
+                'id_course' => $course->id_course,
+                'nama_course' => $course->nama_course,
+                'kategori' => $course->kategori ?? 'kursus',
+                'judul_module' => null,
+                'deskripsi' => $course->deskripsi,
+                'thumbnail' => $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage,
+                'has_video' => false,
+                'real_rating' => floatval($course->real_rating ?? 0),
+                'real_jumlah_ulasan' => intval($course->real_jumlah_ulasan ?? 0),
+                'harga' => floatval($course->harga ?? 0),
+                'video_count' => 0,
+            ]);
+        }
+    }
 @endphp
 
 {{-- Page Header --}}
@@ -57,50 +112,65 @@
     </div>
 </div>
 
-{{-- Courses Grid --}}
+{{-- Courses Grid (Per-Module Preview) --}}
 <div id="courses-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in-up delay-200">
-    @forelse($courses as $index => $course)
+    @forelse($moduleCards as $index => $card)
     @php
-        $courseType = strtolower($course->kategori ?? 'kursus');
-        $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
-        $courseRating = floatval($course->real_rating ?? 0);
-        $courseReviews = intval($course->real_jumlah_ulasan ?? 0);
-        $coursePrice = floatval($course->harga ?? 0);
+        $courseType = strtolower($card->kategori);
     @endphp
-    <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" class="course-card bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden hover-lift transition block" data-type="{{ $courseType }}" style="animation-delay: {{ $index * 50 }}ms">
-        {{-- Course Image --}}
-        <div class="relative h-40 overflow-hidden">
-            <img src="{{ $courseImage }}" alt="{{ $course->nama_course }}" class="w-full h-full object-cover transition-transform duration-300 hover:scale-110">
+    <a href="{{ route('mahasiswa.course-detail', $card->id_course) }}" class="course-card bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden hover-lift transition block" data-type="{{ $courseType }}" style="animation-delay: {{ $index * 50 }}ms">
+        {{-- Module Video Thumbnail --}}
+        <div class="relative h-40 overflow-hidden bg-gray-900">
+            <img src="{{ $card->thumbnail }}" alt="{{ $card->judul_module ?? $card->nama_course }}" class="w-full h-full object-cover transition-transform duration-300 hover:scale-110" onerror="this.src='{{ $defaultImage }}'">
+            {{-- Play button overlay for video modules --}}
+            @if($card->has_video)
+            <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition">
+                <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5 text-gray-800 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+            </div>
+            @endif
             {{-- Type Badge --}}
             <span class="absolute top-3 right-3 {{ $typeColors[$courseType] ?? 'bg-gray-500' }} text-white text-xs font-medium px-3 py-1 rounded-full capitalize">
-                {{ $course->kategori ?? 'Kursus' }}
+                {{ $card->kategori }}
             </span>
+            @if($card->has_video)
+            <span class="absolute bottom-3 left-3 bg-black/70 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                Video
+            </span>
+            @endif
         </div>
         
-        {{-- Course Content --}}
+        {{-- Card Content --}}
         <div class="p-4">
-            {{-- Title --}}
-            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-sm mb-2 line-clamp-2">{{ $course->nama_course }}</h3>
+            {{-- Module Title --}}
+            @if($card->judul_module)
+            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-sm mb-1 line-clamp-2">{{ $card->judul_module }}</h3>
+            <p class="text-blue-500 dark:text-blue-400 text-xs font-medium mb-2 line-clamp-1">{{ $card->nama_course }}</p>
+            @else
+            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-sm mb-2 line-clamp-2">{{ $card->nama_course }}</h3>
+            @endif
             
             {{-- Description --}}
-            <p class="text-gray-500 dark:text-gray-400 text-xs mb-3 line-clamp-2">{{ $course->deskripsi ?? 'Tidak ada deskripsi' }}</p>
+            <p class="text-gray-500 dark:text-gray-400 text-xs mb-3 line-clamp-2">{{ $card->deskripsi ?? 'Tidak ada deskripsi' }}</p>
             
             {{-- Rating --}}
             <div class="flex items-center gap-1 mb-3">
                 @for($i = 1; $i <= 5; $i++)
-                    @if($i <= floor($courseRating))
+                    @if($i <= floor($card->real_rating))
                     <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    @elseif($i - 0.5 <= $courseRating)
+                    @elseif($i - 0.5 <= $card->real_rating)
                     <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                         <defs>
-                            <linearGradient id="half-{{ $course->id_course }}">
+                            <linearGradient id="half-{{ $card->id_course }}-{{ $index }}">
                                 <stop offset="50%" stop-color="currentColor"/>
                                 <stop offset="50%" stop-color="#D1D5DB"/>
                             </linearGradient>
                         </defs>
-                        <path fill="url(#half-{{ $course->id_course }})" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        <path fill="url(#half-{{ $card->id_course }}-{{ $index }})" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                     @else
                     <svg class="w-4 h-4 text-gray-300 dark:text-gray-600" fill="currentColor" viewBox="0 0 20 20">
@@ -109,8 +179,8 @@
                     @endif
                 @endfor
                 <span class="text-gray-400 text-xs ml-1">
-                    @if($courseReviews > 0)
-                        ({{ number_format($courseReviews) }} ulasan)
+                    @if($card->real_jumlah_ulasan > 0)
+                        ({{ number_format($card->real_jumlah_ulasan) }} ulasan)
                     @else
                         0 ulasan
                     @endif
@@ -119,8 +189,8 @@
             
             {{-- Price --}}
             <p class="text-blue-600 dark:text-blue-400 font-bold text-lg">
-                @if($coursePrice > 0)
-                    Rp {{ number_format($coursePrice, 0, ',', '.') }}
+                @if($card->harga > 0)
+                    Rp {{ number_format($card->harga, 0, ',', '.') }}
                 @else
                     Gratis
                 @endif

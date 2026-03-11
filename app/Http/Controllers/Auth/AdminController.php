@@ -884,7 +884,11 @@ class AdminController extends Controller
     {
         $admin = Auth::guard('admin')->user();
         
-        $query = \App\Models\Course::with(['dosen', 'jurusan'])->withCount('enrollments');
+        $query = \App\Models\Course::with(['dosen', 'jurusan', 'modules' => function ($q) {
+            $q->orderBy('urutan');
+        }, 'modules.materials' => function ($q) {
+            $q->orderBy('urutan');
+        }])->withCount('enrollments');
         
         // Filter by status
         if ($request->status && $request->status !== 'all') {
@@ -914,13 +918,33 @@ class AdminController extends Controller
         
         // Transform data for view
         $kursusList = $kursusPaginated->map(function($kursus) {
-            return [
-                'id' => $kursus->id_course,
-                'kode' => $kursus->kode_course,
-                'nama' => $kursus->nama_course,
-                'thumbnail' => $kursus->thumbnail,
-                'dosen' => $kursus->dosen?->name ?? '-',
-                'jurusan' => $kursus->jurusan?->nama_jurusan ?? '-',
+        // Extract first module video thumbnail
+        $videoThumb = null;
+        $moduleCount = $kursus->modules->count();
+        foreach ($kursus->modules as $module) {
+            $firstVideo = $module->materials->where('tipe', 'video')->whereNotNull('video_url')->first();
+            if ($firstVideo && $firstVideo->video_url) {
+                $videoId = null;
+                if (str_contains($firstVideo->video_url, 'youtube.com/watch?v=')) {
+                    parse_str(parse_url($firstVideo->video_url, PHP_URL_QUERY), $params);
+                    $videoId = $params['v'] ?? null;
+                } elseif (str_contains($firstVideo->video_url, 'youtu.be/')) {
+                    $videoId = basename(parse_url($firstVideo->video_url, PHP_URL_PATH));
+                }
+                if ($videoId) {
+                    $videoThumb = "https://img.youtube.com/vi/{$videoId}/mqdefault.jpg";
+                    break;
+                }
+            }
+        }
+
+        return [
+            'id' => $kursus->id_course,
+            'kode' => $kursus->kode_course,
+            'nama' => $kursus->nama_course,
+            'thumbnail' => $kursus->thumbnail,
+            'video_thumbnail' => $videoThumb,
+            'module_count' => $moduleCount,
                 'tipe' => $kursus->tipe,
                 'kategori' => $kursus->kategori,
                 'harga' => $kursus->harga,

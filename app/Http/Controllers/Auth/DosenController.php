@@ -354,7 +354,11 @@ class DosenController extends Controller
         $perPage = 6;
 
         $query = \App\Models\Course::where('id_dosen', $dosen->id)
-            ->with(['enrollments', 'jurusan']);
+            ->with(['enrollments', 'jurusan', 'modules' => function ($q) {
+                $q->orderBy('urutan');
+            }, 'modules.materials' => function ($q) {
+                $q->orderBy('urutan');
+            }]);
 
         // Search filter
         if ($search) {
@@ -390,7 +394,31 @@ class DosenController extends Controller
         $coursesData = $coursesPaginated->map(function($course) {
             $enrollmentCount = $course->enrollments->count();
             $avgProgress = $course->enrollments->avg('progress') ?? 0;
-            
+
+            // Build per-module video preview data
+            $modulePreviews = collect();
+            foreach ($course->modules as $module) {
+                $firstVideo = $module->materials->where('tipe', 'video')->whereNotNull('video_url')->first();
+                $videoThumb = null;
+                if ($firstVideo && $firstVideo->video_url) {
+                    $videoId = null;
+                    if (str_contains($firstVideo->video_url, 'youtube.com/watch?v=')) {
+                        parse_str(parse_url($firstVideo->video_url, PHP_URL_QUERY), $params);
+                        $videoId = $params['v'] ?? null;
+                    } elseif (str_contains($firstVideo->video_url, 'youtu.be/')) {
+                        $videoId = basename(parse_url($firstVideo->video_url, PHP_URL_PATH));
+                    }
+                    if ($videoId) {
+                        $videoThumb = "https://img.youtube.com/vi/{$videoId}/mqdefault.jpg";
+                    }
+                }
+                $modulePreviews->push([
+                    'judul' => $module->judul_module,
+                    'video_thumbnail' => $videoThumb,
+                    'has_video' => $videoThumb !== null,
+                ]);
+            }
+
             return [
                 'id' => $course->id_course,
                 'nama' => $course->nama_course,
@@ -400,6 +428,7 @@ class DosenController extends Controller
                 'mahasiswa_count' => $enrollmentCount,
                 'progress_avg' => round($avgProgress),
                 'status' => $course->status,
+                'module_previews' => $modulePreviews,
             ];
         });
 

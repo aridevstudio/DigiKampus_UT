@@ -60,9 +60,20 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         @forelse($coursesData ?? [] as $course)
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden hover-lift">
-            {{-- Thumbnail --}}
-            <div class="relative h-40 bg-gradient-to-br from-blue-500 to-blue-600">
-                @if($course['thumbnail'])
+            {{-- Thumbnail with Module Video Previews --}}
+            <div class="relative h-40 bg-gradient-to-br from-blue-500 to-blue-600 overflow-hidden">
+                @php
+                    $previews = $course['module_previews'] ?? collect();
+                    $videoPreview = $previews->firstWhere('has_video', true);
+                @endphp
+                @if($videoPreview)
+                    <img src="{{ $videoPreview['video_thumbnail'] }}" alt="{{ $course['nama'] }}" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/10">
+                        <div class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                            <svg class="w-4 h-4 text-gray-800 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                    </div>
+                @elseif($course['thumbnail'])
                     <img src="{{ asset('storage/' . $course['thumbnail']) }}" alt="{{ $course['nama'] }}" class="w-full h-full object-cover">
                 @else
                     <div class="w-full h-full flex items-center justify-center">
@@ -70,6 +81,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                     </div>
+                @endif
+
+                {{-- Module count badge --}}
+                @if($previews->count() > 0)
+                <span class="absolute bottom-3 left-3 bg-black/70 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    {{ $previews->count() }} Modul
+                </span>
                 @endif
                 
                 {{-- Status Badge --}}
