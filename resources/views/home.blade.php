@@ -141,6 +141,7 @@
             padding: 28px 24px;
             transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s ease, border-color 0.35s ease;
             cursor: default;
+            height: 100%;
         }
         .feat-card:hover {
             transform: translateY(-6px);
@@ -153,13 +154,25 @@
             display: flex; align-items: center; justify-content: center;
         }
         .feat-card-highlight {
-            grid-column: span 2;
             background: linear-gradient(135deg, var(--c-primary), var(--c-primary-dark));
             border: none;
             color: #fff;
         }
         .feat-card-highlight .feat-icon { background: rgba(255,255,255,0.2); }
         .feat-card-highlight:hover { border-color: transparent; box-shadow: 0 20px 40px -8px rgba(37,99,235,0.3); }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
 
         /* ————— Stat cards ————— */
         .stat-strip {
@@ -330,12 +343,20 @@
         .progress-fill { height: 100%; border-radius: 100px; transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
 
         /* ————— Responsive ————— */
-        @media (max-width: 1024px) {
-            .feat-card-highlight { grid-column: span 1; }
+        @media (min-width: 640px) {
+            .features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1024px) {
+            .hero-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 48px;
+            }
+            .features-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
         @media (max-width: 768px) {
             .stat-number { font-size: 1.5rem; }
             .hero-blob { display: none; }
+            .feat-card { padding: 22px 18px; border-radius: 16px; }
         }
 
         /* ————— Reduced motion ————— */
@@ -396,7 +417,7 @@
         <div class="hero-blob hero-blob-2"></div>
         <div class="hero-blob hero-blob-3"></div>
 
-        <div class="max-w-6xl mx-auto w-full relative" style="z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center">
+        <div class="max-w-6xl mx-auto w-full relative hero-grid" style="z-index:1">
             {{-- Text --}}
             <div style="max-width:640px">
                 <div class="section-badge" style="animation:fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s both">
@@ -449,7 +470,7 @@
                 </h2>
             </div>
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+            <div class="features-grid">
                 @php
                 $features = [
                     ['Kursus & Modul', 'Akses video pembelajaran, modul bacaan, dan materi yang dipersiapkan oleh dosen.', 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25', 'highlight', '#fff'],
