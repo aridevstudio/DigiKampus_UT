@@ -480,6 +480,15 @@
                             showCancelButton: true,
                             confirmButtonText: 'Ya, Hapus',
                             cancelButtonText: 'Batal',
+                            reverseButtons: true,
+                            focusCancel: true,
+                            buttonsStyling: false,
+                            customClass: {
+                                container: 'font-inter',
+                                actions: 'flex gap-2',
+                                confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-5 rounded-lg transition-colors',
+                                cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-5 rounded-lg transition-colors border border-gray-300'
+                            }
                         }).then((r) => r.isConfirmed);
                     }
                     return Promise.resolve(window.confirm('Hapus pesan ini?'));
