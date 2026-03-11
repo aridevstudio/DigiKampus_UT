@@ -4,6 +4,11 @@
 @endphp
 
 {{-- Flash Messages --}}
+@if(session('success'))
+<div class="mb-4 p-4 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 rounded-xl animate-fade-in-up">
+    {{ session('success') }}
+</div>
+@endif
 
 @if(session('error'))
 <div class="mb-4 p-4 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 rounded-xl animate-fade-in-up">
@@ -104,17 +109,34 @@
         {{-- Voucher Input (only show if cart has items) --}}
         @if($cartItems->count() > 0)
         <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 animate-fade-in-up delay-300">
-            <div class="flex items-center gap-3">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <svg class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
                 </svg>
-                <input 
-                    type="text" 
-                    placeholder="Masukkan kode voucher..." 
+                <input
+                    id="voucher-code-input"
+                    type="text"
+                    placeholder="Masukkan kode voucher..."
                     class="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-[#111827] text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
-                <button class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition text-sm">
+                <button id="apply-voucher-btn" type="button" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition text-sm">
                     Gunakan
+                </button>
+            </div>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-600 dark:bg-gray-700 dark:text-gray-300">HEMAT10</span>
+                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-600 dark:bg-gray-700 dark:text-gray-300">WELCOME50</span>
+                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-600 dark:bg-gray-700 dark:text-gray-300">WEBINAR25</span>
+                <span class="text-gray-400">Hanya 1 voucher per transaksi.</span>
+            </div>
+            <div id="voucher-feedback" class="mt-3 hidden rounded-lg px-3 py-2 text-sm"></div>
+            <div id="voucher-active-box" class="mt-3 hidden items-center justify-between rounded-xl border border-green-200 bg-green-50 px-3 py-2 dark:border-green-700/40 dark:bg-green-500/10">
+                <div>
+                    <p class="text-xs text-green-700 dark:text-green-400">Voucher Aktif</p>
+                    <p id="voucher-active-label" class="text-sm font-semibold text-green-700 dark:text-green-300">-</p>
+                </div>
+                <button id="remove-voucher-btn" type="button" class="rounded-lg border border-green-300 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100 dark:border-green-600 dark:text-green-300 dark:hover:bg-green-500/20">
+                    Hapus
                 </button>
             </div>
         </div>
@@ -130,12 +152,16 @@
             <div class="space-y-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700/50">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600 dark:text-gray-400">Subtotal ({{ count($cartItems) }} kursus)</span>
-                    <span class="text-gray-800 dark:text-gray-200">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                    <span id="checkout-subtotal" class="text-gray-800 dark:text-gray-200">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                </div>
+                <div id="voucher-discount-row" class="hidden justify-between text-sm">
+                    <span class="text-green-600 dark:text-green-400">Diskon Voucher</span>
+                    <span id="voucher-discount-value" class="text-green-600 dark:text-green-400">-Rp 0</span>
                 </div>
                 @if($cartItems->count() > 0)
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600 dark:text-gray-400">Biaya Layanan</span>
-                    <span class="text-gray-800 dark:text-gray-200">Rp {{ number_format($serviceFee, 0, ',', '.') }}</span>
+                    <span id="checkout-service-fee" class="text-gray-800 dark:text-gray-200">Rp {{ number_format($serviceFee, 0, ',', '.') }}</span>
                 </div>
                 @endif
             </div>
@@ -143,7 +169,7 @@
             {{-- Total --}}
             <div class="flex justify-between items-center mb-6">
                 <span class="font-medium text-gray-800 dark:text-gray-100">Total Pembayaran</span>
-                <span class="text-xl font-bold text-blue-600 dark:text-blue-400">Rp. {{ number_format($total, 0, ',', '.') }}</span>
+                <span id="checkout-total" class="text-xl font-bold text-blue-600 dark:text-blue-400">Rp {{ number_format($total, 0, ',', '.') }}</span>
             </div>
             
             @if($cartItems->count() > 0)
@@ -183,6 +209,7 @@
             {{-- Pay Button --}}
             <form id="payment-form" action="{{ route('mahasiswa.payment') }}" method="GET">
                 <input type="hidden" name="payment" id="selected-payment" value="bca">
+                <input type="hidden" name="voucher" id="selected-voucher" value="">
                 <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 mb-4">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -227,6 +254,88 @@
 
 @push('scripts')
 <script>
+    const checkoutMoney = {
+        subtotal: {{ (int) $subtotal }},
+        serviceFee: {{ (int) $serviceFee }},
+    };
+
+    const voucherCatalog = {
+        HEMAT10: { code: 'HEMAT10', label: 'HEMAT10 • Diskon 10%', type: 'percent', value: 10, minSubtotal: 50000 },
+        WELCOME50: { code: 'WELCOME50', label: 'WELCOME50 • Potongan Rp 50.000', type: 'fixed', value: 50000, minSubtotal: 200000 },
+        WEBINAR25: { code: 'WEBINAR25', label: 'WEBINAR25 • Diskon 25%', type: 'percent', value: 25, minSubtotal: 100000 },
+    };
+
+    let activeVoucher = null;
+
+    function formatRupiah(value) {
+        return 'Rp ' + Number(value || 0).toLocaleString('id-ID');
+    }
+
+    function showVoucherFeedback(message, type = 'error') {
+        const el = document.getElementById('voucher-feedback');
+        if (!el) return;
+        el.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'dark:bg-red-500/20', 'dark:text-red-400', 'bg-green-100', 'text-green-700', 'dark:bg-green-500/20', 'dark:text-green-300');
+        if (type === 'success') {
+            el.classList.add('bg-green-100', 'text-green-700', 'dark:bg-green-500/20', 'dark:text-green-300');
+        } else {
+            el.classList.add('bg-red-100', 'text-red-700', 'dark:bg-red-500/20', 'dark:text-red-400');
+        }
+        el.textContent = message;
+    }
+
+    function clearVoucherFeedback() {
+        const el = document.getElementById('voucher-feedback');
+        if (!el) return;
+        el.classList.add('hidden');
+        el.textContent = '';
+    }
+
+    function getVoucherDiscount(voucher) {
+        if (!voucher) return 0;
+        if (voucher.type === 'percent') {
+            return Math.round(checkoutMoney.subtotal * (voucher.value / 100));
+        }
+        return Math.min(voucher.value, checkoutMoney.subtotal);
+    }
+
+    function refreshCheckoutSummary() {
+        const discount = getVoucherDiscount(activeVoucher);
+        const total = Math.max(0, checkoutMoney.subtotal - discount) + checkoutMoney.serviceFee;
+
+        const totalEl = document.getElementById('checkout-total');
+        if (totalEl) totalEl.textContent = formatRupiah(total);
+
+        const discountRow = document.getElementById('voucher-discount-row');
+        const discountValue = document.getElementById('voucher-discount-value');
+        if (discountRow && discountValue) {
+            if (discount > 0) {
+                discountRow.classList.remove('hidden');
+                discountRow.classList.add('flex');
+                discountValue.textContent = '-' + formatRupiah(discount);
+            } else {
+                discountRow.classList.remove('flex');
+                discountRow.classList.add('hidden');
+            }
+        }
+
+        const activeBox = document.getElementById('voucher-active-box');
+        const activeLabel = document.getElementById('voucher-active-label');
+        if (activeBox && activeLabel) {
+            if (activeVoucher) {
+                activeBox.classList.remove('hidden');
+                activeBox.classList.add('flex');
+                activeLabel.textContent = activeVoucher.label;
+            } else {
+                activeBox.classList.remove('flex');
+                activeBox.classList.add('hidden');
+                activeLabel.textContent = '-';
+            }
+        }
+
+        const hiddenVoucher = document.getElementById('selected-voucher');
+        if (hiddenVoucher) hiddenVoucher.value = activeVoucher ? activeVoucher.code : '';
+    }
+
     // Sync payment method selection with hidden form input
     document.querySelectorAll('input[name="payment"]').forEach(radio => {
         radio.addEventListener('change', function() {
@@ -245,6 +354,46 @@
             });
         });
     });
+
+    const applyBtn = document.getElementById('apply-voucher-btn');
+    const removeBtn = document.getElementById('remove-voucher-btn');
+    const codeInput = document.getElementById('voucher-code-input');
+
+    if (applyBtn && codeInput) {
+        applyBtn.addEventListener('click', function () {
+            clearVoucherFeedback();
+            const rawCode = (codeInput.value || '').trim().toUpperCase();
+            if (!rawCode) {
+                showVoucherFeedback('Masukkan kode voucher terlebih dahulu.');
+                return;
+            }
+
+            const voucher = voucherCatalog[rawCode];
+            if (!voucher) {
+                showVoucherFeedback('Kode voucher tidak dikenali.');
+                return;
+            }
+
+            if (checkoutMoney.subtotal < voucher.minSubtotal) {
+                showVoucherFeedback('Voucher butuh minimal belanja ' + formatRupiah(voucher.minSubtotal) + '.');
+                return;
+            }
+
+            activeVoucher = voucher;
+            refreshCheckoutSummary();
+            showVoucherFeedback('Voucher ' + voucher.code + ' aktif. Hanya 1 voucher dipakai per transaksi.', 'success');
+        });
+    }
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function () {
+            activeVoucher = null;
+            refreshCheckoutSummary();
+            showVoucherFeedback('Voucher dihapus.', 'success');
+        });
+    }
+
+    refreshCheckoutSummary();
 </script>
 @endpush
 
