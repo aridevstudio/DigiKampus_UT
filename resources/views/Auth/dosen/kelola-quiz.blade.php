@@ -8,7 +8,7 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
-                <div class="relative min-w-[200px]">
+                <div class="relative w-full md:min-w-[200px]">
                     <select x-model="selectedCourseId" :disabled="courseLocked" class="w-full px-4 py-2.5 pr-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none disabled:opacity-70 disabled:cursor-not-allowed">
                         <option value="">-- Pilih Kursus --</option>
                         <template x-for="course in courses" :key="course.id">

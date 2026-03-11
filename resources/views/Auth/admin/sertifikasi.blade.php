@@ -58,7 +58,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <div class="xl:col-span-2 space-y-6">
                 <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl p-4 sm:p-5">
                     <div class="flex items-center justify-between mb-3">
@@ -126,8 +126,8 @@
                         <input id="searchCertInput" type="text" placeholder="Cari nomor, nama, atau program..." class="w-full sm:w-72 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full min-w-[760px]">
+                    <div class="overflow-x-auto responsive-table">
+                        <table class="w-full responsive-data-table min-w-[620px] lg:min-w-full">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-gray-700/40 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                     <th class="text-left px-4 py-3">Nomor</th>

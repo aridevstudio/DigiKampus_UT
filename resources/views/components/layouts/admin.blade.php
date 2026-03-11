@@ -31,13 +31,18 @@
         }
 
         #admin-main-content {
-            overflow-x: hidden;
+            overflow-x: auto;
         }
 
         #admin-main-content .admin-data-table {
             width: 100%;
             min-width: 0;
             table-layout: auto;
+        }
+
+        #admin-main-content [data-table-scroll-wrapper='true'] {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
 
@@ -67,11 +72,11 @@
 
             #admin-main-content .admin-data-table {
                 width: max-content;
-                min-width: max(100%, 680px);
+                min-width: max(100%, 560px);
             }
 
             #admin-main-content .admin-data-table th {
-                font-size: 0.65rem;
+                font-size: 0.7rem;
                 letter-spacing: 0.04em;
             }
 
@@ -105,6 +110,27 @@
                 flex-wrap: wrap;
                 width: 100%;
                 justify-content: flex-start;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1023px) {
+            #admin-main-content .admin-data-table {
+                width: max-content;
+                min-width: max(100%, 640px);
+            }
+
+            #admin-main-content .admin-data-table th,
+            #admin-main-content .admin-data-table td {
+                padding: 0.7rem 0.9rem !important;
+            }
+
+            #admin-main-content .admin-data-table th {
+                font-size: 0.75rem;
+                letter-spacing: 0.03em;
+            }
+
+            #admin-main-content .admin-data-table td {
+                font-size: 0.8125rem;
             }
         }
     </style>
@@ -540,15 +566,30 @@
         function ensureResponsiveAdminTables() {
             const tables = document.querySelectorAll('#admin-main-content table');
             const isSmallScreen = window.matchMedia('(max-width: 640px)').matches;
+            const isTabletScreen = window.matchMedia('(min-width: 641px) and (max-width: 1023px)').matches;
+
+            const getAutoMinWidth = () => {
+                if (isSmallScreen) return '560px';
+                if (isTabletScreen) return '640px';
+                return '';
+            };
 
             tables.forEach((table) => {
-                table.classList.add('admin-data-table');
+                table.classList.add('admin-data-table', 'responsive-data-table');
 
                 if (table.closest('.overflow-x-auto')) {
-                    if (isSmallScreen && !table.style.minWidth && !table.className.includes('min-w-')) {
-                        table.style.minWidth = '680px';
-                        table.dataset.autoMinWidth = 'true';
-                    } else if (!isSmallScreen && table.dataset.autoMinWidth === 'true') {
+                    const wrapper = table.closest('.overflow-x-auto');
+                    if (wrapper) {
+                        wrapper.classList.add('responsive-table');
+                    }
+
+                    const autoMinWidth = getAutoMinWidth();
+                    if (autoMinWidth && !table.className.includes('min-w-')) {
+                        if (table.dataset.autoMinWidth === 'true' || !table.style.minWidth) {
+                            table.style.minWidth = autoMinWidth;
+                            table.dataset.autoMinWidth = 'true';
+                        }
+                    } else if (table.dataset.autoMinWidth === 'true') {
                         table.style.minWidth = '';
                         delete table.dataset.autoMinWidth;
                     }
@@ -556,7 +597,7 @@
                 }
 
                 const wrapper = document.createElement('div');
-                wrapper.className = 'overflow-x-auto';
+                wrapper.className = 'overflow-x-auto responsive-table';
                 wrapper.setAttribute('data-table-scroll-wrapper', 'true');
 
                 const parent = table.parentNode;
@@ -567,9 +608,13 @@
                 parent.insertBefore(wrapper, table);
                 wrapper.appendChild(table);
 
-                if (isSmallScreen && !table.className.includes('min-w-')) {
-                    table.style.minWidth = '680px';
+                const autoMinWidth = getAutoMinWidth();
+                if (autoMinWidth && !table.className.includes('min-w-')) {
+                    table.style.minWidth = autoMinWidth;
                     table.dataset.autoMinWidth = 'true';
+                } else if (table.dataset.autoMinWidth === 'true') {
+                    table.style.minWidth = '';
+                    delete table.dataset.autoMinWidth;
                 }
             });
         }

@@ -20,7 +20,7 @@
     @endif
 
     {{-- Stats Card --}}
-    <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -109,8 +109,8 @@
 
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
+        <div class="overflow-x-auto responsive-table">
+            <table class="w-full responsive-data-table">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-700/30">
                         <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kode</th>

@@ -7,7 +7,7 @@
 </div>
 
 {{-- Stats Cards --}}
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
     {{-- Total Dosen --}}
     <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700 shadow-sm animate-fade-in-up delay-100 hover-lift">
         <div class="flex items-start justify-between mb-2 sm:mb-4">
@@ -67,7 +67,7 @@
     <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
         <h2 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-2 sm:mb-4">Grafik Pendaftaran Kursus</h2>
         <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">Pendaftaran Kursus Minggu Ini ({{ now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('d M') }} - {{ now()->endOfWeek(\Carbon\Carbon::SUNDAY)->format('d M Y') }})</p>
-        <div class="relative" style="height: 200px;" id="chartContainer">
+        <div class="relative mhs-chart-container" style="height: clamp(180px, 28vw, 260px);" id="chartContainer">
             <canvas id="enrollmentChart"></canvas>
         </div>
     </div>

@@ -1,10 +1,10 @@
 <x-layouts.dosen title="Buat Kursus Baru" active="buat-kursus">
-    <div class="max-w-3xl mx-auto">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6">
         <form action="{{ route('dosen.kursus.store') }}" method="POST" enctype="multipart/form-data" id="buatKursusForm" x-data="{ isLoading: false, selectedKategori: '{{ old('kategori', 'kursus') }}' }" @submit="isLoading = true">
             @csrf
             
             {{-- Page Header + Action Buttons --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sm:p-6 mb-6">
                 <div class="mb-4">
                     <h1 class="text-lg font-bold text-gray-900 dark:text-white">
                         <span x-show="selectedKategori !== 'webinar'">Buat Kursus Baru</span>
@@ -30,7 +30,7 @@
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sm:p-6">
                 <div class="space-y-4">
                     {{-- 1. Informasi Dasar Kursus --}}
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">

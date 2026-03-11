@@ -224,20 +224,20 @@
 </div>
 
 {{-- Tabs --}}
-<div class="flex items-center gap-6 border-b border-gray-200 dark:border-gray-700/50 mb-6 animate-fade-in-up delay-100 overflow-x-auto">
-    <button onclick="showTab('ringkasan')" data-tab="ringkasan" class="tab-btn pb-3 text-sm font-medium border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 whitespace-nowrap">
+<div class="flex items-center gap-3 sm:gap-4 md:gap-6 px-1 border-b border-gray-200 dark:border-gray-700/50 mb-6 animate-fade-in-up delay-100 overflow-x-auto">
+    <button onclick="showTab('ringkasan')" data-tab="ringkasan" class="tab-btn pb-3 text-xs sm:text-sm font-medium border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 whitespace-nowrap">
         Ringkasan
     </button>
-    <button onclick="showTab('konten')" data-tab="konten" class="tab-btn pb-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
+    <button onclick="showTab('konten')" data-tab="konten" class="tab-btn pb-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
         Konten Kursus
     </button>
-    <button onclick="showTab('prasyarat')" data-tab="prasyarat" class="tab-btn pb-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
+    <button onclick="showTab('prasyarat')" data-tab="prasyarat" class="tab-btn pb-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
         Prasyarat
     </button>
-    <button onclick="showTab('deskripsi')" data-tab="deskripsi" class="tab-btn pb-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
+    <button onclick="showTab('deskripsi')" data-tab="deskripsi" class="tab-btn pb-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
         Deskripsi
     </button>
-    <button onclick="showTab('ulasan')" data-tab="ulasan" class="tab-btn pb-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
+    <button onclick="showTab('ulasan')" data-tab="ulasan" class="tab-btn pb-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
         Ulasan
     </button>
 </div>
@@ -848,7 +848,7 @@
 <div id="reviewModal" class="fixed inset-0 z-[100] hidden">
     <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" onclick="closeReviewModal()"></div>
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-        <div class="relative bg-white dark:bg-[#1f2937] rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full">
+        <div class="relative mx-3 sm:mx-0 bg-white dark:bg-[#1f2937] rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full max-h-[calc(100dvh-2rem)] overflow-y-auto">
             <form action="{{ route('mahasiswa.course.review', $course->id_course) }}" method="POST">
                 @csrf
                 <div class="px-6 pt-6 pb-4">
@@ -885,7 +885,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 rounded-b-2xl">
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:justify-end gap-3 rounded-b-2xl">
                     <button type="button" onclick="closeReviewModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                         Batal
                     </button>

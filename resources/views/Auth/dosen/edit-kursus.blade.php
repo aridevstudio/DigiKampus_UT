@@ -8,6 +8,10 @@
     </div>
 
     <style>
+        #editKursusGrid {
+            grid-template-columns: 1fr;
+        }
+
         @media (min-width: 1024px) {
             #editKursusGrid { grid-template-columns: 3fr 2fr; }
         }
@@ -15,7 +19,7 @@
     <div class="grid grid-cols-1 gap-6 items-start w-full" id="editKursusGrid">
         {{-- Informasi Kursus --}}
         <div class="w-full">
-            <div class="bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm p-8">
+            <div class="bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
                         <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,7 +223,7 @@
 
         {{-- Modul Utama --}}
         <div class="w-full">
-            <div class="bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm p-8 flex flex-col min-h-[400px]">
+            <div class="bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-6 lg:p-8 flex flex-col min-h-[400px]">
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Modul Utama</h2>
                 <div id="modulesList" class="space-y-6 flex-1">
                 @forelse($course->modules as $module)
@@ -360,7 +364,7 @@
                     </div>
                 </div>
                 @empty
-                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center">
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 sm:p-6 lg:p-8 text-center">
                     <div class="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
                          <svg width="24" height="24" class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />

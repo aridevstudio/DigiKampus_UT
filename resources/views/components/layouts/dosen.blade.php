@@ -31,13 +31,18 @@
         }
 
         #dosen-main-content {
-            overflow-x: hidden;
+            overflow-x: auto;
         }
 
         #dosen-main-content .dosen-data-table {
             width: 100%;
             min-width: 0;
             table-layout: auto;
+        }
+
+        #dosen-main-content [data-table-scroll-wrapper='true'] {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         @media (max-width: 1024px) {
@@ -85,11 +90,11 @@
 
             #dosen-main-content .dosen-data-table {
                 width: max-content;
-                min-width: max(100%, 680px);
+                min-width: max(100%, 560px);
             }
 
             #dosen-main-content .dosen-data-table th {
-                font-size: 0.65rem;
+                font-size: 0.7rem;
                 letter-spacing: 0.04em;
             }
 
@@ -112,6 +117,27 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.75rem;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1023px) {
+            #dosen-main-content .dosen-data-table {
+                width: max-content;
+                min-width: max(100%, 640px);
+            }
+
+            #dosen-main-content .dosen-data-table th,
+            #dosen-main-content .dosen-data-table td {
+                padding: 0.7rem 0.9rem !important;
+            }
+
+            #dosen-main-content .dosen-data-table th {
+                font-size: 0.75rem;
+                letter-spacing: 0.03em;
+            }
+
+            #dosen-main-content .dosen-data-table td {
+                font-size: 0.8125rem;
             }
         }
     </style>
@@ -363,6 +389,68 @@
                 if (darkIcon) darkIcon.classList.add('hidden');
             }
         })();
+
+        function ensureResponsiveDosenTables() {
+            const tables = document.querySelectorAll('#dosen-main-content table');
+            const isSmallScreen = window.matchMedia('(max-width: 640px)').matches;
+            const isTabletScreen = window.matchMedia('(min-width: 641px) and (max-width: 1023px)').matches;
+
+            const getAutoMinWidth = () => {
+                if (isSmallScreen) return '560px';
+                if (isTabletScreen) return '640px';
+                return '';
+            };
+
+            tables.forEach((table) => {
+                table.classList.add('dosen-data-table', 'responsive-data-table');
+
+                if (table.closest('.overflow-x-auto')) {
+                    const wrapper = table.closest('.overflow-x-auto');
+                    if (wrapper) {
+                        wrapper.classList.add('responsive-table');
+                    }
+
+                    const autoMinWidth = getAutoMinWidth();
+                    if (autoMinWidth && !table.className.includes('min-w-')) {
+                        if (table.dataset.autoMinWidth === 'true' || !table.style.minWidth) {
+                            table.style.minWidth = autoMinWidth;
+                            table.dataset.autoMinWidth = 'true';
+                        }
+                    } else if (table.dataset.autoMinWidth === 'true') {
+                        table.style.minWidth = '';
+                        delete table.dataset.autoMinWidth;
+                    }
+
+                    return;
+                }
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'overflow-x-auto responsive-table';
+                wrapper.setAttribute('data-table-scroll-wrapper', 'true');
+
+                const parent = table.parentNode;
+                if (!parent) {
+                    return;
+                }
+
+                parent.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+
+                const autoMinWidth = getAutoMinWidth();
+                if (autoMinWidth && !table.className.includes('min-w-')) {
+                    table.style.minWidth = autoMinWidth;
+                    table.dataset.autoMinWidth = 'true';
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', ensureResponsiveDosenTables);
+        } else {
+            ensureResponsiveDosenTables();
+        }
+
+        window.addEventListener('resize', ensureResponsiveDosenTables);
     </script>
 
     <script>

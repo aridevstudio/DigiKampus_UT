@@ -13,7 +13,7 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">UI frontend untuk tambah, edit, filter, dan hapus kategori.</p>
     </div>
 
-    <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
             <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ count($sampleKategori) }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">Total Kategori (UI)</p>
@@ -67,8 +67,8 @@
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
+        <div class="overflow-x-auto responsive-table">
+            <table class="w-full responsive-data-table">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-700/30">
                         <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kode</th>

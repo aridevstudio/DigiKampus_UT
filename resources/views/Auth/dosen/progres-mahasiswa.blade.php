@@ -7,7 +7,7 @@
 
     {{-- Summary Stats --}}
     @if(($totalEnrollments ?? 0) > 0)
-    <div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+    <div class="grid responsive-grid-stats-6 gap-4 mb-6">
         @php
             $stats = [
                 ['label' => 'Total Enrollment', 'count' => $totalEnrollments ?? 0, 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', 'color' => 'blue'],
@@ -53,7 +53,7 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 {{-- Pilih Kursus --}}
                 <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Pilih Kursus</label>
@@ -110,8 +110,8 @@
 
     {{-- Progress Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
+        <div class="overflow-x-auto responsive-table">
+            <table class="w-full responsive-data-table">
                 <thead>
                     <tr class="border-b border-gray-100 dark:border-gray-700/50">
                         <th class="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Mahasiswa</th>
@@ -183,7 +183,7 @@
                         {{-- Progress --}}
                         <td class="px-5 py-3.5">
                             <div class="flex items-center gap-3">
-                                <div class="w-24 h-2 {{ $barBg }} rounded-full overflow-hidden">
+                                <div class="w-16 sm:w-24 h-2 {{ $barBg }} rounded-full overflow-hidden">
                                     <div class="h-full bg-gradient-to-r {{ $barColor }} rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
                                 </div>
                                 <span class="text-xs font-bold text-gray-700 dark:text-gray-300 tabular-nums min-w-[36px]">{{ $progress }}%</span>

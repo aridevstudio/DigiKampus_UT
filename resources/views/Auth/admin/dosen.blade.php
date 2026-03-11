@@ -95,7 +95,7 @@
             'red' => ['bg' => 'bg-red-50 dark:bg-red-900/20', 'icon' => 'text-red-500 dark:text-red-400', 'text' => 'text-red-700 dark:text-red-300', 'border' => 'border-red-100 dark:border-red-800/30'],
         ];
     @endphp
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         @foreach($dosenStatItems as $stat)
         <div class="flex items-center gap-3 p-3.5 rounded-xl {{ $dosenColorMap[$stat['color']]['bg'] }} border {{ $dosenColorMap[$stat['color']]['border'] }}">
             <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">
@@ -114,8 +114,8 @@
 
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
+        <div class="overflow-x-auto responsive-table">
+            <table class="w-full responsive-data-table">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-900/40">
                         <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>

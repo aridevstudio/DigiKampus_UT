@@ -17,7 +17,7 @@
     {{-- Progress Badge --}}
     <div class="flex items-center gap-2 bg-white dark:bg-[#1f2937] px-4 py-2 rounded-xl border border-gray-100 dark:border-gray-700/50">
         <span class="text-sm text-gray-600 dark:text-gray-400">Progress Kursus</span>
-        <div class="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div class="w-16 sm:w-20 lg:w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div class="h-full bg-blue-500 rounded-full" style="width: {{ $progressPercent }}%"></div>
         </div>
         <span class="text-sm font-medium text-blue-600 dark:text-blue-400">{{ $progressPercent }}% selesai</span>
@@ -74,7 +74,7 @@
                     <div id="module-{{ $moduleIndex }}" class="{{ $loop->first ? '' : 'hidden' }} border-t border-gray-200 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/30">
                         @if(count($module['materials']) > 20)
                             {{-- Compact 4-Column Grid for >20 materials --}}
-                            <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-4 gap-2 p-3">
+                            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-2 p-3">
                                 @foreach($module['materials'] as $index => $material)
                                 <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $material['id']]) }}" 
                                    title="{{ $material['title'] }}"
@@ -654,7 +654,7 @@
 
 {{-- Mobile responsive style override --}}
 <style>
-    @media (max-width: 1024px) {
+    @media (max-width: 1023px) {
         .course-learn-layout {
             flex-direction: column !important;
         }

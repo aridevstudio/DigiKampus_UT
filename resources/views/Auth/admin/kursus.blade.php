@@ -63,7 +63,7 @@
             </div>
 
             {{-- Search --}}
-            <div class="flex gap-1.5 sm:flex-1 sm:min-w-[200px] sm:max-w-sm sm:ml-auto">
+            <div class="flex gap-1.5 md:flex-1 md:min-w-[220px] md:max-w-sm md:ml-auto">
                 <div class="relative flex-1">
                     <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari kursus..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2.5 sm:pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     <svg class="w-4 h-4 absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +79,7 @@
 
     {{-- Summary Stats --}}
     @if($totalKursus > 0)
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         @php
             $kategoriStats = collect($kursusList)->groupBy('kategori')->map->count();
             $statItems = [
@@ -113,8 +113,8 @@
 
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
+        <div class="overflow-x-auto responsive-table">
+            <table class="w-full responsive-data-table">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-900/40">
                         <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -160,10 +160,10 @@
                                     @endif
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[240px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ $kursus['nama'] }}</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[240px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ $kursus['nama'] }}</p>
                                     <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{{ $kursus['kode'] }}</p>
                                     @if(($kursus['module_count'] ?? 0) > 0)
-                                    <p class="text-[10px] text-blue-500 dark:text-blue-400 mt-0.5 font-medium">{{ $kursus['module_count'] }} modul</p>
+                                    <p class="text-[11px] sm:text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">{{ $kursus['module_count'] }} modul</p>
                                     @endif
                                 </div>
                             </div>

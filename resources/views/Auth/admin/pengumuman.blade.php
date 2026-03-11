@@ -63,8 +63,8 @@
 
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+        <div class="overflow-x-auto responsive-table">
+            <table class="w-full responsive-data-table text-sm">
                 <thead>
                     <tr class="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-700/30">
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -93,8 +93,8 @@
                                 </div>
                                 @endif
                                 <div class="min-w-0">
-                                    <p class="font-semibold text-gray-800 dark:text-white truncate max-w-[300px]">{{ $news->judul }}</p>
-                                    <p class="text-xs text-gray-400 truncate max-w-[300px]">{{ Str::limit(strip_tags($news->konten), 60) }}</p>
+                                    <p class="font-semibold text-gray-800 dark:text-white truncate max-w-[140px] sm:max-w-[220px] lg:max-w-[300px]">{{ $news->judul }}</p>
+                                    <p class="text-xs text-gray-400 truncate max-w-[140px] sm:max-w-[220px] lg:max-w-[300px]">{{ Str::limit(strip_tags($news->konten), 60) }}</p>
                                 </div>
                             </div>
                         </td>

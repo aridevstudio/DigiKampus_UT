@@ -102,7 +102,7 @@
                         </div>
 
                         <template x-for="msg in messages" :key="msg.id">
-                            <div class="flex items-end gap-2 max-w-[85%] md:max-w-[75%]"
+                            <div class="flex items-end gap-2 max-w-[88%] sm:max-w-[82%] md:max-w-[75%]"
                                  :class="msg.sender_type === 'mahasiswa' ? 'ml-auto flex-row-reverse' : ''">
                                 <template x-if="msg.sender_type !== 'mahasiswa'">
                                     <img :src="activeConversation?.dosen_avatar" class="w-8 h-8 rounded-full object-cover">

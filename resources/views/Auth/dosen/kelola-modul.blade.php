@@ -7,7 +7,7 @@
         </div>
         
         {{-- Course Info Card --}}
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm min-w-[280px]">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm w-full md:min-w-[280px]">
             <h3 class="font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-2 mb-3">{{ $course['nama'] }}</h3>
             <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
