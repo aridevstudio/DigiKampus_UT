@@ -15,6 +15,40 @@ use Illuminate\Support\Str;
 
 class MahasiswaController extends Controller
 {
+    private function activeSessionCount(int $userId): int
+    {
+        if (config('session.driver') !== 'database') {
+            return 0;
+        }
+
+        $lifetimeMinutes = (int) config('session.lifetime', 120);
+        $activeSince = now()->subMinutes($lifetimeMinutes)->timestamp;
+        $sessionTable = (string) config('session.table', 'sessions');
+
+        return DB::table($sessionTable)
+            ->where('user_id', $userId)
+            ->where('last_activity', '>=', $activeSince)
+            ->count();
+    }
+
+    private function bindCurrentSessionToUser(Request $request, int $userId): void
+    {
+        if (config('session.driver') !== 'database') {
+            return;
+        }
+
+        $sessionTable = (string) config('session.table', 'sessions');
+
+        DB::table($sessionTable)
+            ->where('id', $request->session()->getId())
+            ->update([
+                'user_id' => $userId,
+                'ip_address' => $request->ip(),
+                'user_agent' => (string) $request->userAgent(),
+                'last_activity' => now()->timestamp,
+            ]);
+    }
+
     // ============================================
     // LOGIN
     // ============================================
@@ -55,8 +89,17 @@ class MahasiswaController extends Controller
         }
 
         if ($user && Hash::check($validated['password'], $user->password)) {
-             Auth::guard('mahasiswa')->login($user);
-             $user->setOnline(); // Set user online status
+            $activeSessions = $this->activeSessionCount((int) $user->id);
+            if ($activeSessions >= 2) {
+                return back()
+                    ->withInput()
+                    ->with('alert', 'Akun sudah aktif di 2 perangkat. Logout dari perangkat lain terlebih dahulu.');
+            }
+
+            Auth::guard('mahasiswa')->login($user);
+            $request->session()->regenerate();
+            $this->bindCurrentSessionToUser($request, (int) $user->id);
+            $user->setOnline(); // Set user online status
             return redirect()->route('mahasiswa.dashboard');
         }
         return back()->withErrors(['mahasiswa.login' => 'NIS atau password salah.']);
@@ -256,11 +299,19 @@ class MahasiswaController extends Controller
      * Handle logout
      */
     public function logout(Logout $request) {
+          $currentSessionId = $request->session()->getId();
           $user = Auth::guard('mahasiswa')->user();
           if ($user) {
               $user->setOffline(); // Set user offline status
           }
           $request->logout();
+
+          if (config('session.driver') === 'database') {
+              DB::table((string) config('session.table', 'sessions'))
+                  ->where('id', $currentSessionId)
+                  ->delete();
+          }
+
           return redirect()->route('mahasiswa.login');
     }
 }

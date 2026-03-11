@@ -21,6 +21,40 @@ use Carbon\Carbon;
 
 class DosenController extends Controller
 {
+    private function activeSessionCount(int $userId): int
+    {
+        if (config('session.driver') !== 'database') {
+            return 0;
+        }
+
+        $lifetimeMinutes = (int) config('session.lifetime', 120);
+        $activeSince = now()->subMinutes($lifetimeMinutes)->timestamp;
+        $sessionTable = (string) config('session.table', 'sessions');
+
+        return DB::table($sessionTable)
+            ->where('user_id', $userId)
+            ->where('last_activity', '>=', $activeSince)
+            ->count();
+    }
+
+    private function bindCurrentSessionToUser(Request $request, int $userId): void
+    {
+        if (config('session.driver') !== 'database') {
+            return;
+        }
+
+        $sessionTable = (string) config('session.table', 'sessions');
+
+        DB::table($sessionTable)
+            ->where('id', $request->session()->getId())
+            ->update([
+                'user_id' => $userId,
+                'ip_address' => $request->ip(),
+                'user_agent' => (string) $request->userAgent(),
+                'last_activity' => now()->timestamp,
+            ]);
+    }
+
     /**
      * Show login form
      */
@@ -107,8 +141,17 @@ class DosenController extends Controller
                 ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi admin.');
         }
 
+        $activeSessions = $this->activeSessionCount((int) $user->id);
+        if ($activeSessions >= 2) {
+            return back()
+                ->withInput()
+                ->with('alert', 'Akun sudah aktif di 2 perangkat. Logout dari perangkat lain terlebih dahulu.');
+        }
+
         // Login using Laravel Auth guard
         Auth::guard('dosen')->login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
+        $this->bindCurrentSessionToUser($request, (int) $user->id);
 
         return redirect()->route('dosen.dashboard')
             ->with('status', 'Login berhasil. Selamat datang!');
@@ -333,10 +376,17 @@ class DosenController extends Controller
      */
     public function logout(Request $request)
     {
+        $currentSessionId = $request->session()->getId();
         Auth::guard('dosen')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if (config('session.driver') === 'database') {
+            DB::table((string) config('session.table', 'sessions'))
+                ->where('id', $currentSessionId)
+                ->delete();
+        }
 
         return redirect()->route('dosen.login')
             ->with('status', 'Logout berhasil.');
