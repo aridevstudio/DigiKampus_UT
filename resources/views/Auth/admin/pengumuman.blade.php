@@ -35,9 +35,12 @@
                 <div class="relative">
                     <select name="kategori" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($kategoriFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Kategori</option>
+                        <option value="pengumuman" {{ ($kategoriFilter ?? '') === 'pengumuman' ? 'selected' : '' }}>Pengumuman</option>
+                        <option value="berita" {{ ($kategoriFilter ?? '') === 'berita' ? 'selected' : '' }}>Berita</option>
+                        <option value="event" {{ ($kategoriFilter ?? '') === 'event' ? 'selected' : '' }}>Event</option>
                         <option value="umum" {{ ($kategoriFilter ?? '') === 'umum' ? 'selected' : '' }}>Umum</option>
                         <option value="akademik" {{ ($kategoriFilter ?? '') === 'akademik' ? 'selected' : '' }}>Akademik</option>
-                        <option value="keungan" {{ ($kategoriFilter ?? '') === 'keungan' ? 'selected' : '' }}>Keungan</option>
+                        <option value="keuangan" {{ ($kategoriFilter ?? '') === 'keuangan' ? 'selected' : '' }}>Keuangan</option>
                         <option value="registrasi" {{ ($kategoriFilter ?? '') === 'registrasi' ? 'selected' : '' }}>Registrasi</option>
                         <option value="kemahasiswaan" {{ ($kategoriFilter ?? '') === 'kemahasiswaan' ? 'selected' : '' }}>Kemahasiswaan</option>
                     </select>
@@ -127,6 +130,7 @@
                                 $kategoriColors = [
                                     'umum' => 'bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300',
                                     'akademik' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+                                    'keuangan' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
                                     'keungan' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
                                     'registrasi' => 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
                                     'kemahasiswaan' => 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300',
@@ -134,9 +138,20 @@
                                     'berita' => 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400',
                                     'event' => 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
                                 ];
+                                $kategoriLabels = [
+                                    'umum' => 'Umum',
+                                    'akademik' => 'Akademik',
+                                    'keuangan' => 'Keuangan',
+                                    'keungan' => 'Keuangan',
+                                    'registrasi' => 'Registrasi',
+                                    'kemahasiswaan' => 'Kemahasiswaan',
+                                    'pengumuman' => 'Pengumuman',
+                                    'berita' => 'Berita',
+                                    'event' => 'Event',
+                                ];
                             @endphp
                             <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold {{ $kategoriColors[$news->kategori] ?? 'bg-gray-100 text-gray-700' }}">
-                                {{ ucfirst($news->kategori) }}
+                                {{ $kategoriLabels[$news->kategori] ?? ucfirst($news->kategori) }}
                             </span>
                         </td>
                         <td class="px-6 py-4">
@@ -248,9 +263,12 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Kategori <span class="text-red-500">*</span></label>
                                 <select name="kategori" required
                                     class="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                                    <option value="pengumuman" {{ old('_modal') === 'add' && old('kategori') === 'pengumuman' ? 'selected' : '' }}>Pengumuman</option>
+                                    <option value="berita" {{ old('_modal') === 'add' && old('kategori') === 'berita' ? 'selected' : '' }}>Berita</option>
+                                    <option value="event" {{ old('_modal') === 'add' && old('kategori') === 'event' ? 'selected' : '' }}>Event</option>
                                     <option value="umum" {{ old('_modal') === 'add' && old('kategori', 'umum') === 'umum' ? 'selected' : '' }}>Umum</option>
                                     <option value="akademik" {{ old('_modal') === 'add' && old('kategori') === 'akademik' ? 'selected' : '' }}>Akademik</option>
-                                    <option value="keungan" {{ old('_modal') === 'add' && old('kategori') === 'keungan' ? 'selected' : '' }}>Keungan</option>
+                                    <option value="keuangan" {{ old('_modal') === 'add' && old('kategori') === 'keuangan' ? 'selected' : '' }}>Keuangan</option>
                                     <option value="registrasi" {{ old('_modal') === 'add' && old('kategori') === 'registrasi' ? 'selected' : '' }}>Registrasi</option>
                                     <option value="kemahasiswaan" {{ old('_modal') === 'add' && old('kategori') === 'kemahasiswaan' ? 'selected' : '' }}>Kemahasiswaan</option>
                                 </select>
@@ -352,9 +370,12 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Kategori <span class="text-red-500">*</span></label>
                                 <select name="kategori" id="edit_kategori" required
                                     class="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                                    <option value="pengumuman">Pengumuman</option>
+                                    <option value="berita">Berita</option>
+                                    <option value="event">Event</option>
                                     <option value="umum">Umum</option>
                                     <option value="akademik">Akademik</option>
-                                    <option value="keungan">Keungan</option>
+                                    <option value="keuangan">Keuangan</option>
                                     <option value="registrasi">Registrasi</option>
                                     <option value="kemahasiswaan">Kemahasiswaan</option>
                                 </select>
@@ -488,7 +509,7 @@
                 document.getElementById('edit_news_id').value = id;
                 document.getElementById('edit_judul').value = data.judul;
                 document.getElementById('edit_konten').value = data.konten;
-                document.getElementById('edit_kategori').value = data.kategori;
+                document.getElementById('edit_kategori').value = data.kategori === 'keungan' ? 'keuangan' : data.kategori;
                 document.getElementById('edit_target_prodi').value = data.target_prodi || 'all';
                 document.getElementById('edit_tanggal_publish').value = data.tanggal_publish;
                 document.getElementById('edit_is_active').checked = data.is_active;

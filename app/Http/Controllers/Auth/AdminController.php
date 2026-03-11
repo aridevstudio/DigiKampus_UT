@@ -2529,11 +2529,16 @@ class AdminController extends Controller
     public function showPengumuman(Request $request)
     {
         $query = \App\Models\News::query();
+        $allowedKategori = ['pengumuman', 'berita', 'event', 'umum', 'akademik', 'keuangan', 'keungan', 'registrasi', 'kemahasiswaan'];
 
         // Filter by kategori
         $kategoriFilter = $request->get('kategori', 'all');
-        if ($kategoriFilter !== 'all') {
-            $query->where('kategori', $kategoriFilter);
+        if ($kategoriFilter !== 'all' && in_array($kategoriFilter, $allowedKategori, true)) {
+            if ($kategoriFilter === 'keuangan') {
+                $query->whereIn('kategori', ['keuangan', 'keungan']);
+            } else {
+                $query->where('kategori', $kategoriFilter);
+            }
         }
 
         // Filter by status
@@ -2576,7 +2581,7 @@ class AdminController extends Controller
         $request->validate([
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
-            'kategori' => 'required|in:pengumuman,berita,event',
+            'kategori' => 'required|in:pengumuman,berita,event,umum,akademik,keuangan,keungan,registrasi,kemahasiswaan',
             'tanggal_publish' => 'required|date',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_active' => 'nullable',
@@ -2591,7 +2596,7 @@ class AdminController extends Controller
         $data = [
             'judul' => $request->judul,
             'konten' => $request->konten,
-            'kategori' => $request->kategori,
+            'kategori' => $request->kategori === 'keungan' ? 'keuangan' : $request->kategori,
             'tanggal_publish' => $request->tanggal_publish,
             'is_active' => $request->has('is_active'),
         ];
@@ -2632,7 +2637,7 @@ class AdminController extends Controller
         $request->validate([
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
-            'kategori' => 'required|in:pengumuman,berita,event',
+            'kategori' => 'required|in:pengumuman,berita,event,umum,akademik,keuangan,keungan,registrasi,kemahasiswaan',
             'tanggal_publish' => 'required|date',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_active' => 'nullable',
@@ -2640,7 +2645,7 @@ class AdminController extends Controller
 
         $news->judul = $request->judul;
         $news->konten = $request->konten;
-        $news->kategori = $request->kategori;
+        $news->kategori = $request->kategori === 'keungan' ? 'keuangan' : $request->kategori;
         $news->tanggal_publish = $request->tanggal_publish;
         $news->is_active = $request->has('is_active');
 
