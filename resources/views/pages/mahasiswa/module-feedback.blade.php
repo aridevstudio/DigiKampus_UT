@@ -1,4 +1,15 @@
 <x-layouts.dashboard :active="'courses'">
+@php
+    $mahasiswa = Auth::guard('mahasiswa')->user();
+    $enrollment = null;
+    if ($mahasiswa) {
+        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $mahasiswa->id)
+            ->where('id_course', $course->id_course)
+            ->first();
+    }
+    $certificateEligible = (bool) ($course->sertifikat ?? false)
+        && ($enrollment && (($enrollment->status ?? null) === 'selesai' || (int) ($enrollment->progress ?? 0) >= 100));
+@endphp
 
 {{-- Header --}}
 <div style="text-align: center; margin-bottom: 32px;">
@@ -157,9 +168,75 @@
         Kembali ke Modul
     </a>
     
-    <a href="{{ route('mahasiswa.courses') }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #3b82f6; color: white; border-radius: 12px; font-weight: 600; text-decoration: none;">
-        Lihat Sertifikat
-    </a>
+    @if($certificateEligible)
+    <button type="button" onclick="printFeedbackCertificate(@js($course->nama_course), @js($mahasiswa?->name ?? 'Mahasiswa'), @js(now()->format('d F Y')))" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #3b82f6; color: white; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">
+        Cetak Sertifikat
+    </button>
+    @else
+    <span style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #e5e7eb; color: #6b7280; border-radius: 12px; font-weight: 600;">
+        Sertifikat Belum Tersedia
+    </span>
+    @endif
 </div>
+
+@push('scripts')
+<script>
+    function printFeedbackCertificate(courseTitle, studentName, completedDate) {
+        const safeCourse = String(courseTitle || 'Kursus');
+        const safeStudent = String(studentName || 'Mahasiswa');
+        const safeDate = String(completedDate || '');
+        const certNo = 'CERT-' + Date.now();
+        const popup = window.open('', '_blank', 'width=1200,height=800');
+        if (!popup) return;
+
+        popup.document.write(`
+            <html>
+            <head>
+                <title>Sertifikat ${safeCourse}</title>
+                <style>
+                    body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+                    .page { width:1123px; height:794px; margin:24px auto; background:#fff; border:14px solid #1d4ed8; box-sizing:border-box; position:relative; }
+                    .inner { position:absolute; inset:18px; border:2px solid #93c5fd; padding:56px 72px; text-align:center; }
+                    .title { font-size:44px; font-weight:700; color:#1e3a8a; margin-top:16px; }
+                    .subtitle { font-size:18px; color:#475569; margin-top:20px; }
+                    .name { font-size:40px; color:#0f172a; font-weight:700; margin:18px 0; }
+                    .course { font-size:24px; color:#1d4ed8; font-weight:600; margin:8px 0 22px; }
+                    .meta { display:flex; justify-content:space-between; margin-top:46px; color:#334155; font-size:14px; }
+                    .line { border-top:1px solid #94a3b8; width:260px; margin:10px auto 6px; }
+                    .badge { display:inline-block; font-size:12px; color:#0f172a; background:#e2e8f0; padding:6px 12px; border-radius:999px; margin-top:14px; }
+                    @media print { body { background:#fff; } .page { margin:0 auto; } }
+                </style>
+            </head>
+            <body>
+                <div class="page">
+                    <div class="inner">
+                        <div class="title">SERTIFIKAT KELULUSAN</div>
+                        <div class="subtitle">Diberikan kepada</div>
+                        <div class="name">${safeStudent}</div>
+                        <div class="subtitle">atas keberhasilan menyelesaikan</div>
+                        <div class="course">${safeCourse}</div>
+                        <div class="badge">Nomor Sertifikat: ${certNo}</div>
+                        <div class="meta">
+                            <div>
+                                <div>Tanggal Selesai</div>
+                                <div><strong>${safeDate}</strong></div>
+                            </div>
+                            <div>
+                                <div class="line"></div>
+                                <div>Pengajar / Platform</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    window.onload = function() { window.print(); };
+                <\/script>
+            </body>
+            </html>
+        `);
+        popup.document.close();
+    }
+</script>
+@endpush
 
 </x-layouts.dashboard>

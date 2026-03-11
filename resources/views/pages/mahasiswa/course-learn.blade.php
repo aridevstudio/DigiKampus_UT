@@ -43,6 +43,8 @@
         ->all();
 
     $isPlaylistMode = request('play') === 'pack';
+    $certificateEligible = (bool) ($course->sertifikat ?? false)
+        && (($enrollment->status ?? null) === 'selesai' || (int) ($progressPercent ?? 0) >= 100);
 @endphp
 
 {{-- Back Link & Title Row --}}
@@ -311,6 +313,11 @@
                                     'rel' => '0',
                                     'modestbranding' => '1',
                                     'playsinline' => '1',
+                                    'fs' => '0',
+                                    'disablekb' => '1',
+                                    'iv_load_policy' => '3',
+                                    'cc_load_policy' => '0',
+                                    'origin' => request()->getSchemeAndHttpHost(),
                                 ];
 
                                 if ($isPlaylistMode && $isPackPlayable) {
@@ -325,10 +332,10 @@
                         @endphp
 
                         @if($embedUrl)
-                            <iframe src="{{ $embedUrl }}" title="Video Player" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe>
+                            <iframe src="{{ $embedUrl }}" title="Video Player" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full"></iframe>
                         @else
                             {{-- Fallback for non-YouTube or direct files --}}
-                            <video controls controlsList="nodownload noplaybackrate" disablePictureInPicture oncontextmenu="return false" class="w-full h-full">
+                            <video controls controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture disableRemotePlayback oncontextmenu="return false" class="w-full h-full">
                                 <source src="{{ $videoUrl }}" type="video/mp4">
                                 Browser Anda tidak mendukung tag video.
                             </video>
@@ -373,6 +380,10 @@
                     </div>
                 </div>
                 @endif
+
+                <div class="pointer-events-none absolute bottom-3 right-3 rounded-md bg-black/45 px-2 py-1 text-[10px] text-white/90 backdrop-blur-sm">
+                    Private Course • {{ Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa' }}
+                </div>
             </div>
 
             @if($currentMaterial && $currentMaterial['type'] == 'video' && count($courseVideoIds) > 1)
@@ -418,6 +429,24 @@
                 </form>
                 @endif
             </div>
+
+            {{-- Certificate Ready --}}
+            @if($certificateEligible)
+            <div class="rounded-2xl border border-emerald-200 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/20 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Sertifikat Siap Dicetak</p>
+                    <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Kursus/webinar sudah selesai dan fitur sertifikat diaktifkan dosen.</p>
+                </div>
+                <button type="button"
+                        onclick="printCourseCertificate(@js($course->nama_course), @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'), @js(now()->format('d F Y')))"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7m-9 12h6m-7 0h8a2 2 0 002-2v-5H6v5a2 2 0 002 2zM6 14H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2" />
+                    </svg>
+                    Cetak Sertifikat
+                </button>
+            </div>
+            @endif
 
             {{-- Dropdown Pre-test / Kuis Modul Ini --}}
             @if($currentMaterial && isset($modules[$currentModuleIndex]) && !empty($modules[$currentModuleIndex]['quiz']))
@@ -743,6 +772,63 @@
             }
         });
     });
+
+    function printCourseCertificate(courseTitle, studentName, completedDate) {
+        const safeCourse = String(courseTitle || 'Kursus');
+        const safeStudent = String(studentName || 'Mahasiswa');
+        const safeDate = String(completedDate || '');
+        const certNo = 'CERT-' + Date.now();
+
+        const popup = window.open('', '_blank', 'width=1200,height=800');
+        if (!popup) return;
+
+        popup.document.write(`
+            <html>
+            <head>
+                <title>Sertifikat ${safeCourse}</title>
+                <style>
+                    body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+                    .page { width:1123px; height:794px; margin:24px auto; background:#fff; border:14px solid #1d4ed8; box-sizing:border-box; position:relative; }
+                    .inner { position:absolute; inset:18px; border:2px solid #93c5fd; padding:56px 72px; text-align:center; }
+                    .title { font-size:44px; font-weight:700; color:#1e3a8a; letter-spacing:1px; margin-top:16px; }
+                    .subtitle { font-size:18px; color:#475569; margin-top:20px; }
+                    .name { font-size:40px; color:#0f172a; font-weight:700; margin:18px 0; }
+                    .course { font-size:24px; color:#1d4ed8; font-weight:600; margin:8px 0 22px; }
+                    .meta { display:flex; justify-content:space-between; margin-top:46px; color:#334155; font-size:14px; }
+                    .line { border-top:1px solid #94a3b8; width:260px; margin:10px auto 6px; }
+                    .badge { display:inline-block; font-size:12px; color:#0f172a; background:#e2e8f0; padding:6px 12px; border-radius:999px; margin-top:14px; }
+                    @media print { body { background:#fff; } .page { margin:0 auto; } }
+                </style>
+            </head>
+            <body>
+                <div class="page">
+                    <div class="inner">
+                        <div class="title">SERTIFIKAT KELULUSAN</div>
+                        <div class="subtitle">Diberikan kepada</div>
+                        <div class="name">${safeStudent}</div>
+                        <div class="subtitle">atas keberhasilan menyelesaikan</div>
+                        <div class="course">${safeCourse}</div>
+                        <div class="badge">Nomor Sertifikat: ${certNo}</div>
+                        <div class="meta">
+                            <div>
+                                <div>Tanggal Selesai</div>
+                                <div><strong>${safeDate}</strong></div>
+                            </div>
+                            <div>
+                                <div class="line"></div>
+                                <div>Pengajar / Platform</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    window.onload = function() { window.print(); };
+                <\/script>
+            </body>
+            </html>
+        `);
+        popup.document.close();
+    }
 </script>
 @endpush
 

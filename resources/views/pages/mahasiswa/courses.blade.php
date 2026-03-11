@@ -71,6 +71,8 @@
                 $course = $enrollment->course;
                 $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
                 $progress = intval($enrollment->progress ?? 0);
+                $certificateEligible = (bool) ($course->sertifikat ?? false)
+                    && (($enrollment->status ?? null) === 'selesai' || $progress >= 100);
                 
                 // Status badge
                 if ($progress >= 100) {
@@ -118,11 +120,17 @@
                 </div>
                 
                 {{-- Action Button --}}
-                <div class="px-4 pb-4">
+                <div class="px-4 pb-4 space-y-2">
                     <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" 
                        class="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-xl font-medium text-sm transition">
                         {{ $progress >= 100 ? 'Lihat Kursus' : 'Lanjutkan Belajar' }}
                     </a>
+                    @if($certificateEligible)
+                    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}"
+                       class="block w-full text-center bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-xl font-medium text-sm transition">
+                        Cetak Sertifikat
+                    </a>
+                    @endif
                 </div>
             </div>
             @empty
