@@ -233,6 +233,13 @@
                     </svg>
                     <span class="font-medium">Pengumuman</span>
                 </a>
+
+                <a href="{{ route('admin.chat') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'chat' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.963 9.963 0 01-4.518-1.078L3 20l1.149-3.064A7.963 7.963 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span class="font-medium">Manajemen Chat</span>
+                </a>
             </nav>
         </aside>
 

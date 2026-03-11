@@ -90,6 +90,7 @@
                         <div class="min-w-0">
                             <p class="font-semibold text-gray-900 dark:text-white truncate" x-text="activeConversation?.dosen_name"></p>
                             <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="activeConversation?.dosen_email"></p>
+                            <p class="text-[10px] text-emerald-500 dark:text-emerald-400 font-medium mt-0.5">Realtime aktif • Riwayat 24 jam</p>
                         </div>
                     </div>
 
@@ -99,6 +100,10 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
+                        </div>
+
+                        <div x-show="!isLoadingMessages && messages.length === 0" class="py-10 text-center">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada pesan aktif dalam 24 jam terakhir.</p>
                         </div>
 
                         <template x-for="msg in messages" :key="msg.id">
@@ -165,6 +170,8 @@
                 isLoadingMessages: false,
                 isSending: false,
                 pollingInterval: null,
+                cleanupInterval: null,
+                MESSAGE_TTL_MS: 24 * 60 * 60 * 1000,
 
                 initChat() {
                     this.fetchConversations();
@@ -173,12 +180,39 @@
                         if (this.activeConversation) {
                             this.fetchMessages(true);
                         }
-                    }, 10000);
+                    }, 3000);
+
+                    this.cleanupInterval = setInterval(() => {
+                        this.messages = this.filterFreshMessages(this.messages);
+                        this.conversations = this.filterFreshConversations(this.conversations);
+                    }, 60000);
 
                     window.addEventListener('beforeunload', () => {
                         if (this.pollingInterval) {
                             clearInterval(this.pollingInterval);
                         }
+                        if (this.cleanupInterval) {
+                            clearInterval(this.cleanupInterval);
+                        }
+                    });
+                },
+
+                isMessageExpired(iso) {
+                    if (!iso) return false;
+                    const ts = new Date(iso).getTime();
+                    if (Number.isNaN(ts)) return false;
+                    return (Date.now() - ts) > this.MESSAGE_TTL_MS;
+                },
+
+                filterFreshMessages(messageList) {
+                    return (messageList || []).filter((msg) => !this.isMessageExpired(msg.created_at));
+                },
+
+                filterFreshConversations(conversationList) {
+                    return (conversationList || []).filter((conv) => {
+                        if (conv.unread_count > 0) return true;
+                        if (!conv.last_message_time) return true;
+                        return !this.isMessageExpired(conv.last_message_time);
                     });
                 },
 
@@ -191,7 +225,7 @@
                         });
                         const data = await response.json();
                         if (data.success) {
-                            this.conversations = data.data;
+                            this.conversations = this.filterFreshConversations(data.data);
                         }
                     } catch (error) {
                         console.error('Error fetching conversations:', error);
@@ -223,7 +257,7 @@
                         });
                         const data = await response.json();
                         if (data.success) {
-                            this.messages = data.data;
+                            this.messages = this.filterFreshMessages(data.data);
                             this.$nextTick(() => this.scrollToBottom());
                         }
                     } catch (error) {
