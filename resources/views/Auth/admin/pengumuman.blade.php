@@ -17,7 +17,7 @@
 
     {{-- Actions Bar --}}
     <form method="GET" action="{{ route('admin.pengumuman') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
-        <div class="admin-toolbar-shell">
+        <div class="admin-toolbar-shell admin-toolbar-pengumuman-row">
             {{-- Buttons --}}
             <div class="admin-toolbar-actions flex flex-wrap gap-1.5">
                 <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs sm:text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25">
@@ -31,7 +31,7 @@
             <div class="admin-toolbar-divider w-px h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
             {{-- Filters --}}
-            <div class="admin-toolbar-filters grid grid-cols-2 gap-1.5">
+            <div class="admin-toolbar-filters admin-toolbar-pengumuman-filters grid grid-cols-2 gap-1.5">
                 <div class="relative">
                     <select name="kategori" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($kategoriFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Kategori</option>
@@ -72,16 +72,18 @@
             </div>
 
             {{-- Search --}}
-            <div class="admin-toolbar-search relative sm:flex-1 sm:min-w-[200px]">
-                <svg class="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari pengumuman..."
-                    class="w-full pl-9 pr-3 py-1.5 sm:pl-10 sm:pr-4 sm:py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+            <div class="admin-toolbar-search admin-toolbar-pengumuman-search flex gap-1.5">
+                <div class="relative flex-1">
+                    <svg class="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari pengumuman..."
+                        class="w-full pl-9 pr-3 py-1.5 sm:pl-10 sm:pr-4 sm:py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                </div>
             </div>
 
             {{-- Stats --}}
-            <div class="hidden lg:flex items-center gap-2 text-xs text-gray-400">
+            <div class="admin-toolbar-pengumuman-meta flex items-center gap-2 text-xs text-gray-400">
                 <span class="font-medium">Total: {{ $totalNews }}</span>
             </div>
         </div>

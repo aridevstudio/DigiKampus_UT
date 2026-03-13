@@ -682,4 +682,32 @@ section img {
         width: 100%;
         max-width: 100%;
     }
+
+    .admin-toolbar-pengumuman-row {
+        align-items: flex-start;
+    }
+
+    .admin-toolbar-pengumuman-filters {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        flex: 1 1 calc(100% - 260px);
+        min-width: 480px;
+    }
+
+    .admin-toolbar-pengumuman-filters > * {
+        min-width: 0;
+    }
+
+    .admin-toolbar-pengumuman-search {
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .admin-toolbar-pengumuman-meta {
+        flex: 1 1 100%;
+        justify-content: flex-end;
+        margin-top: -0.125rem;
+    }
 }
