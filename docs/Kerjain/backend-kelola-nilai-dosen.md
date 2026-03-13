@@ -29,8 +29,16 @@ Setiap course perlu punya konfigurasi:
 4. `is_tugas_akhir_enabled`
 5. `is_nilai_published`
 
+Kebutuhan UI yang sekarang sudah dipreview di frontend:
+
+1. Dosen bisa mengubah persentase bobot langsung dari halaman `kelola nilai`
+2. Dosen bisa menyalakan / mematikan komponen `tugas akhir`
+3. Frontend menampilkan total bobot aktif dan status valid / belum valid
+4. Perlu endpoint persist supaya perubahan bobot tidak hanya lokal di browser
+
 Catatan:
 Jika `is_tugas_akhir_enabled = false`, bobot akhir harus dinormalisasi. Jangan biarkan perhitungan tetap membagi 100 jika komponen akhir dimatikan.
+Jika `is_tugas_akhir_enabled = true`, backend wajib menolak konfigurasi yang total bobot aktifnya tidak sesuai aturan bisnis yang disepakati.
 
 ### 3. Tabel / Entitas yang Dibutuhkan
 
@@ -57,7 +65,7 @@ Minimal:
 2. `GET /dosen/kelola-nilai/{courseId}`
    Mengambil daftar mahasiswa dan breakdown nilai.
 3. `PUT /dosen/kelola-nilai/{courseId}/settings`
-   Update bobot nilai dan status tugas akhir.
+   Update bobot nilai, status tugas akhir, dan validasi total bobot.
 4. `PUT /dosen/kelola-nilai/{courseId}/students/{mahasiswaId}`
    Update nilai manual / feedback dosen.
 5. `POST /dosen/kelola-nilai/{courseId}/publish`
@@ -77,6 +85,12 @@ Minimal:
 Rumus dasar:
 
 `nilai_akhir = (pretest * bobot_pretest + tugas * bobot_tugas + tugas_akhir * bobot_tugas_akhir) / total_bobot_aktif`
+
+Validasi minimum:
+
+1. Jika tugas akhir aktif, total `bobot_pretest + bobot_tugas + bobot_tugas_akhir` harus valid sesuai aturan bisnis
+2. Jika tugas akhir nonaktif, `bobot_tugas_akhir` wajib `0`
+3. Backend tidak boleh hanya percaya angka dari frontend
 
 ### 2. Tugas Akhir Opsional
 

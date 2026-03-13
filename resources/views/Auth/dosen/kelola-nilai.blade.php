@@ -231,8 +231,117 @@
                         <span x-show="!activeCourse.has_final_assignment">tanpa komponen tugas akhir.</span>
                     </p>
                     <p class="mt-2 text-xs text-slate-500 dark:text-gray-400">
-                        Jika tugas akhir opsional dimatikan, bobot tersisa harus dinormalisasi di backend supaya hasil nilai tidak bias.
+                        Preview frontend selalu membagi dengan total bobot aktif <span class="font-semibold text-slate-700 dark:text-slate-200" x-text="`${activeWeightTotal}%`"></span> supaya hasil sementara tetap konsisten.
                     </p>
+                    <p
+                        x-show="activeWeightTotal !== 100"
+                        class="mt-2 text-xs font-medium text-amber-600 dark:text-amber-300"
+                    >
+                        Total bobot belum 100 persen. Nilai akhir di preview dinormalisasi otomatis sampai dosen merapikan komposisinya.
+                    </p>
+                </div>
+
+                <div class="mt-5 rounded-3xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900/40">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Atur Bobot</p>
+                            <h3 class="mt-2 text-base font-semibold text-slate-900 dark:text-white">Kontrol Persentase Nilai</h3>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">
+                                Dosen bisa tentukan komposisi pretest, tugas modul, dan tugas akhir sesuai format course.
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-3 rounded-2xl border border-slate-200 px-3 py-2 dark:border-gray-700">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Tugas Akhir</p>
+                                <p class="text-sm font-medium text-slate-900 dark:text-white" x-text="activeCourse.has_final_assignment ? 'Aktif' : 'Nonaktif'"></p>
+                            </div>
+                            <button
+                                type="button"
+                                @click="toggleFinalAssignment()"
+                                class="relative inline-flex h-7 w-12 items-center rounded-full transition"
+                                :class="activeCourse.has_final_assignment ? 'bg-blue-600' : 'bg-slate-300 dark:bg-gray-600'"
+                                :aria-pressed="activeCourse.has_final_assignment"
+                            >
+                                <span
+                                    class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition"
+                                    :class="activeCourse.has_final_assignment ? 'translate-x-6' : 'translate-x-1'"
+                                ></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 space-y-3">
+                        <template x-for="item in editableWeights" :key="item.key">
+                            <div class="rounded-2xl border border-slate-200 px-4 py-3 dark:border-gray-700">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900 dark:text-white" x-text="item.label"></p>
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" x-text="item.helper"></p>
+                                    </div>
+                                    <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="5"
+                                            :disabled="item.disabled"
+                                            :value="item.value"
+                                            @input="updateWeight(item.key, $event.target.value)"
+                                            class="w-16 border-0 bg-transparent p-0 text-right text-sm font-semibold text-slate-900 focus:ring-0 disabled:cursor-not-allowed disabled:text-slate-400 dark:text-white dark:disabled:text-gray-500"
+                                        >
+                                        <span class="text-sm font-semibold text-slate-500 dark:text-gray-400">%</span>
+                                    </label>
+                                </div>
+
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="5"
+                                    :disabled="item.disabled"
+                                    :value="item.value"
+                                    @input="updateWeight(item.key, $event.target.value)"
+                                    class="mt-3 h-2 w-full cursor-pointer rounded-full accent-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <template x-for="preset in weightPresets" :key="preset.label">
+                            <button
+                                type="button"
+                                @click="applyPreset(preset)"
+                                class="inline-flex items-center rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-300 dark:hover:text-white"
+                                x-text="preset.label"
+                            ></button>
+                        </template>
+                    </div>
+
+                    <div class="mt-4 flex flex-col gap-3 rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Total Bobot Aktif</p>
+                            <p class="mt-1 text-lg font-bold" :class="weightValidation.tone" x-text="`${activeWeightTotal}%`"></p>
+                            <p class="mt-1 text-xs" :class="weightValidation.helperTone" x-text="weightValidation.helper"></p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                @click="normalizeWeights()"
+                                class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                            >
+                                Normalkan ke 100%
+                            </button>
+                            <button
+                                type="button"
+                                @click="resetWeights()"
+                                class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-300 dark:hover:text-white"
+                            >
+                                Reset Bobot
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -378,8 +487,22 @@
                     filteredRows: [],
                     coursePendingCount: 0,
                     compositionCards: [],
+                    activeWeightTotal: 0,
+                    editableWeights: [],
+                    weightValidation: {
+                        tone: 'text-slate-900 dark:text-white',
+                        helperTone: 'text-slate-500 dark:text-gray-400',
+                        helper: '',
+                    },
+                    weightPresets: [
+                        { label: 'Balanced 30/35/35', weights: { pretest: 30, assignment: 35, final: 35 } },
+                        { label: 'Tugas Dominan', weights: { pretest: 20, assignment: 50, final: 30 } },
+                        { label: 'Final Dominan', weights: { pretest: 20, assignment: 30, final: 50 } },
+                    ],
 
                     init() {
+                        this.$watch('search', () => this.syncDerivedState());
+                        this.$watch('statusFilter', () => this.syncDerivedState());
                         this.syncDerivedState();
                     },
 
@@ -428,6 +551,141 @@
                                     : 'Course ini menonaktifkan tugas akhir.',
                             },
                         ];
+
+                        this.activeWeightTotal = this.getActiveWeightTotal();
+                        this.editableWeights = [
+                            {
+                                key: 'pretest',
+                                label: 'Pretest',
+                                value: this.activeCourse.weights.pretest,
+                                helper: 'Mengukur kesiapan awal sebelum mahasiswa masuk materi.',
+                                disabled: false,
+                            },
+                            {
+                                key: 'assignment',
+                                label: 'Tugas Modul',
+                                value: this.activeCourse.weights.assignment,
+                                helper: 'Akumulasi tugas mingguan, proyek kecil, dan penugasan modul.',
+                                disabled: false,
+                            },
+                            {
+                                key: 'final',
+                                label: 'Tugas Akhir',
+                                value: this.activeCourse.weights.final,
+                                helper: this.activeCourse.has_final_assignment
+                                    ? 'Dipakai saat course mewajibkan tugas akhir.'
+                                    : 'Aktifkan toggle tugas akhir untuk memberi bobot komponen ini.',
+                                disabled: !this.activeCourse.has_final_assignment,
+                            },
+                        ];
+
+                        this.weightValidation = this.getWeightValidation();
+                    },
+
+                    getActiveWeightTotal() {
+                        const weights = this.activeCourse.weights;
+
+                        return this.activeCourse.has_final_assignment
+                            ? weights.pretest + weights.assignment + weights.final
+                            : weights.pretest + weights.assignment;
+                    },
+
+                    getWeightValidation() {
+                        if (this.activeWeightTotal === 100) {
+                            return {
+                                tone: 'text-emerald-600 dark:text-emerald-400',
+                                helperTone: 'text-emerald-600 dark:text-emerald-300',
+                                helper: 'Komposisi sudah valid. Nilai akhir bisa dihitung tanpa koreksi tambahan.',
+                            };
+                        }
+
+                        if (this.activeWeightTotal > 100) {
+                            return {
+                                tone: 'text-rose-600 dark:text-rose-400',
+                                helperTone: 'text-rose-600 dark:text-rose-300',
+                                helper: 'Total bobot melebihi 100 persen. Rapikan sebelum publish nilai ke mahasiswa.',
+                            };
+                        }
+
+                        return {
+                            tone: 'text-amber-600 dark:text-amber-400',
+                            helperTone: 'text-amber-600 dark:text-amber-300',
+                            helper: 'Total bobot masih kurang dari 100 persen. Preview dinormalisasi sementara.',
+                        };
+                    },
+
+                    updateWeight(key, value) {
+                        if (key === 'final' && !this.activeCourse.has_final_assignment) {
+                            return;
+                        }
+
+                        const parsed = Number.parseInt(value, 10);
+                        const nextValue = Number.isNaN(parsed) ? 0 : Math.max(0, Math.min(100, parsed));
+
+                        this.activeCourse.weights[key] = nextValue;
+                        this.syncDerivedState();
+                    },
+
+                    toggleFinalAssignment() {
+                        this.activeCourse.has_final_assignment = !this.activeCourse.has_final_assignment;
+
+                        if (!this.activeCourse.has_final_assignment) {
+                            this.activeCourse.weights.final = 0;
+                        } else if (this.activeCourse.weights.final === 0) {
+                            this.activeCourse.weights.final = 30;
+                        }
+
+                        this.normalizeWeights();
+                    },
+
+                    applyPreset(preset) {
+                        this.activeCourse.weights.pretest = preset.weights.pretest;
+                        this.activeCourse.weights.assignment = preset.weights.assignment;
+                        this.activeCourse.weights.final = this.activeCourse.has_final_assignment ? preset.weights.final : 0;
+                        this.syncDerivedState();
+                    },
+
+                    normalizeWeights() {
+                        const defaults = this.activeCourse.has_final_assignment
+                            ? { pretest: 25, assignment: 35, final: 40 }
+                            : { pretest: 30, assignment: 70, final: 0 };
+                        const activeKeys = this.activeCourse.has_final_assignment
+                            ? ['pretest', 'assignment', 'final']
+                            : ['pretest', 'assignment'];
+                        const currentTotal = activeKeys.reduce((sum, key) => sum + this.activeCourse.weights[key], 0);
+
+                        if (currentTotal === 0) {
+                            activeKeys.forEach((key) => {
+                                this.activeCourse.weights[key] = defaults[key];
+                            });
+                        } else {
+                            let remaining = 100;
+
+                            activeKeys.forEach((key, index) => {
+                                if (index === activeKeys.length - 1) {
+                                    this.activeCourse.weights[key] = remaining;
+                                    return;
+                                }
+
+                                const normalized = Math.round((this.activeCourse.weights[key] / currentTotal) * 100);
+                                this.activeCourse.weights[key] = normalized;
+                                remaining -= normalized;
+                            });
+                        }
+
+                        if (!this.activeCourse.has_final_assignment) {
+                            this.activeCourse.weights.final = 0;
+                        }
+
+                        this.syncDerivedState();
+                    },
+
+                    resetWeights() {
+                        this.activeCourse.weights = this.activeCourse.has_final_assignment
+                            ? { pretest: 20, assignment: 35, final: 45 }
+                            : { pretest: 30, assignment: 70, final: 0 };
+
+                        this.syncDerivedState();
                     },
 
                     initials(name) {
@@ -447,18 +705,20 @@
                         const weights = this.activeCourse.weights;
                         const pretest = Number.isFinite(row.pretest) ? row.pretest : 0;
                         const assignment = Number.isFinite(row.assignment) ? row.assignment : 0;
+                        const activeWeightTotal = this.getActiveWeightTotal();
+
+                        if (activeWeightTotal === 0) {
+                            return '0.0';
+                        }
 
                         if (this.activeCourse.has_final_assignment) {
                             if (!Number.isFinite(row.final_assignment)) return 'Pending';
                             const result = (pretest * weights.pretest) + (assignment * weights.assignment) + (row.final_assignment * weights.final);
-                            return (result / 100).toFixed(1);
+                            return (result / activeWeightTotal).toFixed(1);
                         }
 
-                        const totalWeight = weights.pretest + weights.assignment;
-                        if (totalWeight === 0) return '0.0';
-
                         const result = (pretest * weights.pretest) + (assignment * weights.assignment);
-                        return (result / totalWeight).toFixed(1);
+                        return (result / activeWeightTotal).toFixed(1);
                     },
 
                     gradeBand(row) {
