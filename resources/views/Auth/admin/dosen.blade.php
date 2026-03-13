@@ -34,10 +34,23 @@
                 </a>
             </div>
 
+            {{-- Search --}}
+            <div class="admin-toolbar-search order-3 lg:order-2 flex gap-1.5">
+                <div class="relative flex-1">
+                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari dosen..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2.5 sm:pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <svg class="w-4 h-4 absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <button type="submit" class="px-3 py-1.5 sm:px-4 sm:py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium rounded-xl transition flex-shrink-0">
+                    Cari
+                </button>
+            </div>
+
             <div class="admin-toolbar-divider w-px h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
             {{-- Filters --}}
-            <div class="admin-toolbar-filters grid grid-cols-2 gap-1.5">
+            <div class="admin-toolbar-filters order-2 lg:order-3 grid grid-cols-2 gap-1.5">
                 <div class="relative">
                     <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($statusFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
@@ -62,19 +75,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
-            </div>
-
-            {{-- Search --}}
-            <div class="admin-toolbar-search flex gap-1.5">
-                <div class="relative flex-1">
-                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari dosen..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2.5 sm:pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <svg class="w-4 h-4 absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                <button type="submit" class="px-3 py-1.5 sm:px-4 sm:py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium rounded-xl transition flex-shrink-0">
-                    Cari
-                </button>
             </div>
         </div>
     </form>
