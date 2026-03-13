@@ -19,7 +19,7 @@
     <form method="GET" action="{{ route('admin.pengumuman') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
         <div class="admin-toolbar-shell">
             {{-- Buttons --}}
-            <div class="admin-toolbar-actions flex flex-wrap gap-1.5 sm:contents">
+            <div class="admin-toolbar-actions flex flex-wrap gap-1.5">
                 <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs sm:text-sm font-medium rounded-xl transition shadow-sm shadow-blue-500/25">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -31,7 +31,7 @@
             <div class="admin-toolbar-divider w-px h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
             {{-- Filters --}}
-            <div class="admin-toolbar-filters grid grid-cols-2 gap-1.5 sm:contents">
+            <div class="admin-toolbar-filters grid grid-cols-2 gap-1.5">
                 <div class="relative">
                     <select name="kategori" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($kategoriFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Kategori</option>

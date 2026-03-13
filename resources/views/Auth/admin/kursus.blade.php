@@ -27,7 +27,7 @@
             <div class="admin-toolbar-divider admin-toolbar-kursus-divider w-px h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
             {{-- Filters --}}
-            <div class="admin-toolbar-filters admin-toolbar-kursus-filters grid grid-cols-2 gap-1.5 sm:contents">
+            <div class="admin-toolbar-filters admin-toolbar-kursus-filters grid grid-cols-2 gap-1.5">
                 <div class="relative">
                     <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($statusFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
@@ -63,7 +63,7 @@
             </div>
 
             {{-- Search --}}
-            <div class="admin-toolbar-search admin-toolbar-kursus-search flex gap-1.5 md:flex-1 md:min-w-[220px] md:max-w-sm md:ml-auto">
+            <div class="admin-toolbar-search admin-toolbar-kursus-search flex gap-1.5">
                 <div class="relative flex-1">
                     <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari kursus..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2.5 sm:pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     <svg class="w-4 h-4 absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

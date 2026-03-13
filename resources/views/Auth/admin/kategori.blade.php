@@ -31,7 +31,7 @@
     <div class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
         <div class="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
             {{-- Buttons --}}
-            <div class="flex flex-wrap gap-1.5 sm:contents">
+            <div class="admin-toolbar-actions flex flex-wrap gap-1.5">
                 <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs sm:text-sm font-medium rounded-xl transition">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                     Tambah Kategori
@@ -39,7 +39,7 @@
             </div>
 
             {{-- Filters --}}
-            <div class="grid grid-cols-2 gap-1.5 sm:contents">
+            <div class="admin-toolbar-filters grid grid-cols-2 gap-1.5">
                 <div class="relative">
                     <select class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                         <option>Semua Tipe</option>
@@ -59,7 +59,7 @@
             </div>
 
             {{-- Search --}}
-            <div class="relative sm:flex-1 sm:min-w-[200px] sm:max-w-xs sm:ml-auto">
+            <div class="admin-toolbar-search relative">
                 <input type="text" placeholder="Cari kategori..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400">
                 <svg class="w-4 h-4 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
