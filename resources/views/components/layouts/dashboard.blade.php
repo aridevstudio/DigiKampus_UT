@@ -177,6 +177,58 @@
             overflow-x: auto;
         }
 
+        #mhs-layout-main {
+            min-width: 0;
+            transition: margin-left 0.3s ease;
+        }
+
+        #sidebar {
+            transition: transform 0.3s ease, width 0.3s ease;
+        }
+
+        @media (min-width: 1024px) {
+            body.mhs-sidebar-collapsed #sidebar {
+                width: 5.25rem;
+            }
+
+            body.mhs-sidebar-collapsed #mhs-layout-main {
+                margin-left: 5.25rem;
+            }
+
+            body.mhs-sidebar-collapsed #sidebar .sidebar-logo-wrap {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            body.mhs-sidebar-collapsed #sidebar .sidebar-logo-image {
+                height: 2rem;
+            }
+
+            body.mhs-sidebar-collapsed #sidebar .sidebar-user-wrap {
+                justify-content: center;
+            }
+
+            body.mhs-sidebar-collapsed #sidebar .sidebar-user-meta,
+            body.mhs-sidebar-collapsed #sidebar nav a > span:last-child {
+                width: 0;
+                opacity: 0;
+                overflow: hidden;
+                pointer-events: none;
+            }
+
+            body.mhs-sidebar-collapsed #sidebar nav {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            body.mhs-sidebar-collapsed #sidebar nav a {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+        }
+
         #mhs-main-content .mhs-data-table {
             width: 100%;
             min-width: 0;
@@ -291,7 +343,7 @@
         <x-dashboard.sidebar :active="$active ?? 'home'" />
 
         {{-- Main Content --}}
-        <div class="flex-1 flex flex-col lg:ml-64">
+        <div id="mhs-layout-main" class="flex-1 flex flex-col lg:ml-64">
             {{-- Header --}}
             <x-dashboard.header />
 
@@ -322,14 +374,22 @@
                     <span class="h-2 w-2 rounded-full bg-green-500"></span>
                     CS Online
                 </span>
-                <p class="mt-1">Klik tombol di bawah untuk mulai chat dengan CS.</p>
+                <p class="mt-1">Support ini terpisah dari chat dosen-mahasiswa dan tetap berjalan di popup ini.</p>
             </div>
-            <a href="{{ route('mahasiswa.chat') }}" class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-blue-600">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                Buka Live Chat
-            </a>
+            <div id="mhs-cs-messages" class="mt-3 space-y-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-900/50">
+                <div class="max-w-[85%] rounded-2xl rounded-bl-md bg-white px-3 py-2 text-xs text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300">
+                    Halo, ada yang bisa dibantu terkait pembelian, kelas, atau kendala dashboard?
+                </div>
+            </div>
+            <form class="mt-3 flex items-end gap-2" onsubmit="submitMahasiswaCsMessage(event)">
+                <div class="flex-1">
+                    <label for="mhs-cs-input" class="sr-only">Pesan ke CS</label>
+                    <textarea id="mhs-cs-input" rows="2" placeholder="Tulis pesan untuk tim support..." class="w-full resize-none rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"></textarea>
+                </div>
+                <button type="submit" class="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-500 px-4 text-sm font-semibold text-white transition hover:bg-blue-600">
+                    Kirim
+                </button>
+            </form>
         </div>
 
         <button id="mhs-cs-trigger" type="button" onclick="toggleMahasiswaCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
@@ -343,6 +403,33 @@
     @vite('resources/js/app.js')
     
     <script>
+        const MHS_DESKTOP_SIDEBAR_KEY = 'mhs-desktop-sidebar-state';
+
+        function syncMahasiswaDesktopSidebar() {
+            const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+            const isCollapsed = localStorage.getItem(MHS_DESKTOP_SIDEBAR_KEY) === 'collapsed';
+            document.body.classList.toggle('mhs-sidebar-collapsed', isDesktop && isCollapsed);
+
+            document.querySelectorAll('[data-sidebar-desktop-toggle]').forEach((button) => {
+                const collapseIcon = button.querySelector('[data-sidebar-toggle-collapse]');
+                const expandIcon = button.querySelector('[data-sidebar-toggle-expand]');
+                const buttonLabel = isCollapsed ? 'Lebarkan sidebar' : 'Ciutkan sidebar';
+
+                button.setAttribute('title', buttonLabel);
+                button.setAttribute('aria-label', buttonLabel);
+                button.setAttribute('aria-pressed', isCollapsed ? 'true' : 'false');
+
+                if (collapseIcon) collapseIcon.classList.toggle('hidden', isCollapsed);
+                if (expandIcon) expandIcon.classList.toggle('hidden', !isCollapsed);
+            });
+        }
+
+        function toggleDesktopSidebar() {
+            const isCollapsed = localStorage.getItem(MHS_DESKTOP_SIDEBAR_KEY) === 'collapsed';
+            localStorage.setItem(MHS_DESKTOP_SIDEBAR_KEY, isCollapsed ? 'expanded' : 'collapsed');
+            syncMahasiswaDesktopSidebar();
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -569,15 +656,18 @@
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
+                syncMahasiswaDesktopSidebar();
                 ensureResponsiveMahasiswaTables();
                 initMahasiswaFileSizeGuards();
             });
         } else {
+            syncMahasiswaDesktopSidebar();
             ensureResponsiveMahasiswaTables();
             initMahasiswaFileSizeGuards();
         }
 
         window.addEventListener('resize', () => {
+            syncMahasiswaDesktopSidebar();
             ensureResponsiveMahasiswaTables();
             initMahasiswaFileSizeGuards();
         });
@@ -592,6 +682,36 @@
             } else {
                 panel.classList.add('hidden');
             }
+        }
+
+        function appendMahasiswaCsMessage(message, type = 'user') {
+            const container = document.getElementById('mhs-cs-messages');
+            if (!container) return;
+
+            const bubble = document.createElement('div');
+            bubble.className = type === 'user'
+                ? 'ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-blue-500 px-3 py-2 text-xs text-white shadow-sm'
+                : 'max-w-[85%] rounded-2xl rounded-bl-md bg-white px-3 py-2 text-xs text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300';
+            bubble.textContent = message;
+            container.appendChild(bubble);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function submitMahasiswaCsMessage(event) {
+            event.preventDefault();
+
+            const input = document.getElementById('mhs-cs-input');
+            if (!input) return;
+
+            const message = input.value.trim();
+            if (!message) return;
+
+            appendMahasiswaCsMessage(message, 'user');
+            input.value = '';
+
+            window.setTimeout(() => {
+                appendMahasiswaCsMessage('Pesan diterima. Tim support akan membalas dari popup ini. Untuk sekarang ini masih frontend preview.');
+            }, 550);
         }
 
         document.addEventListener('click', (event) => {

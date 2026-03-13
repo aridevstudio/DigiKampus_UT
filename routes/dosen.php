@@ -110,6 +110,7 @@ Route::prefix('dosen')
         // Progres & Monitoring
         // ----------------------------------------------------------------------
         Route::get('/progres-mahasiswa', [DosenController::class, 'showProgresMahasiswa'])->name('dosen.progres');
+        Route::view('/kelola-nilai', 'Auth.dosen.kelola-nilai')->name('dosen.nilai');
         
         // ----------------------------------------------------------------------
         // Komunikasi

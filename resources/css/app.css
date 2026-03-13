@@ -351,6 +351,33 @@ section img {
         width: 100%;
     }
 
+    .admin-toolbar-shell {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .admin-toolbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .admin-toolbar-filters {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-toolbar-search {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.5rem;
+        align-items: stretch;
+        width: 100%;
+        max-width: none;
+    }
+
     .admin-desktop-table {
         width: 100%;
     }
@@ -421,8 +448,25 @@ section img {
         padding: 0.75rem;
     }
 
-    .admin-toolbar-responsive > div {
+    .admin-toolbar-responsive > div,
+    .admin-toolbar-shell {
         gap: 0.5rem !important;
+    }
+
+    .admin-toolbar-actions,
+    .admin-toolbar-filters,
+    .admin-toolbar-search {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .admin-toolbar-filters,
+    .admin-toolbar-search {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .admin-toolbar-divider {
+        display: none !important;
     }
 
     .admin-toolbar-responsive button,
@@ -447,6 +491,11 @@ section img {
 
     .admin-toolbar-responsive .flex.gap-1\.5,
     .admin-toolbar-responsive .flex.gap-2 {
+        width: 100%;
+    }
+
+    .admin-toolbar-search button,
+    .admin-toolbar-search a {
         width: 100%;
     }
 
@@ -544,6 +593,43 @@ section img {
 }
 
 @media (min-width: 640px) {
+    .admin-toolbar-shell {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .admin-toolbar-divider {
+        display: none !important;
+    }
+
+    .admin-toolbar-filters {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .admin-toolbar-search {
+        width: 100% !important;
+        max-width: none !important;
+        margin-left: 0 !important;
+    }
+
+    .admin-toolbar-search .relative,
+    .admin-toolbar-search > div:first-child,
+    .admin-toolbar-search input[type='text'] {
+        min-width: 0;
+    }
+
+    .admin-toolbar-responsive .sm\:contents,
+    .admin-toolbar-responsive .sm\:flex-1,
+    .admin-toolbar-responsive .sm\:min-w-\[200px\],
+    .admin-toolbar-responsive .sm\:max-w-xs,
+    .admin-toolbar-responsive .md\:flex-1,
+    .admin-toolbar-responsive .md\:min-w-\[220px\],
+    .admin-toolbar-responsive .md\:max-w-sm {
+        max-width: none !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+
     .admin-toolbar-kursus .admin-toolbar-kursus-row {
         display: grid;
         grid-template-columns: 1fr;
@@ -585,5 +671,27 @@ section img {
 
     .admin-toolbar-kursus .admin-toolbar-kursus-search {
         justify-self: end;
+    }
+}
+
+@media (min-width: 1280px) {
+    .admin-toolbar-shell {
+        grid-template-columns: auto minmax(320px, 1fr);
+        align-items: center;
+        column-gap: 1rem;
+    }
+
+    .admin-toolbar-actions {
+        grid-column: 1;
+        justify-content: flex-start;
+    }
+
+    .admin-toolbar-filters {
+        grid-column: 2;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .admin-toolbar-search {
+        grid-column: 2;
     }
 }

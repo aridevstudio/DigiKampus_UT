@@ -52,6 +52,15 @@ if ($userType === 'mahasiswa' && $user) {
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                 </svg>
             </button>
+
+            <button type="button" onclick="toggleDesktopSidebar()" data-sidebar-desktop-toggle class="hidden lg:inline-flex p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition" title="Ciutkan sidebar">
+                <svg data-sidebar-toggle-collapse class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <svg data-sidebar-toggle-expand class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
             
             {{-- Mobile Logo --}}
             <img 
@@ -162,4 +171,3 @@ if ($userType === 'mahasiswa' && $user) {
         </div>
     </div>
 </header>
-

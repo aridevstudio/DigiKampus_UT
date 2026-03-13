@@ -35,6 +35,58 @@
             width: 100%;
         }
 
+        #admin-layout-main {
+            min-width: 0;
+            transition: margin-left 0.3s ease;
+        }
+
+        #sidebar {
+            transition: transform 0.3s ease, width 0.3s ease;
+        }
+
+        @media (min-width: 1024px) {
+            body.admin-sidebar-collapsed #sidebar {
+                width: 5.25rem;
+            }
+
+            body.admin-sidebar-collapsed #admin-layout-main {
+                margin-left: 5.25rem;
+            }
+
+            body.admin-sidebar-collapsed #sidebar .sidebar-logo-wrap {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            body.admin-sidebar-collapsed #sidebar .sidebar-logo-image {
+                height: 2rem;
+            }
+
+            body.admin-sidebar-collapsed #sidebar .sidebar-user-wrap {
+                justify-content: center;
+            }
+
+            body.admin-sidebar-collapsed #sidebar .sidebar-user-meta,
+            body.admin-sidebar-collapsed #sidebar nav a > span:last-child {
+                width: 0;
+                opacity: 0;
+                overflow: hidden;
+                pointer-events: none;
+            }
+
+            body.admin-sidebar-collapsed #sidebar nav {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            body.admin-sidebar-collapsed #sidebar nav a {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+        }
+
         #admin-main-content .admin-data-table {
             width: 100%;
             min-width: 0;
@@ -150,8 +202,8 @@
         {{-- Admin Sidebar --}}
         <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
             {{-- Logo --}}
-            <div class="h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="SALUT" class="h-10 object-contain">
+            <div class="sidebar-logo-wrap h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700 transition-all duration-300">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="SALUT" class="sidebar-logo-image h-10 object-contain transition-all duration-300">
             </div>
             
             {{-- User Info --}}
@@ -161,7 +213,7 @@
                     $adminPhoto = $adminUser?->profile?->foto_profile;
                     $adminName = $adminUser->name ?? 'Admin';
                 @endphp
-                <div class="flex items-center gap-3">
+                <div class="sidebar-user-wrap flex items-center gap-3 transition-all duration-300">
                     @if($adminPhoto)
                         <img src="{{ asset('storage/' . $adminPhoto) }}" alt="{{ $adminName }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
                     @else
@@ -169,7 +221,7 @@
                             {{ substr($adminName, 0, 1) }}
                         </div>
                     @endif
-                    <div>
+                    <div class="sidebar-user-meta transition-all duration-300">
                         <p class="font-medium text-gray-800 dark:text-gray-100">{{ $adminName }}</p>
                         <p class="text-xs text-gray-500">Admin</p>
                     </div>
@@ -178,70 +230,70 @@
             
             {{-- Nav Links --}}
             <nav class="p-4 space-y-2">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dashboard' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('admin.dashboard') }}" title="Dashboard" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dashboard' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                     <span class="font-medium">Dashboard</span>
                 </a>
                 
-                <a href="{{ route('admin.dosen') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dosen' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('admin.dosen') }}" title="Kelola Dosen" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dosen' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <span class="font-medium">Kelola Dosen</span>
                 </a>
                 
-                <a href="{{ route('admin.mahasiswa') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'mahasiswa' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('admin.mahasiswa') }}" title="Kelola Mahasiswa" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'mahasiswa' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                     <span class="font-medium">Kelola Mahasiswa</span>
                 </a>
                 
-                <a href="{{ route('admin.kursus') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'kursus' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('admin.kursus') }}" title="Kelola Kursus" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'kursus' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                     <span class="font-medium">Kelola Kursus</span>
                 </a>
                 
-                <a href="{{ route('admin.prodi') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'prodi' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('admin.prodi') }}" title="Kelola Prodi" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'prodi' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                     <span class="font-medium">Kelola Prodi</span>
                 </a>
 
-                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.kategori') ? route('admin.kategori') : '#' }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.kategori') ? route('admin.kategori') : '#' }}" title="Kelola Kategori" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10H7V7zm-4 4h4m10 0h4M11 3v4m0 10v4" />
                     </svg>
                     <span class="font-medium">Kelola Kategori</span>
                 </a>
 
-                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.sertifikasi') ? route('admin.sertifikasi') : '#' }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.sertifikasi') ? route('admin.sertifikasi') : '#' }}" title="Sertifikasi Otomatis" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.591 21 9c0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                     <span class="font-medium">Sertifikasi Otomatis</span>
                 </a>
                 
-                <a href="{{ route('admin.pengumuman') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'pengumuman' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('admin.pengumuman') }}" title="Pengumuman" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'pengumuman' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                     </svg>
                     <span class="font-medium">Pengumuman</span>
                 </a>
 
-                <a href="{{ route('admin.chat') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'chat' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('admin.chat') }}" title="Manajemen Chat" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'chat' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.963 9.963 0 01-4.518-1.078L3 20l1.149-3.064A7.963 7.963 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     <span class="font-medium">Manajemen Chat</span>
                 </a>
 
-                <a href="{{ route('admin.finance-report') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'finance-report' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('admin.finance-report') }}" title="Finance Report" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'finance-report' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 13l3-3 3 2 4-5" />
                     </svg>
@@ -251,7 +303,7 @@
         </aside>
 
         {{-- Main Content --}}
-        <div class="flex-1 flex flex-col lg:ml-64">
+        <div id="admin-layout-main" class="flex-1 flex flex-col lg:ml-64">
             {{-- Header --}}
             <header class="sticky top-0 z-30 bg-white dark:bg-[#1f2937] border-b border-gray-100 dark:border-gray-700/50 px-4 sm:px-6 py-3">
                 <div class="flex items-center justify-between">
@@ -261,6 +313,15 @@
                         <button onclick="toggleSidebar()" class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                            </svg>
+                        </button>
+
+                        <button type="button" onclick="toggleDesktopSidebar()" data-sidebar-desktop-toggle class="hidden lg:inline-flex p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition" title="Ciutkan sidebar">
+                            <svg data-sidebar-toggle-collapse class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <svg data-sidebar-toggle-expand class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
                         
@@ -371,6 +432,33 @@
     @vite('resources/js/app.js')
     
     <script>
+        const ADMIN_DESKTOP_SIDEBAR_KEY = 'admin-desktop-sidebar-state';
+
+        function syncAdminDesktopSidebar() {
+            const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+            const isCollapsed = localStorage.getItem(ADMIN_DESKTOP_SIDEBAR_KEY) === 'collapsed';
+            document.body.classList.toggle('admin-sidebar-collapsed', isDesktop && isCollapsed);
+
+            document.querySelectorAll('[data-sidebar-desktop-toggle]').forEach((button) => {
+                const collapseIcon = button.querySelector('[data-sidebar-toggle-collapse]');
+                const expandIcon = button.querySelector('[data-sidebar-toggle-expand]');
+                const buttonLabel = isCollapsed ? 'Lebarkan sidebar' : 'Ciutkan sidebar';
+
+                button.setAttribute('title', buttonLabel);
+                button.setAttribute('aria-label', buttonLabel);
+                button.setAttribute('aria-pressed', isCollapsed ? 'true' : 'false');
+
+                if (collapseIcon) collapseIcon.classList.toggle('hidden', isCollapsed);
+                if (expandIcon) expandIcon.classList.toggle('hidden', !isCollapsed);
+            });
+        }
+
+        function toggleDesktopSidebar() {
+            const isCollapsed = localStorage.getItem(ADMIN_DESKTOP_SIDEBAR_KEY) === 'collapsed';
+            localStorage.setItem(ADMIN_DESKTOP_SIDEBAR_KEY, isCollapsed ? 'expanded' : 'collapsed');
+            syncAdminDesktopSidebar();
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -775,17 +863,20 @@
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
+                syncAdminDesktopSidebar();
                 ensureResponsiveAdminTables();
                 ensureAdminResponsiveToolbars();
                 initAdminFileSizeGuards();
             });
         } else {
+            syncAdminDesktopSidebar();
             ensureResponsiveAdminTables();
             ensureAdminResponsiveToolbars();
             initAdminFileSizeGuards();
         }
 
         window.addEventListener('resize', () => {
+            syncAdminDesktopSidebar();
             ensureResponsiveAdminTables();
             ensureAdminResponsiveToolbars();
             initAdminFileSizeGuards();

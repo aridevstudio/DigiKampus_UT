@@ -34,6 +34,58 @@
             overflow-x: auto;
         }
 
+        #dosen-layout-main {
+            min-width: 0;
+            transition: margin-left 0.3s ease;
+        }
+
+        #sidebar {
+            transition: transform 0.3s ease, width 0.3s ease;
+        }
+
+        @media (min-width: 1024px) {
+            body.dosen-sidebar-collapsed #sidebar {
+                width: 5.25rem;
+            }
+
+            body.dosen-sidebar-collapsed #dosen-layout-main {
+                margin-left: 5.25rem;
+            }
+
+            body.dosen-sidebar-collapsed #sidebar .sidebar-logo-wrap {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            body.dosen-sidebar-collapsed #sidebar .sidebar-logo-image {
+                height: 2rem;
+            }
+
+            body.dosen-sidebar-collapsed #sidebar .sidebar-user-wrap {
+                justify-content: center;
+            }
+
+            body.dosen-sidebar-collapsed #sidebar .sidebar-user-meta,
+            body.dosen-sidebar-collapsed #sidebar nav a > span:last-child {
+                width: 0;
+                opacity: 0;
+                overflow: hidden;
+                pointer-events: none;
+            }
+
+            body.dosen-sidebar-collapsed #sidebar nav {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            body.dosen-sidebar-collapsed #sidebar nav a {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+        }
+
         #dosen-main-content .dosen-data-table {
             width: 100%;
             min-width: 0;
@@ -171,13 +223,13 @@
         {{-- Dosen Sidebar --}}
         <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
             {{-- Logo --}}
-            <div class="h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="SALUT" class="h-10 object-contain">
+            <div class="sidebar-logo-wrap h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700 transition-all duration-300">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="SALUT" class="sidebar-logo-image h-10 object-contain transition-all duration-300">
             </div>
             
             {{-- User Info --}}
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center gap-3">
+                <div class="sidebar-user-wrap flex items-center gap-3 transition-all duration-300">
                     @php
                         $dosenUser = Auth::guard('dosen')->user();
                         $dosenPhoto = $dosenUser?->profile?->foto_profile;
@@ -189,7 +241,7 @@
                             {{ substr(Auth::guard('dosen')->user()->name ?? 'D', 0, 1) }}
                         </div>
                     @endif
-                    <div>
+                    <div class="sidebar-user-meta transition-all duration-300">
                         <p class="font-medium text-gray-800 dark:text-gray-100">{{ Auth::guard('dosen')->user()->name ?? 'Dosen' }}</p>
                         <p class="text-xs text-gray-500">Dosen</p>
                     </div>
@@ -198,28 +250,35 @@
             
             {{-- Nav Links --}}
             <nav class="p-4 space-y-2">
-                <a href="{{ route('dosen.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dashboard' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('dosen.dashboard') }}" title="Dashboard" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dashboard' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                     <span class="font-medium">Dashboard</span>
                 </a>
                 
-                <a href="{{ route('dosen.kursus') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'kursus-saya' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('dosen.kursus') }}" title="Kursus Saya" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'kursus-saya' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                     <span class="font-medium">Kursus Saya</span>
                 </a>
                 
-                <a href="{{ route('dosen.progres') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'progres' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('dosen.progres') }}" title="Progres Mahasiswa" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'progres' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                     <span class="font-medium">Progres Mahasiswa</span>
                 </a>
+
+                <a href="{{ route('dosen.nilai') }}" title="Mengelola Nilai" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'nilai' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6V7m3 10v-3m4 6H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="font-medium">Mengelola Nilai</span>
+                </a>
                 
-                <a href="{{ route('dosen.pesan') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'pesan' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <a href="{{ route('dosen.pesan') }}" title="Pesan" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'pesan' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
@@ -229,7 +288,7 @@
         </aside>
 
         {{-- Main Content --}}
-        <div class="flex-1 flex flex-col lg:ml-64">
+        <div id="dosen-layout-main" class="flex-1 flex flex-col lg:ml-64">
             {{-- Header --}}
             <header class="sticky top-0 z-30 bg-white dark:bg-[#1f2937] border-b border-gray-100 dark:border-gray-700/50 px-4 sm:px-6 py-3">
                 <div class="flex items-center justify-between">
@@ -239,6 +298,15 @@
                         <button onclick="toggleSidebar()" class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                            </svg>
+                        </button>
+
+                        <button type="button" onclick="toggleDesktopSidebar()" data-sidebar-desktop-toggle class="hidden lg:inline-flex p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition" title="Ciutkan sidebar">
+                            <svg data-sidebar-toggle-collapse class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <svg data-sidebar-toggle-expand class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
                         
@@ -371,14 +439,22 @@
                     <span class="h-2 w-2 rounded-full bg-green-500"></span>
                     CS Online
                 </span>
-                <p class="mt-1">Klik tombol di bawah untuk terhubung ke chat support.</p>
+                <p class="mt-1">Support ini tetap berada di bubble popup dan tidak masuk ke chat dosen-mahasiswa.</p>
             </div>
-            <a href="{{ route('dosen.pesan') }}" class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-blue-600">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                Buka Live Chat
-            </a>
+            <div id="dosen-cs-messages" class="mt-3 space-y-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-900/50">
+                <div class="max-w-[85%] rounded-2xl rounded-bl-md bg-white px-3 py-2 text-xs text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300">
+                    Halo dosen, jika ada kendala materi, jadwal, atau penilaian, silakan kirim lewat popup ini.
+                </div>
+            </div>
+            <form class="mt-3 flex items-end gap-2" onsubmit="submitDosenCsMessage(event)">
+                <div class="flex-1">
+                    <label for="dosen-cs-input" class="sr-only">Pesan ke CS</label>
+                    <textarea id="dosen-cs-input" rows="2" placeholder="Tulis pesan untuk support..." class="w-full resize-none rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"></textarea>
+                </div>
+                <button type="submit" class="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-500 px-4 text-sm font-semibold text-white transition hover:bg-blue-600">
+                    Kirim
+                </button>
+            </form>
         </div>
 
         <button id="dosen-cs-trigger" type="button" onclick="toggleDosenCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
@@ -392,6 +468,33 @@
     @vite('resources/js/app.js')
     
     <script>
+        const DOSEN_DESKTOP_SIDEBAR_KEY = 'dosen-desktop-sidebar-state';
+
+        function syncDosenDesktopSidebar() {
+            const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+            const isCollapsed = localStorage.getItem(DOSEN_DESKTOP_SIDEBAR_KEY) === 'collapsed';
+            document.body.classList.toggle('dosen-sidebar-collapsed', isDesktop && isCollapsed);
+
+            document.querySelectorAll('[data-sidebar-desktop-toggle]').forEach((button) => {
+                const collapseIcon = button.querySelector('[data-sidebar-toggle-collapse]');
+                const expandIcon = button.querySelector('[data-sidebar-toggle-expand]');
+                const buttonLabel = isCollapsed ? 'Lebarkan sidebar' : 'Ciutkan sidebar';
+
+                button.setAttribute('title', buttonLabel);
+                button.setAttribute('aria-label', buttonLabel);
+                button.setAttribute('aria-pressed', isCollapsed ? 'true' : 'false');
+
+                if (collapseIcon) collapseIcon.classList.toggle('hidden', isCollapsed);
+                if (expandIcon) expandIcon.classList.toggle('hidden', !isCollapsed);
+            });
+        }
+
+        function toggleDesktopSidebar() {
+            const isCollapsed = localStorage.getItem(DOSEN_DESKTOP_SIDEBAR_KEY) === 'collapsed';
+            localStorage.setItem(DOSEN_DESKTOP_SIDEBAR_KEY, isCollapsed ? 'expanded' : 'collapsed');
+            syncDosenDesktopSidebar();
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -446,6 +549,9 @@
                 if (darkIcon) darkIcon.classList.add('hidden');
             }
         })();
+
+        syncDosenDesktopSidebar();
+        window.addEventListener('resize', syncDosenDesktopSidebar);
 
         function showAppAlert(message, icon = 'info', title = 'Informasi', options = {}) {
             const text = typeof message === 'string' ? message : String(message ?? '');
@@ -810,6 +916,36 @@
             } else {
                 panel.classList.add('hidden');
             }
+        }
+
+        function appendDosenCsMessage(message, type = 'user') {
+            const container = document.getElementById('dosen-cs-messages');
+            if (!container) return;
+
+            const bubble = document.createElement('div');
+            bubble.className = type === 'user'
+                ? 'ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-blue-500 px-3 py-2 text-xs text-white shadow-sm'
+                : 'max-w-[85%] rounded-2xl rounded-bl-md bg-white px-3 py-2 text-xs text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300';
+            bubble.textContent = message;
+            container.appendChild(bubble);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function submitDosenCsMessage(event) {
+            event.preventDefault();
+
+            const input = document.getElementById('dosen-cs-input');
+            if (!input) return;
+
+            const message = input.value.trim();
+            if (!message) return;
+
+            appendDosenCsMessage(message, 'user');
+            input.value = '';
+
+            window.setTimeout(() => {
+                appendDosenCsMessage('Pesan support diterima. Bubble ini tetap terpisah dari inbox mahasiswa dan saat ini masih frontend preview.');
+            }, 550);
         }
 
         document.addEventListener('click', (event) => {

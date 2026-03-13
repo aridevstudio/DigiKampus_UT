@@ -24,11 +24,11 @@ $userProfilePicture = $profile?->foto_profile;
 {{-- Sidebar - Soft Dark Mode --}}
 <aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#1f2937] border-r border-gray-100 dark:border-gray-700/50 flex flex-col z-40 transition-transform duration-300 -translate-x-full lg:translate-x-0">
     {{-- Logo with Close Button (mobile) --}}
-    <div class="p-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
+    <div class="sidebar-logo-wrap p-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between transition-all duration-300">
         <img 
             src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" 
             alt="SALUT Logo" 
-            class="h-10 object-contain"
+            class="sidebar-logo-image h-10 object-contain transition-all duration-300"
         >
         {{-- Close button for mobile --}}
         <button onclick="toggleSidebar()" class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg">
@@ -40,7 +40,7 @@ $userProfilePicture = $profile?->foto_profile;
 
     {{-- User Profile --}}
     <div class="p-4 border-b border-gray-100 dark:border-gray-700/50">
-        <div class="flex items-center gap-3">
+        <div class="sidebar-user-wrap flex items-center gap-3 transition-all duration-300">
             @if($userProfilePicture)
             <img src="{{ asset('storage/' . $userProfilePicture) }}" alt="{{ $userName }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
             @else
@@ -48,7 +48,7 @@ $userProfilePicture = $profile?->foto_profile;
                 {{ strtoupper(substr($userName, 0, 2)) }}
             </div>
             @endif
-            <div class="min-w-0">
+            <div class="sidebar-user-meta min-w-0 transition-all duration-300">
                 <p class="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">{{ $userName }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Mahasiswa</p>
             </div>
@@ -62,6 +62,7 @@ $userProfilePicture = $profile?->foto_profile;
                 <li>
                     <a 
                         href="{{ $item['route'] !== '#' ? route($item['route']) : '#' }}"
+                        title="{{ $item['name'] }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
                             {{ $active === $item['key'] 
                                 ? 'bg-blue-500 text-white' 
