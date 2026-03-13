@@ -450,11 +450,18 @@
     {{-- ═══════════ STATS STRIP ═══════════ --}}
     <section class="stat-strip" style="padding:48px 24px">
         <div class="max-w-6xl mx-auto relative" style="z-index:1;display:grid;grid-template-columns:repeat(2,1fr);gap:24px">
-            @php $stats = [['2800', 'Mahasiswa Aktif', '+'], ['150', 'Kursus Tersedia', '+'], ['50', 'Dosen Pengajar', '+'], ['98', 'Kepuasan Pengguna', '%']]; @endphp
-            @foreach($stats as $i => $s)
+            @php
+                $stats = $landingStats ?? [
+                    ['count' => 0, 'label' => 'Mahasiswa Aktif', 'suffix' => '+'],
+                    ['count' => 0, 'label' => 'Kursus Tersedia', 'suffix' => '+'],
+                    ['count' => 0, 'label' => 'Dosen Pengajar', 'suffix' => '+'],
+                    ['count' => 0, 'label' => 'Kepuasan Pengguna', 'suffix' => '%'],
+                ];
+            @endphp
+            @foreach($stats as $i => $stat)
             <div class="anim-up" style="text-align:center;transition-delay:{{ $i * 80 }}ms">
-                <p class="stat-number" data-count="{{ $s[0] }}" data-suffix="{{ $s[2] }}">0{{ $s[2] }}</p>
-                <p style="font-size:13px;color:rgba(255,255,255,0.65);margin-top:4px;font-weight:500">{{ $s[1] }}</p>
+                <p class="stat-number" data-count="{{ $stat['count'] }}" data-suffix="{{ $stat['suffix'] }}">0{{ $stat['suffix'] }}</p>
+                <p style="font-size:13px;color:rgba(255,255,255,0.65);margin-top:4px;font-weight:500">{{ $stat['label'] }}</p>
             </div>
             @endforeach
         </div>
