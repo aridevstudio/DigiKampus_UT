@@ -635,10 +635,30 @@ section img {
 
     .admin-toolbar-kursus .admin-toolbar-kursus-row {
         display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-buttons {
+        flex: 0 0 auto;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-filters {
+        flex: 1 1 100%;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-search {
+        flex: 1 1 100%;
+        margin-left: 0;
     }
 }
 
 @media (min-width: 1024px) {
+    .admin-toolbar-kursus .admin-toolbar-kursus-row {
+        align-items: flex-start;
+    }
+
     .admin-toolbar-kursus .admin-toolbar-kursus-buttons {
         display: flex;
         flex-wrap: wrap;
@@ -646,6 +666,20 @@ section img {
     }
 
     .admin-toolbar-kursus .admin-toolbar-kursus-filters {
-        flex: 1 1 520px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        flex: 1 1 calc(100% - 340px);
+        min-width: 420px;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-filters > * {
+        min-width: 0;
+    }
+
+    .admin-toolbar-kursus .admin-toolbar-kursus-search {
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: 100%;
     }
 }
