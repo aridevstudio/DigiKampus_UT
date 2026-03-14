@@ -117,6 +117,7 @@ Route::prefix('admin')
 
         // Frontend-only pages
         Route::view('/kategori', 'Auth.admin.kategori')->name('admin.kategori');
+        Route::view('/bootcamp-tiket', 'Auth.admin.bootcamp-tiket')->name('admin.bootcamp-tiket');
         Route::view('/sertifikasi', 'Auth.admin.sertifikasi')->name('admin.sertifikasi');
         Route::view('/chat', 'Auth.admin.chat')->name('admin.chat');
         Route::view('/finance-report', 'Auth.admin.finance-report')->name('admin.finance-report');

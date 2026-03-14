@@ -263,6 +263,13 @@
                     </svg>
                     <span class="font-medium">Kursus Saya</span>
                 </a>
+
+                <a href="{{ route('dosen.bootcamp') }}" title="Bootcamp Saya" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'bootcamp' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8V6a4 4 0 10-8 0v2m-3 3h14l-1 8a2 2 0 01-2 2H8a2 2 0 01-2-2l-1-8zm5 4h4" />
+                    </svg>
+                    <span class="font-medium">Bootcamp Saya</span>
+                </a>
                 
                 <a href="{{ route('dosen.progres') }}" title="Progres Mahasiswa" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'progres' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
