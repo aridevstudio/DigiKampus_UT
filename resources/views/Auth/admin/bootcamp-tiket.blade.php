@@ -67,7 +67,7 @@
 @endphp
 
 <x-layouts.admin title="Bootcamp & Tiket" active="bootcamp">
-    <div class="space-y-6">
+    <div class="space-y-6" id="bootcamp-ticket-page">
         <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-gray-700/60 dark:bg-gray-800">
             <div class="relative px-6 py-7 sm:px-8">
                 <div class="absolute inset-y-0 right-0 hidden w-2/5 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.18),_transparent_58%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.16),_transparent_50%)] lg:block"></div>
@@ -83,19 +83,19 @@
                     </div>
 
                     <div class="grid gap-2 sm:grid-cols-3 xl:w-[420px]">
-                        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+                        <button id="bootcampCreateBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
                             Buat Bootcamp
                         </button>
-                        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">
+                        <button id="ticketSalesToggleBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m9-4a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Buka Penjualan Tiket
                         </button>
-                        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-900">
+                        <button id="bootcampExportBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-900">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h6m-2 8l-4-4m0 0l4-4m-4 4h14" />
                             </svg>
@@ -132,9 +132,22 @@
                     </div>
                 </div>
 
-                <div class="mt-5 grid gap-4">
+                <div class="mt-5 grid gap-4" id="bootcampProgramList">
                     @foreach ($bootcampPrograms as $program)
-                        <article class="rounded-[24px] border border-slate-200 p-5 transition hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600">
+                        <article
+                            class="rounded-[24px] border border-slate-200 p-5 transition hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600"
+                            data-bootcamp-card="true"
+                            data-program-type="{{ $program['type'] }}"
+                            data-title="{{ $program['title'] }}"
+                            data-batch="{{ $program['batch'] }}"
+                            data-status="{{ $program['status'] }}"
+                            data-mentor="{{ $program['mentor'] }}"
+                            data-seats="{{ $program['seats'] }}"
+                            data-price="{{ $program['price'] }}"
+                            data-schedule="{{ $program['schedule'] }}"
+                            data-risk="{{ $program['risk'] }}"
+                            data-accent="{{ $program['accent'] }}"
+                        >
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div class="min-w-0">
                                     <div class="flex flex-wrap items-center gap-2">
@@ -154,7 +167,7 @@
                             <div class="mt-4 grid gap-3 md:grid-cols-3">
                                 <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
                                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
-                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ $program['status'] }}</p>
+                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-status="true">{{ $program['status'] }}</p>
                                 </div>
                                 <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
                                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Mentor</p>
@@ -239,4 +252,298 @@
             </div>
         </section>
     </div>
+
+    <div id="bootcampCreateModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"></div>
+        <div class="relative flex min-h-full items-center justify-center px-4 py-6">
+            <div class="w-full max-w-2xl overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
+                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-gray-700">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Frontend Draft</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Buat Bootcamp Baru</h2>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Data akan ditambahkan ke daftar program secara lokal di halaman ini.</p>
+                    </div>
+                    <button id="bootcampModalCloseBtn" type="button" class="rounded-2xl border border-slate-200 p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="bootcampCreateForm" class="space-y-5 px-6 py-6">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="block">
+                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Nama Program</span>
+                            <input name="title" type="text" required placeholder="Bootcamp Product Management" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tipe</span>
+                            <select name="type" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                                <option value="Bootcamp">Bootcamp</option>
+                                <option value="Tiket Event">Tiket Event</option>
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Batch / Event</span>
+                            <input name="batch" type="text" required placeholder="Batch Juni 2026" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Harga</span>
+                            <input name="price" type="text" required placeholder="Rp 1.250.000" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Mentor</span>
+                            <input name="mentor" type="text" required placeholder="2 mentor" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Seat</span>
+                            <input name="seats" type="text" required placeholder="0 / 40 kursi" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                        </label>
+                    </div>
+
+                    <label class="block">
+                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Jadwal</span>
+                        <input name="schedule" type="text" required placeholder="Selasa & Kamis, 19.00 - 21.00" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                    </label>
+
+                    <label class="block">
+                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Risiko</span>
+                        <textarea name="risk" rows="3" required placeholder="Contoh: mentor cadangan belum ditentukan" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white"></textarea>
+                    </label>
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-gray-700 sm:flex-row sm:justify-end">
+                        <button id="bootcampModalCancelBtn" type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/60">
+                            Batal
+                        </button>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+                            Simpan Draft Frontend
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const createBtn = document.getElementById('bootcampCreateBtn');
+                const salesToggleBtn = document.getElementById('ticketSalesToggleBtn');
+                const exportBtn = document.getElementById('bootcampExportBtn');
+                const modal = document.getElementById('bootcampCreateModal');
+                const modalCloseBtn = document.getElementById('bootcampModalCloseBtn');
+                const modalCancelBtn = document.getElementById('bootcampModalCancelBtn');
+                const createForm = document.getElementById('bootcampCreateForm');
+                const programList = document.getElementById('bootcampProgramList');
+                const pageRoot = document.getElementById('bootcamp-ticket-page');
+
+                if (!createBtn || !salesToggleBtn || !exportBtn || !modal || !createForm || !programList || !pageRoot) {
+                    return;
+                }
+
+                const accentByType = {
+                    'Bootcamp': 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20',
+                    'Tiket Event': 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20',
+                };
+
+                let ticketSalesOpen = false;
+
+                const getCards = () => Array.from(programList.querySelectorAll('[data-bootcamp-card="true"]'));
+
+                const openModal = () => {
+                    modal.classList.remove('hidden');
+                    document.body.classList.add('overflow-hidden');
+                };
+
+                const closeModal = () => {
+                    modal.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                };
+
+                const renderCard = (program) => {
+                    const article = document.createElement('article');
+                    article.className = 'rounded-[24px] border border-slate-200 p-5 transition hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600';
+                    article.dataset.bootcampCard = 'true';
+                    article.dataset.programType = program.type;
+                    article.dataset.title = program.title;
+                    article.dataset.batch = program.batch;
+                    article.dataset.status = program.status;
+                    article.dataset.mentor = program.mentor;
+                    article.dataset.seats = program.seats;
+                    article.dataset.price = program.price;
+                    article.dataset.schedule = program.schedule;
+                    article.dataset.risk = program.risk;
+                    article.dataset.accent = program.accent;
+
+                    article.innerHTML = `
+                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${program.accent}">${program.type}</span>
+                                    <span class="text-xs font-medium text-slate-500 dark:text-gray-400">${program.batch}</span>
+                                </div>
+                                <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">${program.title}</h3>
+                                <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">${program.schedule}</p>
+                            </div>
+                            <div class="grid gap-2 text-right text-sm lg:min-w-[180px]">
+                                <p class="font-semibold text-slate-900 dark:text-white">${program.price}</p>
+                                <p class="text-slate-500 dark:text-gray-400">${program.seats}</p>
+                                <p class="text-xs font-medium text-amber-600 dark:text-amber-300">${program.risk}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid gap-3 md:grid-cols-3">
+                            <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-status="true">${program.status}</p>
+                            </div>
+                            <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Mentor</p>
+                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">${program.mentor}</p>
+                            </div>
+                            <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Operasi</p>
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    <button type="button" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
+                                    <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    return article;
+                };
+
+                const updateTicketSalesButton = () => {
+                    salesToggleBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700', 'shadow-emerald-600/20', 'bg-amber-500', 'hover:bg-amber-600', 'shadow-amber-500/20');
+                    if (ticketSalesOpen) {
+                        salesToggleBtn.classList.add('bg-amber-500', 'hover:bg-amber-600', 'shadow-amber-500/20');
+                        salesToggleBtn.innerHTML = `
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-12.728 12.728M9 9l6 6" />
+                            </svg>
+                            Tutup Penjualan Tiket
+                        `;
+                        return;
+                    }
+
+                    salesToggleBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'shadow-emerald-600/20');
+                    salesToggleBtn.innerHTML = `
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m9-4a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Buka Penjualan Tiket
+                    `;
+                };
+
+                const updateTicketCards = () => {
+                    getCards()
+                        .filter((card) => card.dataset.programType === 'Tiket Event')
+                        .forEach((card) => {
+                            const statusNode = card.querySelector('[data-card-status="true"]');
+                            const nextStatus = ticketSalesOpen ? 'Published' : 'Registration Closed';
+                            card.dataset.status = nextStatus;
+                            if (statusNode) {
+                                statusNode.textContent = nextStatus;
+                            }
+                        });
+                };
+
+                const exportPrograms = () => {
+                    const rows = getCards().map((card) => ({
+                        title: card.dataset.title || '',
+                        type: card.dataset.programType || '',
+                        batch: card.dataset.batch || '',
+                        status: card.dataset.status || '',
+                        mentor: card.dataset.mentor || '',
+                        seats: card.dataset.seats || '',
+                        price: card.dataset.price || '',
+                        schedule: card.dataset.schedule || '',
+                        risk: card.dataset.risk || '',
+                    }));
+
+                    const header = ['Program', 'Tipe', 'Batch', 'Status', 'Mentor', 'Seat', 'Harga', 'Jadwal', 'Risiko'];
+                    const csvLines = [
+                        header.join(','),
+                        ...rows.map((row) => [
+                            row.title,
+                            row.type,
+                            row.batch,
+                            row.status,
+                            row.mentor,
+                            row.seats,
+                            row.price,
+                            row.schedule,
+                            row.risk,
+                        ].map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')),
+                    ];
+
+                    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `bootcamp-batch-${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(link.href);
+
+                    showAppAlert('Data batch frontend berhasil diexport ke CSV.', 'success', 'Export Selesai', { toast: true });
+                };
+
+                createBtn.addEventListener('click', openModal);
+                modalCloseBtn?.addEventListener('click', closeModal);
+                modalCancelBtn?.addEventListener('click', closeModal);
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal || event.target === modal.firstElementChild) {
+                        closeModal();
+                    }
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                        closeModal();
+                    }
+                });
+
+                createForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    const formData = new FormData(createForm);
+                    const type = formData.get('type');
+                    const program = {
+                        title: formData.get('title')?.toString().trim() || 'Bootcamp Baru',
+                        type: type?.toString() || 'Bootcamp',
+                        batch: formData.get('batch')?.toString().trim() || 'Batch Baru',
+                        status: 'Draft',
+                        mentor: formData.get('mentor')?.toString().trim() || '0 mentor',
+                        seats: formData.get('seats')?.toString().trim() || '0 / 0 kursi',
+                        price: formData.get('price')?.toString().trim() || 'Rp 0',
+                        schedule: formData.get('schedule')?.toString().trim() || 'Jadwal belum diisi',
+                        risk: formData.get('risk')?.toString().trim() || 'Belum ada catatan risiko',
+                        accent: accentByType[type] || accentByType['Bootcamp'],
+                    };
+
+                    programList.prepend(renderCard(program));
+                    createForm.reset();
+                    closeModal();
+                    showAppAlert(`Draft "${program.title}" berhasil ditambahkan ke daftar program.`, 'success', 'Draft Ditambahkan', { toast: true });
+                });
+
+                salesToggleBtn.addEventListener('click', () => {
+                    ticketSalesOpen = !ticketSalesOpen;
+                    updateTicketSalesButton();
+                    updateTicketCards();
+
+                    const message = ticketSalesOpen
+                        ? 'Penjualan tiket frontend dibuka. Status tiket event berubah menjadi Published.'
+                        : 'Penjualan tiket frontend ditutup. Status tiket event berubah menjadi Registration Closed.';
+
+                    showAppAlert(message, 'success', 'Status Tiket Diperbarui', { toast: true });
+                });
+
+                exportBtn.addEventListener('click', exportPrograms);
+
+                updateTicketSalesButton();
+                updateTicketCards();
+            });
+        </script>
+    @endpush
 </x-layouts.admin>
