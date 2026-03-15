@@ -1,5 +1,11 @@
 @php
     $defaultKategori = old('kategori', $initialKategori ?? 'kursus');
+    $defaultCourseCode = old('kategori') === 'webinar'
+        ? 'C-' . strtoupper(substr(md5('course' . (string) now()->timestamp), 0, 6))
+        : old('kode_course', 'C-' . strtoupper(substr(md5((string) now()->timestamp), 0, 6)));
+    $defaultWebinarCode = old('kategori') === 'webinar'
+        ? old('kode_course', 'WEB' . strtoupper(substr(md5('webinar' . (string) now()->timestamp), 0, 6)))
+        : 'WEB' . strtoupper(substr(md5('webinar' . (string) now()->timestamp), 0, 6));
     $pageTitles = [
         'kursus' => 'Buat Kursus Baru',
         'webinar' => 'Buat Webinar Baru',
@@ -12,15 +18,15 @@
             @csrf
             
             {{-- Page Header + Action Buttons --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sm:p-6 mb-6">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sm:p-6 mb-6" :class="selectedKategori === 'webinar' ? 'border-purple-100 dark:border-purple-700/40 shadow-purple-500/5' : ''">
                 <div class="mb-4">
                     <h1 class="text-lg font-bold text-gray-900 dark:text-white">
                         <span x-show="selectedKategori === 'kursus'">Buat Kursus Baru</span>
                         <span x-show="selectedKategori === 'webinar'" x-cloak>Buat Webinar Baru</span>
                     </h1>
-                    <p class="text-sm text-blue-500">
+                    <p class="text-sm" :class="selectedKategori === 'webinar' ? 'text-purple-500' : 'text-blue-500'">
                         <span x-show="selectedKategori === 'kursus'">Lengkapi informasi berikut untuk membuat kursus baru.</span>
-                        <span x-show="selectedKategori === 'webinar'" x-cloak>Lengkapi informasi berikut untuk mengajukan webinar baru.</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Lengkapi informasi webinar yang akan dilaksanakan.</span>
                     </p>
                 </div>
                 
@@ -28,12 +34,12 @@
                     <a href="{{ route('dosen.kursus') }}" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
                         Batal
                     </a>
-                    <button type="submit" name="status_btn" value="draft" class="px-4 py-2 bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
+                    <button type="submit" name="status_btn" value="draft" class="px-4 py-2 bg-white dark:bg-gray-700 border text-sm font-medium rounded-lg transition" :class="selectedKategori === 'webinar' ? 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-gray-600' : 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-gray-600'">
                         Simpan Draft
                     </button>
-                    <button type="submit" name="status_btn" value="aktif" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition shadow-sm shadow-blue-500/25">
+                    <button type="submit" name="status_btn" value="aktif" class="px-4 py-2 text-white text-sm font-medium rounded-lg transition shadow-sm" :class="selectedKategori === 'webinar' ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/25' : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'">
                         <span x-show="selectedKategori === 'kursus'">Buat Kursus</span>
-                        <span x-show="selectedKategori === 'webinar'" x-cloak>Ajukan Webinar</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Publikasikan</span>
                     </button>
                 </div>
             </div>
@@ -43,46 +49,67 @@
                     {{-- 1. Informasi Dasar Kursus --}}
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center">1</span>
-                            Informasi Dasar Kursus
+                            <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center" :class="selectedKategori === 'webinar' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'">1</span>
+                            <span x-show="selectedKategori === 'kursus'">Informasi Dasar Kursus</span>
+                            <span x-show="selectedKategori === 'webinar'" x-cloak>Informasi Dasar Webinar</span>
                         </h4>
                         
                         <div class="space-y-4">
-                            {{-- Judul Kursus (full width) --}}
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
-                                <input type="text" name="nama_course" id="add_nama_course" required placeholder="Masukkan judul kursus" value="{{ old('nama_course') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                            </div>
-
-                            {{-- Kode Kursus --}}
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
-                                <input type="text" name="kode_course" id="add_kode_course" required placeholder="Contoh: EKMA4116" value="{{ old('kode_course', 'C-' . strtoupper(substr(md5((string) now()->timestamp), 0, 6))) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <p class="text-xs text-gray-400 mt-1">Gunakan kode unik untuk kursus ini.</p>
-                                @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div :class="selectedKategori === 'kursus' ? 'sm:col-span-2' : ''">
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                                        <span x-show="selectedKategori === 'kursus'">Judul Kursus <span class="text-red-400">*</span></span>
+                                        <span x-show="selectedKategori === 'webinar'" x-cloak>Judul Webinar <span class="text-red-400">*</span></span>
+                                    </label>
+                                    <input type="text" name="nama_course" id="add_nama_course" required :placeholder="selectedKategori === 'webinar' ? 'Masukkan judul webinar' : 'Masukkan judul kursus'" value="{{ old('nama_course') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-transparent" :class="selectedKategori === 'webinar' ? 'focus:ring-2 focus:ring-purple-500' : 'focus:ring-2 focus:ring-blue-500'">
+                                    @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                                        <span x-show="selectedKategori === 'kursus'">Kode Kursus <span class="text-red-400">*</span></span>
+                                        <span x-show="selectedKategori === 'webinar'" x-cloak>Kode Webinar <span class="text-gray-300 dark:text-gray-600">(otomatis)</span></span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="kode_course"
+                                        id="add_kode_course"
+                                        required
+                                        data-course-default="{{ $defaultCourseCode }}"
+                                        data-webinar-default="{{ $defaultWebinarCode }}"
+                                        placeholder="Contoh: EKMA4116"
+                                        value="{{ $defaultKategori === 'webinar' ? $defaultWebinarCode : $defaultCourseCode }}"
+                                        class="w-full px-3 py-2.5 border rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-transparent"
+                                        :class="selectedKategori === 'webinar'
+                                            ? 'bg-gray-100 dark:bg-gray-600 border-gray-200 dark:border-gray-600 cursor-not-allowed focus:ring-2 focus:ring-purple-500'
+                                            : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500'">
+                                    <p class="text-xs text-gray-400 mt-1" x-show="selectedKategori === 'kursus'">Gunakan kode unik untuk kursus ini.</p>
+                                    @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
                             </div>
 
                             {{-- Deskripsi Kursus --}}
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Kursus</label>
-                                <textarea name="deskripsi" id="add_deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('deskripsi') }}</textarea>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                                    <span x-show="selectedKategori === 'kursus'">Deskripsi Kursus</span>
+                                    <span x-show="selectedKategori === 'webinar'" x-cloak>Deskripsi Webinar <span class="text-gray-300 dark:text-gray-600">(opsional)</span></span>
+                                </label>
+                                <textarea name="deskripsi" id="add_deskripsi" rows="3" :placeholder="selectedKategori === 'webinar' ? 'Jelaskan topik dan manfaat webinar ini...' : 'Jelaskan tentang kursus ini...'" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-transparent resize-none" :class="selectedKategori === 'webinar' ? 'focus:ring-2 focus:ring-purple-500' : 'focus:ring-2 focus:ring-blue-500'">{{ old('deskripsi') }}</textarea>
                             </div>
 
                             {{-- Persyaratan Kursus --}}
-                            <div>
+                            <div x-show="selectedKategori !== 'webinar'" x-transition>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Persyaratan Kursus (Opsional)</label>
-                                <textarea name="persyaratan" id="add_persyaratan" rows="3" placeholder="Contoh:&#10;STIN4101 - Pengantar Teknologi Informasi&#10;Memiliki laptop dan koneksi internet stabil" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('persyaratan') }}</textarea>
+                                <textarea name="persyaratan" id="add_persyaratan" data-course-only-field rows="3" placeholder="Contoh:&#10;STIN4101 - Pengantar Teknologi Informasi&#10;Memiliki laptop dan koneksi internet stabil" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('persyaratan') }}</textarea>
                                 <p class="text-xs text-gray-400 mt-1">Tulis satu persyaratan per baris.</p>
                                 @error('persyaratan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Jurusan/Prodi & Tingkat Kesulitan --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="selectedKategori !== 'webinar'" x-transition>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jurusan/Prodi</label>
                                     <div class="relative">
-                                        <select name="id_jurusan" id="add_id_jurusan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <select name="id_jurusan" id="add_id_jurusan" data-course-only-field class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                             <option value="">Pilih Jurusan</option>
                                             @foreach($jurusans ?? [] as $jurusan)
                                             <option value="{{ $jurusan->id_jurusan }}" {{ old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
@@ -95,7 +122,7 @@
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tingkat Kesulitan</label>
                                     <div class="relative">
-                                        <select name="level" id="add_level" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <select name="level" id="add_level" data-course-only-field class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                             <option value="">Pilih Tingkat</option>
                                             <option value="Pemula" {{ old('level') == 'Pemula' ? 'selected' : '' }}>Pemula</option>
                                             <option value="Menengah" {{ old('level') == 'Menengah' ? 'selected' : '' }}>Menengah</option>
@@ -106,17 +133,36 @@
                                 </div>
                             </div>
 
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="selectedKategori === 'webinar'" x-cloak x-transition>
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pembicara / Dosen <span class="text-gray-300 dark:text-gray-600">(otomatis)</span></label>
+                                    <input type="text" readonly value="{{ $dosen->name ?? Auth::guard('dosen')->user()->name ?? 'Dosen' }}" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white cursor-not-allowed focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Program Studi <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <div class="relative">
+                                        <select name="id_jurusan" data-webinar-only-field class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                            <option value="">Pilih Prodi</option>
+                                            @foreach($jurusans ?? [] as $jurusan)
+                                            <option value="{{ $jurusan->id_jurusan }}" {{ old('id_jurusan') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
+                                            @endforeach
+                                        </select>
+                                        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </div>
+                                </div>
+                            </div>
+
                             {{-- Estimasi Waktu --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="selectedKategori !== 'webinar'" x-transition>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar</label>
-                                    <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" min="0" placeholder="20" value="{{ old('estimasi_waktu', 20) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" data-course-only-field min="0" placeholder="20" value="{{ old('estimasi_waktu', 20) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     @error('estimasi_waktu')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Satuan Durasi</label>
                                     <div class="relative">
-                                        <select name="durasi_satuan" id="add_durasi_satuan" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <select name="durasi_satuan" id="add_durasi_satuan" data-course-only-field class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                             <option value="Jam" {{ old('durasi_satuan', 'Jam') === 'Jam' ? 'selected' : '' }}>Jam</option>
                                             <option value="Minggu" {{ old('durasi_satuan') === 'Minggu' ? 'selected' : '' }}>Minggu</option>
                                         </select>
@@ -127,33 +173,40 @@
                             </div>
 
                             {{-- Playlist YouTube / Link Meeting --}}
-                            <div>
+                            <div x-show="selectedKategori !== 'webinar'" x-transition>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
                                     <span x-show="selectedKategori === 'kursus'">Link Playlist YouTube (Opsional)</span>
-                                    <span x-show="selectedKategori === 'webinar'" x-cloak>Link Meeting (Zoom/Google Meet) <span class="text-red-400">*</span></span>
                                 </label>
-                                <input type="url" name="youtube_playlist" id="add_youtube_playlist" :placeholder="selectedKategori === 'webinar' ? 'https://zoom.us/j/... atau https://meet.google.com/...' : 'https://www.youtube.com/playlist?list=...'" value="{{ old('youtube_playlist') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <input type="url" name="youtube_playlist" id="add_youtube_playlist" data-course-only-field placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('youtube_playlist') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @error('youtube_playlist')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Thumbnail --}}
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Kursus</label>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                                    <span x-show="selectedKategori === 'kursus'">Thumbnail Kursus</span>
+                                    <span x-show="selectedKategori === 'webinar'" x-cloak>Thumbnail Webinar <span class="text-gray-300 dark:text-gray-600">(opsional)</span></span>
+                                </label>
                                 <div class="flex items-center gap-4">
                                     <div id="thumbnailPreview" class="w-20 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
-                                        <svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg x-show="selectedKategori === 'kursus'" class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <svg x-show="selectedKategori === 'webinar'" x-cloak class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                         </svg>
                                     </div>
                                     <div>
-                                        <label class="inline-flex items-center gap-2 px-3 py-1.5 border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium rounded-lg cursor-pointer transition">
+                                        <label class="inline-flex items-center gap-2 px-3 py-1.5 border text-sm font-medium rounded-lg cursor-pointer transition" :class="selectedKategori === 'webinar' ? 'border-purple-500 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20' : 'border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                             </svg>
-                                            Upload Thumbnail
+                                            <span x-show="selectedKategori === 'kursus'">Upload Thumbnail</span>
+                                            <span x-show="selectedKategori === 'webinar'" x-cloak>Unggah Gambar</span>
                                             <input type="file" name="thumbnail" id="thumbnail-input" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" class="hidden" onchange="previewThumbnail(this)">
                                         </label>
-                                        <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
+                                        <p class="text-xs text-gray-400 mt-1" x-show="selectedKategori === 'kursus'">Maksimal 2MB, JPG/PNG</p>
+                                        <p class="text-[11px] text-gray-400 mt-1" x-show="selectedKategori === 'webinar'" x-cloak>JPG, PNG, maks 2MB. Rasio 16:9 disarankan.</p>
                                     </div>
                                 </div>
                             </div>
@@ -161,39 +214,39 @@
                     </div>
 
                     {{-- 2. Jadwal Pelaksanaan (Webinar Only) --}}
-                    <div x-show="selectedKategori === 'webinar'" x-transition x-cloak class="border border-indigo-200 dark:border-indigo-700/50 rounded-xl p-5 bg-indigo-50/30 dark:bg-indigo-900/10">
+                    <div x-show="selectedKategori === 'webinar'" x-transition x-cloak class="border border-purple-200 dark:border-purple-700/50 rounded-xl p-5 bg-purple-50/40 dark:bg-purple-900/10">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center justify-center">2</span>
+                            <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">2</span>
                             Jadwal Pelaksanaan
                         </h4>
                         
                         <div class="space-y-4">
-                            {{-- Tanggal Webinar --}}
-                            <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Webinar <span class="text-red-400">*</span></label>
-                                <input type="date" name="tanggal_webinar" value="{{ old('tanggal_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                @error('tanggal_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                            </div>
-
-                            {{-- Jam Mulai & Jam Selesai --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-red-400">*</span></label>
-                                    <input type="time" name="jam_mulai_webinar" value="{{ old('jam_mulai_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <input type="date" name="tanggal_webinar" data-webinar-only-field value="{{ old('tanggal_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    @error('tanggal_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <input type="time" name="jam_mulai_webinar" data-webinar-only-field value="{{ old('jam_mulai_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     @error('jam_mulai_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-red-400">*</span></label>
-                                    <input type="time" name="jam_selesai_webinar" value="{{ old('jam_selesai_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <input type="time" name="jam_selesai_webinar" data-webinar-only-field value="{{ old('jam_selesai_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     @error('jam_selesai_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
                             </div>
 
-                            {{-- Kuota Peserta --}}
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta (Opsional)</label>
-                                <input type="number" name="kuota_peserta" min="0" placeholder="Kosongkan jika tidak dibatasi" value="{{ old('kuota_peserta') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                @error('kuota_peserta')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Meeting <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                <div class="relative">
+                                    <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                        <input type="url" name="youtube_playlist" data-webinar-only-field placeholder="https://zoom.us/j/... atau https://meet.google.com/..." value="{{ old('youtube_playlist') }}" class="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                </div>
+                                <p class="text-[11px] text-gray-400 mt-1">Link Zoom / Google Meet akan dibagikan ke peserta yang terdaftar.</p>
+                                @error('youtube_playlist')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
                         </div>
                     </div>
@@ -208,11 +261,11 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Judul Modul</label>
-                                <input type="text" name="modul_judul" value="{{ old('modul_judul') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Masukkan judul modul">
+                                <input type="text" name="modul_judul" data-course-only-field value="{{ old('modul_judul') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Masukkan judul modul">
                             </div>
                             <div>
                                 <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
-                                <select name="modul_tipe" id="modul_tipe" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                <select name="modul_tipe" id="modul_tipe" data-course-only-field class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                     <option value="video" {{ old('modul_tipe') == 'video' ? 'selected' : '' }}>Video</option>
                                     <option value="bacaan" {{ old('modul_tipe') == 'bacaan' ? 'selected' : '' }}>Bacaan</option>
                                     <option value="kuis" {{ old('modul_tipe') == 'kuis' ? 'selected' : '' }}>Kuis</option>
@@ -224,15 +277,15 @@
                             </div>
                             <div>
                                 <label id="modul_konten_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
-                                <textarea id="modul_konten" name="modul_konten" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Deskripsi modul...">{{ old('modul_konten') }}</textarea>
+                                <textarea id="modul_konten" name="modul_konten" data-course-only-field rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Deskripsi modul...">{{ old('modul_konten') }}</textarea>
                             </div>
                             <div id="modul_video_url_group">
                                 <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                                <input type="url" id="modul_video_url" name="modul_video_url" value="{{ old('modul_video_url') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://www.youtube.com/watch?v=...">
+                                <input type="url" id="modul_video_url" name="modul_video_url" data-course-only-field value="{{ old('modul_video_url') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://www.youtube.com/watch?v=...">
                             </div>
                             <div id="modul_durasi_group">
                                 <label id="modul_durasi_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
-                                <input type="number" id="modul_durasi" name="modul_durasi" min="0" value="{{ old('modul_durasi') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="0">
+                                <input type="number" id="modul_durasi" name="modul_durasi" data-course-only-field min="0" value="{{ old('modul_durasi') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="0">
                             </div>
                             <p id="modul_type_hint" class="text-xs text-gray-500 dark:text-gray-400"></p>
                             @error('modul_video_url')<p class="text-red-500 text-xs -mt-2">{{ $message }}</p>@enderror
@@ -242,10 +295,11 @@
                     </div>
 
                     {{-- 3. Pengaturan Kursus --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5" :class="selectedKategori === 'webinar' ? 'border-purple-100 dark:border-purple-700/30' : ''">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold flex items-center justify-center">3</span>
-                            Pengaturan Kursus
+                            <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center" :class="selectedKategori === 'webinar' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'">3</span>
+                            <span x-show="selectedKategori === 'kursus'">Pengaturan Kursus</span>
+                            <span x-show="selectedKategori === 'webinar'" x-cloak>Pengaturan Webinar</span>
                         </h4>
                         
                         <div class="space-y-3">
@@ -253,7 +307,10 @@
                                 {{-- Status Kursus Toggle --}}
                                 <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                     <div>
-                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">Status Kursus</h5>
+                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">
+                                            <span x-show="selectedKategori === 'kursus'">Status Kursus</span>
+                                            <span x-show="selectedKategori === 'webinar'" x-cloak>Status</span>
+                                        </h5>
                                         <p class="text-[10px] text-gray-500 dark:text-gray-400">Aktif atau simpan draft</p>
                                     </div>
                                     <input type="hidden" name="status" id="status_input" value="draft">
@@ -280,7 +337,10 @@
                             {{-- Sertifikat Toggle --}}
                             <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                 <div>
-                                    <h5 class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
+                                    <h5 class="font-medium text-gray-900 dark:text-white text-xs">
+                                        <span x-show="selectedKategori === 'kursus'">Sertifikat Penyelesaian</span>
+                                        <span x-show="selectedKategori === 'webinar'" x-cloak>Sertifikat Kehadiran</span>
+                                    </h5>
                                     <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
                                 </div>
                                 <input type="hidden" name="sertifikat" value="0">
@@ -293,10 +353,11 @@
                     </div>
 
                     {{-- 4. Pricing & Akses Kursus --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5" :class="selectedKategori === 'webinar' ? 'border-purple-100 dark:border-purple-700/30' : ''">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center">4</span>
-                            Pricing & Akses Kursus
+                            <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center" :class="selectedKategori === 'webinar' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'">4</span>
+                            <span x-show="selectedKategori === 'kursus'">Pricing & Akses Kursus</span>
+                            <span x-show="selectedKategori === 'webinar'" x-cloak>Harga & Akses</span>
                         </h4>
                         
                         <div class="space-y-4">
@@ -364,6 +425,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const kategoriSelect = document.getElementById('add_kategori');
+            const kodeCourseInput = document.getElementById('add_kode_course');
             const statusToggle = document.getElementById('status_toggle');
             const statusInput = document.getElementById('status_input');
             const gratisToggle = document.getElementById('gratis_toggle');
@@ -379,6 +442,56 @@
             const modulDurasiLabel = document.getElementById('modul_durasi_label');
             const modulDurasiInput = document.getElementById('modul_durasi');
             const modulTypeHint = document.getElementById('modul_type_hint');
+
+            const generateWebinarCode = () => {
+                const now = new Date();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+
+                return `WEB${mm}${dd}${random}`;
+            };
+
+            const syncKategoriMode = () => {
+                if (!kategoriSelect || !kodeCourseInput) return;
+
+                const isWebinar = kategoriSelect.value === 'webinar';
+                const courseDefault = kodeCourseInput.dataset.courseDefault || '';
+                const webinarDefault = kodeCourseInput.dataset.webinarDefault || generateWebinarCode();
+                const courseOnlyFields = document.querySelectorAll('[data-course-only-field]');
+                const webinarOnlyFields = document.querySelectorAll('[data-webinar-only-field]');
+
+                courseOnlyFields.forEach((field) => {
+                    field.disabled = isWebinar;
+                });
+
+                webinarOnlyFields.forEach((field) => {
+                    field.disabled = !isWebinar;
+                });
+
+                if (isWebinar) {
+                    kodeCourseInput.readOnly = true;
+                    kodeCourseInput.classList.add('bg-gray-100', 'dark:bg-gray-600', 'cursor-not-allowed');
+                    kodeCourseInput.classList.remove('bg-gray-50', 'dark:bg-gray-700');
+
+                    if (!kodeCourseInput.value || kodeCourseInput.value === courseDefault || kodeCourseInput.value.startsWith('C-')) {
+                        kodeCourseInput.value = webinarDefault.startsWith('WEB') ? webinarDefault : generateWebinarCode();
+                    }
+                } else {
+                    kodeCourseInput.readOnly = false;
+                    kodeCourseInput.classList.remove('bg-gray-100', 'dark:bg-gray-600', 'cursor-not-allowed');
+                    kodeCourseInput.classList.add('bg-gray-50', 'dark:bg-gray-700');
+
+                    if (!kodeCourseInput.value || kodeCourseInput.value.startsWith('WEB')) {
+                        kodeCourseInput.value = courseDefault || '';
+                    }
+                }
+            };
+
+            if (kategoriSelect) {
+                kategoriSelect.addEventListener('change', syncKategoriMode);
+                syncKategoriMode();
+            }
 
             // Status Toggle
             if (statusToggle) {
