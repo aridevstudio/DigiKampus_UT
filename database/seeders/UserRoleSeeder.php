@@ -92,7 +92,7 @@ class UserRoleSeeder extends Seeder
 
         $this->command->info('UserRoleSeeder berhasil: admin, dosen, mahasiswa siap dipakai.');
         $this->command->line('Login test:');
-        $this->command->line("- admin Nomor Induk {$adminNomorInduk} / password123");
+        $this->command->line('- admin admin@digikampus.test / password123');
         $this->command->line("- dosen Nomor Induk {$dosenNomorInduk} / password123");
         $this->command->line('- mahasiswa Nomor Induk 20260001 / password123');
     }

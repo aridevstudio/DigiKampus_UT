@@ -54,21 +54,21 @@
                 <form method="POST" action="{{ route('admin.login.post') }}" class="space-y-5" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
 
-                    {{-- Nomor Induk Input --}}
+                    {{-- Email Input --}}
                     <div class="relative animate-hidden animate-fade-in-up stagger-1">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5H4.5a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-.832 1.757l-7.5 6.136a2.25 2.25 0 01-2.836 0l-7.5-6.136A2.25 2.25 0 012.25 6.993V6.75" />
                             </svg>
                         </span>
                         <input 
-                            type="text"
-                            name="nomor_induk"
-                            value="{{ old('nomor_induk') }}"
+                            type="email"
+                            name="email"
+                            value="{{ old('email') }}"
                             required 
                             autofocus
                             class="w-full border border-gray-300 rounded-lg pl-12 pr-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
-                            placeholder="Masukkan Nomor Induk Anda"
+                            placeholder="Masukkan Email Anda"
                         >
                     </div>
 
@@ -160,20 +160,20 @@
             <form method="POST" action="{{ route('admin.login.post') }}" class="w-full space-y-4" x-data="{ isLoading: false }" @submit="isLoading = true">
                 @csrf
 
-                {{-- Nomor Induk Input --}}
+                {{-- Email Input --}}
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5H4.5a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-.832 1.757l-7.5 6.136a2.25 2.25 0 01-2.836 0l-7.5-6.136A2.25 2.25 0 012.25 6.993V6.75" />
                         </svg>
                     </span>
                     <input 
-                        type="text"
-                        name="nomor_induk"
-                        value="{{ old('nomor_induk') }}"
+                        type="email"
+                        name="email"
+                        value="{{ old('email') }}"
                         required 
                         class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Masukkan Nomor Induk Anda"
+                        placeholder="Masukkan Email Anda"
                     >
                 </div>
 

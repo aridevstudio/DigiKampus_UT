@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Seed 3 akun default role
-        // admin: Nomor Induk 19880001 / password123
+        // admin: admin@digikampus.test / password123
         // dosen: Nomor Induk 19880002 / password123
         // mahasiswa: Nomor Induk 20260001 / password123
         $this->call([

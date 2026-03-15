@@ -20,9 +20,9 @@ class AdminAuthController extends Controller
         private readonly OtpService $otpService
     ) {}
     /**
-     * Login Admin (Nomor Induk & Password)
+     * Login Admin (Email & Password)
      * 
-     * Endpoint untuk login admin menggunakan Nomor Induk dan password.
+     * Endpoint untuk login admin menggunakan email dan password.
      * Akan mengembalikan token authentication jika berhasil.
      *
      * @operationId adminAuth.login
@@ -33,18 +33,16 @@ class AdminAuthController extends Controller
     {
         $validated = $request->validated();
 
-        // Cari user berdasarkan Nomor Induk melalui relasi profile
+        // Cari user berdasarkan email
         $user = User::where('role', 'admin')
-            ->whereHas('profile', function ($query) use ($validated) {
-                $query->where('nomor_induk', $validated['nomor_induk']);
-            })
+            ->where('email', strtolower(trim($validated['email'])))
             ->first();
 
         // Validasi user exists
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Nomor Induk tidak terdaftar sebagai admin.'
+                'message' => 'Email tidak terdaftar sebagai admin.'
             ], 404);
         }
 

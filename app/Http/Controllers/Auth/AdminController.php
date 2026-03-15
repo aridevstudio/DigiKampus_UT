@@ -32,20 +32,18 @@ class AdminController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'nomor_induk' => ['required', 'string'],
+            'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
         $user = User::where('role', 'admin')
-            ->whereHas('profile', function ($query) use ($request) {
-                $query->where('nomor_induk', $request->nomor_induk);
-            })
+            ->where('email', strtolower(trim($request->email)))
             ->first();
 
         if (!$user) {
             return back()
                 ->withInput()
-                ->with('alert', 'Nomor Induk tidak terdaftar sebagai admin.');
+                ->with('alert', 'Email tidak terdaftar sebagai admin.');
         }
 
         if (!Hash::check($request->password, $user->password)) {
