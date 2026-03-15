@@ -26,6 +26,7 @@ class DosenAuthController extends Controller
      * @bodyContent application/json {
      *   "name": "Dr. John Doe",
      *   "email": "john.doe@ut.ac.id",
+     *   "nip": "1988123401",
      *   "password": "password123"
      * }
      * @response 201
@@ -41,6 +42,10 @@ class DosenAuthController extends Controller
             'role' => 'dosen',
             'provider' => 'email',
             'status' => 'aktif',
+        ]);
+
+        $user->profile()->create([
+            'nim' => $validated['nip'],
         ]);
 
         $token = $user->createToken('dosen-token')->plainTextToken;
@@ -60,7 +65,7 @@ class DosenAuthController extends Controller
      * 
      * @operationId dosenAuth.login
      * @bodyContent application/json {
-     *   "email": "john.doe@ut.ac.id",
+     *   "nip": "1988123401",
      *   "password": "password123"
      * }
      * @response 200
@@ -69,14 +74,16 @@ class DosenAuthController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::where('email', $validated['email'])
-            ->where('role', 'dosen')
+        $user = User::where('role', 'dosen')
+            ->whereHas('profile', function ($query) use ($validated) {
+                $query->where('nim', $validated['nip']);
+            })
             ->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Email atau password salah.'
+                'message' => 'NIP atau password salah.'
             ], 401);
         }
 

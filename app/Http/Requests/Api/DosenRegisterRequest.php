@@ -18,6 +18,7 @@ class DosenRegisterRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'nip' => 'required|string|max:50|unique:profiles,nim',
             'password' => 'required|string|min:8',
         ];
     }
@@ -29,6 +30,9 @@ class DosenRegisterRequest extends FormRequest
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Email sudah terdaftar.',
+            'nip.required' => 'NIP wajib diisi.',
+            'nip.max' => 'NIP maksimal 50 karakter.',
+            'nip.unique' => 'NIP sudah terdaftar.',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 8 karakter.',
         ];

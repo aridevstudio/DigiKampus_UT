@@ -14,9 +14,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Seed 3 akun default role
-        // admin: admin@digikampus.test / password123
-        // dosen: dosen@digikampus.test / password123
-        // mahasiswa: mahasiswa@digikampus.test / password123
+        // admin: NIP 19880001 / password123
+        // dosen: NIP 19880002 / password123
+        // mahasiswa: NIM 20260001 / password123
         $this->call([
             UserRoleSeeder::class,
             MahasiswaSeeder::class,

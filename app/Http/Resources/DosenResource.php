@@ -12,6 +12,7 @@ class DosenResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'nip' => $this->profile?->nim,
             'email' => $this->email,
             'role' => $this->role,
             'google_id' => $this->google_id,
