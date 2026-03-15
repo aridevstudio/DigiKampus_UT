@@ -22,8 +22,16 @@ class Course extends Model
         'thumbnail',
         'youtube_playlist',
         'status',
+        'approval_status',
+        'approval_notes',
+        'approved_by',
+        'approved_at',
         'tipe',
         'kategori',
+        'tanggal_webinar',
+        'jam_mulai_webinar',
+        'jam_selesai_webinar',
+        'kuota_peserta',
         'harga',
         // P0 FIX: Removed 'rating' and 'jumlah_ulasan' — these are system-calculated
         // and must only be set via recalculateRating()
@@ -39,6 +47,9 @@ class Course extends Model
         'harga' => 'decimal:2',
         'rating' => 'decimal:1',
         'jumlah_ulasan' => 'integer',
+        'tanggal_webinar' => 'date',
+        'kuota_peserta' => 'integer',
+        'approved_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -57,6 +68,11 @@ class Course extends Model
     public function jurusan()
     {
         return $this->belongsTo(Jurusan::class, 'id_jurusan', 'id_jurusan');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by', 'id');
     }
 
     /**

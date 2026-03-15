@@ -35,11 +35,12 @@
                         Batal
                     </a>
                     <button type="submit" name="status_btn" value="draft" class="px-4 py-2 bg-white dark:bg-gray-700 border text-sm font-medium rounded-lg transition" :class="selectedKategori === 'webinar' ? 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-gray-600' : 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-gray-600'">
-                        Simpan Draft
+                        <span x-show="selectedKategori !== 'webinar'">Simpan Draft</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Simpan Draft Webinar</span>
                     </button>
                     <button type="submit" name="status_btn" value="aktif" class="px-4 py-2 text-white text-sm font-medium rounded-lg transition shadow-sm" :class="selectedKategori === 'webinar' ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/25' : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'">
                         <span x-show="selectedKategori === 'kursus'">Buat Kursus</span>
-                        <span x-show="selectedKategori === 'webinar'" x-cloak>Publikasikan</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Ajukan Webinar</span>
                     </button>
                 </div>
             </div>
@@ -223,20 +224,26 @@
                         <div class="space-y-4">
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Webinar <span class="text-red-400">*</span></label>
                                     <input type="date" name="tanggal_webinar" data-webinar-only-field value="{{ old('tanggal_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     @error('tanggal_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-red-400">*</span></label>
                                     <input type="time" name="jam_mulai_webinar" data-webinar-only-field value="{{ old('jam_mulai_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     @error('jam_mulai_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-red-400">*</span></label>
                                     <input type="time" name="jam_selesai_webinar" data-webinar-only-field value="{{ old('jam_selesai_webinar') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     @error('jam_selesai_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                <input type="number" name="kuota_peserta" data-webinar-only-field min="1" placeholder="Kosongkan jika tidak dibatasi" value="{{ old('kuota_peserta') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                @error('kuota_peserta')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
                             <div>
@@ -306,13 +313,13 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {{-- Status Kursus Toggle --}}
                                 <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
-                                    <div>
-                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">
-                                            <span x-show="selectedKategori === 'kursus'">Status Kursus</span>
-                                            <span x-show="selectedKategori === 'webinar'" x-cloak>Status</span>
-                                        </h5>
-                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Aktif atau simpan draft</p>
-                                    </div>
+                                        <div>
+                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">
+                                                <span x-show="selectedKategori === 'kursus'">Status Kursus</span>
+                                            <span x-show="selectedKategori === 'webinar'" x-cloak>Status Pengajuan</span>
+                                            </h5>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-400" x-text="selectedKategori === 'webinar' ? 'Ajukan ke admin atau simpan draft' : 'Aktif atau simpan draft'"></p>
+                                        </div>
                                     <input type="hidden" name="status" id="status_input" value="draft">
                                     <label class="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" id="status_toggle" class="sr-only peer">

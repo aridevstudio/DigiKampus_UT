@@ -59,13 +59,13 @@
                 Ubah Informasi Kursus
             </a>
         </div>
-        <form action="{{ route('dosen.kursus.publish', $course['id']) }}" method="POST" class="inline" onsubmit="return confirm('Publikasikan kursus ini?')" x-data="{ isLoading: false }" @submit="isLoading = true">
+        <form action="{{ route('dosen.kursus.publish', $course['id']) }}" method="POST" class="inline" onsubmit="return confirm('{{ ($course['kategori'] ?? 'kursus') === 'webinar' ? 'Ajukan webinar ini ke admin untuk persetujuan?' : 'Publikasikan kursus ini?' }}')" x-data="{ isLoading: false }" @submit="isLoading = true">
             @csrf
             <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                Publikasikan Perubahan
+                {{ ($course['kategori'] ?? 'kursus') === 'webinar' ? 'Ajukan Webinar' : 'Publikasikan Perubahan' }}
             </button>
         </form>
     </div>

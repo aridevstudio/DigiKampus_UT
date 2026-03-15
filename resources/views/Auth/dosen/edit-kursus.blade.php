@@ -7,6 +7,19 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1">Perbarui informasi dan struktur materi kursus Anda</p>
     </div>
 
+    @if(($course->kategori ?? '') === 'webinar' && ($course->approval_status ?? '') === 'pending')
+    <div class="mb-6 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-900/10 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
+        Webinar ini sedang menunggu persetujuan admin. Jika Anda menyimpan perubahan saat status tetap aktif, webinar akan tetap diajukan untuk review.
+    </div>
+    @elseif(($course->kategori ?? '') === 'webinar' && ($course->approval_status ?? '') === 'ditolak')
+    <div class="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+        Webinar ini ditolak admin.
+        @if(!empty($course->approval_notes))
+            Catatan: {{ $course->approval_notes }}
+        @endif
+    </div>
+    @endif
+
     <style>
         #editKursusGrid {
             grid-template-columns: 1fr;
@@ -135,7 +148,7 @@
                             </h5>
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Webinar <span class="text-red-400">*</span></label>
-                                <input type="date" name="tanggal_webinar" value="{{ old('tanggal_webinar', $course->tanggal_webinar ?? '') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <input type="date" name="tanggal_webinar" value="{{ old('tanggal_webinar', optional($course->tanggal_webinar)->format('Y-m-d')) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @error('tanggal_webinar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -152,7 +165,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta (Opsional)</label>
-                                <input type="number" name="kuota_peserta" min="0" placeholder="Kosongkan jika tidak dibatasi" value="{{ old('kuota_peserta', $course->kuota_peserta ?? '') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <input type="number" name="kuota_peserta" min="1" placeholder="Kosongkan jika tidak dibatasi" value="{{ old('kuota_peserta', $course->kuota_peserta ?? '') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @error('kuota_peserta')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
                         </div>
@@ -189,11 +202,11 @@
                         </div>
 
                         <div>
-                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status Kursus</label>
+                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ ($course->kategori ?? '') === 'webinar' ? 'Status Webinar' : 'Status Kursus' }}</label>
                              <div class="flex gap-4">
                                 <label class="inline-flex items-center">
                                     <input type="radio" name="status" value="aktif" {{ $course->status === 'aktif' ? 'checked' : '' }} class="form-radio text-green-500 focus:ring-green-500">
-                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Aktif</span>
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ ($course->kategori ?? '') === 'webinar' ? 'Ajukan / Aktif' : 'Aktif' }}</span>
                                 </label>
                                 <label class="inline-flex items-center">
                                     <input type="radio" name="status" value="draft" {{ $course->status === 'draft' ? 'checked' : '' }} class="form-radio text-yellow-500 focus:ring-yellow-500">
@@ -211,7 +224,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                         </svg>
-                        Simpan Perubahan Informasi
+                        {{ ($course->kategori ?? '') === 'webinar' ? 'Simpan Perubahan Webinar' : 'Simpan Perubahan Informasi' }}
                     </button>
                     
                     <div class="mt-4 text-center">
@@ -1011,4 +1024,3 @@
     </script>
     @endpush
 </x-layouts.dosen>
-

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Dosen;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminNotification;
 use App\Models\Course;
 use App\Models\CourseMaterial;
 use Illuminate\Http\JsonResponse;
@@ -81,7 +82,15 @@ class DosenCourseController extends Controller
                 'thumbnail' => $course->thumbnail,
                 'status' => $course->status,
                 'tipe' => $course->tipe,
+                'kategori' => $course->kategori,
                 'harga' => $course->harga,
+                'approval_status' => $course->approval_status,
+                'approval_notes' => $course->approval_notes,
+                'tanggal_webinar' => optional($course->tanggal_webinar)?->format('Y-m-d'),
+                'jam_mulai_webinar' => $course->jam_mulai_webinar,
+                'jam_selesai_webinar' => $course->jam_selesai_webinar,
+                'kuota_peserta' => $course->kuota_peserta,
+                'youtube_playlist' => $course->youtube_playlist,
                 'jurusan' => $course->jurusan->nama_jurusan ?? null,
                 'jumlah_mahasiswa' => $enrollmentCount,
                 'progress_rata_rata' => round($avgProgress, 0),
@@ -148,7 +157,15 @@ class DosenCourseController extends Controller
                 'thumbnail' => $course->thumbnail,
                 'status' => $course->status,
                 'tipe' => $course->tipe,
+                'kategori' => $course->kategori,
                 'harga' => $course->harga,
+                'approval_status' => $course->approval_status,
+                'approval_notes' => $course->approval_notes,
+                'tanggal_webinar' => optional($course->tanggal_webinar)?->format('Y-m-d'),
+                'jam_mulai_webinar' => $course->jam_mulai_webinar,
+                'jam_selesai_webinar' => $course->jam_selesai_webinar,
+                'kuota_peserta' => $course->kuota_peserta,
+                'youtube_playlist' => $course->youtube_playlist,
                 'jurusan' => $course->jurusan ? [
                     'id' => $course->jurusan->id_jurusan,
                     'nama' => $course->jurusan->nama_jurusan
@@ -219,7 +236,12 @@ class DosenCourseController extends Controller
             'harga' => 'nullable|numeric|min:0',
             'diskon' => 'nullable|numeric|min:0|max:100',
             'is_gratis' => 'nullable|boolean',
-            'tipe' => 'nullable|in:kursus,webinar,tiket'
+            'tipe' => 'nullable|in:kursus,webinar,tiket',
+            'tanggal_webinar' => 'required_if:tipe,webinar|nullable|date',
+            'jam_mulai_webinar' => 'required_if:tipe,webinar|nullable|date_format:H:i',
+            'jam_selesai_webinar' => 'required_if:tipe,webinar|nullable|date_format:H:i|after:jam_mulai_webinar',
+            'kuota_peserta' => 'nullable|integer|min:1',
+            'youtube_playlist' => 'nullable|url|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -243,14 +265,18 @@ class DosenCourseController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('courses/thumbnails', 'public');
         }
 
+        $kategori = $validated['tipe'] ?? 'kursus';
+
         // Calculate final price
         $harga = $validated['is_gratis'] ?? false ? 0 : ($validated['harga'] ?? 0);
         if (isset($validated['diskon']) && $validated['diskon'] > 0) {
             $harga = $harga - ($harga * $validated['diskon'] / 100);
         }
 
-        // Determine status
-        $status = ($validated['status_kursus'] ?? false) ? 'aktif' : 'draft';
+        // Determine workflow-aware status
+        $requestedStatus = ($validated['status_kursus'] ?? false) ? 'aktif' : 'draft';
+        $status = $kategori === 'webinar' && $requestedStatus === 'aktif' ? 'draft' : $requestedStatus;
+        $approvalStatus = $kategori === 'webinar' && $requestedStatus === 'aktif' ? 'pending' : 'tidak_perlu';
 
         $course = Course::create([
             'kode_course' => $kodeCourse,
@@ -261,20 +287,40 @@ class DosenCourseController extends Controller
             'id_jurusan' => $validated['kategori'],
             'thumbnail' => $thumbnailPath,
             'status' => $status,
-            'tipe' => $validated['tipe'] ?? 'kursus',
+            'approval_status' => $approvalStatus,
+            'tipe' => ($validated['is_gratis'] ?? false) ? 'gratis' : 'berbayar',
+            'kategori' => $kategori,
             'harga' => $harga,
             'rating' => 0,
-            'jumlah_ulasan' => 0
+            'jumlah_ulasan' => 0,
+            'tanggal_webinar' => $kategori === 'webinar' ? ($validated['tanggal_webinar'] ?? null) : null,
+            'jam_mulai_webinar' => $kategori === 'webinar' ? ($validated['jam_mulai_webinar'] ?? null) : null,
+            'jam_selesai_webinar' => $kategori === 'webinar' ? ($validated['jam_selesai_webinar'] ?? null) : null,
+            'kuota_peserta' => $kategori === 'webinar' ? ($validated['kuota_peserta'] ?? null) : null,
+            'youtube_playlist' => $validated['youtube_playlist'] ?? null,
         ]);
+
+        if ($kategori === 'webinar' && $approvalStatus === 'pending') {
+            AdminNotification::notifyAllAdmins(
+                'Pengajuan Webinar Baru',
+                ($request->user()->name ?? 'Dosen') . " mengajukan webinar \"{$course->nama_course}\" untuk ditinjau.",
+                'info',
+                'webinar',
+                '/admin/kursus'
+            );
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Kursus berhasil dibuat.',
+            'message' => $kategori === 'webinar' && $approvalStatus === 'pending'
+                ? 'Webinar berhasil diajukan dan menunggu persetujuan admin.'
+                : 'Kursus berhasil dibuat.',
             'data' => [
                 'id' => $course->id_course,
                 'kode' => $course->kode_course,
                 'nama' => $course->nama_course,
-                'status' => $course->status
+                'status' => $course->status,
+                'approval_status' => $course->approval_status,
             ]
         ], 201);
     }
@@ -328,7 +374,12 @@ class DosenCourseController extends Controller
             'thumbnail' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
             'status_kursus' => 'nullable|boolean',
             'harga' => 'nullable|numeric|min:0',
-            'tipe' => 'nullable|in:kursus,webinar,tiket'
+            'tipe' => 'nullable|in:kursus,webinar,tiket',
+            'tanggal_webinar' => 'required_if:tipe,webinar|nullable|date',
+            'jam_mulai_webinar' => 'required_if:tipe,webinar|nullable|date_format:H:i',
+            'jam_selesai_webinar' => 'required_if:tipe,webinar|nullable|date_format:H:i|after:jam_mulai_webinar',
+            'kuota_peserta' => 'nullable|integer|min:1',
+            'youtube_playlist' => 'nullable|url|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -362,14 +413,48 @@ class DosenCourseController extends Controller
             $updateData['id_jurusan'] = $validated['kategori'];
         if (isset($validated['thumbnail']))
             $updateData['thumbnail'] = $validated['thumbnail'];
-        if (isset($validated['status_kursus']))
-            $updateData['status'] = $validated['status_kursus'] ? 'aktif' : 'draft';
+        $targetKategori = $validated['tipe'] ?? $course->kategori;
+        if (isset($validated['status_kursus'])) {
+            $requestedStatus = $validated['status_kursus'] ? 'aktif' : 'draft';
+            $updateData['status'] = $targetKategori === 'webinar' && $requestedStatus === 'aktif'
+                ? 'draft'
+                : $requestedStatus;
+            $updateData['approval_status'] = $targetKategori === 'webinar' && $requestedStatus === 'aktif'
+                ? 'pending'
+                : 'tidak_perlu';
+            if (($updateData['approval_status'] ?? null) === 'pending') {
+                $updateData['approval_notes'] = null;
+                $updateData['approved_by'] = null;
+                $updateData['approved_at'] = null;
+            }
+        }
         if (isset($validated['harga']))
             $updateData['harga'] = $validated['harga'];
-        if (isset($validated['tipe']))
-            $updateData['tipe'] = $validated['tipe'];
+        if (isset($validated['tipe'])) {
+            $updateData['kategori'] = $validated['tipe'];
+        }
+        if (array_key_exists('youtube_playlist', $validated))
+            $updateData['youtube_playlist'] = $validated['youtube_playlist'];
+        if (array_key_exists('tanggal_webinar', $validated))
+            $updateData['tanggal_webinar'] = $targetKategori === 'webinar' ? $validated['tanggal_webinar'] : null;
+        if (array_key_exists('jam_mulai_webinar', $validated))
+            $updateData['jam_mulai_webinar'] = $targetKategori === 'webinar' ? $validated['jam_mulai_webinar'] : null;
+        if (array_key_exists('jam_selesai_webinar', $validated))
+            $updateData['jam_selesai_webinar'] = $targetKategori === 'webinar' ? $validated['jam_selesai_webinar'] : null;
+        if (array_key_exists('kuota_peserta', $validated))
+            $updateData['kuota_peserta'] = $targetKategori === 'webinar' ? $validated['kuota_peserta'] : null;
 
         $course->update($updateData);
+
+        if (($course->kategori ?? null) === 'webinar' && ($course->approval_status ?? null) === 'pending') {
+            AdminNotification::notifyAllAdmins(
+                'Pengajuan Webinar Diperbarui',
+                ($request->user()->name ?? 'Dosen') . " mengajukan ulang webinar \"{$course->nama_course}\" untuk ditinjau.",
+                'info',
+                'webinar',
+                '/admin/kursus'
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -377,7 +462,8 @@ class DosenCourseController extends Controller
             'data' => [
                 'id' => $course->id_course,
                 'nama' => $course->nama_course,
-                'status' => $course->status
+                'status' => $course->status,
+                'approval_status' => $course->approval_status,
             ]
         ], 200);
     }

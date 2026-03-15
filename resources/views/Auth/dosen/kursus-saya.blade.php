@@ -31,6 +31,8 @@
                     <option value="all" {{ ($statusFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua</option>
                     <option value="aktif" {{ ($statusFilter ?? '') === 'aktif' ? 'selected' : '' }}>Aktif</option>
                     <option value="draft" {{ ($statusFilter ?? '') === 'draft' ? 'selected' : '' }}>Draft</option>
+                    <option value="pending" {{ ($statusFilter ?? '') === 'pending' ? 'selected' : '' }}>Menunggu Persetujuan</option>
+                    <option value="ditolak" {{ ($statusFilter ?? '') === 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                     <option value="nonaktif" {{ ($statusFilter ?? '') === 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
                 </select>
                 <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,19 +103,28 @@
                 
                 {{-- Status Badge --}}
                 @php
+                    $displayStatus = match (true) {
+                        ($course['approval_status'] ?? null) === 'pending' => 'pending',
+                        ($course['approval_status'] ?? null) === 'ditolak' => 'ditolak',
+                        default => $course['status'],
+                    };
                     $statusColors = [
                         'aktif' => 'bg-green-500',
                         'draft' => 'bg-yellow-500',
+                        'pending' => 'bg-blue-500',
+                        'ditolak' => 'bg-red-500',
                         'nonaktif' => 'bg-red-500',
                     ];
                     $statusLabels = [
                         'aktif' => 'Aktif',
                         'draft' => 'Draft',
+                        'pending' => 'Menunggu Persetujuan',
+                        'ditolak' => 'Ditolak',
                         'nonaktif' => 'Segera Dibuka',
                     ];
                 @endphp
-                <span class="absolute top-3 left-3 px-2.5 py-1 {{ $statusColors[$course['status']] ?? 'bg-gray-500' }} text-white text-xs font-medium rounded-full">
-                    {{ $statusLabels[$course['status']] ?? ucfirst($course['status']) }}
+                <span class="absolute top-3 left-3 px-2.5 py-1 {{ $statusColors[$displayStatus] ?? 'bg-gray-500' }} text-white text-xs font-medium rounded-full">
+                    {{ $statusLabels[$displayStatus] ?? ucfirst($displayStatus) }}
                 </span>
             </div>
             
@@ -121,6 +132,21 @@
             <div class="p-5">
                 <h3 class="font-semibold text-gray-900 dark:text-white mb-1">{{ $course['nama'] }}</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">{{ $course['deskripsi'] ?: 'Tidak ada deskripsi' }}</p>
+
+                @if(($course['kategori'] ?? '') === 'webinar' && !empty($course['tanggal_webinar']))
+                <div class="mb-3 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/40 px-3 py-2 text-xs text-purple-700 dark:text-purple-300">
+                    {{ \Carbon\Carbon::parse($course['tanggal_webinar'])->translatedFormat('d M Y') }}
+                    @if(!empty($course['jam_mulai_webinar']) && !empty($course['jam_selesai_webinar']))
+                        • {{ substr($course['jam_mulai_webinar'], 0, 5) }} - {{ substr($course['jam_selesai_webinar'], 0, 5) }}
+                    @endif
+                </div>
+                @endif
+
+                @if(($course['approval_status'] ?? null) === 'ditolak' && !empty($course['approval_notes']))
+                <div class="mb-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800/40 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+                    Catatan admin: {{ $course['approval_notes'] }}
+                </div>
+                @endif
                 
                 {{-- Mahasiswa Count --}}
                 <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
@@ -144,7 +170,7 @@
                 {{-- Actions --}}
                 <div class="mt-4 flex gap-2">
                     <a href="{{ route('dosen.kursus.edit', $course['id']) }}" class="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-center">
-                        Kelola Kursus & Modul
+                        {{ ($course['kategori'] ?? 'kursus') === 'webinar' ? 'Kelola Webinar' : 'Kelola Kursus & Modul' }}
                     </a>
                     <a href="{{ route('dosen.kursus.preview', $course['id']) }}" class="px-3 py-2 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" title="Lihat Detail">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

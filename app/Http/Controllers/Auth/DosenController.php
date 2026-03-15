@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agenda;
+use App\Models\AdminNotification;
 use App\Models\Course;
 use App\Models\DosenNotification;
 use App\Models\Enrollment;
@@ -421,7 +422,13 @@ class DosenController extends Controller
 
         // Status filter
         if ($statusFilter !== 'all') {
-            $query->where('status', $statusFilter);
+            if ($statusFilter === 'pending') {
+                $query->where('approval_status', 'pending');
+            } elseif ($statusFilter === 'ditolak') {
+                $query->where('approval_status', 'ditolak');
+            } else {
+                $query->where('status', $statusFilter);
+            }
         }
 
         // Sorting
@@ -478,6 +485,13 @@ class DosenController extends Controller
                 'mahasiswa_count' => $enrollmentCount,
                 'progress_avg' => round($avgProgress),
                 'status' => $course->status,
+                'kategori' => $course->kategori,
+                'approval_status' => $course->approval_status,
+                'approval_notes' => $course->approval_notes,
+                'tanggal_webinar' => optional($course->tanggal_webinar)?->format('Y-m-d'),
+                'jam_mulai_webinar' => $course->jam_mulai_webinar,
+                'jam_selesai_webinar' => $course->jam_selesai_webinar,
+                'kuota_peserta' => $course->kuota_peserta,
                 'module_previews' => $modulePreviews,
             ];
         });
@@ -529,6 +543,13 @@ class DosenController extends Controller
             'status' => $course->status,
             'tipe' => $course->tipe,
             'kategori' => $course->kategori,
+            'approval_status' => $course->approval_status,
+            'approval_notes' => $course->approval_notes,
+            'tanggal_webinar' => optional($course->tanggal_webinar)?->format('Y-m-d'),
+            'jam_mulai_webinar' => $course->jam_mulai_webinar,
+            'jam_selesai_webinar' => $course->jam_selesai_webinar,
+            'kuota_peserta' => $course->kuota_peserta,
+            'youtube_playlist' => $course->youtube_playlist,
             'harga' => $course->harga,
             'jurusan' => $course->jurusan?->nama_jurusan,
             'mahasiswa_count' => $course->enrollments->count(),
@@ -585,6 +606,8 @@ class DosenController extends Controller
                 'nama' => $course->nama_course,
                 'kode' => $course->kode_course,
                 'status' => $course->status,
+                'kategori' => $course->kategori,
+                'approval_status' => $course->approval_status,
                 'mahasiswa_count' => $course->enrollments->count(),
             ],
             'materials' => $materials,
@@ -895,6 +918,30 @@ class DosenController extends Controller
             return back()->with('error', 'Kursus tidak ditemukan');
         }
 
+        if ($course->kategori === 'webinar') {
+            if (!$course->tanggal_webinar || !$course->jam_mulai_webinar || !$course->jam_selesai_webinar) {
+                return back()->with('error', 'Lengkapi tanggal dan jam webinar sebelum mengajukan ke admin.');
+            }
+
+            $course->update([
+                'status' => 'draft',
+                'approval_status' => 'pending',
+                'approval_notes' => null,
+                'approved_by' => null,
+                'approved_at' => null,
+            ]);
+
+            AdminNotification::notifyAllAdmins(
+                'Pengajuan Webinar Baru',
+                "{$dosen->name} mengajukan webinar \"{$course->nama_course}\" untuk ditinjau.",
+                'info',
+                'webinar',
+                route('admin.kursus')
+            );
+
+            return back()->with('success', 'Webinar berhasil diajukan dan menunggu persetujuan admin.');
+        }
+
         // Check if course has at least one material
         $materialsCount = \App\Models\CourseMaterial::where('id_course', $id)->count();
         if ($materialsCount === 0) {
@@ -902,6 +949,10 @@ class DosenController extends Controller
         }
 
         $course->status = 'aktif';
+        $course->approval_status = 'tidak_perlu';
+        $course->approval_notes = null;
+        $course->approved_by = null;
+        $course->approved_at = null;
         $course->save();
 
         return back()->with('success', 'Kursus berhasil dipublikasikan!');
@@ -933,33 +984,7 @@ class DosenController extends Controller
     {
         $dosen = Auth::guard('dosen')->user();
 
-        $request->validate([
-            'nama_course' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('courses', 'nama_course')
-                    ->where(static fn ($query) => $query->where('id_dosen', $dosen->id)),
-            ],
-            'kode_course' => 'required|string|max:50|unique:courses,kode_course',
-            'deskripsi' => 'nullable|string',
-            'persyaratan' => 'nullable|string|max:4000',
-            'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',
-            'tipe' => 'required|in:gratis,berbayar',
-            'kategori' => 'required|in:webinar,tiket,kursus',
-            'harga' => 'nullable|numeric|min:0',
-            'thumbnail' => 'nullable|image|max:2048',
-            'level' => 'nullable|in:Pemula,Menengah,Mahir',
-            'estimasi_waktu' => 'nullable|integer|min:0',
-            'durasi_satuan' => 'nullable|in:Jam,Minggu',
-            'diskon' => 'nullable|integer|min:0|max:100',
-            'youtube_playlist' => 'nullable|url|max:500',
-            'modul_judul' => 'nullable|string|max:255',
-            'modul_tipe' => 'nullable|in:video,bacaan,kuis,tugas',
-            'modul_konten' => 'nullable|string',
-            'modul_video_url' => 'nullable|url|max:500|exclude_unless:modul_tipe,video',
-            'modul_durasi' => 'nullable|integer|min:0|exclude_if:modul_tipe,tugas',
-        ]);
+        $request->validate($this->dosenCourseRules($dosen->id));
 
         $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
@@ -967,31 +992,9 @@ class DosenController extends Controller
         }
 
         $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath) {
-            $durasiSatuan = null;
-            if ($request->filled('estimasi_waktu')) {
-                $durasiSatuan = $request->durasi_satuan ?: 'Jam';
-            }
-
-            $course = \App\Models\Course::create([
-                'id_dosen' => $dosen->id,
-                'nama_course' => $request->nama_course,
-                'kode_course' => $request->kode_course,
-                'deskripsi' => $request->deskripsi,
-                'persyaratan' => $request->persyaratan,
-                'id_jurusan' => $request->id_jurusan,
-                'tipe' => $request->tipe,
-                'kategori' => $request->kategori,
-                'harga' => $request->tipe === 'berbayar' ? $request->harga : 0,
-                'thumbnail' => $thumbnailPath,
-                'status' => $request->status ?? 'draft',
-                'level' => $request->level,
-                'estimasi_waktu' => $request->estimasi_waktu,
-                'durasi_satuan' => $durasiSatuan,
-                'sertifikat' => $request->boolean('sertifikat'),
-                'akses_publik' => $request->boolean('akses_publik'),
-                'diskon' => $request->diskon ?? 0,
-                'youtube_playlist' => $request->youtube_playlist,
-            ]);
+            $course = \App\Models\Course::create(
+                $this->buildDosenCoursePayload($request, $dosen->id, $thumbnailPath)
+            );
 
             // Build "Modul Utama" when initial structure fields are filled.
             $hasInitialStructure =
@@ -1030,8 +1033,24 @@ class DosenController extends Controller
             return $course;
         });
 
+        if ($course->kategori === 'webinar' && $course->approval_status === 'pending') {
+            AdminNotification::notifyAllAdmins(
+                'Pengajuan Webinar Baru',
+                "{$dosen->name} mengajukan webinar \"{$course->nama_course}\" untuk ditinjau.",
+                'info',
+                'webinar',
+                route('admin.kursus')
+            );
+        }
+
+        $message = $course->kategori === 'webinar'
+            ? ($course->approval_status === 'pending'
+                ? 'Webinar berhasil diajukan dan menunggu persetujuan admin.'
+                : 'Draft webinar berhasil disimpan.')
+            : 'Kursus berhasil dibuat dan tampil di Kursus Saya.';
+
         return redirect()->route('dosen.kursus')
-            ->with('success', 'Kursus berhasil dibuat dan tampil di Kursus Saya.');
+            ->with('success', $message);
     }
 
     /**
@@ -1056,6 +1075,112 @@ class DosenController extends Controller
         // $materials = $course->materials()->orderBy('urutan')->get(); // No longer needed as primary source?
         
         return view('Auth.dosen.edit-kursus', compact('course', 'jurusans'));
+    }
+
+    private function dosenCourseRules(int $dosenId, ?int $courseId = null): array
+    {
+        $namaRule = Rule::unique('courses', 'nama_course')
+            ->where(static fn ($query) => $query->where('id_dosen', $dosenId));
+
+        if ($courseId !== null) {
+            $namaRule = $namaRule->ignore($courseId, 'id_course');
+        }
+
+        return [
+            'nama_course' => ['required', 'string', 'max:255', $namaRule],
+            'kode_course' => 'required|string|max:50|unique:courses,kode_course' . ($courseId !== null ? ',' . $courseId . ',id_course' : ''),
+            'deskripsi' => 'nullable|string',
+            'persyaratan' => 'nullable|string|max:4000',
+            'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',
+            'tipe' => 'required|in:gratis,berbayar',
+            'kategori' => 'required|in:webinar,tiket,kursus',
+            'harga' => 'nullable|numeric|min:0',
+            'status' => 'required|in:draft,aktif,nonaktif',
+            'thumbnail' => 'nullable|image|max:2048',
+            'level' => 'nullable|in:Pemula,Menengah,Mahir',
+            'estimasi_waktu' => 'nullable|integer|min:0',
+            'durasi_satuan' => 'nullable|in:Jam,Minggu',
+            'diskon' => 'nullable|integer|min:0|max:100',
+            'youtube_playlist' => 'nullable|url|max:500',
+            'tanggal_webinar' => 'required_if:kategori,webinar|nullable|date',
+            'jam_mulai_webinar' => 'required_if:kategori,webinar|nullable|date_format:H:i',
+            'jam_selesai_webinar' => 'required_if:kategori,webinar|nullable|date_format:H:i|after:jam_mulai_webinar',
+            'kuota_peserta' => 'nullable|integer|min:1',
+            'modul_judul' => 'nullable|string|max:255',
+            'modul_tipe' => 'nullable|in:video,bacaan,kuis,tugas',
+            'modul_konten' => 'nullable|string',
+            'modul_video_url' => 'nullable|url|max:500|exclude_unless:modul_tipe,video',
+            'modul_durasi' => 'nullable|integer|min:0|exclude_if:modul_tipe,tugas',
+        ];
+    }
+
+    private function buildDosenCoursePayload(Request $request, int $dosenId, ?string $thumbnailPath = null, ?Course $existingCourse = null): array
+    {
+        $isWebinar = $request->kategori === 'webinar';
+        $requestedStatus = $request->input('status_btn', $request->input('status', 'draft'));
+        $durasiSatuan = $request->filled('estimasi_waktu') ? ($request->durasi_satuan ?: 'Jam') : null;
+
+        $approvalStatus = 'tidak_perlu';
+        $approvalNotes = null;
+        $approvedBy = null;
+        $approvedAt = null;
+        $status = $requestedStatus;
+
+        if ($isWebinar) {
+            if ($requestedStatus === 'aktif') {
+                $status = 'draft';
+                $approvalStatus = 'pending';
+            } elseif ($requestedStatus === 'nonaktif') {
+                $status = 'nonaktif';
+            } elseif ($existingCourse && $existingCourse->approval_status === 'ditolak') {
+                $status = 'draft';
+                $approvalStatus = 'ditolak';
+                $approvalNotes = $existingCourse->approval_notes;
+                $approvedBy = $existingCourse->approved_by;
+                $approvedAt = $existingCourse->approved_at;
+            } elseif ($existingCourse && $existingCourse->approval_status === 'disetujui' && $existingCourse->status === 'aktif') {
+                $status = 'aktif';
+                $approvalStatus = 'disetujui';
+                $approvedBy = $existingCourse->approved_by;
+                $approvedAt = $existingCourse->approved_at;
+            } else {
+                $status = 'draft';
+            }
+        }
+
+        $data = [
+            'id_dosen' => $dosenId,
+            'nama_course' => $request->nama_course,
+            'kode_course' => $request->kode_course,
+            'deskripsi' => $request->deskripsi,
+            'persyaratan' => $request->persyaratan,
+            'id_jurusan' => $request->id_jurusan,
+            'tipe' => $request->tipe,
+            'kategori' => $request->kategori,
+            'harga' => $request->tipe === 'berbayar' ? ($request->harga ?? 0) : 0,
+            'status' => $status,
+            'approval_status' => $approvalStatus,
+            'approval_notes' => $approvalNotes,
+            'approved_by' => $approvedBy,
+            'approved_at' => $approvedAt,
+            'level' => $request->level,
+            'estimasi_waktu' => $request->estimasi_waktu,
+            'durasi_satuan' => $durasiSatuan,
+            'sertifikat' => $request->boolean('sertifikat'),
+            'akses_publik' => $request->boolean('akses_publik'),
+            'diskon' => $request->diskon ?? 0,
+            'youtube_playlist' => $request->youtube_playlist,
+            'tanggal_webinar' => $isWebinar ? $request->tanggal_webinar : null,
+            'jam_mulai_webinar' => $isWebinar ? $request->jam_mulai_webinar : null,
+            'jam_selesai_webinar' => $isWebinar ? $request->jam_selesai_webinar : null,
+            'kuota_peserta' => $isWebinar ? $request->kuota_peserta : null,
+        ];
+
+        if ($thumbnailPath !== null) {
+            $data['thumbnail'] = $thumbnailPath;
+        }
+
+        return $data;
     }
 
     /**
@@ -1118,57 +1243,38 @@ class DosenController extends Controller
             return back()->with('error', 'Kursus tidak ditemukan');
         }
 
-        $request->validate([
-            'nama_course' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('courses', 'nama_course')
-                    ->where(static fn ($query) => $query->where('id_dosen', $dosen->id))
-                    ->ignore($course->id_course, 'id_course'),
-            ],
-            'kode_course' => 'required|string|max:50|unique:courses,kode_course,' . $id . ',id_course',
-            'deskripsi' => 'nullable|string',
-            'persyaratan' => 'nullable|string|max:4000',
-            'id_jurusan' => 'nullable|integer|exists:jurusans,id_jurusan',
-            'tipe' => 'required|in:gratis,berbayar',
-            'kategori' => 'required|in:webinar,tiket,kursus',
-            'harga' => 'nullable|numeric|min:0',
-            'status' => 'required|in:draft,aktif,nonaktif',
-            'thumbnail' => 'nullable|image|max:2048',
-            'estimasi_waktu' => 'nullable|integer|min:0',
-            'durasi_satuan' => 'nullable|in:Minggu,Jam',
-            'level' => 'nullable|in:Pemula,Menengah,Mahir',
-            'diskon' => 'nullable|integer|min:0|max:100',
-        ]);
+        $request->validate($this->dosenCourseRules($dosen->id, $course->id_course));
 
+        $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
             // Delete old thumbnail
             if ($course->thumbnail) {
                 \Storage::disk('public')->delete($course->thumbnail);
             }
-            $course->thumbnail = $request->file('thumbnail')->store('course-thumbnails', 'public');
+            $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
         }
 
-        $course->update([
-            'nama_course' => $request->nama_course,
-            'kode_course' => $request->kode_course,
-            'deskripsi' => $request->deskripsi,
-            'persyaratan' => $request->persyaratan,
-            'id_jurusan' => $request->id_jurusan,
-            'tipe' => $request->tipe,
-            'kategori' => $request->kategori,
-            'harga' => $request->tipe === 'berbayar' ? $request->harga : 0,
-            'status' => $request->status,
-            'estimasi_waktu' => $request->estimasi_waktu,
-            'durasi_satuan' => $request->durasi_satuan,
-            'level' => $request->level,
-            'sertifikat' => $request->boolean('sertifikat'),
-            'akses_publik' => $request->boolean('akses_publik'),
-            'diskon' => $request->diskon ?? 0,
-        ]);
+        $course->update(
+            $this->buildDosenCoursePayload($request, $dosen->id, $thumbnailPath, $course)
+        );
 
-        return back()->with('success', 'Kursus berhasil diperbarui!');
+        if ($course->kategori === 'webinar' && $course->approval_status === 'pending') {
+            AdminNotification::notifyAllAdmins(
+                'Pengajuan Webinar Diperbarui',
+                "{$dosen->name} mengajukan ulang webinar \"{$course->nama_course}\" untuk ditinjau.",
+                'info',
+                'webinar',
+                route('admin.kursus')
+            );
+        }
+
+        $message = $course->kategori === 'webinar'
+            ? ($course->approval_status === 'pending'
+                ? 'Perubahan webinar disimpan dan diajukan ke admin untuk persetujuan.'
+                : 'Perubahan webinar berhasil disimpan.')
+            : 'Kursus berhasil diperbarui!';
+
+        return back()->with('success', $message);
     }
 
     /**

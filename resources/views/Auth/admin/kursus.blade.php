@@ -33,6 +33,8 @@
                         <option value="all" {{ ($statusFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
                         <option value="aktif" {{ ($statusFilter ?? '') === 'aktif' ? 'selected' : '' }}>Aktif</option>
                         <option value="draft" {{ ($statusFilter ?? '') === 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="pending" {{ ($statusFilter ?? '') === 'pending' ? 'selected' : '' }}>Menunggu Persetujuan</option>
+                        <option value="ditolak" {{ ($statusFilter ?? '') === 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                         <option value="nonaktif" {{ ($statusFilter ?? '') === 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
                     </select>
                     <svg class="w-4 h-4 absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,22 +235,44 @@
                         {{-- Status --}}
                         <td class="px-5 py-4 text-center">
                             @php
+                                $displayStatus = match (true) {
+                                    ($kursus['approval_status'] ?? null) === 'pending' => 'pending',
+                                    ($kursus['approval_status'] ?? null) === 'ditolak' => 'ditolak',
+                                    default => $kursus['status'],
+                                };
                                 $statusConfig = [
                                     'aktif' => ['dot' => 'bg-green-500', 'bg' => 'bg-green-50 dark:bg-green-900/20', 'text' => 'text-green-700 dark:text-green-400', 'border' => 'border-green-200 dark:border-green-700/40'],
                                     'draft' => ['dot' => 'bg-yellow-500', 'bg' => 'bg-yellow-50 dark:bg-yellow-900/20', 'text' => 'text-yellow-700 dark:text-yellow-400', 'border' => 'border-yellow-200 dark:border-yellow-700/40'],
+                                    'pending' => ['dot' => 'bg-blue-500', 'bg' => 'bg-blue-50 dark:bg-blue-900/20', 'text' => 'text-blue-700 dark:text-blue-400', 'border' => 'border-blue-200 dark:border-blue-700/40'],
+                                    'ditolak' => ['dot' => 'bg-rose-500', 'bg' => 'bg-rose-50 dark:bg-rose-900/20', 'text' => 'text-rose-700 dark:text-rose-400', 'border' => 'border-rose-200 dark:border-rose-700/40'],
                                     'nonaktif' => ['dot' => 'bg-red-500', 'bg' => 'bg-red-50 dark:bg-red-900/20', 'text' => 'text-red-700 dark:text-red-400', 'border' => 'border-red-200 dark:border-red-700/40'],
                                 ];
-                                $sc = $statusConfig[$kursus['status']] ?? $statusConfig['draft'];
+                                $sc = $statusConfig[$displayStatus] ?? $statusConfig['draft'];
                             @endphp
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border {{ $sc['bg'] }} {{ $sc['text'] }} {{ $sc['border'] }}">
                                 <span class="w-1.5 h-1.5 rounded-full {{ $sc['dot'] }} animate-pulse"></span>
-                                {{ ucfirst($kursus['status']) }}
+                                {{ $displayStatus === 'pending' ? 'Menunggu Persetujuan' : ($displayStatus === 'ditolak' ? 'Ditolak' : ucfirst($displayStatus)) }}
                             </span>
                         </td>
 
                         {{-- Aksi --}}
                         <td class="px-5 py-4 text-center">
-                            <div class="inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-0.5">
+                            <div class="inline-flex flex-wrap items-center justify-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-0.5">
+                                @if(($kursus['kategori'] ?? '') === 'webinar' && ($kursus['approval_status'] ?? '') === 'pending')
+                                <button onclick="approveWebinar({{ $kursus['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Setujui Webinar">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Setujui
+                                </button>
+                                <button onclick="rejectWebinar({{ $kursus['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Tolak Webinar">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Tolak
+                                </button>
+                                <div class="w-px h-4 bg-gray-200 dark:bg-gray-600"></div>
+                                @endif
                                 <button onclick="openEditModal({{ $kursus['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Edit Kursus">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -712,17 +736,22 @@
                             <div class="space-y-4">
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Webinar <span class="text-red-400">*</span></label>
                                         <input type="date" name="tanggal_webinar" value="{{ old('_modal') === 'add_webinar' ? old('tanggal_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai <span class="text-red-400">*</span></label>
                                         <input type="time" name="jam_mulai_webinar" value="{{ old('_modal') === 'add_webinar' ? old('jam_mulai_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai <span class="text-red-400">*</span></label>
                                         <input type="time" name="jam_selesai_webinar" value="{{ old('_modal') === 'add_webinar' ? old('jam_selesai_webinar') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                     </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                    <input type="number" name="kuota_peserta" min="1" placeholder="Kosongkan jika tidak dibatasi" value="{{ old('_modal') === 'add_webinar' ? old('kuota_peserta') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                 </div>
 
                                 <div>
@@ -747,7 +776,7 @@
                                     <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                         <div>
                                             <h5 class="font-medium text-gray-900 dark:text-white text-xs">Status</h5>
-                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Aktif atau simpan draft</p>
+                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Aktifkan langsung atau simpan draft</p>
                                         </div>
                                         <input type="hidden" name="status" id="webinar_status_input" value="{{ old('_modal') === 'add_webinar' ? old('status', 'draft') : 'draft' }}">
                                         <label class="relative inline-flex items-center cursor-pointer">
@@ -817,7 +846,7 @@
                             Simpan Draft
                         </button>
                         <button type="submit" name="add_status_btn" value="aktif" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-lg transition shadow-sm shadow-purple-500/25">
-                            Publikasikan
+                            Publikasikan Webinar
                         </button>
                     </div>
                 </form>
@@ -1055,6 +1084,38 @@
                                         <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </div>
                                 </div>
+
+                                <div class="rounded-xl border border-purple-100 dark:border-purple-800/40 bg-purple-50/40 dark:bg-purple-900/10 p-4 space-y-4">
+                                    <div>
+                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">Jadwal Webinar</h5>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Field ini digunakan saat kategori webinar.</p>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Webinar</label>
+                                            <input type="date" name="tanggal_webinar" id="edit_tanggal_webinar" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Mulai</label>
+                                            <input type="time" name="jam_mulai_webinar" id="edit_jam_mulai_webinar" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jam Selesai</label>
+                                            <input type="time" name="jam_selesai_webinar" id="edit_jam_selesai_webinar" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta</label>
+                                            <input type="number" name="kuota_peserta" id="edit_kuota_peserta" min="1" placeholder="Kosongkan jika tidak dibatasi" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Meeting / Playlist</label>
+                                            <input type="url" name="youtube_playlist" id="edit_youtube_playlist" placeholder="https://zoom.us/j/... atau https://meet.google.com/..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                    </div>
+                                    <div id="editApprovalNoteBox" class="hidden rounded-lg border border-rose-100 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-900/10 px-3 py-2 text-xs text-rose-700 dark:text-rose-300"></div>
+                                </div>
                                 
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                                     <div>
@@ -1122,6 +1183,17 @@
         </div>
     </div>
 
+    <form id="approveWebinarForm" method="POST" class="hidden">
+        @csrf
+        @method('PUT')
+    </form>
+
+    <form id="rejectWebinarForm" method="POST" class="hidden">
+        @csrf
+        @method('PUT')
+        <input type="hidden" name="approval_notes" id="rejectWebinarNotes">
+    </form>
+
     
 
     
@@ -1180,7 +1252,8 @@
         const editFieldIds = [
             'edit_nama_course', 'edit_kode_course', 'edit_deskripsi', 'edit_persyaratan',
             'edit_id_dosen', 'edit_id_jurusan', 'edit_level', 'edit_estimasi_waktu', 'edit_durasi_satuan',
-            'edit_kategori', 'edit_harga', 'edit_diskon',
+            'edit_kategori', 'edit_harga', 'edit_diskon', 'edit_tanggal_webinar', 'edit_jam_mulai_webinar',
+            'edit_jam_selesai_webinar', 'edit_kuota_peserta', 'edit_youtube_playlist',
             'edit_status_input', 'edit_tipe_input'
         ];
         const editCheckboxIds = [
@@ -1431,6 +1504,11 @@
                         document.getElementById('edit_estimasi_waktu').value = data.estimasi_waktu || 20;
                         document.getElementById('edit_durasi_satuan').value = data.durasi_satuan || 'Jam';
                         document.getElementById('edit_kategori').value = data.kategori || 'kursus';
+                        document.getElementById('edit_tanggal_webinar').value = data.tanggal_webinar || '';
+                        document.getElementById('edit_jam_mulai_webinar').value = data.jam_mulai_webinar || '';
+                        document.getElementById('edit_jam_selesai_webinar').value = data.jam_selesai_webinar || '';
+                        document.getElementById('edit_kuota_peserta').value = data.kuota_peserta || '';
+                        document.getElementById('edit_youtube_playlist').value = data.youtube_playlist || '';
                         document.getElementById('edit_harga').value = data.harga || 0;
                         document.getElementById('edit_diskon').value = data.diskon || 0;
 
@@ -1450,6 +1528,20 @@
                         // Set akses_publik & sertifikat checkboxes
                         document.getElementById('edit_akses_publik').checked = data.akses_publik !== false;
                         document.getElementById('edit_sertifikat').checked = !!data.sertifikat;
+
+                        const approvalNoteBox = document.getElementById('editApprovalNoteBox');
+                        if (approvalNoteBox) {
+                            if (data.approval_status === 'ditolak' && data.approval_notes) {
+                                approvalNoteBox.textContent = 'Catatan penolakan: ' + data.approval_notes;
+                                approvalNoteBox.classList.remove('hidden');
+                            } else if (data.approval_status === 'pending') {
+                                approvalNoteBox.textContent = 'Webinar ini sedang menunggu persetujuan admin.';
+                                approvalNoteBox.classList.remove('hidden');
+                            } else {
+                                approvalNoteBox.textContent = '';
+                                approvalNoteBox.classList.add('hidden');
+                            }
+                        }
 
                         // Update Kelola Modul link
                         const btnModul = document.getElementById('edit_modul_btn');
@@ -1499,6 +1591,34 @@
             document.getElementById('deleteKursusForm').action = '/admin/kursus/' + id;
             document.getElementById('deleteKursusModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+        }
+
+        function approveWebinar(id) {
+            if (!confirm('Setujui webinar ini dan publikasikan sekarang?')) {
+                return;
+            }
+
+            const form = document.getElementById('approveWebinarForm');
+            form.action = '/admin/kursus/' + id + '/approve-webinar';
+            form.submit();
+        }
+
+        function rejectWebinar(id) {
+            const notes = prompt('Masukkan catatan penolakan untuk dosen:');
+            if (notes === null) {
+                return;
+            }
+
+            const trimmedNotes = notes.trim();
+            if (!trimmedNotes) {
+                alert('Catatan penolakan wajib diisi.');
+                return;
+            }
+
+            const form = document.getElementById('rejectWebinarForm');
+            document.getElementById('rejectWebinarNotes').value = trimmedNotes;
+            form.action = '/admin/kursus/' + id + '/reject-webinar';
+            form.submit();
         }
         
         function closeDeleteModal() {
@@ -1585,4 +1705,3 @@
     </script>
     @endpush
 </x-layouts.admin>
-

@@ -52,6 +52,8 @@ Route::prefix('admin')
         Route::post('/kursus', [AdminController::class, 'storeKursus'])->name('admin.kursus.store');
         Route::get('/kursus/{id}', [AdminController::class, 'getKursus'])->name('admin.kursus.get');
         Route::put('/kursus/{id}', [AdminController::class, 'updateKursus'])->name('admin.kursus.update');
+        Route::put('/kursus/{id}/approve-webinar', [AdminController::class, 'approveWebinar'])->name('admin.kursus.approveWebinar');
+        Route::put('/kursus/{id}/reject-webinar', [AdminController::class, 'rejectWebinar'])->name('admin.kursus.rejectWebinar');
         Route::delete('/kursus/{id}', [AdminController::class, 'deleteKursus'])->name('admin.kursus.delete');
 
         // Module Management
