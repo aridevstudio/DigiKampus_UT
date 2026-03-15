@@ -910,14 +910,19 @@ class DosenController extends Controller
     /**
      * Show Buat Kursus page
      */
-    public function showBuatKursus()
+    public function showBuatKursus(Request $request)
     {
         $dosen = Auth::guard('dosen')->user();
         $jurusans = \App\Models\Jurusan::all();
+        $allowedKategori = ['kursus', 'webinar'];
+        $initialKategori = in_array($request->query('kategori'), $allowedKategori, true)
+            ? $request->query('kategori')
+            : 'kursus';
         
         return view('Auth.dosen.buat-kursus', [
             'dosen' => $dosen,
             'jurusans' => $jurusans,
+            'initialKategori' => $initialKategori,
         ]);
     }
 

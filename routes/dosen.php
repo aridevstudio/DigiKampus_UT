@@ -84,6 +84,8 @@ Route::prefix('dosen')
             Route::put('/{id}/material/{materialId}', [DosenController::class, 'updateMaterial'])->name('dosen.material.update');
             Route::delete('/{id}/material/{materialId}', [DosenController::class, 'deleteMaterial'])->name('dosen.material.delete');
         });
+
+        Route::redirect('/webinar/buat', '/dosen/kursus/buat?kategori=webinar')->name('dosen.webinar.buat');
         
         // ----------------------------------------------------------------------
         // Content Creation (Video, Quiz, dll)

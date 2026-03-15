@@ -1,17 +1,25 @@
-<x-layouts.dosen title="Buat Kursus Baru" active="buat-kursus">
+@php
+    $defaultKategori = old('kategori', $initialKategori ?? 'kursus');
+    $pageTitles = [
+        'kursus' => 'Buat Kursus Baru',
+        'webinar' => 'Buat Webinar Baru',
+    ];
+@endphp
+
+<x-layouts.dosen :title="$pageTitles[$defaultKategori] ?? 'Buat Kursus Baru'" active="buat-kursus">
     <div class="max-w-3xl mx-auto px-4 sm:px-6">
-        <form action="{{ route('dosen.kursus.store') }}" method="POST" enctype="multipart/form-data" id="buatKursusForm" x-data="{ isLoading: false, selectedKategori: '{{ old('kategori', 'kursus') }}' }" @submit="isLoading = true">
+        <form action="{{ route('dosen.kursus.store') }}" method="POST" enctype="multipart/form-data" id="buatKursusForm" x-data="{ isLoading: false, selectedKategori: '{{ $defaultKategori }}' }" @submit="isLoading = true">
             @csrf
             
             {{-- Page Header + Action Buttons --}}
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sm:p-6 mb-6">
                 <div class="mb-4">
                     <h1 class="text-lg font-bold text-gray-900 dark:text-white">
-                        <span x-show="selectedKategori !== 'webinar'">Buat Kursus Baru</span>
+                        <span x-show="selectedKategori === 'kursus'">Buat Kursus Baru</span>
                         <span x-show="selectedKategori === 'webinar'" x-cloak>Buat Webinar Baru</span>
                     </h1>
                     <p class="text-sm text-blue-500">
-                        <span x-show="selectedKategori !== 'webinar'">Lengkapi informasi berikut untuk membuat kursus baru.</span>
+                        <span x-show="selectedKategori === 'kursus'">Lengkapi informasi berikut untuk membuat kursus baru.</span>
                         <span x-show="selectedKategori === 'webinar'" x-cloak>Lengkapi informasi berikut untuk mengajukan webinar baru.</span>
                     </p>
                 </div>
@@ -24,7 +32,7 @@
                         Simpan Draft
                     </button>
                     <button type="submit" name="status_btn" value="aktif" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition shadow-sm shadow-blue-500/25">
-                        <span x-show="selectedKategori !== 'webinar'">Buat Kursus</span>
+                        <span x-show="selectedKategori === 'kursus'">Buat Kursus</span>
                         <span x-show="selectedKategori === 'webinar'" x-cloak>Ajukan Webinar</span>
                     </button>
                 </div>
@@ -121,7 +129,7 @@
                             {{-- Playlist YouTube / Link Meeting --}}
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                                    <span x-show="selectedKategori !== 'webinar'">Link Playlist YouTube (Opsional)</span>
+                                    <span x-show="selectedKategori === 'kursus'">Link Playlist YouTube (Opsional)</span>
                                     <span x-show="selectedKategori === 'webinar'" x-cloak>Link Meeting (Zoom/Google Meet) <span class="text-red-400">*</span></span>
                                 </label>
                                 <input type="url" name="youtube_playlist" id="add_youtube_playlist" :placeholder="selectedKategori === 'webinar' ? 'https://zoom.us/j/... atau https://meet.google.com/...' : 'https://www.youtube.com/playlist?list=...'" value="{{ old('youtube_playlist') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -298,7 +306,6 @@
                                     <select name="kategori" id="add_kategori" required x-model="selectedKategori" class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         <option value="kursus" {{ old('kategori') === 'kursus' ? 'selected' : '' }}>Kursus</option>
                                         <option value="webinar" {{ old('kategori') === 'webinar' ? 'selected' : '' }}>Webinar</option>
-                                        <option value="tiket" {{ old('kategori') === 'tiket' ? 'selected' : '' }}>Tiket</option>
                                     </select>
                                     <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </div>
