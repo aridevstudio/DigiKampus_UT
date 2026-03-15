@@ -9,18 +9,18 @@ use Illuminate\Support\Facades\Schema;
  * and improve query performance.
  *
  * Missing constraints found in audit:
- * - enrollments: no UNIQUE on (id_mahasiswa, id_course) → double enrollment
- * - carts: no UNIQUE on (id_mahasiswa, id_course) → duplicate cart entries
- * - favorites: no UNIQUE on (id_mahasiswa, id_course) → duplicate favorites
- * - course_ratings: no UNIQUE on (id_mahasiswa, id_course) → double ratings
- * - material_progress: no UNIQUE on (id_mahasiswa, id_material) → progress duplication
+ * - enrollments: no UNIQUE on (id_mahasiswa, id_course) â†’ double enrollment
+ * - carts: no UNIQUE on (id_mahasiswa, id_course) â†’ duplicate cart entries
+ * - favorites: no UNIQUE on (id_mahasiswa, id_course) â†’ duplicate favorites
+ * - course_ratings: no UNIQUE on (id_mahasiswa, id_course) â†’ double ratings
+ * - material_progress: no UNIQUE on (id_mahasiswa, id_material) â†’ progress duplication
  *
  * Missing indexes:
- * - profiles.nim → used for mahasiswa login (full table scan without index)
- * - courses.id_dosen → dosen's course listings
- * - courses.status → active course filtering
- * - enrollments(id_mahasiswa, id_course) → enrollment lookups
- * - messages(id_sender, id_receiver) → conversation queries
+ * - profiles.nomor_induk â†’ used for mahasiswa login (full table scan without index)
+ * - courses.id_dosen â†’ dosen's course listings
+ * - courses.status â†’ active course filtering
+ * - enrollments(id_mahasiswa, id_course) â†’ enrollment lookups
+ * - messages(id_sender, id_receiver) â†’ conversation queries
  */
 return new class extends Migration {
     public function up(): void
@@ -48,7 +48,7 @@ return new class extends Migration {
 
         // Add performance indexes
         Schema::table('profiles', function (Blueprint $table) {
-            $table->index('nim', 'profiles_nim_index');
+            $table->index('nomor_induk', 'profiles_nomor_induk_index');
         });
 
         Schema::table('courses', function (Blueprint $table) {
@@ -84,7 +84,7 @@ return new class extends Migration {
         });
 
         Schema::table('profiles', function (Blueprint $table) {
-            $table->dropIndex('profiles_nim_index');
+            $table->dropIndex('profiles_nomor_induk_index');
         });
 
         Schema::table('courses', function (Blueprint $table) {

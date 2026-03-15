@@ -71,7 +71,7 @@ class DosenController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'nip' => ['required', 'string', 'max:50', 'unique:profiles,nim'],
+            'nomor_induk' => ['required', 'string', 'max:50', 'unique:profiles,nomor_induk'],
             'id_jurusan' => ['required', 'exists:jurusans,id_jurusan'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'google_id' => ['nullable', 'string'],
@@ -89,7 +89,7 @@ class DosenController extends Controller
             ]);
 
             $user->profile()->create([
-                'nim' => $request->nip, // NIP is stored in 'nim' based on existing patterns
+                'nomor_induk' => $request->nomor_induk,
                 'id_jurusan' => $request->id_jurusan,
             ]);
 
@@ -109,20 +109,20 @@ class DosenController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'nip' => ['required', 'string'],
+            'nomor_induk' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
         $user = User::where('role', 'dosen')
             ->whereHas('profile', function ($query) use ($request) {
-                $query->where('nim', $request->nip);
+                $query->where('nomor_induk', $request->nomor_induk);
             })
             ->first();
 
         if (!$user) {
             return back()
                 ->withInput()
-                ->with('alert', 'NIP tidak terdaftar sebagai dosen.');
+                ->with('alert', 'Nomor Induk tidak terdaftar sebagai dosen.');
         }
 
         if (!Hash::check($request->password, $user->password)) {
@@ -1680,7 +1680,7 @@ class DosenController extends Controller
             return [
                 'student_id' => $student->id,
                 'student_name' => $student->name,
-                'student_nim' => $student->profile->nim ?? '-',
+                'student_nomor_induk' => $student->profile->nomor_induk ?? '-',
                 'student_email' => $student->email ?? '-',
                 'student_avatar' => $avatar,
                 'last_message' => $lastMessage

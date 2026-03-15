@@ -20,9 +20,9 @@ class MahasiswaAuthController extends Controller
         private readonly OtpService $otpService
     ) {}
     /**
-     * Login mahasiswa dengan NIM dan password
+     * Login mahasiswa dengan Nomor Induk dan password
      *
-     * Endpoint untuk login mahasiswa menggunakan NIM dan password.
+     * Endpoint untuk login mahasiswa menggunakan Nomor Induk dan password.
      * Akan mengembalikan token authentication jika berhasil.
      *
      * @param MahasiswaLoginRequest $request
@@ -32,16 +32,16 @@ class MahasiswaAuthController extends Controller
     {
         $validated = $request->validated();
 
-        // Cari user berdasarkan NIM melalui relasi profile
+        // Cari user berdasarkan Nomor Induk melalui relasi profile
         $user = User::whereHas('profile', function ($q) use ($validated) {
-            $q->where('nim', $validated['nim']);
+            $q->where('nomor_induk', $validated['nomor_induk']);
         })->with('profile')->first();
 
         // Validasi user exists
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'NIM tidak ditemukan. Pastikan NIM Anda sudah terdaftar.'
+                'message' => 'Nomor Induk tidak ditemukan. Pastikan Nomor Induk Anda sudah terdaftar.'
             ], 404);
         }
 
@@ -293,7 +293,7 @@ class MahasiswaAuthController extends Controller
      * Endpoint untuk mengubah password mahasiswa yang sedang login.
      * Hanya memerlukan password baru tanpa verifikasi password lama.
      *
-     * **⚠️ WARNING:** This endpoint does NOT verify current password for security.
+     * **âš ï¸ WARNING:** This endpoint does NOT verify current password for security.
      * Implemented per client requirement. NOT RECOMMENDED for production use.
      * Consider adding current_password verification for better security.
      *

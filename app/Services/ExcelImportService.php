@@ -21,8 +21,8 @@ class ExcelImportService
      * Required columns for each type.
      */
     private static array $requiredColumns = [
-        'mahasiswa' => ['nama', 'nim', 'email'],
-        'dosen' => ['nama', 'nip', 'email'],
+        'mahasiswa' => ['nama', 'nomor_induk', 'email'],
+        'dosen' => ['nama', 'nomor_induk', 'email'],
     ];
 
     /**
@@ -103,8 +103,8 @@ class ExcelImportService
 
         $nama = $row['nama'] ?? '';
         $email = $row['email'] ?? '';
-        $identifier = $type === 'mahasiswa' ? ($row['nim'] ?? '') : ($row['nip'] ?? '');
-        $identifierLabel = $type === 'mahasiswa' ? 'NIM' : 'NIP';
+        $identifier = $row['nomor_induk'] ?? '';
+        $identifierLabel = 'Nomor Induk';
 
         if (empty($nama)) {
             $errors[] = "Baris {$rowNumber}: Nama wajib diisi.";
@@ -155,7 +155,7 @@ class ExcelImportService
         try {
             foreach ($validRows as $row) {
                 $email = strtolower(trim($row['email']));
-                $identifier = $type === 'mahasiswa' ? ($row['nim'] ?? '') : ($row['nip'] ?? '');
+                $identifier = $row['nomor_induk'] ?? '';
                 $existingUser = User::where('email', $email)->first();
 
                 if ($existingUser) {
@@ -182,7 +182,7 @@ class ExcelImportService
                         $existingUser->profile()->updateOrCreate(
                             ['user_id' => $existingUser->id],
                             array_filter([
-                                'nim' => $identifier,
+                                'nomor_induk' => $identifier,
                                 'id_jurusan' => $jurusanId,
                                 'no_hp' => $row['no_hp'] ?? null,
                             ])
@@ -192,17 +192,16 @@ class ExcelImportService
                     }
                 }
 
-                // Also check NIM/NIP uniqueness
-                $existingProfile = \App\Models\Profile::where('nim', $identifier)->first();
+                // Also check Nomor Induk uniqueness
+                $existingProfile = \App\Models\Profile::where('nomor_induk', $identifier)->first();
                 if ($existingProfile) {
                     if ($strategy === 'stop') {
                         DB::rollBack();
-                        $label = $type === 'mahasiswa' ? 'NIM' : 'NIP';
                         return [
                             'imported' => 0,
                             'skipped' => 0,
                             'updated' => 0,
-                            'errors' => ["Import dihentikan: {$label} {$identifier} sudah terdaftar (baris {$row['_row']})."],
+                            'errors' => ["Import dihentikan: Nomor Induk {$identifier} sudah terdaftar (baris {$row['_row']})."],
                             'status' => 'stopped',
                         ];
                     }
@@ -222,7 +221,7 @@ class ExcelImportService
 
                 $jurusanId = self::matchJurusan($row['jurusan'] ?? '', $jurusanMap);
                 $user->profile()->create([
-                    'nim' => $identifier,
+                    'nomor_induk' => $identifier,
                     'id_jurusan' => $jurusanId,
                     'no_hp' => !empty($row['no_hp']) ? $row['no_hp'] : null,
                 ]);
@@ -313,8 +312,8 @@ class ExcelImportService
 
         // Headers
         $headers = $isMahasiswa
-            ? ['Nama', 'NIM', 'Email', 'Jurusan', 'No HP', 'Status']
-            : ['Nama', 'NIP', 'Email', 'Jurusan', 'No HP', 'Status'];
+            ? ['Nama', 'Nomor Induk', 'Email', 'Jurusan', 'No HP', 'Status']
+            : ['Nama', 'Nomor Induk', 'Email', 'Jurusan', 'No HP', 'Status'];
 
         foreach ($headers as $col => $header) {
             $cell = chr(65 + $col) . '1';
@@ -374,7 +373,7 @@ class ExcelImportService
         $notesRow = $row + 1;
         $sheet->setCellValue("A{$notesRow}", 'Catatan:');
         $sheet->getStyle("A{$notesRow}")->getFont()->setBold(true);
-        $sheet->setCellValue("A" . ($notesRow + 1), '- Kolom Nama, ' . ($isMahasiswa ? 'NIM' : 'NIP') . ', Email wajib diisi');
+        $sheet->setCellValue("A" . ($notesRow + 1), '- Kolom Nama, Nomor Induk, Email wajib diisi');
         $sheet->setCellValue("A" . ($notesRow + 2), '- Kolom Jurusan, No HP, Status opsional');
         $sheet->setCellValue("A" . ($notesRow + 3), '- Status: aktif atau nonaktif (default: aktif)');
         $sheet->setCellValue("A" . ($notesRow + 4), '- Email harus unik (belum terdaftar di sistem)');

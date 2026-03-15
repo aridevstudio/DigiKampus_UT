@@ -25,7 +25,7 @@ class ProfileController extends Controller
 
         $userName = $user->name ?? 'Mahasiswa';
         $userEmail = $user->email ?? '-';
-        $nim = $profile?->nim;
+        $nomor_induk = $profile?->nomor_induk;
         $noHp = $profile?->no_hp;
         $alamat = $profile?->alamat;
         $tempatLahir = $profile?->tempat_lahir;
@@ -70,7 +70,7 @@ class ProfileController extends Controller
         return view('pages.mahasiswa.profile', compact(
             'userName',
             'userEmail',
-            'nim',
+            'nomor_induk',
             'noHp',
             'alamat',
             'tempatLahir',
@@ -106,7 +106,7 @@ class ProfileController extends Controller
         return view('pages.mahasiswa.edit-profile', [
             'userName' => $user->name ?? '',
             'userEmail' => $user->email ?? '',
-            'nim' => $profile?->nim ?? '',
+            'nomor_induk' => $profile?->nomor_induk ?? '',
             'noHp' => $profile?->no_hp ?? '',
             'alamat' => $profile?->alamat ?? '',
             'tempatLahir' => $profile?->tempat_lahir ?? '',

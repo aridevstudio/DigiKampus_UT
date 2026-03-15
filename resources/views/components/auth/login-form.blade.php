@@ -24,7 +24,7 @@
                 <form method="POST" action="{{ route('mahasiswa.post') }}" class="w-full space-y-4 sm:space-y-5" x-data="{ isLoading: false }" @submit="isLoading = true">
                     @csrf
 
-                    {{-- NIM Input --}}
+                    {{-- Nomor Induk Input --}}
                     <div class="relative animate-hidden animate-fade-in-up stagger-1">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4 text-gray-400">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -34,12 +34,12 @@
                         </span>
                         <input 
                             type="text" 
-                            name="nim" 
-                            value="{{ old('nim') }}"
+                            name="nomor_induk" 
+                            value="{{ old('nomor_induk') }}"
                             required 
                             autofocus
                             class="w-full border border-gray-300 rounded-lg pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition input-animate"
-                            placeholder="NIM Mahasiswa"
+                            placeholder="Nomor Induk Mahasiswa"
                         >
                     </div>
 
@@ -95,7 +95,7 @@
                 {{-- Footer --}}
                 <div class="w-full mt-6 sm:mt-8 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 footer-animate">
                     <a href="javascript:void(0)" class="hover:underline">Kebijakan Privasi</a>
-                    <span>{{ date('Y') }} © Universitas Terbuka</span>
+                    <span>{{ date('Y') }} Â© Universitas Terbuka</span>
                 </div>
             </div>
         </div>

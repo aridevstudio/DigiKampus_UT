@@ -112,7 +112,7 @@
             {{-- Search --}}
             <div class="admin-toolbar-search flex gap-1.5">
                 <div class="relative flex-1">
-                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari nama, email, NIM..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari nama, email, Nomor Induk..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     <svg class="w-4 h-4 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -132,7 +132,7 @@
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-700/30">
                         <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mahasiswa</th>
-                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">NIM</th>
+                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nomor Induk</th>
                         <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Program Studi</th>
                         <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kontak</th>
                         <th class="text-center px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
@@ -163,10 +163,10 @@
                                 </div>
                             </div>
                         </td>
-                        {{-- NIM --}}
+                        {{-- Nomor Induk --}}
                         <td class="px-6 py-3.5">
-                            @if($mhs['nim'] !== '-')
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 text-xs font-mono font-medium text-gray-700 dark:text-gray-300">{{ $mhs['nim'] }}</span>
+                            @if($mhs['nomor_induk'] !== '-')
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 text-xs font-mono font-medium text-gray-700 dark:text-gray-300">{{ $mhs['nomor_induk'] }}</span>
                             @else
                                 <span class="text-xs text-gray-400">-</span>
                             @endif
@@ -347,8 +347,8 @@
                             </div>
                             
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">NIM</label>
-                                <input type="text" name="nim" required placeholder="Masukkan NIM" value="{{ old('_modal') === 'add' ? old('nim') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nomor Induk</label>
+                                <input type="text" name="nomor_induk" required placeholder="Masukkan Nomor Induk" value="{{ old('_modal') === 'add' ? old('nomor_induk') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                             
                             <div>
@@ -488,8 +488,8 @@
                             </div>
                             
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">NIM</label>
-                                <input type="text" name="nim" id="edit_nim" required placeholder="Masukkan NIM" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nomor Induk</label>
+                                <input type="text" name="nomor_induk" id="edit_nomor_induk" required placeholder="Masukkan Nomor Induk" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
                             </div>
                             
                             <div>
@@ -613,7 +613,7 @@
                 <div id="importStep1">
                     <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <p class="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">Kolom yang dibutuhkan:</p>
-                        <code class="text-xs text-blue-600 dark:text-blue-400">nama, nim, email, jurusan, no_hp</code>
+                        <code class="text-xs text-blue-600 dark:text-blue-400">nama, nomor_induk, email, jurusan, no_hp</code>
                         <div class="mt-2">
                             <a href="{{ route('admin.import.template', 'mahasiswa') }}" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 font-medium">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -639,7 +639,7 @@
                     <div id="importPreviewTable" class="mb-4 max-h-64 overflow-auto border border-gray-200 dark:border-gray-700 rounded-lg"></div>
                     <div id="importErrorList" class="mb-4 hidden"></div>
                     <div class="mb-4">
-                        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5">Strategi Duplikat (NIM sudah ada):</label>
+                        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5">Strategi Duplikat (Nomor Induk sudah ada):</label>
                         <select id="importStrategy" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white">
                             <option value="skip">Lewati (skip)</option>
                             <option value="update">Perbarui data (update)</option>
@@ -708,7 +708,7 @@
                     document.getElementById('edit_mhs_id').value = id;
                     document.getElementById('edit_name').value = data.name || '';
                     document.getElementById('edit_email').value = data.email || '';
-                    document.getElementById('edit_nim').value = data.nim || '';
+                    document.getElementById('edit_nomor_induk').value = data.nomor_induk || '';
                     document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
                     document.getElementById('edit_no_hp').value = data.no_hp || '';
                     document.getElementById('edit_status').checked = data.status === 'aktif';
@@ -949,7 +949,7 @@
             if (editId) {
                 editForm.action = '/admin/mahasiswa/' + editId;
                 document.getElementById('edit_name').value = '{{ old('name') }}';
-                document.getElementById('edit_nim').value = '{{ old('nim') }}';
+                document.getElementById('edit_nomor_induk').value = '{{ old('nomor_induk') }}';
                 document.getElementById('edit_email').value = '{{ old('email') }}';
                 document.getElementById('edit_no_hp').value = '{{ old('no_hp') }}';
                 document.getElementById('edit_id_jurusan').value = '{{ old('id_jurusan') }}';

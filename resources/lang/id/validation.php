@@ -54,12 +54,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | Baris berikut digunakan untuk mengganti nama atribut dengan sesuatu yang
-    | lebih mudah dibaca pengguna (misal: “E-Mail Address” → “Alamat Email”).
+    | lebih mudah dibaca pengguna (misal: â€œE-Mail Addressâ€ â†’ â€œAlamat Emailâ€).
     |
     */
 
     'attributes' => [
-        'nim' => 'NIM',
+        'nomor_induk' => 'Nomor Induk',
         'password' => 'Password',
     ],
 

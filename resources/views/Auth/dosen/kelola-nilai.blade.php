@@ -35,7 +35,7 @@
     $gradeRows = [
         [
             'student' => 'Nabila Putri',
-            'nim' => '20240149',
+            'nomor_induk' => '20240149',
             'course_id' => 'course-ui-ux',
             'course' => 'UI/UX Design Sprint',
             'cohort' => 'Kelas A',
@@ -48,7 +48,7 @@
         ],
         [
             'student' => 'Gilang Pratama',
-            'nim' => '20240122',
+            'nomor_induk' => '20240122',
             'course_id' => 'course-ui-ux',
             'course' => 'UI/UX Design Sprint',
             'cohort' => 'Kelas A',
@@ -61,7 +61,7 @@
         ],
         [
             'student' => 'Salsa Maharani',
-            'nim' => '20240177',
+            'nomor_induk' => '20240177',
             'course_id' => 'course-elektro',
             'course' => 'Elektronika Dasar',
             'cohort' => 'Kelas B',
@@ -74,7 +74,7 @@
         ],
         [
             'student' => 'Ryan Champilin DDS',
-            'nim' => '20240145',
+            'nomor_induk' => '20240145',
             'course_id' => 'course-elektro',
             'course' => 'Elektronika Dasar',
             'cohort' => 'Kelas B',
@@ -87,7 +87,7 @@
         ],
         [
             'student' => 'Jayde Abbott',
-            'nim' => '20240133',
+            'nomor_induk' => '20240133',
             'course_id' => 'course-webinar',
             'course' => 'Webinar AI Product Thinking',
             'cohort' => 'Batch 2',
@@ -356,7 +356,7 @@
                 <div class="grid gap-3 sm:grid-cols-3 lg:w-[720px]">
                     <label class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900/40">
                         <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Cari Mahasiswa</span>
-                        <input x-model="search" type="text" placeholder="Nama / NIM" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 dark:text-white">
+                        <input x-model="search" type="text" placeholder="Nama / Nomor Induk" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 dark:text-white">
                     </label>
 
                     <label class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900/40">
@@ -397,14 +397,14 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
-                        <template x-for="row in filteredRows" :key="`${row.nim}-${row.course_id}`">
+                        <template x-for="row in filteredRows" :key="`${row.nomor_induk}-${row.course_id}`">
                             <tr class="hover:bg-slate-50/80 dark:hover:bg-gray-900/30">
                                 <td class="px-4 py-4">
                                     <div class="flex items-center gap-3">
                                         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
                                         <div>
                                             <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
-                                            <p class="text-xs text-slate-500 dark:text-gray-400" x-text="row.nim"></p>
+                                            <p class="text-xs text-slate-500 dark:text-gray-400" x-text="row.nomor_induk"></p>
                                         </div>
                                     </div>
                                 </td>
@@ -429,14 +429,14 @@
             </div>
 
             <div class="mt-5 grid gap-4 lg:hidden">
-                <template x-for="row in filteredRows" :key="`${row.nim}-${row.course_id}-mobile`">
+                <template x-for="row in filteredRows" :key="`${row.nomor_induk}-${row.course_id}-mobile`">
                     <article class="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-center gap-3">
                                 <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
                                 <div>
                                     <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
-                                    <p class="text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nim} • ${row.cohort}`"></p>
+                                    <p class="text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nomor_induk} â€¢ ${row.cohort}`"></p>
                                 </div>
                             </div>
                             <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
@@ -520,7 +520,7 @@
                             const query = this.search.trim().toLowerCase();
                             const matchesSearch = !query
                                 || row.student.toLowerCase().includes(query)
-                                || row.nim.toLowerCase().includes(query);
+                                || row.nomor_induk.toLowerCase().includes(query);
 
                             const matchesStatus = this.statusFilter === 'all' || row.status === this.statusFilter;
 

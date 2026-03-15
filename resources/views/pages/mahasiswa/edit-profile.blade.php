@@ -56,22 +56,22 @@
                 @enderror
             </div>
             
-            {{-- NIM --}}
+            {{-- Nomor Induk --}}
             <div class="mb-4">
                 <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                     </svg>
-                    NIM
+                    Nomor Induk
                 </label>
                 <input 
                     type="text" 
-                    value="{{ $nim }}"
+                    value="{{ $nomor_induk }}"
                     class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                     readonly
                     disabled
                 >
-                <p class="text-gray-400 text-xs mt-1">NIM tidak dapat diubah</p>
+                <p class="text-gray-400 text-xs mt-1">Nomor Induk tidak dapat diubah</p>
             </div>
             
             {{-- Tempat Lahir --}}
@@ -463,11 +463,11 @@
         status.classList.remove('hidden');
         
         if (password === confirm) {
-            status.textContent = '✓ Kata sandi cocok';
+            status.textContent = 'âœ“ Kata sandi cocok';
             status.classList.remove('text-red-500');
             status.classList.add('text-green-500');
         } else {
-            status.textContent = '✗ Kata sandi tidak cocok';
+            status.textContent = 'âœ— Kata sandi tidak cocok';
             status.classList.remove('text-green-500');
             status.classList.add('text-red-500');
         }

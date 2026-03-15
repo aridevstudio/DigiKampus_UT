@@ -154,7 +154,7 @@ class AdminImportTest extends TestCase
         $this->assertArrayHasKey('valid_rows', $preview);
         $this->assertArrayHasKey('valid_count', $preview);
         $this->assertContains('nama', $preview['header']);
-        $this->assertContains('nim', $preview['header']);
+        $this->assertContains('nomor_induk', $preview['header']);
         $this->assertContains('email', $preview['header']);
         // Template has 3 sample rows
         $this->assertEquals(3, $preview['valid_count']);
@@ -165,8 +165,8 @@ class AdminImportTest extends TestCase
     public function test_execute_import_creates_users(): void
     {
         $validRows = [
-            ['nama' => 'Import User 1', 'nim' => '2099001', 'email' => 'import1@example.com', 'no_hp' => '081234567890', '_row' => 2],
-            ['nama' => 'Import User 2', 'nim' => '2099002', 'email' => 'import2@example.com', 'no_hp' => '081234567891', '_row' => 3],
+            ['nama' => 'Import User 1', 'nomor_induk' => '2099001', 'email' => 'import1@example.com', 'no_hp' => '081234567890', '_row' => 2],
+            ['nama' => 'Import User 2', 'nomor_induk' => '2099002', 'email' => 'import2@example.com', 'no_hp' => '081234567891', '_row' => 3],
         ];
 
         $result = ExcelImportService::executeImport($validRows, 'mahasiswa', 'skip', $this->admin->id);
@@ -183,8 +183,8 @@ class AdminImportTest extends TestCase
         User::factory()->mahasiswa()->create(['email' => 'exists@example.com']);
 
         $validRows = [
-            ['nama' => 'Existing', 'nim' => '9999', 'email' => 'exists@example.com', '_row' => 2],
-            ['nama' => 'New User', 'nim' => '1111', 'email' => 'new@example.com', '_row' => 3],
+            ['nama' => 'Existing', 'nomor_induk' => '9999', 'email' => 'exists@example.com', '_row' => 2],
+            ['nama' => 'New User', 'nomor_induk' => '1111', 'email' => 'new@example.com', '_row' => 3],
         ];
 
         $result = ExcelImportService::executeImport($validRows, 'mahasiswa', 'skip', $this->admin->id);
@@ -198,7 +198,7 @@ class AdminImportTest extends TestCase
         User::factory()->mahasiswa()->create(['email' => 'blocker@example.com']);
 
         $validRows = [
-            ['nama' => 'Blocker', 'nim' => '8888', 'email' => 'blocker@example.com', '_row' => 2],
+            ['nama' => 'Blocker', 'nomor_induk' => '8888', 'email' => 'blocker@example.com', '_row' => 2],
         ];
 
         $result = ExcelImportService::executeImport($validRows, 'mahasiswa', 'stop', $this->admin->id);

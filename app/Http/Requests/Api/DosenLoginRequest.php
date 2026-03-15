@@ -16,7 +16,7 @@ class DosenLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nip' => 'required|string|max:50',
+            'nomor_induk' => 'required|string|max:50',
             'password' => 'required|string|min:8',
         ];
     }
@@ -24,8 +24,8 @@ class DosenLoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nip.required' => 'NIP wajib diisi.',
-            'nip.max' => 'NIP maksimal 50 karakter.',
+            'nomor_induk.required' => 'Nomor Induk wajib diisi.',
+            'nomor_induk.max' => 'Nomor Induk maksimal 50 karakter.',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 8 karakter.',
         ];

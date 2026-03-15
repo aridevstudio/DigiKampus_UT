@@ -184,7 +184,7 @@ class DosenContentApiController extends Controller
                     'id' => $enrollment->id_mahasiswa,
                     'name' => $enrollment->mahasiswa?->name ?? 'Mahasiswa',
                     'email' => $enrollment->mahasiswa?->email,
-                    'nim' => $enrollment->mahasiswa?->profile?->nim,
+                    'nomor_induk' => $enrollment->mahasiswa?->profile?->nomor_induk,
                     'status' => $enrollment->status,
                 ];
             })

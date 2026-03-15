@@ -14,7 +14,7 @@ class ProfileFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'nim' => fake()->unique()->numerify('##########'),
+            'nomor_induk' => fake()->unique()->numerify('##########'),
             'tempat_lahir' => fake()->city(),
             'tanggal_lahir' => fake()->date(),
             'jenis_kelamin' => fake()->randomElement(['L', 'P']),

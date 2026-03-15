@@ -15,8 +15,8 @@ class UserRoleSeeder extends Seeder
     public function run(): void
     {
         $defaultPassword = Hash::make('password123');
-        $adminNip = '19880001';
-        $dosenNip = '19880002';
+        $adminNomorInduk = '19880001';
+        $dosenNomorInduk = '19880002';
 
         $admin = User::updateOrCreate(
             ['email' => 'admin@digikampus.test'],
@@ -32,7 +32,7 @@ class UserRoleSeeder extends Seeder
         Profile::updateOrCreate(
             ['user_id' => $admin->id],
             [
-                'nim' => $adminNip,
+                'nomor_induk' => $adminNomorInduk,
                 'tempat_lahir' => 'Jakarta',
                 'tanggal_lahir' => '1985-01-10',
                 'jenis_kelamin' => 'L',
@@ -67,7 +67,7 @@ class UserRoleSeeder extends Seeder
         Profile::updateOrCreate(
             ['user_id' => $dosen->id],
             [
-                'nim' => $dosenNip,
+                'nomor_induk' => $dosenNomorInduk,
                 'tempat_lahir' => 'Bandung',
                 'tanggal_lahir' => '1988-03-15',
                 'jenis_kelamin' => 'L',
@@ -80,7 +80,7 @@ class UserRoleSeeder extends Seeder
         Profile::updateOrCreate(
             ['user_id' => $mahasiswa->id],
             [
-                'nim' => 20260001,
+                'nomor_induk' => 20260001,
                 'tempat_lahir' => 'Sukabumi',
                 'tanggal_lahir' => '2004-07-22',
                 'jenis_kelamin' => 'P',
@@ -92,8 +92,8 @@ class UserRoleSeeder extends Seeder
 
         $this->command->info('UserRoleSeeder berhasil: admin, dosen, mahasiswa siap dipakai.');
         $this->command->line('Login test:');
-        $this->command->line("- admin NIP {$adminNip} / password123");
-        $this->command->line("- dosen NIP {$dosenNip} / password123");
-        $this->command->line('- mahasiswa NIM 20260001 / password123');
+        $this->command->line("- admin Nomor Induk {$adminNomorInduk} / password123");
+        $this->command->line("- dosen Nomor Induk {$dosenNomorInduk} / password123");
+        $this->command->line('- mahasiswa Nomor Induk 20260001 / password123');
     }
 }

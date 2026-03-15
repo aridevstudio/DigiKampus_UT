@@ -32,20 +32,20 @@ class AdminController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'nip' => ['required', 'string'],
+            'nomor_induk' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
         $user = User::where('role', 'admin')
             ->whereHas('profile', function ($query) use ($request) {
-                $query->where('nim', $request->nip);
+                $query->where('nomor_induk', $request->nomor_induk);
             })
             ->first();
 
         if (!$user) {
             return back()
                 ->withInput()
-                ->with('alert', 'NIP tidak terdaftar sebagai admin.');
+                ->with('alert', 'Nomor Induk tidak terdaftar sebagai admin.');
         }
 
         if (!Hash::check($request->password, $user->password)) {
@@ -375,7 +375,7 @@ class AdminController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhereHas('profile', function($pq) use ($search) {
-                      $pq->where('nim', 'like', "%{$search}%"); // NIP stored in nim field for now
+                      $pq->where('nomor_induk', 'like', "%{$search}%");
                   });
             });
         }
@@ -407,7 +407,7 @@ class AdminController extends Controller
                 'id' => $dosen->id,
                 'foto' => $dosen->profile?->foto_profile,
                 'nama' => $dosen->name,
-                'nip' => $dosen->profile?->nim ?? '-',
+                'nomor_induk' => $dosen->profile?->nomor_induk ?? '-',
                 'program_studi' => $dosen->profile?->jurusan?->nama_jurusan ?? '-',
                 'email' => $dosen->email,
                 'no_telepon' => $dosen->profile?->no_hp ?? '-',
@@ -453,14 +453,14 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'nip' => 'required|string|max:50|unique:profiles,nim',
+            'nomor_induk' => 'required|string|max:50|unique:profiles,nomor_induk',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
-            'nip.unique' => 'NIP sudah terdaftar di sistem.',
+            'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
@@ -484,7 +484,7 @@ class AdminController extends Controller
 
         // Create profile
         $user->profile()->create([
-            'nim' => $request->nip,
+            'nomor_induk' => $request->nomor_induk,
             'id_jurusan' => $request->id_jurusan,
             'no_hp' => $request->no_hp,
             'foto_profile' => $fotoPath,
@@ -510,7 +510,7 @@ class AdminController extends Controller
             'name' => $dosen->name,
             'email' => $dosen->email,
             'status' => $dosen->status,
-            'nip' => $dosen->profile?->nim,
+            'nomor_induk' => $dosen->profile?->nomor_induk,
             'id_jurusan' => $dosen->profile?->id_jurusan,
             'no_hp' => $dosen->profile?->no_hp,
             'foto' => $dosen->profile?->foto_profile,
@@ -533,14 +533,14 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'nip' => 'required|string|max:50|unique:profiles,nim,' . ($profileId ?? 'NULL') . ',id',
+            'nomor_induk' => 'required|string|max:50|unique:profiles,nomor_induk,' . ($profileId ?? 'NULL') . ',id',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
-            'nip.unique' => 'NIP sudah terdaftar di sistem.',
+            'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
@@ -567,7 +567,7 @@ class AdminController extends Controller
         $dosen->profile()->updateOrCreate(
             ['user_id' => $dosen->id],
             [
-                'nim' => $request->nip,
+                'nomor_induk' => $request->nomor_induk,
                 'id_jurusan' => $request->id_jurusan,
                 'no_hp' => $request->no_hp,
                 'foto_profile' => $fotoPath,
@@ -626,7 +626,7 @@ class AdminController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhereHas('profile', function($pq) use ($search) {
-                      $pq->where('nim', 'like', "%{$search}%");
+                      $pq->where('nomor_induk', 'like', "%{$search}%");
                   });
             });
         }
@@ -653,7 +653,7 @@ class AdminController extends Controller
                 'id' => $mhs->id,
                 'foto' => $mhs->profile?->foto_profile,
                 'nama' => $mhs->name,
-                'nim' => $mhs->profile?->nim ?? '-',
+                'nomor_induk' => $mhs->profile?->nomor_induk ?? '-',
                 'program_studi' => $mhs->profile?->jurusan?->nama_jurusan ?? '-',
                 'email' => $mhs->email,
                 'no_telepon' => $mhs->profile?->no_hp ?? '-',
@@ -700,14 +700,14 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'nim' => 'required|string|max:50|unique:profiles,nim',
+            'nomor_induk' => 'required|string|max:50|unique:profiles,nomor_induk',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
-            'nim.unique' => 'NIM sudah terdaftar di sistem.',
+            'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
@@ -731,7 +731,7 @@ class AdminController extends Controller
 
         // Create profile
         $user->profile()->create([
-            'nim' => $request->nim,
+            'nomor_induk' => $request->nomor_induk,
             'id_jurusan' => $request->id_jurusan,
             'no_hp' => $request->no_hp,
             'foto_profile' => $fotoPath,
@@ -786,7 +786,7 @@ class AdminController extends Controller
             'name' => $mhs->name,
             'email' => $mhs->email,
             'status' => $mhs->status,
-            'nim' => $mhs->profile?->nim,
+            'nomor_induk' => $mhs->profile?->nomor_induk,
             'id_jurusan' => $mhs->profile?->id_jurusan,
             'no_hp' => $mhs->profile?->no_hp,
             'foto' => $mhs->profile?->foto_profile,
@@ -809,14 +809,14 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'nim' => 'required|string|max:50|unique:profiles,nim,' . $id . ',user_id',
+            'nomor_induk' => 'required|string|max:50|unique:profiles,nomor_induk,' . $id . ',user_id',
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
-            'nim.unique' => 'NIM sudah terdaftar di sistem.',
+            'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
@@ -843,7 +843,7 @@ class AdminController extends Controller
         $mhs->profile()->updateOrCreate(
             ['user_id' => $mhs->id],
             [
-                'nim' => $request->nim,
+                'nomor_induk' => $request->nomor_induk,
                 'id_jurusan' => $request->id_jurusan,
                 'no_hp' => $request->no_hp,
                 'foto_profile' => $fotoPath,
@@ -2003,12 +2003,12 @@ class AdminController extends Controller
 
             $data = array_combine($header, array_pad($row, count($header), ''));
             $nama = $data['nama'] ?? '';
-            $nim = $data['nim'] ?? '';
+            $nomor_induk = $data['nomor_induk'] ?? '';
             $email = $data['email'] ?? '';
             $jurusanName = $data['jurusan'] ?? '';
             $noHp = $data['no_hp'] ?? '';
 
-            if (empty($nama) || empty($nim) || empty($email)) {
+            if (empty($nama) || empty($nomor_induk) || empty($email)) {
                 $skipped++;
                 continue;
             }
@@ -2039,7 +2039,7 @@ class AdminController extends Controller
                 ]);
 
                 $user->profile()->create([
-                    'nim' => $nim,
+                    'nomor_induk' => $nomor_induk,
                     'id_jurusan' => $idJurusan,
                     'no_hp' => $noHp ?: null,
                 ]);
@@ -2097,12 +2097,12 @@ class AdminController extends Controller
 
             $data = array_combine($header, array_pad($row, count($header), ''));
             $nama = $data['nama'] ?? '';
-            $nip = $data['nip'] ?? '';
+            $nomor_induk = $data['nomor_induk'] ?? '';
             $email = $data['email'] ?? '';
             $jurusanName = $data['jurusan'] ?? '';
             $noHp = $data['no_hp'] ?? '';
 
-            if (empty($nama) || empty($nip) || empty($email)) {
+            if (empty($nama) || empty($nomor_induk) || empty($email)) {
                 $skipped++;
                 continue;
             }
@@ -2131,7 +2131,7 @@ class AdminController extends Controller
                 ]);
 
                 $user->profile()->create([
-                    'nim' => $nip,
+                    'nomor_induk' => $nomor_induk,
                     'id_jurusan' => $idJurusan,
                     'no_hp' => $noHp ?: null,
                 ]);
@@ -2154,7 +2154,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Get notifications (JSON API) — real persistent notifications
+     * Get notifications (JSON API) â€” real persistent notifications
      */
     public function getNotifications()
     {
@@ -2702,8 +2702,8 @@ class AdminController extends Controller
 
         // Headers
         $headers = $isMahasiswa
-            ? ['No', 'Nama', 'NIM', 'Email', 'Program Studi', 'No. Telepon', 'Status']
-            : ['No', 'Nama', 'NIP', 'Email', 'Program Studi', 'No. Telepon', 'Status'];
+            ? ['No', 'Nama', 'Nomor Induk', 'Email', 'Program Studi', 'No. Telepon', 'Status']
+            : ['No', 'Nama', 'Nomor Induk', 'Email', 'Program Studi', 'No. Telepon', 'Status'];
 
         foreach ($headers as $col => $header) {
             $cell = chr(65 + $col) . '1';
@@ -2731,7 +2731,7 @@ class AdminController extends Controller
         foreach ($users as $index => $user) {
             $sheet->setCellValue('A' . $rowNum, $index + 1);
             $sheet->setCellValue('B' . $rowNum, $user->name);
-            $sheet->setCellValueExplicit('C' . $rowNum, $user->profile?->nim ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('C' . $rowNum, $user->profile?->nomor_induk ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('D' . $rowNum, $user->email);
             $sheet->setCellValue('E' . $rowNum, $user->profile?->jurusan?->nama_jurusan ?? '-');
             $sheet->setCellValueExplicit('F' . $rowNum, $user->profile?->no_hp ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);

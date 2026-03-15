@@ -37,7 +37,7 @@ class AdminValidationTest extends TestCase
         $response = $this->actingAsAdmin()
             ->post(route('admin.dosen.store'), [
                 'nama' => 'Dr. Test',
-                'nip' => '12345678',
+                'nomor_induk' => '12345678',
                 'email' => 'test@example.com',
                 'no_hp' => '081234567890',
                 'id_jurusan' => 1,
@@ -56,7 +56,7 @@ class AdminValidationTest extends TestCase
         $response = $this->actingAsAdmin()
             ->post(route('admin.dosen.store'), [
                 'nama' => 'Dr. WebP',
-                'nip' => '99887766',
+                'nomor_induk' => '99887766',
                 'email' => 'webp@example.com',
                 'no_hp' => '081234567890',
                 'id_jurusan' => 1,
@@ -75,7 +75,7 @@ class AdminValidationTest extends TestCase
         $response = $this->actingAsAdmin()
             ->post(route('admin.mahasiswa.store'), [
                 'nama' => 'Mahasiswa Test',
-                'nim' => '2024001001',
+                'nomor_induk' => '2024001001',
                 'email' => 'mhs@example.com',
                 'no_hp' => '081234567890',
                 'id_jurusan' => 1,
@@ -90,23 +90,23 @@ class AdminValidationTest extends TestCase
     // Uniqueness Tests
     // =====================
 
-    public function test_store_mahasiswa_rejects_duplicate_nim(): void
+    public function test_store_mahasiswa_rejects_duplicate_nomor_induk(): void
     {
-        // Create existing user with NIM
+        // Create existing user with Nomor Induk
         $existingUser = User::factory()->mahasiswa()->create();
-        $existingUser->profile()->create(['nim' => '2024001001']);
+        $existingUser->profile()->create(['nomor_induk' => '2024001001']);
 
         $response = $this->actingAsAdmin()
             ->post(route('admin.mahasiswa.store'), [
                 'nama' => 'New Student',
-                'nim' => '2024001001', // duplicate
+                'nomor_induk' => '2024001001', // duplicate
                 'email' => 'new@example.com',
                 'no_hp' => '081234567890',
                 'id_jurusan' => 1,
                 'status' => 'aktif',
             ]);
 
-        $response->assertSessionHasErrors('nim');
+        $response->assertSessionHasErrors('nomor_induk');
     }
 
     public function test_store_dosen_rejects_duplicate_email(): void
@@ -116,7 +116,7 @@ class AdminValidationTest extends TestCase
         $response = $this->actingAsAdmin()
             ->post(route('admin.dosen.store'), [
                 'nama' => 'Dr. New',
-                'nip' => '99999999',
+                'nomor_induk' => '99999999',
                 'email' => 'existing@example.com', // duplicate
                 'no_hp' => '081234567890',
                 'id_jurusan' => 1,

@@ -524,7 +524,7 @@
                 if (!studentId) return;
 
                 const studentName = escapeScheduleHtml(student?.name ?? 'Mahasiswa');
-                const studentNim = student?.nim ? ` - ${escapeScheduleHtml(student.nim)}` : '';
+                const studentNim = student?.nomor_induk ? ` - ${escapeScheduleHtml(student.nomor_induk)}` : '';
                 options.push(`<option value="${studentId}">${studentName}${studentNim}</option>`);
             });
 

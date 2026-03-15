@@ -21,7 +21,7 @@ class MahasiswaSeeder extends Seeder
         ])->each(function ($user) {
             Profile::create([
                 'user_id' => $user->id,  // Fixed: user_id bukan id_user
-                'nim' => fake()->numerify('202401##'),  // Format: 20240101, 20240102, dst
+                'nomor_induk' => fake()->numerify('202401##'),  // Format: 20240101, 20240102, dst
                 'tempat_lahir' => fake()->city(),
                 'tanggal_lahir' => fake()->date('Y-m-d', '-18 years'),
                 'jenis_kelamin' => fake()->randomElement(['L', 'P']),

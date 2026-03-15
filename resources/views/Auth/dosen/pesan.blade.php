@@ -88,8 +88,8 @@
                             <img :src="activeConversation?.student_avatar" class="w-10 h-10 rounded-full object-cover bg-gray-200">
                             <div>
                                 <p class="font-semibold text-gray-900 dark:text-white" x-text="activeConversation?.student_name"></p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="activeConversation?.student_nim"></p>
-                                <p class="text-[10px] text-emerald-500 dark:text-emerald-400 font-medium mt-0.5">Realtime aktif • Riwayat 24 jam</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="activeConversation?.student_nomor_induk"></p>
+                                <p class="text-[10px] text-emerald-500 dark:text-emerald-400 font-medium mt-0.5">Realtime aktif â€¢ Riwayat 24 jam</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
@@ -178,7 +178,7 @@
                 <div class="p-5 text-center border-b border-gray-100 dark:border-gray-700">
                     <img :src="activeConversation?.student_avatar" class="w-20 h-20 rounded-full mx-auto mb-3 bg-gray-200 object-cover">
                     <h3 class="font-bold text-gray-900 dark:text-white" x-text="activeConversation?.student_name"></h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400" x-text="'NIM: ' + activeConversation?.student_nim"></p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400" x-text="'Nomor Induk: ' + activeConversation?.student_nomor_induk"></p>
                 </div>
 
                 <div class="p-5 space-y-4">
@@ -262,7 +262,7 @@
                             const mapped = data.data.map(conv => ({
                                 student_id: conv.student_id,
                                 student_name: conv.student_name,
-                                student_nim: conv.student_nim || '-',
+                                student_nomor_induk: conv.student_nomor_induk || '-',
                                 student_email: conv.student_email || '-',
                                 student_avatar: conv.student_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.student_name)}&background=random`,
                                 last_message: conv.last_message,

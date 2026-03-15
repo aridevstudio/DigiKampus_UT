@@ -11,7 +11,7 @@ class Profile extends Model
     use HasFactory, Notifiable;
     protected $fillable = [
         'user_id',
-        'nim',
+        'nomor_induk',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',

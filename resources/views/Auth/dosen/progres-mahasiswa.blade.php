@@ -161,7 +161,7 @@
                                 @endif
                                 <div class="min-w-0">
                                     <p class="font-semibold text-gray-900 dark:text-white text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ $enrollment->mahasiswa?->name ?? 'Unknown' }}</p>
-                                    <p class="text-[11px] text-gray-400 dark:text-gray-500 font-mono">{{ $enrollment->mahasiswa?->profile?->nim ?? '-' }}</p>
+                                    <p class="text-[11px] text-gray-400 dark:text-gray-500 font-mono">{{ $enrollment->mahasiswa?->profile?->nomor_induk ?? '-' }}</p>
                                 </div>
                             </div>
                         </td>
@@ -205,7 +205,7 @@
                                     <span class="text-[10px] text-gray-400">{{ $enrollment->quiz_score['quiz_count'] }} kuis</span>
                                 </div>
                             @else
-                                <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
+                                <span class="text-xs text-gray-400 dark:text-gray-500">â€”</span>
                             @endif
                         </td>
                         

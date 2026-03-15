@@ -41,7 +41,7 @@
             </div>
             
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $userName }}</h2>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">NIM: {{ $nim ?? '-' }}</p>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Nomor Induk: {{ $nomor_induk ?? '-' }}</p>
             <a href="{{ route('mahasiswa.courses') }}" class="text-blue-500 hover:text-blue-600 text-sm font-medium mt-1">{{ $programStudi ?? '-' }} ({{ $jenjang ?? '-' }})</a>
             
             <div class="flex items-center gap-2 mt-4">

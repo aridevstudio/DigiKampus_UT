@@ -13,7 +13,7 @@ use Tests\TestCase;
  * Tests for Mahasiswa authentication API endpoints.
  *
  * Covers:
- * - Login with NIM/password
+ * - Login with Nomor Induk/password
  * - Token generation and revocation
  * - Role-based access guard
  * - Rate limiting on auth endpoints
@@ -23,7 +23,7 @@ class MahasiswaAuthTest extends TestCase
     use RefreshDatabase;
 
     private User $mahasiswa;
-    private string $nim = '2100001234';
+    private string $nomor_induk = '2100001234';
 
     protected function setUp(): void
     {
@@ -35,14 +35,14 @@ class MahasiswaAuthTest extends TestCase
 
         Profile::factory()->create([
             'user_id' => $this->mahasiswa->id,
-            'nim' => $this->nim,
+            'nomor_induk' => $this->nomor_induk,
         ]);
     }
 
     public function test_mahasiswa_can_login_with_valid_credentials(): void
     {
         $response = $this->postJson('/api/auth/mahasiswa/login', [
-            'nim' => $this->nim,
+            'nomor_induk' => $this->nomor_induk,
             'password' => 'Password1',
         ]);
 
@@ -56,7 +56,7 @@ class MahasiswaAuthTest extends TestCase
     public function test_login_fails_with_wrong_password(): void
     {
         $response = $this->postJson('/api/auth/mahasiswa/login', [
-            'nim' => $this->nim,
+            'nomor_induk' => $this->nomor_induk,
             'password' => 'wrongpassword',
         ]);
 
@@ -64,10 +64,10 @@ class MahasiswaAuthTest extends TestCase
             ->assertJsonPath('success', false);
     }
 
-    public function test_login_fails_with_nonexistent_nim(): void
+    public function test_login_fails_with_nonexistent_nomor_induk(): void
     {
         $response = $this->postJson('/api/auth/mahasiswa/login', [
-            'nim' => '9999999999',
+            'nomor_induk' => '9999999999',
             'password' => 'Password1',
         ]);
 
@@ -83,11 +83,11 @@ class MahasiswaAuthTest extends TestCase
 
         Profile::factory()->create([
             'user_id' => $dosen->id,
-            'nim' => '9876543210',
+            'nomor_induk' => '9876543210',
         ]);
 
         $response = $this->postJson('/api/auth/mahasiswa/login', [
-            'nim' => '9876543210',
+            'nomor_induk' => '9876543210',
             'password' => 'Password1',
         ]);
 
@@ -99,7 +99,7 @@ class MahasiswaAuthTest extends TestCase
         $this->mahasiswa->update(['status' => 'nonaktif']);
 
         $response = $this->postJson('/api/auth/mahasiswa/login', [
-            'nim' => $this->nim,
+            'nomor_induk' => $this->nomor_induk,
             'password' => 'Password1',
         ]);
 
@@ -110,7 +110,7 @@ class MahasiswaAuthTest extends TestCase
     {
         // First login - creates token
         $this->postJson('/api/auth/mahasiswa/login', [
-            'nim' => $this->nim,
+            'nomor_induk' => $this->nomor_induk,
             'password' => 'Password1',
         ]);
 
@@ -118,7 +118,7 @@ class MahasiswaAuthTest extends TestCase
 
         // Second login - should revoke old token and create new one
         $this->postJson('/api/auth/mahasiswa/login', [
-            'nim' => $this->nim,
+            'nomor_induk' => $this->nomor_induk,
             'password' => 'Password1',
         ]);
 

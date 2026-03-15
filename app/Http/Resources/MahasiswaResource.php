@@ -21,7 +21,7 @@ class MahasiswaResource extends JsonResource
             'role' => $this->role,
             'status' => $this->status,
             'profile' => [
-                'nim' => $this->profile->nim ?? null,
+                'nomor_induk' => $this->profile->nomor_induk ?? null,
                 'tempat_lahir' => $this->profile->tempat_lahir ?? null,
                 'tanggal_lahir' => $this->profile->tanggal_lahir ?? null,
                 'jenis_kelamin' => $this->profile->jenis_kelamin ?? null,

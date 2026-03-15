@@ -109,7 +109,7 @@ class DosenStudentProgressController extends Controller
                 'mahasiswa' => [
                     'id' => $mahasiswa->id,
                     'name' => $mahasiswa->name,
-                    'nim' => $mahasiswa->profile->nim ?? null,
+                    'nomor_induk' => $mahasiswa->profile->nomor_induk ?? null,
                     'avatar' => $mahasiswa->profile->avatar ?? null
                 ],
                 'course' => [
@@ -199,7 +199,7 @@ class DosenStudentProgressController extends Controller
                     'id' => $mahasiswa->id,
                     'name' => $mahasiswa->name,
                     'email' => $mahasiswa->email,
-                    'nim' => $mahasiswa->profile->nim ?? null,
+                    'nomor_induk' => $mahasiswa->profile->nomor_induk ?? null,
                     'avatar' => $mahasiswa->profile->avatar ?? null,
                     'bergabung_sejak' => $mahasiswa->created_at->format('F Y')
                 ],

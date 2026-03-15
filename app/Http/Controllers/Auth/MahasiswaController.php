@@ -66,13 +66,13 @@ class MahasiswaController extends Controller
     public function showLoginFormPost(MahasiswaRequest $request) {
         $validated = $request->validated();
         $user = User::whereHas('profile', function($q) use ($validated) {
-            $q->where('nim', $validated['nim']);
+            $q->where('nomor_induk', $validated['nomor_induk']);
         })->first();
 
         if (!$user) {
             return back()
                 ->withInput()
-                ->with('alert', 'NIM tidak ditemukan. Pastikan NIM Anda sudah terdaftar.');
+                ->with('alert', 'Nomor Induk tidak ditemukan. Pastikan Nomor Induk Anda sudah terdaftar.');
         }
         
         // Check if user role is mahasiswa
@@ -102,7 +102,7 @@ class MahasiswaController extends Controller
             $user->setOnline(); // Set user online status
             return redirect()->route('mahasiswa.dashboard');
         }
-        return back()->withErrors(['mahasiswa.login' => 'NIS atau password salah.']);
+        return back()->withErrors(['mahasiswa.login' => 'Nomor Induk atau password salah.']);
     }
 
     // ============================================

@@ -93,7 +93,7 @@
 
             <p class="mt-4 font-semibold text-gray-800 dark:text-white">{{ $dosen->name }}</p>
             <p class="text-sm text-gray-500">{{ $dosen->email }}</p>
-            <p class="text-xs text-gray-400 mt-1">NIP/NIM: {{ $dosen->profile?->nim ?? '-' }}</p>
+            <p class="text-xs text-gray-400 mt-1">Nomor Induk: {{ $dosen->profile?->nomor_induk ?? '-' }}</p>
             <span class="inline-block mt-2 px-3 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-full">Dosen</span>
         </div>
     </div>

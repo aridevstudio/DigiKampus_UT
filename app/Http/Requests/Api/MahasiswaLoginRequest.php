@@ -24,7 +24,7 @@ class MahasiswaLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nim' => ['required', 'integer', 'digits_between:1,20'],
+            'nomor_induk' => ['required', 'string', 'max:50'],
             'password' => ['required', 'string', 'min:6'],
         ];
     }
@@ -37,9 +37,9 @@ class MahasiswaLoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nim.required' => 'NIM wajib diisi.',
-            'nim.integer' => 'NIM harus berupa angka.',
-            'nim.digits_between' => 'NIM tidak valid.',
+            'nomor_induk.required' => 'Nomor Induk wajib diisi.',
+            'nomor_induk.string' => 'Nomor Induk harus berupa teks.',
+            'nomor_induk.max' => 'Nomor Induk maksimal 50 karakter.',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 6 karakter.',
         ];

@@ -137,14 +137,14 @@
 
         @if($course->enrollments->count() > 5)
         <div class="mb-3">
-            <input type="text" x-model="search" placeholder="Cari nama atau NIM..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <input type="text" x-model="search" placeholder="Cari nama atau Nomor Induk..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         </div>
         @endif
 
         <div class="space-y-2 max-h-80 overflow-y-auto">
             @forelse($course->enrollments as $enrollment)
                 <div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-gray-700/50 px-4 py-3"
-                     x-show="!search || '{{ strtolower($enrollment->mahasiswa?->name ?? '') }} {{ strtolower($enrollment->mahasiswa?->profile?->nim ?? '') }}'.includes(search.toLowerCase())"
+                     x-show="!search || '{{ strtolower($enrollment->mahasiswa?->name ?? '') }} {{ strtolower($enrollment->mahasiswa?->profile?->nomor_induk ?? '') }}'.includes(search.toLowerCase())"
                      x-transition>
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
@@ -152,7 +152,7 @@
                         </div>
                         <div class="min-w-0">
                             <p class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">{{ $enrollment->mahasiswa?->name ?? 'Mahasiswa' }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $enrollment->mahasiswa?->profile?->nim ?? '-' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $enrollment->mahasiswa?->profile?->nomor_induk ?? '-' }}</p>
                         </div>
                     </div>
                     <div class="ml-3 shrink-0 flex items-center gap-2">

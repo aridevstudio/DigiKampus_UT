@@ -23,16 +23,16 @@ class MahasiswaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nim' => ['required', 'string','min:3'],
+            'nomor_induk' => ['required', 'string','min:3'],
             'password' => ['required', 'string','min:3'],
         ];
     }
     public function messages(): array
     {
         return [
-            'nim.required' => 'NIM wajib diisi.',
+            'nomor_induk.required' => 'Nomor Induk wajib diisi.',
             'password.required' => 'Password wajib diisi.',
-            'nim.min' => 'NIM minimal :min karakter.',
+            'nomor_induk.min' => 'Nomor Induk minimal :min karakter.',
             'password.min' => 'Password minimal :min karakter.',
         ];
     }
