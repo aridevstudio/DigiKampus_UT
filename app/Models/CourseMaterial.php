@@ -75,4 +75,9 @@ class CourseMaterial extends Model
     {
         return $this->progress()->where('id_mahasiswa', $mahasiswaId)->first();
     }
+
+    public function submissions()
+    {
+        return $this->hasMany(AssignmentSubmission::class, 'id_material', 'id_material');
+    }
 }

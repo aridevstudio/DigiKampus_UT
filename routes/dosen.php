@@ -64,6 +64,8 @@ Route::prefix('dosen')
             
             // Kursus Detail Routes
             Route::get('/{id}', [DosenController::class, 'getKursusDetail'])->name('dosen.kursus.detail');
+            Route::post('/{id}/notes', [DosenController::class, 'storeCourseNote'])->name('dosen.kursus.notes.store');
+            Route::delete('/{id}/notes/{noteId}', [DosenController::class, 'deleteCourseNote'])->name('dosen.kursus.notes.delete');
             Route::get('/{id}/edit', [DosenController::class, 'showEditKursus'])->name('dosen.kursus.edit');
             Route::put('/{id}', [DosenController::class, 'updateCourse'])->name('dosen.kursus.update');
             Route::get('/{id}/modul', [DosenController::class, 'showKelolaModul'])->name('dosen.kursus.modul');

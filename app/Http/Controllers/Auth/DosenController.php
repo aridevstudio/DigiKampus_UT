@@ -6,15 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Agenda;
 use App\Models\AdminNotification;
 use App\Models\Course;
+use App\Models\CourseInstructorNote;
 use App\Models\DosenNotification;
 use App\Models\Enrollment;
 use App\Models\Message;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Laravel\Socialite\Facades\Socialite;
@@ -521,6 +524,7 @@ class DosenController extends Controller
                 'materials',
                 'modules.materials',
                 'jurusan',
+                'instructorNotes' => fn ($query) => $query->latest(),
             ])
             ->first();
 
@@ -566,6 +570,56 @@ class DosenController extends Controller
             'course' => $course,
             'detail' => $detailData,
         ]);
+    }
+
+    public function storeCourseNote(Request $request, $id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $course = Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->with('enrollments')
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'judul' => 'nullable|string|max:255',
+            'konten' => 'required|string|max:3000',
+        ]);
+
+        $note = CourseInstructorNote::create([
+            'id_course' => $course->id_course,
+            'id_dosen' => $dosen->id,
+            'judul' => trim((string) ($validated['judul'] ?? '')),
+            'konten' => trim($validated['konten']),
+            'is_active' => true,
+        ]);
+
+        foreach ($course->enrollments as $enrollment) {
+            Notification::notifyMahasiswa(
+                $enrollment->id_mahasiswa,
+                'Catatan baru dari dosen',
+                'Dosen menambahkan catatan baru pada kursus ' . $course->nama_course . '.',
+                'kursus_pembelajaran',
+                'note',
+                '#F59E0B'
+            );
+        }
+
+        return back()->with('success', 'Catatan dosen berhasil dikirim.');
+    }
+
+    public function deleteCourseNote($id, $noteId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $note = CourseInstructorNote::where('id_course_instructor_note', $noteId)
+            ->where('id_dosen', $dosen->id)
+            ->where('id_course', $id)
+            ->firstOrFail();
+
+        $note->delete();
+
+        return back()->with('success', 'Catatan dosen berhasil dihapus.');
     }
 
     /**
@@ -1287,8 +1341,10 @@ class DosenController extends Controller
         $course = \App\Models\Course::where('id_course', $id)
             ->where('id_dosen', $dosen->id)
             ->with(['materials' => function($q) {
-                $q->orderBy('urutan');
-            }, 'enrollments.mahasiswa.profile', 'jurusan'])
+                  $q->orderBy('urutan');
+            }, 'enrollments.mahasiswa.profile', 'jurusan', 'instructorNotes' => function ($query) {
+                $query->latest();
+            }])
             ->first();
 
         if (!$course) {
@@ -1741,40 +1797,35 @@ class DosenController extends Controller
     {
         $dosen = Auth::guard('dosen')->user();
         $dosenId = $dosen->id;
-        $search = $request->query('search');
+        $search = trim((string) $request->query('search', ''));
 
-        // Get students who have conversations with this dosen
-        $conversationStudents = Message::where('id_sender', $dosenId)
-            ->orWhere('id_receiver', $dosenId)
-            ->selectRaw('CASE WHEN id_sender = ? THEN id_receiver ELSE id_sender END as student_id', [$dosenId])
-            ->distinct()
-            ->pluck('student_id');
+        $availableStudentIds = $this->getAvailableStudentIds($dosenId);
 
-        // Also include students enrolled in dosen's courses (potential contacts)
-        $dosenCourseIds = Course::where('id_dosen', $dosenId)->pluck('id_course');
-        $enrolledStudents = Enrollment::whereIn('id_course', $dosenCourseIds)
-            ->pluck('id_mahasiswa');
+        if ($availableStudentIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
 
-        $allStudentIds = $conversationStudents->merge($enrolledStudents)->unique();
-
-        // Query students
-        $studentsQuery = User::whereIn('id', $allStudentIds)
+        $studentsQuery = User::whereIn('id', $availableStudentIds)
             ->where('role', 'mahasiswa')
             ->with('profile');
 
-        if ($search) {
-            $studentsQuery->where('name', 'like', "%{$search}%");
+        if ($search !== '') {
+            $studentsQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('profile', function ($profileQuery) use ($search) {
+                        $profileQuery->where('nomor_induk', 'like', "%{$search}%");
+                    });
+            });
         }
 
         $students = $studentsQuery->get();
 
-        // Build conversations data
         $conversations = $students->map(function ($student) use ($dosenId) {
-            $lastMessage = Message::where(function ($q) use ($dosenId, $student) {
-                    $q->where('id_sender', $dosenId)->where('id_receiver', $student->id);
-                })->orWhere(function ($q) use ($dosenId, $student) {
-                    $q->where('id_sender', $student->id)->where('id_receiver', $dosenId);
-                })
+            $lastMessage = Message::conversation($dosenId, $student->id)
                 ->orderBy('created_at', 'desc')
                 ->first();
 
@@ -1800,9 +1851,25 @@ class DosenController extends Controller
                 'last_message_time' => $lastMessage ? $lastMessage->created_at->toISOString() : null,
                 'unread_count' => $unreadCount,
             ];
-        })->sortByDesc(function ($conv) {
-            return $conv['unread_count'] > 0 ? 1 : 0;
-        })->values();
+        })
+            ->sort(function (array $left, array $right) {
+                $leftUnread = (int) ($left['unread_count'] ?? 0);
+                $rightUnread = (int) ($right['unread_count'] ?? 0);
+
+                if (($leftUnread > 0) !== ($rightUnread > 0)) {
+                    return $leftUnread > 0 ? -1 : 1;
+                }
+
+                $leftTime = $left['last_message_time'] ?? '';
+                $rightTime = $right['last_message_time'] ?? '';
+
+                if ($leftTime !== $rightTime) {
+                    return $rightTime <=> $leftTime;
+                }
+
+                return strcmp($left['student_name'], $right['student_name']);
+            })
+            ->values();
 
         return response()->json([
             'success' => true,
@@ -1817,6 +1884,14 @@ class DosenController extends Controller
     {
         $dosen = Auth::guard('dosen')->user();
         $dosenId = $dosen->id;
+        $studentId = (int) $studentId;
+
+        if (!$this->canAccessStudent($dosenId, $studentId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mahasiswa tidak dapat diakses.',
+            ], 403);
+        }
 
         $student = User::where('id', $studentId)->where('role', 'mahasiswa')->first();
         if (!$student) {
@@ -1830,11 +1905,7 @@ class DosenController extends Controller
             ->update(['is_read' => true]);
 
         // Get messages
-        $messages = Message::where(function ($q) use ($dosenId, $studentId) {
-                $q->where('id_sender', $dosenId)->where('id_receiver', $studentId);
-            })->orWhere(function ($q) use ($dosenId, $studentId) {
-                $q->where('id_sender', $studentId)->where('id_receiver', $dosenId);
-            })
+        $messages = Message::conversation($dosenId, $studentId)
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($msg) use ($dosenId) {
@@ -1865,6 +1936,13 @@ class DosenController extends Controller
             'content' => 'required|string|max:2000',
         ]);
 
+        if (!$this->canAccessStudent((int) $dosen->id, (int) $request->student_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses untuk menghubungi mahasiswa ini.',
+            ], 403);
+        }
+
         $student = User::where('id', $request->student_id)->where('role', 'mahasiswa')->first();
         if (!$student) {
             return response()->json(['success' => false, 'message' => 'Mahasiswa tidak ditemukan.'], 404);
@@ -1887,6 +1965,34 @@ class DosenController extends Controller
                 'is_read' => false,
             ],
         ]);
+    }
+
+    private function getAvailableStudentIds(int $dosenId): Collection
+    {
+        $conversationStudentIds = Message::where(function ($query) use ($dosenId) {
+            $query->where('id_sender', $dosenId)->orWhere('id_receiver', $dosenId);
+        })
+            ->selectRaw('CASE WHEN id_sender = ? THEN id_receiver ELSE id_sender END as student_id', [$dosenId])
+            ->pluck('student_id');
+
+        $dosenCourseIds = Course::where('id_dosen', $dosenId)->pluck('id_course');
+        $enrolledStudentIds = Enrollment::whereIn('id_course', $dosenCourseIds)
+            ->pluck('id_mahasiswa');
+
+        return $conversationStudentIds
+            ->merge($enrolledStudentIds)
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+    }
+
+    private function canAccessStudent(int $dosenId, int $studentId): bool
+    {
+        if ($studentId <= 0) {
+            return false;
+        }
+
+        return $this->getAvailableStudentIds($dosenId)->contains($studentId);
     }
 
     private function formatScheduleTime(?string $time): ?string

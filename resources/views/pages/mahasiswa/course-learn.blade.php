@@ -315,6 +315,7 @@
                                     'playsinline' => '1',
                                     'fs' => '0',
                                     'disablekb' => '1',
+                                    'enablejsapi' => '1',
                                     'iv_load_policy' => '3',
                                     'cc_load_policy' => '0',
                                     'origin' => request()->getSchemeAndHttpHost(),
@@ -332,10 +333,10 @@
                         @endphp
 
                         @if($embedUrl)
-                            <iframe src="{{ $embedUrl }}" title="Video Player" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full"></iframe>
+                            <iframe id="course-youtube-player" src="{{ $embedUrl }}" title="Video Player" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full"></iframe>
                         @else
                             {{-- Fallback for non-YouTube or direct files --}}
-                            <video controls controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture disableRemotePlayback oncontextmenu="return false" class="w-full h-full">
+                            <video id="course-html5-player" controls controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture disableRemotePlayback oncontextmenu="return false" class="w-full h-full">
                                 <source src="{{ $videoUrl }}" type="video/mp4">
                                 Browser Anda tidak mendukung tag video.
                             </video>
@@ -383,6 +384,13 @@
 
                 <div class="pointer-events-none absolute bottom-3 right-3 rounded-md bg-black/45 px-2 py-1 text-[10px] text-white/90 backdrop-blur-sm">
                     Private Course • {{ Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa' }}
+                </div>
+
+                <div id="video-private-overlay" class="absolute inset-0 hidden items-center justify-center bg-black/80 px-6 text-center">
+                    <div>
+                        <p class="text-lg font-semibold text-white">Sesi video selesai</p>
+                        <p class="mt-2 text-sm text-white/80">Player diprivasi setelah video selesai. Buka lagi dari modul jika ingin menonton ulang.</p>
+                    </div>
                 </div>
             </div>
 
@@ -504,79 +512,18 @@
             </div>
             
             {{-- Diskusi Tab --}}
-            <div id="tab-diskusi" class="tab-content" x-data="{
-                newComment: '',
-                comments: [
-                    { id: 1, name: 'Budi Santoso', role: 'Mahasiswa', text: 'Permisi Pak/Bu, saya kurang paham di menit ke 4:20 mengenai variabel scope. Apakah variabel di dalam function tidak bisa diakses dari luar sama sekali?', time: '2 jam yang lalu', avatar: 'https://ui-avatars.com/api/?name=Budi+Santoso&background=random' },
-                    { id: 2, name: 'Dosen DigiKampus', role: 'Pengajar', text: 'Benar sekali Budi. Variabel yang dideklarasikan di dalam fungsi (local scope) hanya hidup selama fungsi tersebut dieksekusi. Ia tidak bisa diakses dari luar fungsi tersebut secara langsung.', time: '1 jam yang lalu', avatar: 'https://ui-avatars.com/api/?name=Dosen+DigiKampus&background=4F46E5&color=fff' }
-                ],
-                postComment() {
-                    if(this.newComment.trim() === '') return;
-                    this.comments.push({
-                        id: Date.now(),
-                        name: 'Anda (Mahasiswa)',
-                        role: 'Mahasiswa',
-                        text: this.newComment,
-                        time: 'Baru saja',
-                        avatar: 'https://ui-avatars.com/api/?name=Mahasiswa&background=0D9488&color=fff'
-                    });
-                    this.newComment = '';
-                    // Scroll to bottom
-                    setTimeout(() => {
-                        const container = document.getElementById('diskusi-container');
-                        container.scrollTop = container.scrollHeight;
-                    }, 50);
-                }
-            }">
-                {{-- Messages Container --}}
-                <div id="diskusi-container" class="p-4 space-y-5" style="height: 400px; overflow-y: auto;">
-                    <template x-for="comment in comments" :key="comment.id">
-                        <div class="flex gap-3">
-                            <img :src="comment.avatar" :alt="comment.name" class="w-8 h-8 rounded-full flex-shrink-0 object-cover border border-gray-200 dark:border-gray-700">
-                            <div class="flex-1">
-                                <div class="flex items-baseline justify-between mb-1">
-                                    <div class="flex items-center gap-2">
-                                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100" x-text="comment.name"></h4>
-                                        <span x-show="comment.role === 'Pengajar'" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-bold rounded">Pengajar</span>
-                                    </div>
-                                    <span class="text-xs text-gray-400 dark:text-gray-500" x-text="comment.time"></span>
-                                </div>
-                                <div class="bg-gray-50 dark:bg-gray-800/60 rounded-r-xl rounded-bl-xl p-3 border border-gray-100 dark:border-gray-700/50">
-                                    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" x-text="comment.text"></p>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                    
-                    <template x-if="comments.length === 0">
-                        <div class="flex flex-col items-center justify-center h-full text-center space-y-3">
-                            <div class="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Belum ada diskusi</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mulai percakapan atau tanyakan sesuatu</p>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-                
-                {{-- Comment Input --}}
-                <div class="p-4 border-t border-gray-200 dark:border-gray-700/50 bg-white dark:bg-[#1f2937]">
-                    <textarea 
-                        x-model="newComment"
-                        @keydown.enter.prevent="postComment()"
-                        placeholder="Tulis pertanyaan atau komentar Anda... (Enter untuk kirim)" 
-                        rows="2" 
-                        class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-[#111827] text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none transition-all"></textarea>
-                    <div class="mt-3 flex justify-between items-center">
-                        <span class="text-[11px] text-gray-400"><span class="font-semibold">Bantuan:</span> Tekan Enter untuk mengirim</span>
-                        <button 
-                            @click="postComment()" 
-                            :disabled="newComment.trim() === ''"
-                            class="px-5 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2">
+            <div id="tab-diskusi" class="tab-content">
+                <div id="diskusi-container" class="space-y-5 p-4" style="height: 400px; overflow-y: auto;"></div>
+
+                <div class="border-t border-gray-200 bg-white p-4 dark:border-gray-700/50 dark:bg-[#1f2937]">
+                    <textarea
+                        id="discussion-input"
+                        placeholder="Tulis pertanyaan atau komentar Anda... (Enter untuk kirim)"
+                        rows="2"
+                        class="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 placeholder-gray-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-[#111827] dark:text-gray-200"></textarea>
+                    <div class="mt-3 flex items-center justify-between">
+                        <span class="text-[11px] text-gray-400"><span class="font-semibold">Realtime:</span> Diskusi diperbarui otomatis setiap beberapa detik.</span>
+                        <button id="discussion-send-btn" onclick="sendCourseDiscussion()" class="flex items-center gap-2 rounded-lg bg-blue-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600">
                             Kirim
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -585,84 +532,48 @@
                     </div>
                 </div>
             </div>
-            
+
             {{-- Catatan Tab --}}
-            <div id="tab-catatan" class="tab-content hidden" x-data="{
-                saving: false,
-                isSaved: true,
-                noteText: 'Mempelajari cara kerja React hooks.\n- useState: menyimpan data.\n- useEffect: menjalankan *side effect* saat nilai berubah.',
-                instructorNote: 'Perhatikan baik-baik di bagian useEffect dependencies agar tidak terjadi infinite loop rendering.',
-                
-                saveNote() {
-                    if (this.noteText.trim() === '') return;
-                    this.saving = true;
-                    this.isSaved = false;
-                    
-                    // Simulate API Call delay
-                    setTimeout(() => {
-                        this.saving = false;
-                        this.isSaved = true;
-                    }, 800);
-                }
-            }">
-                <div class="h-[400px] overflow-y-auto w-full flex flex-col">
-                    
-                    {{-- Dosen Pinned Note (If Exists) --}}
-                    <template x-if="instructorNote">
-                        <div class="p-4 border-b border-yellow-200 dark:border-yellow-900/50 bg-yellow-50/50 dark:bg-yellow-500/5">
-                            <div class="flex items-center gap-2 mb-2">
-                                <svg class="w-4 h-4 text-yellow-600 dark:text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                <span class="text-xs font-bold text-yellow-800 dark:text-yellow-400 uppercase tracking-widest">Catatan Dosen</span>
-                            </div>
-                            <p class="text-sm text-yellow-800 dark:text-yellow-200/80 leading-relaxed italic" x-text="instructorNote"></p>
+            <div id="tab-catatan" class="tab-content hidden">
+                <div class="flex h-[400px] flex-col overflow-y-auto">
+                    @forelse($dosenNotes as $note)
+                    <div class="border-b border-yellow-200 bg-yellow-50/50 p-4 dark:border-yellow-900/50 dark:bg-yellow-500/5">
+                        <div class="mb-2 flex items-center gap-2">
+                            <svg class="h-4 w-4 text-yellow-600 dark:text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <span class="text-xs font-bold uppercase tracking-widest text-yellow-800 dark:text-yellow-400">{{ $note['title'] }}</span>
+                            @if($note['created_at'])
+                            <span class="ml-auto text-[11px] text-yellow-700/80 dark:text-yellow-300/70">{{ $note['created_at'] }}</span>
+                            @endif
                         </div>
-                    </template>
-                    
-                    {{-- Personal Notes Editor --}}
-                    <div class="p-4 flex-1 flex flex-col relative">
-                        <div class="flex items-center justify-between mb-3 text-sm">
+                        <p class="text-sm leading-relaxed text-yellow-800 dark:text-yellow-200/80">{{ $note['content'] }}</p>
+                    </div>
+                    @empty
+                    <div class="p-6 text-center">
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Belum ada catatan dari dosen.</p>
+                    </div>
+                    @endforelse
+
+                    <div class="relative flex flex-1 flex-col p-4">
+                        <div class="mb-3 flex items-center justify-between text-sm">
                             <h4 class="font-semibold text-gray-700 dark:text-gray-200">Catatan Pribadi</h4>
-                            
-                            {{-- Save State Indicators --}}
-                            <div class="flex items-center gap-1.5 text-xs font-medium">
-                                <span x-show="saving" x-transition class="text-blue-500 flex items-center gap-1">
-                                    <svg class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                    </svg>
-                                    Menyimpan...
-                                </span>
-                                <span x-show="isSaved && !saving" x-transition class="text-green-500 flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    Tersimpan
-                                </span>
-                                <span x-show="!isSaved && !saving" x-transition class="text-gray-400">Belum Disimpan</span>
-                            </div>
+                            <span id="personal-note-state" class="text-xs font-medium text-gray-400">Belum Disimpan</span>
                         </div>
 
-                        <textarea 
-                            x-model="noteText"
-                            @input="isSaved = false"
-                            class="w-full h-full flex-1 min-h-[220px] bg-transparent border-0 resize-none text-sm text-gray-700 dark:text-gray-300 leading-relaxed focus:ring-0 p-0 placeholder-gray-400"
-                            placeholder="Ketik catatan pribadi Anda di sini... Catatan ini hanya bisa dilihat oleh Anda."
+                        <textarea
+                            id="personal-note-textarea"
+                            class="min-h-[220px] flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm leading-relaxed text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-[#111827] dark:text-gray-300"
+                            placeholder="Ketik catatan pribadi Anda di sini... Catatan ini hanya tersimpan di browser Anda."
                         ></textarea>
                     </div>
                 </div>
-                
-                {{-- Floating Action Bar --}}
-                <div class="p-4 border-t border-gray-200 dark:border-gray-700/50 bg-white dark:bg-[#1f2937]">
-                    <button 
-                        @click="saveNote()" 
-                        :disabled="saving || isSaved || noteText.trim() === ''"
-                        class="w-full py-2.5 bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium text-sm transition-all"
-                        >
-                        <span x-text="saving ? 'Menyimpan...' : 'Simpan Catatan'"></span>
+
+                <div class="border-t border-gray-200 bg-white p-4 dark:border-gray-700/50 dark:bg-[#1f2937]">
+                    <button id="save-personal-note-btn" onclick="savePersonalCourseNote()" class="w-full rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white transition-all hover:bg-black dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+                        Simpan Catatan
                     </button>
-                    <p class="text-[11px] text-gray-400 text-center mt-3">Teks mendukung Markdown sederhana.</p>
+                    <p class="mt-3 text-center text-[11px] text-gray-400">Catatan pribadi disimpan lokal di browser Anda.</p>
                 </div>
             </div>
             
@@ -756,22 +667,237 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         const playerBox = document.getElementById('video-protected-player');
-        if (!playerBox) return;
+        if (playerBox) {
+            const block = (event) => event.preventDefault();
+            playerBox.addEventListener('contextmenu', block);
+            playerBox.addEventListener('copy', block);
+            playerBox.addEventListener('cut', block);
+            playerBox.addEventListener('dragstart', block);
+            playerBox.addEventListener('selectstart', block);
 
-        const block = (event) => event.preventDefault();
-        playerBox.addEventListener('contextmenu', block);
-        playerBox.addEventListener('copy', block);
-        playerBox.addEventListener('cut', block);
-        playerBox.addEventListener('dragstart', block);
-        playerBox.addEventListener('selectstart', block);
+            playerBox.addEventListener('keydown', function (event) {
+                const key = (event.key || '').toLowerCase();
+                if ((event.ctrlKey || event.metaKey) && ['c', 'x', 'u', 's'].includes(key)) {
+                    event.preventDefault();
+                }
+            });
+        }
 
-        playerBox.addEventListener('keydown', function (event) {
-            const key = (event.key || '').toLowerCase();
-            if ((event.ctrlKey || event.metaKey) && ['c', 'x', 'u', 's'].includes(key)) {
+        initCourseDiscussion();
+        initPersonalCourseNote();
+        initProtectedVideoPlayer();
+    });
+
+    const discussionEndpoint = '{{ route('mahasiswa.course-discussions.index', ['courseId' => $course->id_course]) }}';
+    const discussionStoreEndpoint = '{{ route('mahasiswa.course-discussions.store', ['courseId' => $course->id_course]) }}';
+    let discussionPoller = null;
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function renderDiscussionComments(comments) {
+        const container = document.getElementById('diskusi-container');
+        if (!container) return;
+
+        if (!Array.isArray(comments) || comments.length === 0) {
+            container.innerHTML = `
+                <div class="flex h-full flex-col items-center justify-center space-y-3 text-center">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-800">
+                        <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Belum ada diskusi</p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Mulai percakapan atau tanyakan sesuatu</p>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = comments.map((comment) => `
+            <div class="flex gap-3">
+                <img src="${escapeHtml(comment.avatar)}" alt="${escapeHtml(comment.name)}" class="h-8 w-8 flex-shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-700">
+                <div class="flex-1">
+                    <div class="mb-1 flex items-baseline justify-between">
+                        <div class="flex items-center gap-2">
+                            <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100">${escapeHtml(comment.name)}</h4>
+                            ${comment.role === 'Pengajar' ? '<span class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Pengajar</span>' : ''}
+                        </div>
+                        <span class="text-xs text-gray-400 dark:text-gray-500">${escapeHtml(comment.time ?? '')}</span>
+                    </div>
+                    <div class="rounded-r-xl rounded-bl-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700/50 dark:bg-gray-800/60">
+                        <p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">${escapeHtml(comment.text)}</p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        container.scrollTop = container.scrollHeight;
+    }
+
+    async function fetchCourseDiscussion() {
+        const response = await fetch(discussionEndpoint, {
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Gagal memuat diskusi.');
+        }
+        renderDiscussionComments(data.data || []);
+    }
+
+    async function sendCourseDiscussion() {
+        const input = document.getElementById('discussion-input');
+        const button = document.getElementById('discussion-send-btn');
+        if (!input || !button) return;
+
+        const message = input.value.trim();
+        if (!message) return;
+
+        button.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('message', message);
+
+            const response = await fetch(discussionStoreEndpoint, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                },
+                body: formData,
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Gagal mengirim diskusi.');
+            }
+
+            input.value = '';
+            await fetchCourseDiscussion();
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Diskusi gagal dikirim',
+                text: error.message || 'Terjadi kesalahan saat mengirim pesan diskusi.',
+            });
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    function initCourseDiscussion() {
+        fetchCourseDiscussion().catch(() => {});
+        if (discussionPoller) {
+            window.clearInterval(discussionPoller);
+        }
+        discussionPoller = window.setInterval(() => {
+            fetchCourseDiscussion().catch(() => {});
+        }, 5000);
+
+        const input = document.getElementById('discussion-input');
+        input?.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
+                sendCourseDiscussion();
             }
         });
-    });
+    }
+
+    const personalNoteStorageKey = 'course-note-{{ $course->id_course }}';
+
+    function initPersonalCourseNote() {
+        const textarea = document.getElementById('personal-note-textarea');
+        const state = document.getElementById('personal-note-state');
+        if (!textarea || !state) return;
+
+        textarea.value = localStorage.getItem(personalNoteStorageKey) || '';
+        state.textContent = textarea.value.trim() ? 'Tersimpan Lokal' : 'Belum Disimpan';
+
+        textarea.addEventListener('input', function () {
+            state.textContent = 'Belum Disimpan';
+        });
+    }
+
+    function savePersonalCourseNote() {
+        const textarea = document.getElementById('personal-note-textarea');
+        const state = document.getElementById('personal-note-state');
+        if (!textarea || !state) return;
+
+        localStorage.setItem(personalNoteStorageKey, textarea.value);
+        state.textContent = 'Tersimpan Lokal';
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Catatan tersimpan',
+            text: 'Catatan pribadi disimpan di browser ini.',
+            timer: 1800,
+            showConfirmButton: false,
+        });
+    }
+
+    function completeCurrentMaterialSilently() {
+        @if($currentMaterial)
+        fetch('{{ route('mahasiswa.material.complete', $currentMaterial['id']) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+        }).catch(() => {});
+        @endif
+    }
+
+    function privatizeVideoPlayer() {
+        const overlay = document.getElementById('video-private-overlay');
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+        completeCurrentMaterialSilently();
+    }
+
+    function initProtectedVideoPlayer() {
+        const html5Player = document.getElementById('course-html5-player');
+        if (html5Player) {
+            html5Player.addEventListener('ended', privatizeVideoPlayer);
+        }
+
+        const ytIframe = document.getElementById('course-youtube-player');
+        if (!ytIframe) return;
+
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(script);
+
+        window.onYouTubeIframeAPIReady = function () {
+            const player = new YT.Player('course-youtube-player', {
+                events: {
+                    onStateChange(event) {
+                        if (event.data === YT.PlayerState.ENDED) {
+                            try {
+                                event.target.stopVideo();
+                            } catch (error) {
+                                // Ignore stopping failures and still privatize the player.
+                            }
+                            privatizeVideoPlayer();
+                        }
+                    }
+                }
+            });
+
+            window.__currentCourseYoutubePlayer = player;
+        };
+    }
 
     function printCourseCertificate(courseTitle, studentName, completedDate) {
         const safeCourse = String(courseTitle || 'Kursus');

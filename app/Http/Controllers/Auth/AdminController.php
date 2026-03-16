@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
 use App\Models\Course;
 use App\Models\DosenNotification;
+use App\Models\Notification;
+use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\YoutubePlaylistVideo;
 use App\Services\ExcelImportService;
@@ -2195,7 +2197,7 @@ class AdminController extends Controller
                     'icon' => $n->icon ?? 'info',
                     'message' => $n->judul,
                     'detail' => $n->konten,
-                    'link' => $n->link,
+                    'link' => $this->resolveNotificationLink($n),
                     'is_read' => $n->is_read,
                     'time' => $n->created_at->diffForHumans(),
                     'created_at' => $n->created_at,
@@ -2241,6 +2243,101 @@ class AdminController extends Controller
         AdminNotification::where('admin_id', $admin->id)->unread()->update(['is_read' => true]);
 
         return response()->json(['success' => true]);
+    }
+
+    public function showSupportTickets(Request $request)
+    {
+        $admin = Auth::guard('admin')->user();
+        $status = (string) $request->query('status', 'all');
+        $search = trim((string) $request->query('search', ''));
+        $selectedTicketId = (int) $request->query('ticket', 0);
+
+        $query = SupportTicket::query()
+            ->with(['mahasiswa.profile', 'answeredBy'])
+            ->latest();
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('subject', 'like', "%{$search}%")
+                    ->orWhere('question', 'like', "%{$search}%")
+                    ->orWhereHas('mahasiswa', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhereHas('profile', function ($profileQuery) use ($search) {
+                                $profileQuery->where('nomor_induk', 'like', "%{$search}%");
+                            });
+                    });
+            });
+        }
+
+        $tickets = $query->paginate(10)->withQueryString();
+
+        return view('Auth.admin.support-tickets', [
+            'admin' => $admin,
+            'tickets' => $tickets,
+            'statusFilter' => $status,
+            'search' => $search,
+            'selectedTicketId' => $selectedTicketId,
+            'openCount' => SupportTicket::where('status', 'open')->count(),
+            'answeredCount' => SupportTicket::where('status', 'answered')->count(),
+        ]);
+    }
+
+    public function replySupportTicket(Request $request, $id)
+    {
+        $admin = Auth::guard('admin')->user();
+
+        $validated = $request->validate([
+            'admin_reply' => 'required|string|min:3|max:3000',
+            'status' => 'nullable|in:open,answered',
+        ]);
+
+        $ticket = SupportTicket::with('mahasiswa')->findOrFail($id);
+
+        $ticket->update([
+            'admin_reply' => trim($validated['admin_reply']),
+            'status' => $validated['status'] ?? 'answered',
+            'answered_by' => $admin->id,
+            'answered_at' => now(),
+        ]);
+
+        if ($ticket->mahasiswa) {
+            Notification::notifyMahasiswa(
+                (int) $ticket->mahasiswa->id,
+                'Balasan Support Baru',
+                'Admin telah membalas tiket support Anda: ' . $ticket->subject,
+                'info',
+                'support',
+                '#2563EB'
+            );
+        }
+
+        return redirect()
+            ->route('admin.support-tickets', [
+                'ticket' => $ticket->id_support_ticket,
+                'status' => $request->query('status', 'all'),
+                'search' => $request->query('search', ''),
+            ])
+            ->with('success', 'Balasan support berhasil dikirim.');
+    }
+
+    private function resolveNotificationLink(AdminNotification $notification): ?string
+    {
+        $link = $notification->link;
+
+        if (($notification->icon ?? '') === 'support') {
+            if (is_string($link) && str_contains($link, '/admin/support-tickets')) {
+                return $link;
+            }
+
+            return route('admin.support-tickets');
+        }
+
+        return $link;
     }
 
     // ==========================================

@@ -6,6 +6,7 @@ use App\Http\Controllers\Mahasiswa\ProfileController;
 use App\Http\Controllers\Mahasiswa\CourseController;
 use App\Http\Controllers\Mahasiswa\ChatController;
 use App\Http\Controllers\Mahasiswa\CheckoutController;
+use App\Http\Controllers\Mahasiswa\SupportController;
 use App\Http\Middleware\EnsureAuthenticatedMahasiswa;
 use App\Http\Middleware\RedirectIfAuthenticatedMahasiswa;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,8 @@ Route::prefix('mahasiswa')
         Route::get('/course/{id}/learn', [CourseController::class, 'learn'])->name('mahasiswa.course-learn');
         Route::post('/course/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.course.review');
         Route::post('/course/material/{id}/complete', [CourseController::class, 'completeMaterial'])->name('mahasiswa.material.complete');
+        Route::get('/course/{courseId}/discussions', [CourseController::class, 'getDiscussions'])->name('mahasiswa.course-discussions.index');
+        Route::post('/course/{courseId}/discussions', [CourseController::class, 'sendDiscussion'])->name('mahasiswa.course-discussions.store');
         Route::get('/course/{courseId}/quiz/{quizId}', [CourseController::class, 'quiz'])->name('mahasiswa.course-quiz');
         Route::post('/course/{courseId}/quiz/{quizId}/answer', [CourseController::class, 'saveQuizAnswer'])->name('mahasiswa.quiz-answer');
         Route::post('/course/{courseId}/quiz/{quizId}/flag', [CourseController::class, 'toggleQuizFlag'])->name('mahasiswa.quiz-flag');
@@ -80,6 +83,8 @@ Route::prefix('mahasiswa')
         Route::delete('/cart/{id}', [CheckoutController::class, 'removeFromCart'])->name('mahasiswa.cart.remove');
         Route::get('/payment', [CheckoutController::class, 'payment'])->name('mahasiswa.payment');
         Route::get('/payment-success', [CheckoutController::class, 'success'])->name('mahasiswa.payment-success');
+        Route::get('/support', [SupportController::class, 'index'])->name('mahasiswa.support');
+        Route::post('/support/ask', [SupportController::class, 'ask'])->name('mahasiswa.support.ask');
         
         // Finance
         Route::get('/finance', [CheckoutController::class, 'finance'])->name('mahasiswa.finance');

@@ -59,4 +59,23 @@ class Notification extends Model
     {
         return $this->created_at->diffForHumans();
     }
+
+    public static function notifyMahasiswa(
+        int $mahasiswaId,
+        string $judul,
+        ?string $konten = null,
+        string $tipe = 'umum',
+        ?string $icon = null,
+        string $iconColor = '#3B82F6'
+    ): self {
+        return self::create([
+            'id_mahasiswa' => $mahasiswaId,
+            'judul' => $judul,
+            'konten' => $konten,
+            'tipe' => $tipe,
+            'icon' => $icon,
+            'icon_color' => $iconColor,
+            'is_read' => false,
+        ]);
+    }
 }

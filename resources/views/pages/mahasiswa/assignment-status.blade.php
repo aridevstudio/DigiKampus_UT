@@ -1,88 +1,77 @@
 <x-layouts.dashboard :active="'courses'">
 
-{{-- Breadcrumb --}}
-<div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6b7280; margin-bottom: 16px;">
-    <a href="{{ route('mahasiswa.courses') }}" style="color: #3b82f6; text-decoration: none;">Kursus</a>
-    <span>›</span>
-    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" style="color: #3b82f6; text-decoration: none;">{{ $course->nama_course }}</a>
-    <span>›</span>
-    <span style="color: #1f2937; font-weight: 500;">Tugas Akhir</span>
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+    <a href="{{ route('mahasiswa.courses') }}" class="text-blue-500 hover:underline">Kursus</a>
+    <span>&rsaquo;</span>
+    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" class="text-blue-500 hover:underline">{{ $course->nama_course }}</a>
+    <span>&rsaquo;</span>
+    <span class="font-medium text-gray-800 dark:text-gray-100">Status Tugas</span>
 </div>
 
-{{-- Page Header --}}
-<div style="margin-bottom: 24px;">
-    <h1 style="font-size: 28px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Tugas Akhir</h1>
-    <p style="color: #6b7280;">Status pengumpulan tugas akhir (opsional).</p>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Status Pengumpulan Tugas</h1>
+    <p class="text-gray-500 dark:text-gray-400">{{ $submission->material?->judul_material ?? 'Tugas Akhir' }}</p>
 </div>
 
-{{-- Ringkasan Tugas --}}
-<div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e5e7eb; margin-bottom: 24px;">
-    <h2 style="font-size: 20px; font-weight: 600; color: #1f2937; margin-bottom: 20px;">Ringkasan Tugas</h2>
-    
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #f3f4f6;">
-            <span style="color: #6b7280;">Status:</span>
-            @if($submission['status'] === 'pending')
-            <span style="color: #f59e0b; font-weight: 600;">Menunggu Penilaian</span>
-            @elseif($submission['status'] === 'graded')
-            <span style="color: #22c55e; font-weight: 600;">Sudah Dinilai</span>
+<div class="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700/50 dark:bg-[#1f2937]">
+    <h2 class="mb-5 text-lg font-semibold text-gray-800 dark:text-gray-100">Ringkasan Pengumpulan</h2>
+
+    <div class="space-y-4">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-700/50">
+            <span class="text-gray-500 dark:text-gray-400">Status</span>
+            @if($submission->status === 'reviewed')
+            <span class="font-semibold text-green-600 dark:text-green-400">Sudah Direview</span>
+            @elseif($submission->status === 'revision_requested')
+            <span class="font-semibold text-amber-600 dark:text-amber-400">Perlu Revisi</span>
+            @else
+            <span class="font-semibold text-yellow-600 dark:text-yellow-400">Menunggu Review</span>
             @endif
         </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #f3f4f6;">
-            <span style="color: #6b7280;">Dikumpulkan:</span>
-            <span style="font-weight: 600; color: #1f2937;">{{ $submission['submitted_at']->format('d M Y, H:i') }}</span>
+
+        <div class="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-700/50">
+            <span class="text-gray-500 dark:text-gray-400">Dikumpulkan</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-100">{{ optional($submission->submitted_at)->format('d M Y, H:i') }}</span>
         </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #6b7280;">File:</span>
-            <span style="font-weight: 600; color: #1f2937;">{{ $submission['file_name'] }}</span>
+
+        <div class="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-700/50">
+            <span class="text-gray-500 dark:text-gray-400">File</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-100">{{ $submission->original_file_name }}</span>
+        </div>
+
+        <div class="flex items-center justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Ukuran</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-100">{{ number_format(($submission->file_size ?? 0) / 1024 / 1024, 2) }} MB</span>
         </div>
     </div>
 </div>
 
-{{-- Feedback Dosen --}}
-<div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e5e7eb;">
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-        <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <svg style="width: 24px; height: 24px; color: #10b981;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700/50 dark:bg-[#1f2937]">
+    <div class="mb-5 flex items-center gap-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
+            <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
         </div>
-        <h2 style="font-size: 20px; font-weight: 600; color: #1f2937;">Feedback Dosen</h2>
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Feedback Dosen</h2>
     </div>
-    
-    @if($submission['status'] === 'pending')
-    {{-- Waiting for grading --}}
-    <div style="text-align: center; padding: 40px 20px;">
-        <div style="width: 64px; height: 64px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-            <svg style="width: 32px; height: 32px; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <p style="font-size: 18px; font-weight: 600; color: #4b5563; margin-bottom: 8px;">Menunggu penilaian dari dosen</p>
-        <p style="color: #9ca3af;">Feedback akan muncul setelah dosen menyelesaikan penilaian</p>
+
+    @if($submission->catatan_dosen)
+    <div class="rounded-2xl bg-blue-50 p-4 text-sm leading-relaxed text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+        {{ $submission->catatan_dosen }}
     </div>
     @else
-    {{-- Graded --}}
-    <div style="margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-            <div style="background: #dcfce7; border-radius: 12px; padding: 16px 24px; text-align: center;">
-                <p style="font-size: 12px; color: #16a34a; margin-bottom: 4px;">Nilai</p>
-                <p style="font-size: 32px; font-weight: 700; color: #16a34a;">{{ $submission['grade'] }}</p>
-            </div>
-            <div>
-                <p style="font-size: 14px; color: #6b7280;">Dinilai pada:</p>
-                <p style="font-weight: 600; color: #1f2937;">{{ $submission['graded_at']?->format('d M Y, H:i') }}</p>
-            </div>
-        </div>
-        
-        <div style="background: #f9fafb; border-radius: 12px; padding: 16px;">
-            <p style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">Komentar Dosen:</p>
-            <p style="color: #4b5563; line-height: 1.7;">{{ $submission['feedback'] }}</p>
-        </div>
+    <div class="rounded-2xl bg-gray-50 p-6 text-center dark:bg-gray-800/50">
+        <p class="font-medium text-gray-700 dark:text-gray-200">Belum ada feedback dari dosen</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Feedback akan muncul setelah dosen menyelesaikan review.</p>
     </div>
     @endif
 </div>
+
+@if($submission->catatan_mahasiswa)
+<div class="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700/50 dark:bg-[#1f2937]">
+    <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-gray-100">Catatan Anda</h2>
+    <p class="whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-300">{{ $submission->catatan_mahasiswa }}</p>
+</div>
+@endif
 
 </x-layouts.dashboard>

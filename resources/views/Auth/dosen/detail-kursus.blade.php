@@ -82,6 +82,63 @@
             </div>
 
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Catatan Dosen</h2>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Catatan ini tampil di halaman belajar mahasiswa yang mengikuti kursus ini.</p>
+                    </div>
+                    <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+                        {{ $course->instructorNotes->count() }} catatan
+                    </span>
+                </div>
+
+                <form action="{{ route('dosen.kursus.notes.store', $detail['id_course']) }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Judul catatan</label>
+                            <input type="text" name="judul" placeholder="Contoh: Fokus modul minggu ini" class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Isi catatan</label>
+                        <textarea name="konten" rows="4" required placeholder="Tulis catatan yang perlu dilihat mahasiswa..." class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="inline-flex h-11 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700">
+                            Kirim Catatan
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6 space-y-3">
+                    @forelse($course->instructorNotes as $note)
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $note->judul ?: 'Catatan Dosen' }}</p>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ optional($note->created_at)->diffForHumans() }}</p>
+                                </div>
+                                <form action="{{ route('dosen.kursus.notes.delete', ['id' => $detail['id_course'], 'noteId' => $note->id_course_instructor_note]) }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">
+                                        Hapus
+                                    </button>
+                                </form>
+                            </div>
+                            <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-gray-300">{{ $note->konten }}</p>
+                        </div>
+                    @empty
+                        <div class="rounded-xl border border-dashed border-gray-300 px-5 py-8 text-center dark:border-gray-600">
+                            <p class="font-medium text-gray-700 dark:text-gray-200">Belum ada catatan dosen</p>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Gunakan form di atas untuk mengirim catatan ke mahasiswa.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                 <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Struktur Modul</h2>
 
                 @if($displayModules->isEmpty())

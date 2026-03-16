@@ -1,134 +1,127 @@
 <x-layouts.dashboard :active="'courses'">
 
-{{-- Breadcrumb --}}
-<div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6b7280; margin-bottom: 16px;">
-    <a href="{{ route('mahasiswa.courses') }}" style="color: #3b82f6; text-decoration: none;">Kursus</a>
-    <span>›</span>
-    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" style="color: #3b82f6; text-decoration: none;">{{ $course->nama_course }}</a>
-    <span>›</span>
-    <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}" style="color: #3b82f6; text-decoration: none;">Tugas Akhir</a>
-    <span>›</span>
-    <span style="color: #1f2937; font-weight: 500;">Submit</span>
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+    <a href="{{ route('mahasiswa.courses') }}" class="text-blue-500 hover:underline">Kursus</a>
+    <span>&rsaquo;</span>
+    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" class="text-blue-500 hover:underline">{{ $course->nama_course }}</a>
+    <span>&rsaquo;</span>
+    <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}" class="text-blue-500 hover:underline">Tugas Akhir</a>
+    <span>&rsaquo;</span>
+    <span class="font-medium text-gray-800 dark:text-gray-100">Submit</span>
 </div>
 
-{{-- Page Header --}}
-<div style="margin-bottom: 24px;">
-    <h1 style="font-size: 28px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Submit Tugas</h1>
-    <p style="color: #6b7280;">{{ $assignment['title'] }}</p>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Submit Tugas</h1>
+    <p class="text-gray-500 dark:text-gray-400">{{ $assignment['title'] }}</p>
 </div>
 
-{{-- Deadline Alert --}}
-<div style="background: #fef3c7; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 24px; border: 1px solid #fcd34d;">
-    <svg style="width: 24px; height: 24px; color: #d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <div>
-        <p style="font-weight: 600; color: #92400e;">Deadline: {{ $assignment['deadline']->format('d F Y, H:i') }}</p>
-        <p style="font-size: 14px; color: #b45309;">Sisa waktu: {{ $assignment['deadline']->diffForHumans() }}</p>
-    </div>
+<div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-600/30 dark:bg-amber-500/10">
+    <p class="font-semibold text-amber-800 dark:text-amber-300">Deadline: {{ $assignment['deadline']->format('d F Y, H:i') }}</p>
+    <p class="mt-1 text-sm text-amber-700 dark:text-amber-200">Sisa waktu: {{ $assignment['deadline']->diffForHumans() }}</p>
 </div>
 
-<div style="display: flex; gap: 24px; flex-wrap: wrap;">
-    {{-- Left: Upload Form --}}
-    <div style="flex: 1; min-width: 400px;">
-        <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e5e7eb;">
-            <h2 style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 20px;">Upload File Tugas</h2>
-            
-            {{-- Upload Area --}}
-            <div id="dropzone" style="border: 2px dashed #d1d5db; border-radius: 12px; padding: 48px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#d1d5db'; this.style.background='white'" onclick="document.getElementById('fileInput').click()">
-                <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.doc,.zip" data-max-size-mb="10" onchange="handleFileSelect(this)">
-                <svg style="width: 48px; height: 48px; color: #9ca3af; margin: 0 auto 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+@if($submission)
+<div class="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4 dark:border-green-600/30 dark:bg-green-500/10">
+    <p class="font-semibold text-green-800 dark:text-green-300">Tugas sebelumnya sudah pernah dikirim.</p>
+    <p class="mt-1 text-sm text-green-700 dark:text-green-200">Jika Anda unggah ulang, file lama akan diganti dengan file baru.</p>
+    <a href="{{ route('mahasiswa.assignment-status', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}" class="mt-3 inline-flex rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700">
+        Lihat Status Tugas
+    </a>
+</div>
+@endif
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+    <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700/50 dark:bg-[#1f2937]">
+        <h2 class="mb-5 text-lg font-semibold text-gray-800 dark:text-gray-100">Upload File Tugas</h2>
+
+        <div id="dropzone" class="cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 px-6 py-12 text-center transition hover:border-blue-500 hover:bg-blue-50/40 dark:border-gray-600 dark:hover:bg-blue-500/10" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" style="display:none" accept=".pdf,.docx,.doc,.zip" data-max-size-mb="10" onchange="handleFileSelect(this)">
+            <svg class="mx-auto mb-4 h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p class="mb-1 font-semibold text-gray-800 dark:text-gray-100">Klik atau drag file ke sini</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Format: {{ $assignment['format'] }} • Maksimal {{ $assignment['max_size'] }}</p>
+        </div>
+
+        <div id="selectedFile" class="mt-4 hidden rounded-2xl border border-green-200 bg-green-50 p-4 dark:border-green-700/40 dark:bg-green-500/10">
+            <div class="flex items-center gap-3">
+                <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <p style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">Klik atau drag file ke sini</p>
-                <p style="font-size: 14px; color: #6b7280;">Format: {{ $assignment['format'] }} • Maks: {{ $assignment['max_size'] }}</p>
-            </div>
-            
-            {{-- Selected File Display --}}
-            <div id="selectedFile" style="display: none; margin-top: 16px; padding: 16px; background: #f0fdf4; border-radius: 12px; border: 1px solid #86efac;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <svg style="width: 32px; height: 32px; color: #22c55e;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <div class="flex-1">
+                    <p id="fileName" class="font-semibold text-gray-800 dark:text-gray-100"></p>
+                    <p id="fileSize" class="text-sm text-gray-500 dark:text-gray-400"></p>
+                </div>
+                <button type="button" onclick="removeFile()" class="text-red-500 transition hover:text-red-600">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    <div style="flex: 1;">
-                        <p id="fileName" style="font-weight: 600; color: #1f2937;"></p>
-                        <p id="fileSize" style="font-size: 14px; color: #6b7280;"></p>
-                    </div>
-                    <button type="button" onclick="removeFile()" style="color: #ef4444; background: none; border: none; cursor: pointer;">
-                        <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+                </button>
             </div>
-            
-            {{-- Notes --}}
-            <div style="margin-top: 20px;">
-                <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 8px;">Catatan (Opsional)</label>
-                <textarea style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; resize: vertical; min-height: 100px; font-family: inherit;" placeholder="Tambahkan catatan untuk dosen..."></textarea>
-            </div>
-            
-            {{-- Submit Button --}}
-            <button type="button" onclick="submitAssignment()" style="width: 100%; margin-top: 20px; padding: 14px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                Submit Tugas
-            </button>
         </div>
+
+        <div class="mt-5">
+            <label for="catatan" class="mb-2 block font-medium text-gray-700 dark:text-gray-300">Catatan untuk dosen</label>
+            <textarea id="catatan" rows="5" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-[#111827] dark:text-gray-100" placeholder="Tambahkan catatan jika diperlukan...">{{ old('catatan', $submission?->catatan_mahasiswa) }}</textarea>
+        </div>
+
+        <button type="button" id="submit-assignment-btn" onclick="submitAssignment()" class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-3 font-semibold text-white transition hover:bg-blue-600">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Submit Tugas
+        </button>
     </div>
-    
-    {{-- Right: Info --}}
-    <div style="width: 320px;">
-        <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e5e7eb;">
-            <h3 style="font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 16px;">Informasi Tugas</h3>
-            
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: #6b7280; font-size: 14px;">Bobot Nilai</span>
-                    <span style="font-weight: 600; color: #1f2937;">{{ $assignment['weight'] }}%</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: #6b7280; font-size: 14px;">Format</span>
-                    <span style="font-weight: 600; color: #1f2937;">{{ $assignment['format'] }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: #6b7280; font-size: 14px;">Ukuran Maks</span>
-                    <span style="font-weight: 600; color: #1f2937;">{{ $assignment['max_size'] }}</span>
-                </div>
+
+    <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700/50 dark:bg-[#1f2937]">
+        <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-gray-100">Informasi Tugas</h3>
+        <div class="space-y-3 text-sm">
+            <div class="flex justify-between">
+                <span class="text-gray-500 dark:text-gray-400">Bobot Nilai</span>
+                <span class="font-semibold text-gray-800 dark:text-gray-100">{{ $assignment['weight'] }}%</span>
             </div>
-            
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
-            
-            <div style="background: #f0f9ff; border-radius: 8px; padding: 12px;">
-                <p style="font-size: 13px; color: #0369a1; line-height: 1.6;">
-                    💡 Pastikan file yang diupload sudah final. Anda hanya dapat mengirim ulang sebelum deadline.
-                </p>
+            <div class="flex justify-between">
+                <span class="text-gray-500 dark:text-gray-400">Format</span>
+                <span class="font-semibold text-gray-800 dark:text-gray-100">{{ $assignment['format'] }}</span>
             </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500 dark:text-gray-400">Ukuran Maks</span>
+                <span class="font-semibold text-gray-800 dark:text-gray-100">{{ $assignment['max_size'] }}</span>
+            </div>
+        </div>
+
+        <div class="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+            Pastikan file final dan ukuran tidak melebihi 10MB. Sistem akan menolak file yang terlalu besar.
         </div>
     </div>
 </div>
 
+@push('scripts')
 <script>
 function handleFileSelect(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const maxBytes = 10 * 1024 * 1024;
-        if (file.size > maxBytes) {
-            alert('Ukuran file maksimal 10MB.');
-            input.value = '';
-            document.getElementById('selectedFile').style.display = 'none';
-            return;
-        }
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('fileSize').textContent = formatFileSize(file.size);
-        document.getElementById('selectedFile').style.display = 'block';
+    if (!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    const maxBytes = 10 * 1024 * 1024;
+    if (file.size > maxBytes) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Ukuran file terlalu besar',
+            text: 'Ukuran file maksimal 10MB.',
+        });
+        input.value = '';
+        document.getElementById('selectedFile').classList.add('hidden');
+        return;
     }
+
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatFileSize(file.size);
+    document.getElementById('selectedFile').classList.remove('hidden');
 }
 
 function removeFile() {
     document.getElementById('fileInput').value = '';
-    document.getElementById('selectedFile').style.display = 'none';
+    document.getElementById('selectedFile').classList.add('hidden');
 }
 
 function formatFileSize(bytes) {
@@ -137,59 +130,61 @@ function formatFileSize(bytes) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-function submitAssignment() {
+async function submitAssignment() {
     const fileInput = document.getElementById('fileInput');
+    const notesTextarea = document.getElementById('catatan');
     if (!fileInput.files || !fileInput.files[0]) {
-        alert('Pilih file terlebih dahulu!');
+        await Swal.fire({
+            icon: 'warning',
+            title: 'File belum dipilih',
+            text: 'Pilih file tugas terlebih dahulu.',
+        });
         return;
     }
 
-    const submitBtn = document.querySelector('button[onclick="submitAssignment()"]');
+    const submitBtn = document.getElementById('submit-assignment-btn');
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Mengunggah...';
-    submitBtn.style.opacity = '0.7';
+    submitBtn.innerHTML = 'Mengunggah...';
 
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    formData.append('_token', '{{ csrf_token() }}');
-
-    const notesTextarea = document.querySelector('textarea');
-    if (notesTextarea && notesTextarea.value.trim()) {
+    try {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
         formData.append('catatan', notesTextarea.value.trim());
-    }
 
-    fetch('{{ route('mahasiswa.submit-assignment', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
-        },
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Server error: ' + response.status);
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert('Tugas berhasil disubmit!');
-            window.location.href = data.redirect;
-        } else {
-            alert(data.message || 'Gagal mengirim tugas. Silakan coba lagi.');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-            submitBtn.style.opacity = '1';
+        const response = await fetch('{{ route('mahasiswa.submit-assignment', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Gagal mengirim tugas.');
         }
-    })
-    .catch(error => {
-        console.error('Submit error:', error);
-        alert('Terjadi kesalahan saat mengirim tugas. Periksa koneksi dan coba lagi.');
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Tugas berhasil dikirim',
+            text: data.message || 'Tugas Anda berhasil disubmit.',
+        });
+
+        window.location.href = data.redirect;
+    } catch (error) {
+        await Swal.fire({
+            icon: 'error',
+            title: 'Submit gagal',
+            text: error.message || 'Terjadi kesalahan saat mengirim tugas.',
+        });
+    } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
-        submitBtn.style.opacity = '1';
-    });
+    }
 }
 </script>
+@endpush
 
 </x-layouts.dashboard>

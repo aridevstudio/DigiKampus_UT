@@ -5,325 +5,540 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\DosenNotification;
+use App\Models\Enrollment;
+use App\Models\Notification;
+use App\Models\PaymentTransaction;
+use App\Models\PaymentTransactionItem;
+use App\Models\Voucher;
+use App\Services\MidtransSnapService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
+    public function __construct(
+        private readonly MidtransSnapService $midtransSnapService
+    ) {
+    }
+
     /**
-     * Show checkout/cart page
+     * Show checkout/cart page.
      */
     public function index()
     {
         $user = Auth::guard('mahasiswa')->user();
-        
-        // Get cart items from database
-        $cartItems = Cart::with(['course', 'course.dosen'])
-            ->where('id_mahasiswa', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        // Calculate totals
-        $subtotal = $cartItems->sum(function ($item) {
-            return $item->course->harga ?? 0;
-        });
+
+        $cartItems = $this->getCartItems($user->id);
+        $subtotal = $this->calculateSubtotal($cartItems);
         $serviceFee = $cartItems->isNotEmpty() ? 5000 : 0;
         $total = $subtotal + $serviceFee;
-        
-        // Payment methods
-        $paymentMethods = [
-            ['id' => 'bca', 'name' => 'Transfer Bank BCA', 'icon' => 'bank'],
-            ['id' => 'ovo', 'name' => 'OVO', 'icon' => 'ovo'],
-            ['id' => 'gopay', 'name' => 'GoPay', 'icon' => 'gopay'],
-        ];
-        
+        $vouchers = Voucher::available()->orderBy('code')->get();
+
         return view('pages.mahasiswa.checkout', [
             'cartItems' => $cartItems,
             'subtotal' => $subtotal,
             'serviceFee' => $serviceFee,
             'total' => $total,
-            'paymentMethods' => $paymentMethods,
+            'vouchers' => $vouchers,
+            'paymentMethods' => [
+                ['id' => 'midtrans', 'name' => 'Midtrans', 'icon' => 'midtrans'],
+            ],
         ]);
     }
 
     /**
-     * Add item to cart
+     * Add item to cart.
      */
     public function addToCart()
     {
         $user = Auth::guard('mahasiswa')->user();
-        $courseId = request('course_id');
-        
-        // Check if already in cart
+        $courseId = (int) request('course_id');
+
         $exists = Cart::where('id_mahasiswa', $user->id)
             ->where('id_course', $courseId)
             ->exists();
-        
+
         if ($exists) {
             return back()->with('error', 'Kursus sudah ada di keranjang');
         }
-        
-        // Check if already enrolled
-        $enrolled = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+
+        $enrolled = Enrollment::where('id_mahasiswa', $user->id)
             ->where('id_course', $courseId)
             ->exists();
-        
+
         if ($enrolled) {
             return back()->with('error', 'Anda sudah terdaftar di kursus ini');
         }
-        
+
         Cart::create([
             'id_mahasiswa' => $user->id,
             'id_course' => $courseId,
         ]);
-        
+
         return redirect()->route('mahasiswa.checkout')->with('success', 'Kursus berhasil ditambahkan ke keranjang');
     }
 
     /**
-     * Remove item from cart
+     * Remove item from cart.
      */
     public function removeFromCart($id)
     {
         $user = Auth::guard('mahasiswa')->user();
-        
+
         Cart::where('id_mahasiswa', $user->id)
             ->where('id_cart', $id)
             ->delete();
-        
+
         return back()->with('success', 'Item berhasil dihapus dari keranjang');
     }
 
     /**
-     * Show payment confirmation page
+     * Build payment page and create Midtrans transaction.
      */
-    public function payment()
+    public function payment(Request $request)
     {
         $user = Auth::guard('mahasiswa')->user();
-        $paymentMethod = request('payment', 'bca');
-        
-        // Get cart items from database
-        $cartItems = Cart::with(['course', 'course.dosen'])
-            ->where('id_mahasiswa', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        if ($cartItems->isEmpty()) {
-            return redirect()->route('mahasiswa.checkout')
-                ->with('error', 'Keranjang Anda kosong');
-        }
-        
-        // Calculate totals
-        $subtotal = $cartItems->sum(function ($item) {
-            return $item->course->harga ?? 0;
-        });
-        $serviceFee = 5000;
-        $total = $subtotal + $serviceFee;
-        
-        // Payment methods config
-        $paymentMethods = [
-            'bca' => ['name' => 'Bank BCA', 'type' => 'Virtual Account', 'color' => 'bg-blue-600'],
-            'ovo' => ['name' => 'OVO', 'type' => 'E-Wallet', 'color' => 'bg-purple-600'],
-            'gopay' => ['name' => 'GoPay', 'type' => 'E-Wallet', 'color' => 'bg-green-500'],
-        ];
-        
-        $selectedPayment = $paymentMethods[$paymentMethod] ?? $paymentMethods['bca'];
-        $selectedPayment['id'] = $paymentMethod;
-        $selectedPayment['va_number'] = '890' . str_pad($user->id, 10, '0', STR_PAD_LEFT) . rand(100, 999);
-        
-        return view('pages.mahasiswa.payment', [
-            'cartItems' => $cartItems,
-            'subtotal' => $subtotal,
-            'serviceFee' => $serviceFee,
-            'total' => $total,
-            'selectedPayment' => $selectedPayment,
-        ]);
-    }
+        $preferredPaymentMethod = trim((string) $request->query('payment', 'midtrans'));
 
-    /**
-     * Process payment and show success page
-     */
-    public function success()
-    {
-        $user = Auth::guard('mahasiswa')->user();
-        $paymentMethod = request('payment', 'bca');
-        
-        // Get cart items from database
-        $cartItems = Cart::with(['course'])
-            ->where('id_mahasiswa', $user->id)
-            ->get();
-        
+        $cartItems = $this->getCartItems($user->id);
         if ($cartItems->isEmpty()) {
-            return redirect()->route('mahasiswa.courses')
-                ->with('success', 'Kursus Anda sudah aktif!');
+            return redirect()->route('mahasiswa.checkout')->with('error', 'Keranjang Anda kosong');
         }
-        
-        // Calculate totals
-        $subtotal = $cartItems->sum(function ($item) {
-            return $item->course->harga ?? 0;
-        });
+
+        $voucher = null;
+        if ($request->filled('voucher')) {
+            $voucher = $this->resolveVoucher(trim((string) $request->query('voucher')));
+            if (!$voucher['success']) {
+                return redirect()->route('mahasiswa.checkout')->with('error', $voucher['message']);
+            }
+            $voucher = $voucher['voucher'];
+        }
+
+        $subtotal = $this->calculateSubtotal($cartItems);
         $serviceFee = 5000;
-        $total = $subtotal + $serviceFee;
-        
-        // Generate transaction ID
-        $transactionId = 'TRX-UT-' . date('ymd') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
-        
-        // Payment method labels
-        $paymentLabels = [
-            'bca' => 'BCA Virtual Account',
-            'ovo' => 'OVO',
-            'gopay' => 'GoPay',
-        ];
-        
-        // Create enrollments for each cart item
-        $courseNames = [];
-        foreach ($cartItems as $item) {
-            // Check if not already enrolled
-            $exists = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
-                ->where('id_course', $item->id_course)
-                ->exists();
-            
-            if (!$exists) {
-                \App\Models\Enrollment::create([
+        if ($voucher && $subtotal < (float) $voucher->min_subtotal) {
+            return redirect()->route('mahasiswa.checkout')
+                ->with('error', 'Voucher membutuhkan minimal belanja Rp ' . number_format($voucher->min_subtotal, 0, ',', '.') . '.');
+        }
+        $discountAmount = $this->calculateVoucherDiscount($voucher, $subtotal);
+        $grossAmount = max(0, $subtotal + $serviceFee - $discountAmount);
+        $orderId = $this->generateOrderId();
+
+        try {
+            $transaction = DB::transaction(function () use (
+                $user,
+                $cartItems,
+                $voucher,
+                $preferredPaymentMethod,
+                $subtotal,
+                $serviceFee,
+                $discountAmount,
+                $grossAmount,
+                $orderId
+            ) {
+                $paymentTransaction = PaymentTransaction::create([
+                    'order_id' => $orderId,
                     'id_mahasiswa' => $user->id,
-                    'id_course' => $item->id_course,
-                    'status' => 'aktif',
-                    'progress' => 0,
+                    'id_voucher' => $voucher?->id_voucher,
+                    'preferred_payment_method' => $preferredPaymentMethod,
+                    'subtotal_amount' => $subtotal,
+                    'service_fee' => $serviceFee,
+                    'discount_amount' => $discountAmount,
+                    'gross_amount' => $grossAmount,
+                    'transaction_status' => 'pending',
                 ]);
 
-                // Notify dosen about new enrollment
-                if ($item->course && $item->course->id_dosen) {
-                    DosenNotification::notifyDosen(
-                        $item->course->id_dosen,
-                        'Mahasiswa Baru Mendaftar',
-                        ($user->name ?? 'Mahasiswa') . ' mendaftar di kursus ' . ($item->course->nama_course ?? 'Kursus'),
-                        'enrollment',
-                        'enrollment',
-                        '/dosen/kursus/' . $item->id_course
-                    );
+                foreach ($cartItems as $item) {
+                    PaymentTransactionItem::create([
+                        'id_payment_transaction' => $paymentTransaction->id_payment_transaction,
+                        'id_course' => $item->id_course,
+                        'course_name' => $item->course->nama_course ?? 'Kursus',
+                        'price' => $item->course->harga ?? 0,
+                    ]);
                 }
+
+                return $paymentTransaction->load('items.course');
+            });
+
+            $midtransPayload = $this->buildMidtransPayload(
+                $transaction,
+                $user,
+                $voucher,
+                $serviceFee,
+                $discountAmount
+            );
+
+            $midtransResponse = $this->midtransSnapService->createTransaction($midtransPayload);
+
+            $transaction->update([
+                'snap_token' => $midtransResponse['token'] ?? null,
+                'snap_redirect_url' => $midtransResponse['redirect_url'] ?? null,
+                'payload' => [
+                    'request' => $midtransPayload,
+                    'response' => $midtransResponse,
+                ],
+            ]);
+
+            if ($voucher) {
+                $voucher->update([
+                    'used_by_user_id' => $user->id,
+                    'used_payment_transaction_id' => $transaction->id_payment_transaction,
+                    'used_at' => now(),
+                ]);
             }
-            
-            $courseNames[] = $item->course->nama_course;
+
+            return view('pages.mahasiswa.payment', [
+                'cartItems' => $cartItems,
+                'subtotal' => $subtotal,
+                'serviceFee' => $serviceFee,
+                'discountAmount' => $discountAmount,
+                'total' => $grossAmount,
+                'selectedPayment' => [
+                    'id' => 'midtrans',
+                    'name' => 'Midtrans Payment Gateway',
+                    'type' => 'Secure Checkout',
+                    'color' => 'bg-sky-600',
+                ],
+                'paymentTransaction' => $transaction->fresh(['items.course', 'voucher']),
+                'snapRedirectUrl' => $midtransResponse['redirect_url'] ?? null,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('mahasiswa.checkout')
+                ->with('error', 'Gagal membuat transaksi pembayaran Midtrans. Periksa konfigurasi env dan coba lagi.');
         }
-        
-        // Clear cart after successful payment
-        Cart::where('id_mahasiswa', $user->id)->delete();
-        
-        // Prepare transaction data with Indonesian date format
-        $months = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-        ];
-        $dateFormatted = now()->format('d') . ' ' . $months[(int)now()->format('n')] . ' ' . now()->format('Y, H:i');
-        
-        $transactionData = [
-            'id' => $transactionId,
-            'course_names' => $courseNames,
-            'course_count' => count($courseNames),
-            'date' => $dateFormatted,
-            'payment_method' => $paymentLabels[$paymentMethod] ?? 'Unknown',
-            'total' => $total,
-        ];
-        
+    }
+
+    /**
+     * Midtrans finish landing page.
+     */
+    public function success(Request $request)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        $orderId = trim((string) $request->query('order_id'));
+
+        if ($orderId === '') {
+            return redirect()->route('mahasiswa.finance')->with('info', 'Transaksi tidak ditemukan.');
+        }
+
+        $transaction = PaymentTransaction::with(['items.course', 'voucher'])
+            ->where('id_mahasiswa', $user->id)
+            ->where('order_id', $orderId)
+            ->firstOrFail();
+
+        $incomingStatus = trim((string) $request->query('transaction_status'));
+        if ($incomingStatus !== '') {
+            $this->syncTransactionStatus($transaction, [
+                'transaction_status' => $incomingStatus,
+                'payment_type' => $request->query('payment_type'),
+                'fraud_status' => $request->query('fraud_status'),
+                'status_code' => $request->query('status_code'),
+            ]);
+        }
+
         return view('pages.mahasiswa.payment-success', [
-            'transaction' => $transactionData,
+            'paymentTransaction' => $transaction->fresh(['items.course', 'voucher']),
         ]);
     }
-    
+
     /**
-     * Show finance/transaction history page
+     * Midtrans notification endpoint.
+     */
+    public function midtransNotification(Request $request)
+    {
+        $orderId = trim((string) $request->input('order_id'));
+        if ($orderId === '') {
+            return response()->json(['message' => 'order_id wajib diisi'], 422);
+        }
+
+        $transaction = PaymentTransaction::with(['items.course', 'voucher'])
+            ->where('order_id', $orderId)
+            ->first();
+
+        if (!$transaction) {
+            return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
+        }
+
+        if (!$this->hasValidMidtransSignature($request, $transaction)) {
+            return response()->json(['message' => 'Signature Midtrans tidak valid'], 403);
+        }
+
+        $this->syncTransactionStatus($transaction, $request->all());
+
+        return response()->json(['message' => 'ok']);
+    }
+
+    /**
+     * Finance page backed by payment transactions.
      */
     public function finance()
     {
         $user = Auth::guard('mahasiswa')->user();
-        $search = request('search');
-        $status = request('status');
-        $date = request('date');
-        
-        // Get enrollments as transactions (simulating payment history)
-        $query = \App\Models\Enrollment::with(['course'])
+        $search = trim((string) request('search'));
+        $status = trim((string) request('status'));
+        $date = trim((string) request('date'));
+
+        $query = PaymentTransaction::with(['items'])
             ->where('id_mahasiswa', $user->id)
-            ->orderBy('created_at', 'desc');
-        
-        // Apply search filter
-        if ($search) {
-            $query->whereHas('course', function ($q) use ($search) {
-                $q->where('nama_course', 'like', '%' . $search . '%');
+            ->latest();
+
+        if ($search !== '') {
+            $query->where(function ($inner) use ($search) {
+                $inner->where('order_id', 'like', '%' . $search . '%')
+                    ->orWhereHas('items', function ($itemQuery) use ($search) {
+                        $itemQuery->where('course_name', 'like', '%' . $search . '%');
+                    });
             });
         }
-        
-        // Apply status filter
-        if ($status && $status !== 'semua') {
-            $query->where('status', $status);
+
+        if ($status !== '' && $status !== 'semua') {
+            $mappedStatus = match ($status) {
+                'aktif' => ['settlement', 'capture'],
+                'pending' => ['pending'],
+                'gagal' => ['deny', 'cancel', 'expire', 'failure'],
+                default => [$status],
+            };
+            $query->whereIn('transaction_status', $mappedStatus);
         }
-        
+
+        if ($date === 'today') {
+            $query->whereDate('created_at', today());
+        } elseif ($date === 'week') {
+            $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+        } elseif ($date === 'month') {
+            $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year);
+        }
+
         $transactions = $query->paginate(10);
-        
-        // Calculate stats
-        $allEnrollments = \App\Models\Enrollment::with(['course'])
-            ->where('id_mahasiswa', $user->id)
-            ->get();
-        
-        $totalPayment = $allEnrollments->sum(function ($item) {
-            return $item->course->harga ?? 0;
-        });
-        
-        $successCount = $allEnrollments->where('status', 'aktif')->count();
-        $pendingCount = $allEnrollments->where('status', 'pending')->count();
-        $failedCount = $allEnrollments->where('status', 'gagal')->count();
-        
+
+        $allTransactions = PaymentTransaction::where('id_mahasiswa', $user->id)->get();
+        $totalPayment = (float) $allTransactions->whereIn('transaction_status', ['settlement', 'capture'])->sum('gross_amount');
+        $successCount = $allTransactions->whereIn('transaction_status', ['settlement', 'capture'])->count();
+        $pendingCount = $allTransactions->where('transaction_status', 'pending')->count();
+        $failedCount = $allTransactions->whereIn('transaction_status', ['deny', 'cancel', 'expire', 'failure'])->count();
+
         return view('pages.mahasiswa.finance', [
             'transactions' => $transactions,
             'totalPayment' => $totalPayment,
             'successCount' => $successCount,
             'pendingCount' => $pendingCount,
             'failedCount' => $failedCount,
-            'selectedStatus' => $status ?? 'semua',
+            'selectedStatus' => $status !== '' ? $status : 'semua',
             'searchQuery' => $search,
         ]);
     }
-    
+
     /**
-     * Show transaction detail page
+     * Transaction detail page.
      */
     public function transactionDetail($id)
     {
         $user = Auth::guard('mahasiswa')->user();
-        
-        // Get enrollment by ID
-        $enrollment = \App\Models\Enrollment::with(['course', 'course.dosen'])
+
+        $transaction = PaymentTransaction::with(['items.course', 'voucher'])
             ->where('id_mahasiswa', $user->id)
-            ->where('id_enroll', $id)
+            ->where('id_payment_transaction', $id)
             ->firstOrFail();
-        
-        // Payment method (simulated)
-        $paymentMethods = [
-            'va_bca' => ['name' => 'Bank Central Asia (BCA)', 'type' => 'Virtual Account BCA'],
-            'va_bni' => ['name' => 'Bank Negara Indonesia (BNI)', 'type' => 'Virtual Account BNI'],
-            'ewallet' => ['name' => 'E-Wallet', 'type' => 'E-Wallet'],
-        ];
-        $selectedMethod = array_rand($paymentMethods);
-        
-        // Build transaction data
-        $transaction = [
-            'id' => 'TRX-' . date('Y', strtotime($enrollment->created_at)) . '-' . str_pad($enrollment->id_enroll, 6, '0', STR_PAD_LEFT),
-            'date' => $enrollment->created_at,
-            'course_name' => $enrollment->course->nama_course ?? 'Unknown',
-            'course_id' => $enrollment->id_course,
-            'method' => $paymentMethods[$selectedMethod]['type'],
-            'bank_name' => $paymentMethods[$selectedMethod]['name'],
-            'va_number' => '1234567890' . str_pad($enrollment->id_enroll, 6, '0', STR_PAD_LEFT),
-            'amount' => $enrollment->course->harga ?? 0,
-            'admin_fee' => 1000,
-            'total' => ($enrollment->course->harga ?? 0) + 1000,
-            'status' => $enrollment->status,
-            'deadline' => $enrollment->created_at->addDays(1),
-            'enrollment_id' => $enrollment->id_enroll,
-        ];
-        
+
         return view('pages.mahasiswa.transaction-detail', [
-            'transaction' => $transaction,
+            'paymentTransaction' => $transaction,
         ]);
+    }
+
+    private function getCartItems(int $mahasiswaId)
+    {
+        return Cart::with(['course', 'course.dosen'])
+            ->where('id_mahasiswa', $mahasiswaId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    private function calculateSubtotal($cartItems): float
+    {
+        return (float) $cartItems->sum(function ($item) {
+            return $item->course->harga ?? 0;
+        });
+    }
+
+    private function resolveVoucher(string $code): array
+    {
+        $voucher = Voucher::whereRaw('LOWER(code) = ?', [Str::lower($code)])->first();
+        if (!$voucher) {
+            return ['success' => false, 'message' => 'Kode voucher tidak dikenali.'];
+        }
+
+        if (!$voucher->is_active) {
+            return ['success' => false, 'message' => 'Voucher tidak aktif.'];
+        }
+
+        if ($voucher->used_at !== null) {
+            return ['success' => false, 'message' => 'Voucher ini sudah dipakai pada transaksi lain.'];
+        }
+
+        return ['success' => true, 'voucher' => $voucher];
+    }
+
+    private function calculateVoucherDiscount(?Voucher $voucher, float $subtotal): float
+    {
+        if (!$voucher) {
+            return 0;
+        }
+
+        if ($subtotal < (float) $voucher->min_subtotal) {
+            return 0;
+        }
+
+        if ($voucher->type === 'percent') {
+            return round($subtotal * (((float) $voucher->value) / 100), 2);
+        }
+
+        return min((float) $voucher->value, $subtotal);
+    }
+
+    private function generateOrderId(): string
+    {
+        return 'MID-UT-' . now()->format('YmdHis') . '-' . random_int(1000, 9999);
+    }
+
+    private function buildMidtransPayload(
+        PaymentTransaction $transaction,
+        $user,
+        ?Voucher $voucher,
+        float $serviceFee,
+        float $discountAmount
+    ): array {
+        $itemDetails = $transaction->items->map(function (PaymentTransactionItem $item) {
+            return [
+                'id' => 'COURSE-' . $item->id_course,
+                'price' => (int) round((float) $item->price),
+                'quantity' => 1,
+                'name' => Str::limit($item->course_name, 50, ''),
+            ];
+        })->values()->all();
+
+        if ($serviceFee > 0) {
+            $itemDetails[] = [
+                'id' => 'SERVICE-FEE',
+                'price' => (int) round($serviceFee),
+                'quantity' => 1,
+                'name' => 'Biaya Layanan',
+            ];
+        }
+
+        if ($discountAmount > 0) {
+            $itemDetails[] = [
+                'id' => 'VOUCHER-' . ($voucher?->id_voucher ?? 'NA'),
+                'price' => (int) round($discountAmount * -1),
+                'quantity' => 1,
+                'name' => 'Diskon Voucher ' . ($voucher?->code ?? ''),
+            ];
+        }
+
+        return [
+            'transaction_details' => [
+                'order_id' => $transaction->order_id,
+                'gross_amount' => (int) round((float) $transaction->gross_amount),
+            ],
+            'item_details' => $itemDetails,
+            'customer_details' => [
+                'first_name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->profile->no_hp ?? null,
+            ],
+            'callbacks' => [
+                'finish' => route('mahasiswa.payment-success', ['order_id' => $transaction->order_id]),
+                'unfinish' => route('mahasiswa.payment-success', ['order_id' => $transaction->order_id]),
+                'error' => route('mahasiswa.payment-success', ['order_id' => $transaction->order_id]),
+            ],
+        ];
+    }
+
+    private function syncTransactionStatus(PaymentTransaction $transaction, array $payload): void
+    {
+        $status = (string) ($payload['transaction_status'] ?? $transaction->transaction_status);
+        $paymentMethod = (string) ($payload['payment_type'] ?? $transaction->payment_method);
+        $fraudStatus = $payload['fraud_status'] ?? $transaction->fraud_status;
+
+        $transaction->update([
+            'transaction_status' => $status,
+            'payment_method' => $paymentMethod !== '' ? $paymentMethod : $transaction->payment_method,
+            'fraud_status' => $fraudStatus,
+            'paid_at' => in_array($status, ['settlement', 'capture'], true) ? ($transaction->paid_at ?? now()) : $transaction->paid_at,
+            'payload' => array_merge($transaction->payload ?? [], ['latest_notification' => $payload]),
+        ]);
+
+        if (in_array($status, ['settlement', 'capture'], true)) {
+            $this->finalizeSuccessfulTransaction($transaction->fresh(['items.course', 'voucher']));
+        }
+    }
+
+    private function finalizeSuccessfulTransaction(PaymentTransaction $transaction): void
+    {
+        DB::transaction(function () use ($transaction) {
+            foreach ($transaction->items as $item) {
+                $exists = Enrollment::where('id_mahasiswa', $transaction->id_mahasiswa)
+                    ->where('id_course', $item->id_course)
+                    ->exists();
+
+                if (!$exists) {
+                    Enrollment::create([
+                        'id_mahasiswa' => $transaction->id_mahasiswa,
+                        'id_course' => $item->id_course,
+                        'status' => 'aktif',
+                        'progress' => 0,
+                        'tanggal_daftar' => now(),
+                    ]);
+
+                    if ($item->course && $item->course->id_dosen) {
+                        $mahasiswa = $transaction->mahasiswa;
+                        DosenNotification::notifyDosen(
+                            $item->course->id_dosen,
+                            'Mahasiswa Baru Mendaftar',
+                            ($mahasiswa->name ?? 'Mahasiswa') . ' mendaftar di kursus ' . ($item->course->nama_course ?? 'Kursus'),
+                            'enrollment',
+                            'enrollment',
+                            '/dosen/kursus/' . $item->id_course
+                        );
+                    }
+                }
+            }
+
+            Cart::where('id_mahasiswa', $transaction->id_mahasiswa)->delete();
+        });
+
+        Notification::notifyMahasiswa(
+            $transaction->id_mahasiswa,
+            'Pembayaran berhasil',
+            'Pembayaran order ' . $transaction->order_id . ' berhasil. Kursus Anda sudah aktif.',
+            'umum',
+            'payment',
+            '#10B981'
+        );
+    }
+
+    private function hasValidMidtransSignature(Request $request, PaymentTransaction $transaction): bool
+    {
+        $signature = (string) $request->input('signature_key');
+        if ($signature === '') {
+            return false;
+        }
+
+        $serverKey = (string) config('services.midtrans.server_key');
+        if ($serverKey === '') {
+            return false;
+        }
+
+        $expected = hash(
+            'sha512',
+            $transaction->order_id .
+            (string) $request->input('status_code', '') .
+            number_format((float) $transaction->gross_amount, 2, '.', '') .
+            $serverKey
+        );
+
+        return hash_equals($expected, $signature);
     }
 }

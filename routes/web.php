@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Mahasiswa\CheckoutController;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,9 @@ Route::get('/', function () {
 
     return view('home', compact('landingStats'));
 });
+
+Route::post('/payments/midtrans/notification', [CheckoutController::class, 'midtransNotification'])
+    ->name('midtrans.notification');
 
 require __DIR__.'/mahasiswa.php';
 require __DIR__.'/admin.php';

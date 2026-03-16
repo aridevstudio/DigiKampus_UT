@@ -1,150 +1,136 @@
 <x-layouts.dashboard :active="'get-courses'">
 
-{{-- Step Indicator --}}
-<div class="flex items-center justify-center gap-4 mb-8 animate-fade-in-up">
+@php
+    $status = $paymentTransaction->transaction_status;
+    $isSuccess = in_array($status, ['settlement', 'capture'], true);
+    $isPending = $status === 'pending';
+@endphp
+
+<div class="mb-8 flex items-center justify-center gap-4">
     <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
             </svg>
         </div>
         <span class="text-sm text-gray-500 dark:text-gray-400">Keranjang</span>
     </div>
-    <div class="w-16 h-0.5 bg-blue-500"></div>
+    <div class="h-0.5 w-16 bg-blue-500"></div>
     <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
             </svg>
         </div>
         <span class="text-sm text-gray-500 dark:text-gray-400">Pembayaran</span>
     </div>
-    <div class="w-16 h-0.5 bg-blue-500"></div>
+    <div class="h-0.5 w-16 {{ $isSuccess ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600' }}"></div>
     <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">3</div>
-        <span class="text-sm font-medium text-green-600 dark:text-green-400">Selesai</span>
+        <div class="flex h-8 w-8 items-center justify-center rounded-full {{ $isSuccess ? 'bg-green-500 text-white' : ($isPending ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white') }} text-sm font-bold">3</div>
+        <span class="text-sm font-medium {{ $isSuccess ? 'text-green-600 dark:text-green-400' : ($isPending ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
+            {{ $isSuccess ? 'Selesai' : ($isPending ? 'Pending' : 'Gagal') }}
+        </span>
     </div>
 </div>
 
-{{-- Success Icon --}}
-<div class="text-center mb-6 animate-fade-in-up delay-100">
-    <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500 flex items-center justify-center animate-bounce-in">
-        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+<div class="mb-6 text-center">
+    <div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full {{ $isSuccess ? 'bg-green-500' : ($isPending ? 'bg-yellow-500' : 'bg-red-500') }}">
+        @if($isSuccess)
+        <svg class="h-10 w-10 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
         </svg>
+        @elseif($isPending)
+        <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        @else
+        <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        @endif
     </div>
-    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Pembayaran Berhasil!</h1>
-    <p class="text-gray-600 dark:text-gray-400">Terima kasih, kursus Anda sudah aktif dan siap dipelajari.</p>
+    <h1 class="mb-2 text-2xl font-bold text-gray-800 dark:text-gray-100">
+        {{ $isSuccess ? 'Pembayaran Berhasil!' : ($isPending ? 'Pembayaran Masih Pending' : 'Pembayaran Belum Berhasil') }}
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+        @if($isSuccess)
+            Terima kasih, kursus Anda sudah aktif dan siap dipelajari.
+        @elseif($isPending)
+            Silakan selesaikan pembayaran melalui Midtrans atau cek kembali status transaksi.
+        @else
+            Transaksi tidak berhasil. Anda bisa mencoba pembayaran ulang dari detail transaksi.
+        @endif
+    </p>
 </div>
 
-{{-- Main Content --}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    {{-- Left: Transaction Summary --}}
-    <div class="lg:col-span-2 space-y-6">
-        <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 animate-fade-in-up delay-200">
-            <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-6">Ringkasan Transaksi</h2>
-            
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div class="space-y-6 lg:col-span-2">
+        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700/50 dark:bg-[#1f2937]">
+            <h2 class="mb-6 text-lg font-bold text-gray-800 dark:text-gray-100">Ringkasan Transaksi</h2>
+
             <div class="space-y-4">
-                <div class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-700/50">
-                    <span class="text-gray-600 dark:text-gray-400">Nama Kursus</span>
+                <div class="flex justify-between border-b border-gray-100 py-3 dark:border-gray-700/50">
+                    <span class="text-gray-600 dark:text-gray-400">Kursus</span>
                     <span class="font-medium text-gray-800 dark:text-gray-100 text-right">
-                        @if($transaction['course_count'] > 1)
-                            {{ $transaction['course_count'] }} kursus
+                        @if($paymentTransaction->items->count() > 1)
+                            {{ $paymentTransaction->items->count() }} kursus
                         @else
-                            {{ $transaction['course_names'][0] ?? 'Kursus' }}
+                            {{ $paymentTransaction->items->first()?->course_name ?? 'Kursus' }}
                         @endif
                     </span>
                 </div>
-                <div class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-700/50">
-                    <span class="text-gray-600 dark:text-gray-400">Kode Transaksi</span>
-                    <span class="font-mono font-medium text-gray-800 dark:text-gray-100">{{ $transaction['id'] }}</span>
+                <div class="flex justify-between border-b border-gray-100 py-3 dark:border-gray-700/50">
+                    <span class="text-gray-600 dark:text-gray-400">Order ID</span>
+                    <span class="font-mono font-medium text-gray-800 dark:text-gray-100">{{ $paymentTransaction->order_id }}</span>
                 </div>
-                <div class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-700/50">
-                    <span class="text-gray-600 dark:text-gray-400">Tanggal & Waktu</span>
-                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $transaction['date'] }}</span>
+                <div class="flex justify-between border-b border-gray-100 py-3 dark:border-gray-700/50">
+                    <span class="text-gray-600 dark:text-gray-400">Tanggal</span>
+                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $paymentTransaction->created_at->format('d F Y, H:i') }}</span>
                 </div>
-                <div class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-700/50">
+                <div class="flex justify-between border-b border-gray-100 py-3 dark:border-gray-700/50">
                     <span class="text-gray-600 dark:text-gray-400">Metode Pembayaran</span>
-                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $transaction['payment_method'] }}</span>
+                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ strtoupper($paymentTransaction->payment_method ?: 'midtrans') }}</span>
                 </div>
                 <div class="flex justify-between py-3">
                     <span class="text-gray-600 dark:text-gray-400">Total Pembayaran</span>
-                    <span class="font-bold text-xl text-green-600 dark:text-green-400">Rp {{ number_format($transaction['total'], 0, ',', '.') }}</span>
+                    <span class="text-xl font-bold {{ $isSuccess ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400' }}">Rp {{ number_format($paymentTransaction->gross_amount, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>
-        
-        {{-- Action Buttons --}}
-        <div class="flex flex-col sm:flex-row gap-3 animate-fade-in-up delay-300">
-            <a href="{{ route('mahasiswa.get-courses') }}" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-                <div class="text-center">
-                    <div class="font-medium">Mulai</div>
-                    <div class="font-medium">Belajar</div>
-                    <div class="font-medium">Sekarang</div>
-                </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row">
+            @if($isSuccess)
+            <a href="{{ route('mahasiswa.courses') }}" class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
+                Mulai Belajar Sekarang
             </a>
-            <a href="{{ route('mahasiswa.dashboard') }}" class="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700/50 transition flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                <div class="text-center">
-                    <div>Lihat Kursus</div>
-                    <div>Saya</div>
-                </div>
+            @elseif($paymentTransaction->snap_redirect_url)
+            <a href="{{ $paymentTransaction->snap_redirect_url }}" target="_blank" rel="noopener noreferrer" class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
+                Lanjutkan Bayar
             </a>
-            <button class="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700/50 transition flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                <span>Unduh Invoice</span>
-            </button>
+            @endif
+            <a href="{{ route('mahasiswa.transaction-detail', ['id' => $paymentTransaction->id_payment_transaction]) }}" class="flex-1 rounded-xl border border-gray-300 py-3 text-center font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700/50">
+                Detail Transaksi
+            </a>
+            <a href="{{ route('mahasiswa.finance') }}" class="flex-1 rounded-xl border border-gray-300 py-3 text-center font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700/50">
+                Lihat Finance
+            </a>
         </div>
     </div>
-    
-    {{-- Right: Sidebar --}}
-    <div class="lg:col-span-1 space-y-4">
-        {{-- Tips Penggunaan --}}
-        <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 animate-fade-in-up delay-200">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <h3 class="font-bold text-gray-800 dark:text-gray-100">Tips Penggunaan</h3>
-            </div>
-            <p class="text-gray-600 dark:text-gray-400 text-sm">
-                Selamat! Anda resmi terdaftar di kursus ini. Selesaikan modul minggu pertama agar progres belajar lebih cepat.
+
+    <div class="space-y-4 lg:col-span-1">
+        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700/50 dark:bg-[#1f2937]">
+            <h3 class="mb-3 font-bold text-gray-800 dark:text-gray-100">Catatan</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                @if($isSuccess)
+                    Kursus aktif otomatis setelah Midtrans mengirim status berhasil ke sistem.
+                @elseif($isPending)
+                    Jika status belum berubah, cek lagi beberapa saat atau buka detail transaksi untuk bayar ulang.
+                @else
+                    Anda bisa membuat transaksi baru dari checkout atau menghubungi support jika pembayaran seharusnya berhasil.
+                @endif
             </p>
-        </div>
-        
-        {{-- Satisfaction Rating --}}
-        <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 text-center animate-fade-in-up delay-300">
-            <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-green-500 flex items-center justify-center">
-                <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-            </div>
-            <p class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">97%</p>
-            <p class="text-gray-600 dark:text-gray-400 text-sm">mahasiswa merasa puas dengan kursus ini</p>
         </div>
     </div>
 </div>
-
-@push('styles')
-<style>
-    @keyframes bounce-in {
-        0% { transform: scale(0); opacity: 0; }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); opacity: 1; }
-    }
-    .animate-bounce-in {
-        animation: bounce-in 0.5s ease-out;
-    }
-</style>
-@endpush
 
 </x-layouts.dashboard>

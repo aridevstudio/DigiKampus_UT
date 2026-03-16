@@ -101,6 +101,10 @@ Route::prefix('admin')
         Route::get('/profile', [AdminController::class, 'showProfile'])->name('admin.profile');
         Route::put('/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
 
+        // Support Tickets
+        Route::get('/support-tickets', [AdminController::class, 'showSupportTickets'])->name('admin.support-tickets');
+        Route::post('/support-tickets/{id}/reply', [AdminController::class, 'replySupportTicket'])->name('admin.support-tickets.reply');
+
         // Notifications
         Route::get('/notifications', [AdminController::class, 'getNotifications'])->name('admin.notifications');
         Route::get('/notifications/count', [AdminController::class, 'getNotificationCount'])->name('admin.notifications.count');

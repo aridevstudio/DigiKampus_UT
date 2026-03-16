@@ -356,6 +356,7 @@
         </div>
     </div>
 
+    @unless(request()->routeIs('mahasiswa.chat'))
     <div class="mhs-cs-widget" id="mhs-cs-widget">
         <div id="mhs-cs-panel" class="mhs-cs-panel hidden mb-3 bg-white dark:bg-[#1f2937] p-4">
             <div class="flex items-start justify-between gap-3">
@@ -372,13 +373,13 @@
             <div class="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
                 <span class="inline-flex items-center gap-1.5">
                     <span class="h-2 w-2 rounded-full bg-green-500"></span>
-                    CS Online
+                    QA & Support
                 </span>
-                <p class="mt-1">Support ini terpisah dari chat dosen-mahasiswa dan tetap berjalan di popup ini.</p>
+                <p class="mt-1">Pertanyaan akan dicek ke FAQ terlebih dahulu. Jika belum cocok, tiket akan diteruskan ke admin.</p>
             </div>
             <div id="mhs-cs-messages" class="mt-3 space-y-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-900/50">
                 <div class="max-w-[85%] rounded-2xl rounded-bl-md bg-white px-3 py-2 text-xs text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300">
-                    Halo, ada yang bisa dibantu terkait pembelian, kelas, atau kendala dashboard?
+                    Halo, tulis pertanyaan Anda terkait pembayaran, kelas, tugas, atau kendala dashboard.
                 </div>
             </div>
             <form class="mt-3 flex items-end gap-2" onsubmit="submitMahasiswaCsMessage(event)">
@@ -390,6 +391,9 @@
                     Kirim
                 </button>
             </form>
+            <a href="{{ route('mahasiswa.support') }}" class="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">
+                Buka Halaman Support
+            </a>
         </div>
 
         <button id="mhs-cs-trigger" type="button" onclick="toggleMahasiswaCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
@@ -399,6 +403,7 @@
             Chat CS
         </button>
     </div>
+    @endunless
 
     @vite('resources/js/app.js')
     
@@ -708,10 +713,45 @@
 
             appendMahasiswaCsMessage(message, 'user');
             input.value = '';
+            appendMahasiswaCsMessage('Sedang memeriksa FAQ...');
 
-            window.setTimeout(() => {
-                appendMahasiswaCsMessage('Pesan diterima. Tim support akan membalas dari popup ini. Untuk sekarang ini masih frontend preview.');
-            }, 550);
+            fetch('{{ route('mahasiswa.support.ask') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                },
+                body: (() => {
+                    const formData = new FormData();
+                    formData.append('subject', 'Pertanyaan dari widget support');
+                    formData.append('question', message);
+                    return formData;
+                })(),
+            })
+                .then(async (response) => {
+                    const payload = await response.json();
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.message || 'Gagal menghubungi support.');
+                    }
+
+                    const container = document.getElementById('mhs-cs-messages');
+                    if (container && container.lastElementChild) {
+                        container.removeChild(container.lastElementChild);
+                    }
+
+                    if (payload.resolved) {
+                        appendMahasiswaCsMessage('FAQ terkait ditemukan: ' + payload.data.answer);
+                    } else {
+                        appendMahasiswaCsMessage('Pertanyaan Anda belum ada di FAQ dan sudah diteruskan ke admin. Ticket ID: #' + payload.data.ticket_id);
+                    }
+                })
+                .catch((error) => {
+                    const container = document.getElementById('mhs-cs-messages');
+                    if (container && container.lastElementChild) {
+                        container.removeChild(container.lastElementChild);
+                    }
+                    appendMahasiswaCsMessage(error.message || 'Terjadi kesalahan saat mengirim pertanyaan.');
+                });
         }
 
         document.addEventListener('click', (event) => {

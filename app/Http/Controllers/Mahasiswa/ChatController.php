@@ -44,7 +44,13 @@ class ChatController extends Controller
             ->with('profile');
 
         if ($search !== '') {
-            $dosenQuery->where('name', 'like', "%{$search}%");
+            $dosenQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('profile', function ($profileQuery) use ($search) {
+                        $profileQuery->where('nomor_induk', 'like', "%{$search}%");
+                    });
+            });
         }
 
         $dosens = $dosenQuery->get();
@@ -76,8 +82,22 @@ class ChatController extends Controller
                 'unread_count' => $unreadCount,
             ];
         })
-            ->sortByDesc(function (array $conv) {
-                return $conv['last_message_time'] ?? '';
+            ->sort(function (array $left, array $right) {
+                $leftUnread = (int) ($left['unread_count'] ?? 0);
+                $rightUnread = (int) ($right['unread_count'] ?? 0);
+
+                if (($leftUnread > 0) !== ($rightUnread > 0)) {
+                    return $leftUnread > 0 ? -1 : 1;
+                }
+
+                $leftTime = $left['last_message_time'] ?? '';
+                $rightTime = $right['last_message_time'] ?? '';
+
+                if ($leftTime !== $rightTime) {
+                    return $rightTime <=> $leftTime;
+                }
+
+                return strcmp($left['dosen_name'], $right['dosen_name']);
             })
             ->values();
 
@@ -219,4 +239,3 @@ class ChatController extends Controller
         return $this->getAvailableDosenIds($mahasiswaId)->contains($dosenId);
     }
 }
-

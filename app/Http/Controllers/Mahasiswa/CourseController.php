@@ -3,13 +3,19 @@
 namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Models\CourseDiscussion;
+use App\Models\CourseInstructorNote;
 use App\Models\CourseMaterial;
 use App\Models\Assignment;
 use App\Models\DosenNotification;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class CourseController extends Controller
 {
@@ -205,7 +211,12 @@ class CourseController extends Controller
     {
         $user = Auth::guard('mahasiswa')->user();
         
-        $course = Course::with(['dosen', 'materials', 'assignments'])
+        $course = Course::with([
+            'dosen',
+            'materials',
+            'assignments',
+            'instructorNotes' => fn ($query) => $query->where('is_active', true)->latest(),
+        ])
             ->findOrFail($id);
         $courseId = $course->id_course;
         
@@ -360,6 +371,14 @@ class CourseController extends Controller
             'progressPercent' => $progressPercent,
             'completedMaterials' => $completedMaterials,
             'totalMaterials' => $totalMaterials,
+            'dosenNotes' => $course->instructorNotes->map(function (CourseInstructorNote $note) {
+                return [
+                    'id' => $note->id_course_instructor_note,
+                    'title' => $note->judul ?: 'Catatan Dosen',
+                    'content' => $note->konten,
+                    'created_at' => optional($note->created_at)->diffForHumans(),
+                ];
+            })->values(),
         ]);
     }
 
@@ -395,7 +414,14 @@ class CourseController extends Controller
 
         // Recalculate aggregate progress and update enrollment status.
         $enrollment->recalculateProgress($user->id);
-        
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Materi ditandai selesai.',
+            ]);
+        }
+
         return back()->with('success', 'Materi ditandai selesai!');
     }
     
@@ -770,10 +796,16 @@ class CourseController extends Controller
             'format' => 'PDF, DOCX, ZIP',
             'max_size' => '10 MB',
         ];
+
+        $submission = AssignmentSubmission::where('id_material', $assignmentMaterial->id_material)
+            ->where('id_mahasiswa', $user->id)
+            ->latest('submitted_at')
+            ->first();
         
         return view('pages.mahasiswa.assignment-submission', [
             'course' => $course,
             'assignment' => $assignment,
+            'submission' => $submission,
         ]);
     }
     
@@ -799,21 +831,16 @@ class CourseController extends Controller
                 ->with('info', 'Modul ini tidak memiliki tugas akhir (opsional oleh dosen).');
         }
         
-        // Dummy submission data
-        $submission = [
-            'id' => 1,
-            'assignment_id' => $assignmentId,
-            'assignment_title' => $assignmentMaterial->judul_material ?? $assignmentMaterial->judul ?? 'Tugas Akhir',
-            'status' => 'pending', // pending, graded
-            'submitted_at' => now()->subDays(2),
-            'file_name' => 'Analisis_SI.pdf',
-            'file_size' => '2.4 MB',
-            'notes' => 'Tugas sudah saya kerjakan dengan baik.',
-            // Grading (if graded)
-            'grade' => null,
-            'feedback' => null,
-            'graded_at' => null,
-        ];
+        $submission = AssignmentSubmission::where('id_material', $assignmentMaterial->id_material)
+            ->where('id_mahasiswa', $user->id)
+            ->first();
+
+        if (!$submission) {
+            return redirect()->route('mahasiswa.assignment-submission', [
+                'courseId' => $courseId,
+                'assignmentId' => $assignmentId,
+            ])->with('info', 'Tugas belum dikumpulkan.');
+        }
         
         return view('pages.mahasiswa.assignment-status', [
             'course' => $course,
@@ -895,17 +922,48 @@ class CourseController extends Controller
             ], 422);
         }
 
-        // Store uploaded file if present
-        if ($request->hasFile('file')) {
-            $request->validate([
-                'file' => 'required|file|max:10240|mimes:pdf,docx,doc,zip',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file|max:10240|mimes:pdf,docx,doc,zip',
+            'catatan' => 'nullable|string|max:2000',
+        ]);
 
-            $file = $request->file('file');
-            $userId = $user->id;
-            $fileName = "assignment_{$courseId}_{$assignmentId}_{$userId}_" . time() . '.' . $file->getClientOriginalExtension();
-            $file->storeAs('assignments', $fileName, 'public');
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
         }
+
+        $file = $request->file('file');
+        $userId = $user->id;
+        $fileName = "assignment_{$courseId}_{$assignmentId}_{$userId}_" . time() . '.' . $file->getClientOriginalExtension();
+        $filePath = $file->storeAs('assignments', $fileName, 'public');
+
+        $submission = AssignmentSubmission::where('id_material', $assignmentMaterial->id_material)
+            ->where('id_mahasiswa', $user->id)
+            ->first();
+
+        if ($submission?->file_path) {
+            Storage::disk('public')->delete($submission->file_path);
+        }
+
+        AssignmentSubmission::updateOrCreate(
+            [
+                'id_material' => $assignmentMaterial->id_material,
+                'id_mahasiswa' => $user->id,
+            ],
+            [
+                'id_course' => $courseId,
+                'file_path' => $filePath,
+                'original_file_name' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+                'catatan_mahasiswa' => $request->string('catatan')->trim()->value(),
+                'status' => 'submitted',
+                'submitted_at' => now(),
+                'reviewed_at' => null,
+            ]
+        );
 
         // Mark assignment as completed in session (use module key so it matches learn() logic)
         $completedAssignments = session('completed_assignments', []);
@@ -925,14 +983,76 @@ class CourseController extends Controller
                 'Tugas Dikumpulkan',
                 ($mahasiswa->name ?? 'Mahasiswa') . ' mengumpulkan tugas di kursus ' . ($course->nama_course ?? 'Kursus'),
                 'tugas',
-                'tugas',
-                '/dosen/kursus/' . $courseId
-            );
+                    'tugas',
+                    '/dosen/kursus/' . $courseId
+                );
         }
+
+        Notification::notifyMahasiswa(
+            $user->id,
+            'Tugas berhasil dikumpulkan',
+            'Tugas Anda untuk kursus ' . ($course->nama_course ?? 'Kursus') . ' sudah tersimpan dan menunggu review dosen.',
+            'kursus_pembelajaran',
+            'assignment',
+            '#F97316'
+        );
         
         return response()->json([
             'success' => true,
+            'message' => 'Tugas berhasil disubmit.',
             'redirect' => route('mahasiswa.assignment-status', ['courseId' => $courseId, 'assignmentId' => $assignmentId])
+        ]);
+    }
+
+    public function getDiscussions($courseId)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+
+        if (!$this->isEnrolledInCourse($user->id, (int) $courseId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses ke diskusi kursus ini.',
+            ], 403);
+        }
+
+        $messages = CourseDiscussion::with(['user.profile'])
+            ->where('id_course', $courseId)
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(fn (CourseDiscussion $comment) => $this->formatDiscussionComment($comment));
+
+        return response()->json([
+            'success' => true,
+            'data' => $messages,
+        ]);
+    }
+
+    public function sendDiscussion(Request $request, $courseId)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+
+        if (!$this->isEnrolledInCourse($user->id, (int) $courseId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses ke diskusi kursus ini.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'message' => 'required|string|max:2000',
+        ]);
+
+        $discussion = CourseDiscussion::create([
+            'id_course' => $courseId,
+            'id_user' => $user->id,
+            'message' => trim($validated['message']),
+        ]);
+
+        $discussion->load(['user.profile']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->formatDiscussionComment($discussion),
         ]);
     }
 
@@ -1004,5 +1124,29 @@ class CourseController extends Controller
         }
 
         return $this->normalizeMaterialType($material->tipe) === 'tugas' ? $material : null;
+    }
+
+    private function isEnrolledInCourse(int $mahasiswaId, int $courseId): bool
+    {
+        return \App\Models\Enrollment::where('id_mahasiswa', $mahasiswaId)
+            ->where('id_course', $courseId)
+            ->exists();
+    }
+
+    private function formatDiscussionComment(CourseDiscussion $comment): array
+    {
+        $avatar = $comment->user?->profile?->foto_profile
+            ? asset('storage/' . $comment->user->profile->foto_profile)
+            : 'https://ui-avatars.com/api/?name=' . urlencode($comment->user?->name ?? 'Mahasiswa') . '&background=0D9488&color=fff';
+
+        return [
+            'id' => $comment->id_course_discussion,
+            'name' => $comment->user?->name ?? 'Mahasiswa',
+            'role' => $comment->user?->role === 'dosen' ? 'Pengajar' : 'Mahasiswa',
+            'text' => $comment->message,
+            'time' => optional($comment->created_at)->diffForHumans(),
+            'avatar' => $avatar,
+            'created_at' => optional($comment->created_at)->toISOString(),
+        ];
     }
 }

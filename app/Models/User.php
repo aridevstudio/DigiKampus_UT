@@ -58,6 +58,21 @@ class User extends Authenticatable
         return $this->hasMany(Agenda::class, 'id_mahasiswa', 'id');
     }
 
+    public function assignmentSubmissions()
+    {
+        return $this->hasMany(AssignmentSubmission::class, 'id_mahasiswa', 'id');
+    }
+
+    public function courseInstructorNotes()
+    {
+        return $this->hasMany(CourseInstructorNote::class, 'id_dosen', 'id');
+    }
+
+    public function paymentTransactions()
+    {
+        return $this->hasMany(PaymentTransaction::class, 'id_mahasiswa', 'id');
+    }
+
     /**
      * Update online status.
      */

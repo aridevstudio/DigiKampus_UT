@@ -107,6 +107,16 @@ class Course extends Model
         return $this->hasMany(Assignment::class, 'id_course', 'id_course');
     }
 
+    public function instructorNotes()
+    {
+        return $this->hasMany(CourseInstructorNote::class, 'id_course', 'id_course');
+    }
+
+    public function discussions()
+    {
+        return $this->hasMany(CourseDiscussion::class, 'id_course', 'id_course');
+    }
+
     /**
      * Scope to filter by tipe (pricing: gratis/berbayar).
      */
