@@ -152,7 +152,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-3.5 text-center">
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $prodi->profiles_count }}</span>
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $prodi->mahasiswa_count }}</span>
                         </td>
                         <td class="px-6 py-3.5 text-center">
                             <div class="inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/30 rounded-lg p-0.5">
@@ -315,6 +315,7 @@
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="_modal" value="edit">
+                    <input type="hidden" name="_prodi_id" value="{{ old('_modal') === 'edit' ? old('_prodi_id') : '' }}">
 
                     <div class="mb-4">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Program Studi</h3>
@@ -328,6 +329,9 @@
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Prodi <span class="text-red-400">*</span></label>
                                     <input type="text" name="kode_jurusan" id="edit_kode_jurusan" required placeholder="Contoh: TI" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @if(old('_modal') === 'edit')
+                                    @error('kode_jurusan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                    @endif
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jenjang <span class="text-red-400">*</span></label>
@@ -342,17 +346,26 @@
                                         </select>
                                         <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </div>
+                                    @if(old('_modal') === 'edit')
+                                    @error('jenjang')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                    @endif
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nama Program Studi <span class="text-red-400">*</span></label>
                                 <input type="text" name="nama_jurusan" id="edit_nama_jurusan" required placeholder="Contoh: Teknik Informatika" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @if(old('_modal') === 'edit')
+                                @error('nama_jurusan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                @endif
                             </div>
 
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Fakultas <span class="text-red-400">*</span></label>
                                 <input type="text" name="fakultas" id="edit_fakultas" required placeholder="Contoh: Fakultas Teknik" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @if(old('_modal') === 'edit')
+                                @error('fakultas')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -374,6 +387,21 @@
 
     @push('scripts')
     <script>
+        function populateEditForm(data) {
+            if (data.id_jurusan) {
+                document.getElementById('editProdiForm').action = '/admin/prodi/' + data.id_jurusan;
+                const hiddenIdInput = document.querySelector('#editProdiForm input[name="_prodi_id"]');
+                if (hiddenIdInput) {
+                    hiddenIdInput.value = data.id_jurusan;
+                }
+            }
+
+            document.getElementById('edit_kode_jurusan').value = data.kode_jurusan || '';
+            document.getElementById('edit_nama_jurusan').value = data.nama_jurusan || '';
+            document.getElementById('edit_fakultas').value = data.fakultas || '';
+            document.getElementById('edit_jenjang').value = data.jenjang || '';
+        }
+
         // Add Modal
         function openAddModal() {
             document.getElementById('addProdiModal').classList.remove('hidden');
@@ -390,12 +418,10 @@
             fetch('/admin/prodi/' + id)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('editProdiForm').action = '/admin/prodi/' + id;
-                    document.getElementById('edit_kode_jurusan').value = data.kode_jurusan || '';
-                    document.getElementById('edit_nama_jurusan').value = data.nama_jurusan || '';
-                    document.getElementById('edit_fakultas').value = data.fakultas || '';
-                    document.getElementById('edit_jenjang').value = data.jenjang || '';
-
+                    populateEditForm({
+                        id_jurusan: id,
+                        ...data,
+                    });
                     document.getElementById('editProdiModal').classList.remove('hidden');
                     document.body.style.overflow = 'hidden';
                 })
@@ -455,7 +481,20 @@
         @if($errors->any() && old('_modal') === 'add')
         document.addEventListener('DOMContentLoaded', () => openAddModal());
         @endif
+
+        @if($errors->any() && old('_modal') === 'edit' && old('_prodi_id'))
+        document.addEventListener('DOMContentLoaded', () => {
+            populateEditForm({
+                id_jurusan: @json(old('_prodi_id')),
+                kode_jurusan: @json(old('kode_jurusan')),
+                nama_jurusan: @json(old('nama_jurusan')),
+                fakultas: @json(old('fakultas')),
+                jenjang: @json(old('jenjang')),
+            });
+            document.getElementById('editProdiModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        @endif
     </script>
     @endpush
 </x-layouts.admin>
-

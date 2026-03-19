@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
+use App\Models\Category;
 use App\Models\Course;
 use App\Models\DosenNotification;
+use App\Models\Jurusan;
 use App\Models\Notification;
 use App\Models\Profile;
 use App\Models\SupportTicket;
@@ -23,6 +25,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -2695,14 +2698,15 @@ class AdminController extends Controller
         $admin = Auth::guard('admin')->user();
         $perPage = 10;
 
-        $query = \App\Models\Jurusan::query();
+        $query = Jurusan::query();
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim((string) $request->search);
             $query->where(function($q) use ($search) {
                 $q->where('nama_jurusan', 'like', "%{$search}%")
                   ->orWhere('kode_jurusan', 'like', "%{$search}%")
-                  ->orWhere('fakultas', 'like', "%{$search}%");
+                  ->orWhere('fakultas', 'like', "%{$search}%")
+                  ->orWhere('jenjang', 'like', "%{$search}%");
             });
         }
 
@@ -2715,15 +2719,21 @@ class AdminController extends Controller
         }
 
         $prodiPaginated = $query
-            ->withCount('profiles')
+            ->withCount([
+                'profiles as mahasiswa_count' => function ($profileQuery) {
+                    $profileQuery->whereHas('user', function ($userQuery) {
+                        $userQuery->where('role', 'mahasiswa');
+                    });
+                },
+            ])
             ->orderByDesc('created_at')
             ->orderByDesc('id_jurusan')
             ->paginate($perPage);
         $prodiPaginated->appends($request->only(['search', 'jenjang', 'fakultas']));
 
-        $totalAll = \App\Models\Jurusan::count();
-        $jenjangList = \App\Models\Jurusan::select('jenjang')->distinct()->orderBy('jenjang')->pluck('jenjang');
-        $fakultasList = \App\Models\Jurusan::select('fakultas')->distinct()->orderBy('fakultas')->pluck('fakultas');
+        $totalAll = Jurusan::count();
+        $jenjangList = Jurusan::select('jenjang')->distinct()->orderBy('jenjang')->pluck('jenjang');
+        $fakultasList = Jurusan::select('fakultas')->distinct()->orderBy('fakultas')->pluck('fakultas');
 
         return view('Auth.admin.prodi', [
             'admin' => $admin,
@@ -2739,52 +2749,258 @@ class AdminController extends Controller
 
     public function storeProdi(Request $request)
     {
-        $request->validate([
-            'kode_jurusan' => 'required|string|max:20|unique:jurusans,kode_jurusan',
-            'nama_jurusan' => 'required|string|max:255',
-            'fakultas' => 'required|string|max:255',
-            'jenjang' => 'required|string|max:10',
-        ]);
+        $validated = $this->validateProdiPayload($request);
 
-        \App\Models\Jurusan::create($request->only(['kode_jurusan', 'nama_jurusan', 'fakultas', 'jenjang']));
+        Jurusan::create($validated);
 
         return redirect()->route('admin.prodi')->with('success', 'Program Studi berhasil ditambahkan.');
     }
 
     public function getProdi($id)
     {
-        $prodi = \App\Models\Jurusan::findOrFail($id);
+        $prodi = Jurusan::findOrFail($id);
         return response()->json($prodi);
     }
 
     public function updateProdi(Request $request, $id)
     {
-        $prodi = \App\Models\Jurusan::findOrFail($id);
+        $prodi = Jurusan::findOrFail($id);
 
-        $request->validate([
-            'kode_jurusan' => 'required|string|max:20|unique:jurusans,kode_jurusan,' . $id . ',id_jurusan',
-            'nama_jurusan' => 'required|string|max:255',
-            'fakultas' => 'required|string|max:255',
-            'jenjang' => 'required|string|max:10',
-        ]);
+        $validated = $this->validateProdiPayload($request, $prodi);
 
-        $prodi->update($request->only(['kode_jurusan', 'nama_jurusan', 'fakultas', 'jenjang']));
+        $prodi->update($validated);
 
         return redirect()->route('admin.prodi')->with('success', 'Program Studi berhasil diperbarui.');
     }
 
     public function deleteProdi($id)
     {
-        $prodi = \App\Models\Jurusan::findOrFail($id);
+        $prodi = Jurusan::findOrFail($id);
 
-        $mahasiswaCount = $prodi->profiles()->count();
+        $mahasiswaCount = $prodi->profiles()
+            ->whereHas('user', function ($query) {
+                $query->where('role', 'mahasiswa');
+            })
+            ->count();
+
+        $dosenCount = $prodi->dosenProfiles()
+            ->whereHas('user', function ($query) {
+                $query->where('role', 'dosen');
+            })
+            ->distinct('profiles.id')
+            ->count('profiles.id');
+
+        $courseCount = $prodi->courses()->count();
+
+        $blockingRelations = [];
         if ($mahasiswaCount > 0) {
-            return redirect()->route('admin.prodi')->with('error', "Tidak dapat menghapus prodi ini karena masih memiliki {$mahasiswaCount} mahasiswa terdaftar.");
+            $blockingRelations[] = "{$mahasiswaCount} mahasiswa";
+        }
+        if ($dosenCount > 0) {
+            $blockingRelations[] = "{$dosenCount} dosen";
+        }
+        if ($courseCount > 0) {
+            $blockingRelations[] = "{$courseCount} kursus";
+        }
+
+        if (!empty($blockingRelations)) {
+            $relationMessage = implode(', ', $blockingRelations);
+
+            return redirect()->route('admin.prodi')->with(
+                'error',
+                "Tidak dapat menghapus prodi ini karena masih terhubung dengan {$relationMessage}."
+            );
         }
 
         $prodi->delete();
 
         return redirect()->route('admin.prodi')->with('success', 'Program Studi berhasil dihapus.');
+    }
+
+    private function validateProdiPayload(Request $request, ?Jurusan $prodi = null): array
+    {
+        $request->merge([
+            'kode_jurusan' => Str::upper($this->cleanTextInput($request->input('kode_jurusan'))),
+            'nama_jurusan' => $this->cleanTextInput($request->input('nama_jurusan')),
+            'fakultas' => $this->cleanTextInput($request->input('fakultas')),
+            'jenjang' => Str::upper($this->cleanTextInput($request->input('jenjang'))),
+        ]);
+
+        return $request->validate([
+            'kode_jurusan' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('jurusans', 'kode_jurusan')
+                    ->ignore($prodi?->id_jurusan, 'id_jurusan'),
+            ],
+            'nama_jurusan' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('jurusans', 'nama_jurusan')
+                    ->where(fn ($query) => $query
+                        ->where('fakultas', $request->input('fakultas'))
+                        ->where('jenjang', $request->input('jenjang')))
+                    ->ignore($prodi?->id_jurusan, 'id_jurusan'),
+            ],
+            'fakultas' => ['required', 'string', 'max:255'],
+            'jenjang' => ['required', 'string', Rule::in(['D3', 'D4', 'S1', 'S2', 'S3'])],
+        ], [
+            'kode_jurusan.required' => 'Kode prodi wajib diisi.',
+            'kode_jurusan.unique' => 'Kode prodi sudah digunakan.',
+            'nama_jurusan.required' => 'Nama program studi wajib diisi.',
+            'nama_jurusan.unique' => 'Program studi dengan fakultas dan jenjang yang sama sudah ada.',
+            'fakultas.required' => 'Fakultas wajib diisi.',
+            'jenjang.required' => 'Jenjang wajib dipilih.',
+            'jenjang.in' => 'Jenjang yang dipilih tidak valid.',
+        ]);
+    }
+
+    private function cleanTextInput(mixed $value): string
+    {
+        return preg_replace('/\s+/u', ' ', trim((string) $value));
+    }
+
+    // ========================
+    // CATEGORY MANAGEMENT
+    // ========================
+
+    public function showKategori(Request $request)
+    {
+        $admin = Auth::guard('admin')->user();
+        $perPage = 10;
+
+        $query = Category::query();
+
+        $search = trim((string) $request->get('search', ''));
+        if ($search !== '') {
+            $query->where(function ($categoryQuery) use ($search) {
+                $categoryQuery->where('kode_kategori', 'like', "%{$search}%")
+                    ->orWhere('nama_kategori', 'like', "%{$search}%")
+                    ->orWhere('tipe', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
+
+        $tipeFilter = $request->get('tipe', 'all');
+        if (in_array($tipeFilter, ['kursus', 'pengumuman'], true)) {
+            $query->where('tipe', $tipeFilter);
+        } else {
+            $tipeFilter = 'all';
+        }
+
+        $statusFilter = $request->get('status', 'all');
+        if (in_array($statusFilter, ['aktif', 'nonaktif'], true)) {
+            $query->where('status', $statusFilter);
+        } else {
+            $statusFilter = 'all';
+        }
+
+        $kategoriPaginated = $query
+            ->latest('id_category')
+            ->paginate($perPage);
+        $kategoriPaginated->appends($request->only(['search', 'tipe', 'status']));
+
+        return view('Auth.admin.kategori', [
+            'admin' => $admin,
+            'kategoriPaginated' => $kategoriPaginated,
+            'totalAll' => Category::count(),
+            'totalKursus' => Category::where('tipe', 'kursus')->count(),
+            'totalPengumuman' => Category::where('tipe', 'pengumuman')->count(),
+            'search' => $search,
+            'tipeFilter' => $tipeFilter,
+            'statusFilter' => $statusFilter,
+            'nextCategoryCode' => $this->generateNextCategoryCode(),
+        ]);
+    }
+
+    public function storeKategori(Request $request)
+    {
+        $validated = $this->validateKategoriPayload($request);
+
+        Category::create($validated);
+
+        return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil ditambahkan.');
+    }
+
+    public function getKategori($id)
+    {
+        return response()->json(Category::findOrFail($id));
+    }
+
+    public function updateKategori(Request $request, $id)
+    {
+        $kategori = Category::findOrFail($id);
+
+        $validated = $this->validateKategoriPayload($request, $kategori);
+
+        $kategori->update($validated);
+
+        return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil diperbarui.');
+    }
+
+    public function deleteKategori($id)
+    {
+        $kategori = Category::findOrFail($id);
+        $kategori->delete();
+
+        return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil dihapus.');
+    }
+
+    private function validateKategoriPayload(Request $request, ?Category $kategori = null): array
+    {
+        $request->merge([
+            'kode_kategori' => Str::upper($this->cleanTextInput($request->input('kode_kategori'))),
+            'nama_kategori' => $this->cleanTextInput($request->input('nama_kategori')),
+            'tipe' => strtolower($this->cleanTextInput($request->input('tipe'))),
+            'status' => strtolower($this->cleanTextInput($request->input('status', 'aktif'))),
+        ]);
+
+        return $request->validate([
+            'kode_kategori' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('categories', 'kode_kategori')
+                    ->ignore($kategori?->id_category, 'id_category'),
+            ],
+            'nama_kategori' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('categories', 'nama_kategori')
+                    ->where(fn ($query) => $query->where('tipe', $request->input('tipe')))
+                    ->ignore($kategori?->id_category, 'id_category'),
+            ],
+            'tipe' => ['required', 'string', Rule::in(['kursus', 'pengumuman'])],
+            'status' => ['required', 'string', Rule::in(['aktif', 'nonaktif'])],
+        ], [
+            'kode_kategori.required' => 'Kode kategori wajib diisi.',
+            'kode_kategori.unique' => 'Kode kategori sudah digunakan.',
+            'nama_kategori.required' => 'Nama kategori wajib diisi.',
+            'nama_kategori.unique' => 'Nama kategori untuk tipe ini sudah ada.',
+            'tipe.required' => 'Tipe kategori wajib dipilih.',
+            'tipe.in' => 'Tipe kategori yang dipilih tidak valid.',
+            'status.required' => 'Status kategori wajib dipilih.',
+            'status.in' => 'Status kategori yang dipilih tidak valid.',
+        ]);
+    }
+
+    private function generateNextCategoryCode(): string
+    {
+        $maxNumber = Category::query()
+            ->get(['kode_kategori'])
+            ->map(function (Category $category): int {
+                if (preg_match('/(\d+)$/', $category->kode_kategori, $matches)) {
+                    return (int) $matches[1];
+                }
+
+                return 0;
+            })
+            ->max() ?? 0;
+
+        return 'KAT-' . str_pad((string) ($maxNumber + 1), 3, '0', STR_PAD_LEFT);
     }
 
     // ========================

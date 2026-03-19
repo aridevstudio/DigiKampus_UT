@@ -121,8 +121,14 @@ Route::prefix('admin')
         Route::put('/prodi/{id}', [AdminController::class, 'updateProdi'])->name('admin.prodi.update');
         Route::delete('/prodi/{id}', [AdminController::class, 'deleteProdi'])->name('admin.prodi.delete');
 
+        // Kategori Management
+        Route::get('/kategori', [AdminController::class, 'showKategori'])->name('admin.kategori');
+        Route::post('/kategori', [AdminController::class, 'storeKategori'])->name('admin.kategori.store');
+        Route::get('/kategori/{id}', [AdminController::class, 'getKategori'])->name('admin.kategori.get');
+        Route::put('/kategori/{id}', [AdminController::class, 'updateKategori'])->name('admin.kategori.update');
+        Route::delete('/kategori/{id}', [AdminController::class, 'deleteKategori'])->name('admin.kategori.delete');
+
         // Frontend-only pages
-        Route::view('/kategori', 'Auth.admin.kategori')->name('admin.kategori');
         Route::view('/bootcamp-tiket', 'Auth.admin.bootcamp-tiket')->name('admin.bootcamp-tiket');
         Route::view('/sertifikasi', 'Auth.admin.sertifikasi')->name('admin.sertifikasi');
         Route::view('/chat', 'Auth.admin.chat')->name('admin.chat');
