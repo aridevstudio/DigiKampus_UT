@@ -8,6 +8,7 @@ use App\Models\AdminNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -40,7 +41,7 @@ class ExcelImportService
     {
         $spreadsheet = IOFactory::load($filePath);
         $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray(null, true, true, true);
+        $rows = $sheet->toArray(null, false, false, true);
 
         if (count($rows) < 2) {
             throw new \RuntimeException('File harus memiliki minimal 1 baris header dan 1 baris data.');
@@ -48,7 +49,8 @@ class ExcelImportService
 
         // Parse header (first row)
         $headerRow = array_shift($rows);
-        $header = array_map(fn($h) => strtolower(trim($h ?? '')), $headerRow);
+        $headerKeys = array_keys($headerRow);
+        $header = array_map(fn($h) => strtolower(trim((string) ($h ?? ''))), $headerRow);
         $header = array_values(array_filter($header, fn($h) => !empty($h)));
 
         // Validate required columns
@@ -64,8 +66,13 @@ class ExcelImportService
         foreach ($rows as $rowIndex => $row) {
             $rowData = [];
             foreach ($header as $colIdx => $colName) {
-                $cellKey = array_keys($headerRow)[$colIdx] ?? null;
-                $rowData[$colName] = trim($row[$cellKey] ?? '');
+                $columnLetter = $headerKeys[$colIdx] ?? null;
+                if ($columnLetter === null) {
+                    continue;
+                }
+
+                $cellCoordinate = $columnLetter . ($rowIndex + 2);
+                $rowData[$colName] = self::readCellAsString($sheet->getCell($cellCoordinate), $colName);
             }
 
             // Skip completely empty rows
@@ -130,6 +137,24 @@ class ExcelImportService
         }
 
         return $errors;
+    }
+
+    private static function readCellAsString($cell, string $columnName): string
+    {
+        $value = $cell->getFormattedValue();
+
+        if ($value === null || $value === '') {
+            $value = $cell->getValue();
+        }
+
+        $value = trim((string) ($value ?? ''));
+
+        // Keep identifiers exactly as displayed in Excel when the user formats cells as text.
+        if (in_array($columnName, ['nomor_induk', 'no_hp'], true)) {
+            return preg_replace("/^[\\'=]+/", '', $value) ?? '';
+        }
+
+        return $value;
     }
 
     /**
@@ -359,7 +384,13 @@ class ExcelImportService
         $row = 2;
         foreach ($sampleData as $data) {
             foreach ($data as $col => $value) {
-                $sheet->setCellValue(chr(65 + $col) . $row, $value);
+                $cell = chr(65 + $col) . $row;
+                if (in_array($col, [1, 4], true)) {
+                    $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_STRING);
+                    continue;
+                }
+
+                $sheet->setCellValue($cell, $value);
             }
             $row++;
         }
