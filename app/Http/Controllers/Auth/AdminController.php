@@ -649,31 +649,51 @@ class AdminController extends Controller
 
         // Search filter
         if ($request->has('search') && $request->search !== '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $search = trim((string) $request->search);
+            $normalizedStatusSearch = match (strtolower(str_replace([' ', '-'], '', $search))) {
+                'aktif' => 'aktif',
+                'nonaktif' => 'nonaktif',
+                default => null,
+            };
+
+            $query->where(function($q) use ($search, $normalizedStatusSearch) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhereHas('profile', function($pq) use ($search) {
-                      $pq->where('nomor_induk', 'like', "%{$search}%");
+                      $pq->where('nomor_induk', 'like', "%{$search}%")
+                         ->orWhere('no_hp', 'like', "%{$search}%")
+                         ->orWhereHas('jurusan', function ($jurusanQuery) use ($search) {
+                             $jurusanQuery->where('nama_jurusan', 'like', "%{$search}%")
+                                 ->orWhere('kode_jurusan', 'like', "%{$search}%")
+                                 ->orWhere('fakultas', 'like', "%{$search}%")
+                                 ->orWhere('jenjang', 'like', "%{$search}%");
+                         });
                   });
+
+                if ($normalizedStatusSearch !== null) {
+                    $q->orWhere('status', $normalizedStatusSearch);
+                }
             });
         }
 
+        $statusFilter = $request->input('status', 'all');
+        $prodiFilter = $request->input('prodi', 'all');
+
         // Status filter
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
         }
 
         // Prodi filter
-        if ($request->filled('prodi')) {
-            $query->whereHas('profile', function($q) use ($request) {
-                $q->where('id_jurusan', $request->prodi);
+        if ($prodiFilter !== 'all') {
+            $query->whereHas('profile', function($q) use ($prodiFilter) {
+                $q->where('id_jurusan', $prodiFilter);
             });
         }
 
         $mahasiswaPaginated = $query
+            ->latest('id')
             ->orderByDesc('created_at')
-            ->orderByDesc('id')
             ->paginate($perPage);
         $mahasiswaPaginated->appends($request->only(['search', 'status', 'prodi']));
         $mahasiswaList = $mahasiswaPaginated->map(function($mhs) {
@@ -690,7 +710,7 @@ class AdminController extends Controller
         });
 
         // Get jurusan list for dropdown
-        $jurusanList = \App\Models\Jurusan::all();
+        $jurusanList = \App\Models\Jurusan::orderBy('nama_jurusan')->get();
         
         // Get active courses for enrollment dropdown
         $courseList = \App\Models\Course::where('status', 'aktif')->get();
@@ -709,8 +729,8 @@ class AdminController extends Controller
             'currentPage' => $mahasiswaPaginated->currentPage(),
             'perPage' => $perPage,
             'search' => $request->search ?? '',
-            'statusFilter' => $request->status ?? 'all',
-            'prodiFilter' => $request->prodi ?? '',
+            'statusFilter' => $statusFilter,
+            'prodiFilter' => $prodiFilter,
             'jurusanList' => $jurusanList,
             'courseList' => $courseList,
             'totalAll' => $totalAll,

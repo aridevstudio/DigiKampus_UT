@@ -98,7 +98,7 @@
                 </div>
                 <div class="relative">
                     <select name="prodi" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                        <option value="">Semua Prodi</option>
+                        <option value="all" {{ ($prodiFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Prodi</option>
                         @foreach($jurusanList as $jurusan)
                         <option value="{{ $jurusan->id_jurusan }}" {{ ($prodiFilter ?? '') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
                         @endforeach
@@ -112,7 +112,7 @@
             {{-- Search --}}
             <div class="admin-toolbar-search flex gap-1.5">
                 <div class="relative flex-1">
-                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari nama, email, Nomor Induk..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari nama, email, nomor induk, prodi, kontak, status..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     <svg class="w-4 h-4 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -334,6 +334,9 @@
                                 <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
                             </div>
                         </div>
+                        <p id="photoError" class="mt-2 text-xs text-red-500 {{ $errors->has('foto') && old('_modal') === 'add' ? '' : 'hidden' }}">
+                            {{ $errors->has('foto') && old('_modal') === 'add' ? $errors->first('foto') : '' }}
+                        </p>
                     </div>
                     
                     {{-- Informasi Mahasiswa Box --}}
@@ -475,6 +478,9 @@
                                 <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
                             </div>
                         </div>
+                        <p id="editPhotoError" class="mt-2 text-xs text-red-500 {{ $errors->has('foto') && old('_modal') === 'edit' ? '' : 'hidden' }}">
+                            {{ $errors->has('foto') && old('_modal') === 'edit' ? $errors->first('foto') : '' }}
+                        </p>
                     </div>
                     
                     {{-- Informasi Mahasiswa Box --}}
@@ -669,6 +675,55 @@
 
     @push('scripts')
     <script>
+        const defaultPhotoPreviewSvg = '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+
+        function setPhotoError(message, errorElementId) {
+            const errorElement = document.getElementById(errorElementId);
+            if (!errorElement) {
+                return;
+            }
+
+            if (message) {
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+                return;
+            }
+
+            errorElement.textContent = '';
+            errorElement.classList.add('hidden');
+        }
+
+        function resetPhotoPreview(previewElementId) {
+            const preview = document.getElementById(previewElementId);
+            if (!preview) {
+                return;
+            }
+
+            preview.innerHTML = defaultPhotoPreviewSvg;
+        }
+
+        function validatePhotoBeforePreview(input, previewElementId, errorElementId) {
+            const file = input.files?.[0];
+            const maxSizeMb = Number(input.dataset.maxSizeMb || 2);
+            const maxSizeBytes = maxSizeMb * 1024 * 1024;
+
+            if (!file) {
+                setPhotoError('', errorElementId);
+                return null;
+            }
+
+            if (file.size > maxSizeBytes) {
+                input.value = '';
+                resetPhotoPreview(previewElementId);
+                setPhotoError(`Ukuran foto maksimal ${maxSizeMb}MB.`, errorElementId);
+                return null;
+            }
+
+            setPhotoError('', errorElementId);
+
+            return file;
+        }
+
         // Add Modal functions
         function openAddModal() {
             document.getElementById('addMahasiswaModal').classList.remove('hidden');
@@ -681,14 +736,17 @@
         }
         
         function previewPhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('photoPreview');
-                    preview.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
-                }
-                reader.readAsDataURL(input.files[0]);
+            const file = validatePhotoBeforePreview(input, 'photoPreview', 'photoError');
+            if (!file) {
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('photoPreview');
+                preview.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
+            }
+            reader.readAsDataURL(file);
         }
         
         // Toggle course section in Add modal
@@ -718,8 +776,9 @@
                     if (data.foto) {
                         preview.innerHTML = '<img src="/storage/' + data.foto + '" class="w-full h-full object-cover">';
                     } else {
-                        preview.innerHTML = '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+                        preview.innerHTML = defaultPhotoPreviewSvg;
                     }
+                    setPhotoError('', 'editPhotoError');
                     
                     // Populate enrolled courses
                     const coursesContainer = document.getElementById('edit_enrolledCourses');
@@ -759,14 +818,17 @@
         }
         
         function previewEditPhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('editPhotoPreview');
-                    preview.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
-                }
-                reader.readAsDataURL(input.files[0]);
+            const file = validatePhotoBeforePreview(input, 'editPhotoPreview', 'editPhotoError');
+            if (!file) {
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('editPhotoPreview');
+                preview.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
+            }
+            reader.readAsDataURL(file);
         }
         
         // Delete Modal functions
