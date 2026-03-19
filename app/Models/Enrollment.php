@@ -72,6 +72,22 @@ class Enrollment extends Model
     }
 
     /**
+     * Scope for pending enrollments awaiting payment confirmation.
+     */
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    /**
+     * Scope for enrollments that are allowed to access course learning.
+     */
+    public function scopeAccessible($query)
+    {
+        return $query->whereIn('status', ['aktif', 'in_progress', 'selesai']);
+    }
+
+    /**
      * Scope for completed enrollments.
      */
     public function scopeSelesai($query)

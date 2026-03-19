@@ -800,13 +800,23 @@ class AdminController extends Controller
 
         // Enroll in selected courses
         if ($request->has('courses') && is_array($request->courses)) {
+            $selectedCourses = Course::query()
+                ->whereIn('id_course', $request->courses)
+                ->get()
+                ->keyBy('id_course');
+
             foreach ($request->courses as $courseId) {
+                $course = $selectedCourses->get($courseId);
+                if (!$course) {
+                    continue;
+                }
+
                 \App\Models\Enrollment::create([
                     'id_mahasiswa' => $user->id,
                     'id_course' => $courseId,
                     'tanggal_daftar' => now(),
                     'progress' => 0,
-                    'status' => 'aktif',
+                    'status' => $this->resolveEnrollmentStatusForCourse($course),
                 ]);
             }
         }
@@ -1044,8 +1054,16 @@ class AdminController extends Controller
         });
         
         // Get dosen list for dropdown
-        $dosenList = User::where('role', 'dosen')->where('status', 'aktif')->get();
-        $jurusanList = \App\Models\Jurusan::all();
+        $dosenList = User::where('role', 'dosen')
+            ->where('status', 'aktif')
+            ->orderBy('name')
+            ->get();
+        $webinarSpeakerList = User::whereIn('role', ['dosen', 'admin'])
+            ->where('status', 'aktif')
+            ->orderByRaw("CASE WHEN role = 'admin' THEN 0 ELSE 1 END")
+            ->orderBy('name')
+            ->get();
+        $jurusanList = \App\Models\Jurusan::orderBy('nama_jurusan')->get();
         
         return view('Auth.admin.kursus', [
             'admin' => $admin,
@@ -1059,7 +1077,10 @@ class AdminController extends Controller
             'tipeFilter' => $request->tipe ?? 'all',
             'kategoriFilter' => $request->kategori ?? 'all',
             'dosenList' => $dosenList,
+            'webinarSpeakerList' => $webinarSpeakerList,
             'jurusanList' => $jurusanList,
+            'nextKursusCode' => $this->generateNextCourseCode('KRS'),
+            'nextWebinarCode' => $this->generateNextCourseCode('WEB'),
         ]);
     }
 
@@ -1179,6 +1200,8 @@ class AdminController extends Controller
         ]);
 
         if ($kursus->id_dosen) {
+            $speaker = User::find($kursus->id_dosen);
+            if ($speaker?->role === 'dosen') {
             DosenNotification::notifyDosen(
                 $kursus->id_dosen,
                 'Webinar Disetujui',
@@ -1187,6 +1210,7 @@ class AdminController extends Controller
                 'webinar',
                 route('dosen.kursus.edit', $kursus->id_course)
             );
+            }
         }
 
         return redirect()->route('admin.kursus')
@@ -1218,6 +1242,8 @@ class AdminController extends Controller
         ]);
 
         if ($kursus->id_dosen) {
+            $speaker = User::find($kursus->id_dosen);
+            if ($speaker?->role === 'dosen') {
             DosenNotification::notifyDosen(
                 $kursus->id_dosen,
                 'Pengajuan Webinar Ditolak',
@@ -1226,6 +1252,7 @@ class AdminController extends Controller
                 'webinar',
                 route('dosen.kursus.edit', $kursus->id_course)
             );
+            }
         }
 
         return redirect()->route('admin.kursus')
@@ -3032,10 +3059,17 @@ class AdminController extends Controller
     private function buildAdminCoursePayload(Request $request, string $status, ?string $thumbnailPath = null, ?Course $existingCourse = null): array
     {
         $isWebinar = $request->kategori === 'webinar';
-        $durasiSatuan = $request->filled('estimasi_waktu') ? ($request->durasi_satuan ?: 'Jam') : null;
+        $generatedCode = $isWebinar
+            ? $this->generateNextCourseCode('WEB', $existingCourse?->id_course)
+            : $this->generateNextCourseCode('KRS', $existingCourse?->id_course);
+        $durasiSatuan = !$isWebinar && $request->filled('estimasi_waktu')
+            ? ($request->durasi_satuan ?: 'Jam')
+            : null;
 
         $data = [
-            'kode_course' => $request->kode_course,
+            'kode_course' => $isWebinar
+                ? ($existingCourse?->kode_course ?: $generatedCode)
+                : ($request->kode_course ?: $generatedCode),
             'nama_course' => $request->nama_course,
             'deskripsi' => $request->deskripsi,
             'persyaratan' => $request->persyaratan,
@@ -3047,7 +3081,7 @@ class AdminController extends Controller
             'diskon' => $request->tipe === 'berbayar' ? ($request->diskon ?? 0) : 0,
             'status' => $status,
             'level' => $request->level,
-            'estimasi_waktu' => $request->estimasi_waktu,
+            'estimasi_waktu' => $isWebinar ? null : $request->estimasi_waktu,
             'durasi_satuan' => $durasiSatuan,
             'youtube_playlist' => $request->youtube_playlist,
             'sertifikat' => $request->boolean('sertifikat'),
@@ -3081,6 +3115,29 @@ class AdminController extends Controller
         }
 
         return $data;
+    }
+
+    private function resolveEnrollmentStatusForCourse(Course $course): string
+    {
+        return $course->tipe === 'berbayar' ? 'pending' : 'aktif';
+    }
+
+    private function generateNextCourseCode(string $prefix, ?int $ignoreCourseId = null): string
+    {
+        $latestCode = Course::query()
+            ->when($ignoreCourseId !== null, fn ($query) => $query->where('id_course', '!=', $ignoreCourseId))
+            ->where('kode_course', 'like', $prefix . '%')
+            ->orderByRaw('LENGTH(kode_course) DESC')
+            ->orderByDesc('kode_course')
+            ->value('kode_course');
+
+        $lastNumber = 0;
+
+        if (is_string($latestCode) && preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $latestCode, $matches)) {
+            $lastNumber = (int) $matches[1];
+        }
+
+        return $prefix . str_pad((string) ($lastNumber + 1), 2, '0', STR_PAD_LEFT);
     }
 
     /**

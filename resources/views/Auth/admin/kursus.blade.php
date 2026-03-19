@@ -673,10 +673,10 @@
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div x-data="dosenSearch('webinar')" class="relative">
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pembicara / Dosen <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pembicara <span class="text-gray-300 dark:text-gray-600">(dosen/admin, opsional)</span></label>
                                         <input type="hidden" name="id_dosen" :value="selectedId" id="webinar_id_dosen">
                                         <div class="relative">
-                                            <input type="text" x-model="search" @focus="open = true" @click="open = true" @input="open = true" placeholder="Cari dosen..." autocomplete="off" class="w-full px-3 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                            <input type="text" x-model="search" @focus="open = true" @click="open = true" @input="open = true" placeholder="Cari dosen atau admin..." autocomplete="off" class="w-full px-3 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                             <button type="button" x-show="selectedId" @click="clear()" class="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                             </button>
@@ -686,7 +686,10 @@
                                             <template x-for="item in filteredItems()" :key="item.id">
                                                 <button type="button" @click="select(item)" class="w-full text-left px-3 py-2 text-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 text-gray-900 dark:text-white flex items-center gap-2 transition">
                                                     <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0" x-text="item.name.charAt(0).toUpperCase()"></span>
-                                                    <span x-text="item.name"></span>
+                                                    <div class="min-w-0">
+                                                        <span class="block truncate" x-text="item.name"></span>
+                                                        <span class="block text-[10px] text-gray-400" x-text="item.role_label"></span>
+                                                    </div>
                                                 </button>
                                             </template>
                                         </div>
@@ -955,7 +958,7 @@
                                             <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div id="editDurationFields" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         <div>
                                             <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu</label>
                                             <input type="number" name="estimasi_waktu" id="edit_estimasi_waktu" min="0" placeholder="20" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -1203,7 +1206,12 @@
         // ============================================================
         // Dosen Search data
         // ============================================================
-        const dosenItems = @json($dosenList->map(fn($d) => ['id' => $d->id, 'name' => $d->name])->values());
+        const dosenItems = @json($dosenList->map(fn($d) => ['id' => $d->id, 'name' => $d->name, 'role_label' => 'Dosen'])->values());
+        const webinarSpeakerItems = @json(($webinarSpeakerList ?? $dosenList)->map(fn($user) => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'role_label' => $user->role === 'admin' ? 'Admin' : 'Dosen',
+        ])->values());
 
         // Alpine component for searchable dosen dropdown
         document.addEventListener('alpine:init', () => {
@@ -1211,11 +1219,14 @@
                 search: '',
                 selectedId: '',
                 open: false,
-                items: dosenItems,
+                items: prefix === 'add' ? dosenItems : webinarSpeakerItems,
                 filteredItems() {
                     if (!this.search) return this.items;
                     const q = this.search.toLowerCase();
-                    return this.items.filter(i => i.name.toLowerCase().includes(q));
+                    return this.items.filter(i =>
+                        i.name.toLowerCase().includes(q) ||
+                        i.role_label.toLowerCase().includes(q)
+                    );
                 },
                 select(item) {
                     this.selectedId = item.id;
@@ -1259,6 +1270,23 @@
         const editCheckboxIds = [
             'edit_status_toggle', 'edit_akses_publik', 'edit_sertifikat', 'edit_gratis_toggle'
         ];
+
+        function syncEditCategoryUI(kategori = '') {
+            const isWebinar = kategori === 'webinar';
+            const durationFields = document.getElementById('editDurationFields');
+            const modulButton = document.getElementById('edit_modul_btn')?.closest('.border');
+
+            if (durationFields) {
+                durationFields.classList.toggle('hidden', isWebinar);
+                durationFields.querySelectorAll('input, select').forEach((field) => {
+                    field.disabled = isWebinar;
+                });
+            }
+
+            if (modulButton) {
+                modulButton.classList.toggle('hidden', isWebinar);
+            }
+        }
 
         function saveFormState(fieldIds, checkboxIds, storageKey, extra) {
             const data = extra ? { ...extra } : {};
@@ -1468,6 +1496,7 @@
                 document.getElementById('editKursusForm').action = '/admin/kursus/' + id;
                 document.getElementById('edit_kursus_id').value = id;
                 restoreFormState(editFieldIds, editCheckboxIds, EDIT_FORM_KEY);
+                syncEditCategoryUI(document.getElementById('edit_kategori')?.value || 'kursus');
                 
                 // Update Kelola Modul link
                 const btnModul = document.getElementById('edit_modul_btn');
@@ -1504,6 +1533,7 @@
                         document.getElementById('edit_estimasi_waktu').value = data.estimasi_waktu || 20;
                         document.getElementById('edit_durasi_satuan').value = data.durasi_satuan || 'Jam';
                         document.getElementById('edit_kategori').value = data.kategori || 'kursus';
+                        syncEditCategoryUI(data.kategori || 'kursus');
                         document.getElementById('edit_tanggal_webinar').value = data.tanggal_webinar || '';
                         document.getElementById('edit_jam_mulai_webinar').value = data.jam_mulai_webinar || '';
                         document.getElementById('edit_jam_selesai_webinar').value = data.jam_selesai_webinar || '';
@@ -1572,6 +1602,10 @@
             document.getElementById('editKursusModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
+
+        document.getElementById('edit_kategori')?.addEventListener('change', (event) => {
+            syncEditCategoryUI(event.target.value);
+        });
         
         function previewEditThumbnail(input) {
             if (input.files && input.files[0]) {

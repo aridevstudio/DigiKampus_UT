@@ -229,6 +229,11 @@ class CourseController extends Controller
             return redirect()->route('mahasiswa.course-detail', $id)
                 ->with('error', 'Anda harus terdaftar untuk mengakses kursus ini');
         }
+
+        if ($enrollment->status === 'pending') {
+            return redirect()->route('mahasiswa.course-detail', $id)
+                ->with('error', 'Kursus berbayar ini masih menunggu konfirmasi pembayaran dari admin.');
+        }
         
         // Get materials grouped by module
         $materials = $course->materials()->orderBy('urutan')->get();
@@ -399,6 +404,10 @@ class CourseController extends Controller
         if (!$enrollment) {
             return back()->with('error', 'Anda tidak terdaftar di kursus ini');
         }
+
+        if ($enrollment->status === 'pending') {
+            return back()->with('error', 'Akses materi belum dibuka karena pembayaran masih menunggu konfirmasi admin.');
+        }
         
         // Create or update progress
         \App\Models\MaterialProgress::updateOrCreate(
@@ -521,6 +530,11 @@ class CourseController extends Controller
         if (!$enrollment) {
             return redirect()->route('mahasiswa.course-detail', $courseId)
                 ->with('error', 'Anda belum terdaftar di kursus ini.');
+        }
+
+        if ($enrollment->status === 'pending') {
+            return redirect()->route('mahasiswa.course-detail', $courseId)
+                ->with('error', 'Webinar atau kursus ini masih menunggu konfirmasi pembayaran dari admin.');
         }
         
         // Get course info
@@ -720,6 +734,11 @@ class CourseController extends Controller
             return redirect()->route('mahasiswa.course-detail', $courseId)
                 ->with('error', 'Anda belum terdaftar di kursus ini.');
         }
+
+        if ($enrollment->status === 'pending') {
+            return redirect()->route('mahasiswa.course-detail', $courseId)
+                ->with('error', 'Tugas belum dapat diakses karena pembayaran masih menunggu konfirmasi admin.');
+        }
         
         // Get course info
         $course = \App\Models\Course::findOrFail($courseId);
@@ -780,6 +799,11 @@ class CourseController extends Controller
                 ->with('error', 'Anda belum terdaftar di kursus ini.');
         }
 
+        if ($enrollment->status === 'pending') {
+            return redirect()->route('mahasiswa.course-detail', $courseId)
+                ->with('error', 'Tugas belum dapat diakses karena pembayaran masih menunggu konfirmasi admin.');
+        }
+
         // Get course and assignment
         $course = \App\Models\Course::findOrFail($courseId);
         $assignmentMaterial = $this->resolveAssignmentMaterial((int) $courseId, (int) $assignmentId);
@@ -822,6 +846,11 @@ class CourseController extends Controller
         if (!$enrollment) {
             return redirect()->route('mahasiswa.course-detail', $courseId)
                 ->with('error', 'Anda belum terdaftar di kursus ini.');
+        }
+
+        if ($enrollment->status === 'pending') {
+            return redirect()->route('mahasiswa.course-detail', $courseId)
+                ->with('error', 'Status kursus masih pending pembayaran, jadi tugas belum bisa diakses.');
         }
 
         $course = \App\Models\Course::findOrFail($courseId);
@@ -911,6 +940,13 @@ class CourseController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Anda belum terdaftar di kursus ini.',
+            ], 403);
+        }
+
+        if ($enrollment->status === 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pembayaran kursus masih menunggu konfirmasi admin.',
             ], 403);
         }
 
@@ -1076,6 +1112,10 @@ class CourseController extends Controller
         if (!$enrollment) {
             return back()->with('error', 'Anda harus terdaftar di kursus ini untuk memberikan ulasan.');
         }
+
+        if ($enrollment->status === 'pending') {
+            return back()->with('error', 'Ulasan hanya bisa diberikan setelah pembayaran dikonfirmasi dan kursus aktif.');
+        }
         
         if ($enrollment->progress < 100) {
             return back()->with('error', 'Anda harus menyelesaikan kursus terlebih dahulu untuk memberikan ulasan.');
@@ -1130,6 +1170,7 @@ class CourseController extends Controller
     {
         return \App\Models\Enrollment::where('id_mahasiswa', $mahasiswaId)
             ->where('id_course', $courseId)
+            ->accessible()
             ->exists();
     }
 
