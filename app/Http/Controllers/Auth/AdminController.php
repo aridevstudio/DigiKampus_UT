@@ -11,6 +11,7 @@ use App\Models\Profile;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\YoutubePlaylistVideo;
+use App\Services\DeviceSessionLimitService;
 use App\Services\ExcelImportService;
 use App\Services\YoutubePlaylistService;
 use Illuminate\Http\RedirectResponse;
@@ -36,7 +37,7 @@ class AdminController extends Controller
     /**
      * Handle login
      */
-    public function login(Request $request)
+    public function login(Request $request, DeviceSessionLimitService $deviceSessionLimitService)
     {
         $request->validate([
             'email' => ['required', 'email'],
@@ -65,8 +66,16 @@ class AdminController extends Controller
                 ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi super admin.');
         }
 
+        if ($deviceSessionLimitService->hasReachedWebLoginLimit($user)) {
+            return back()
+                ->withInput()
+                ->with('alert', $deviceSessionLimitService->limitMessage());
+        }
+
         // Login using Laravel Auth guard
         Auth::guard('admin')->login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
+        $deviceSessionLimitService->bindCurrentSessionToUser($request, (int) $user->id);
 
         return redirect()->route('admin.dashboard')
             ->with('status', 'Login berhasil. Selamat datang!');
@@ -3077,12 +3086,14 @@ class AdminController extends Controller
     /**
      * Logout
      */
-    public function logout(Request $request)
+    public function logout(Request $request, DeviceSessionLimitService $deviceSessionLimitService)
     {
+        $currentSessionId = $request->session()->getId();
         Auth::guard('admin')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        $deviceSessionLimitService->deleteSessionById($currentSessionId);
 
         return redirect()->route('admin.login')
             ->with('status', 'Logout berhasil.');

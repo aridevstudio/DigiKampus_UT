@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\AdminLoginRequest;
 use App\Http\Resources\AdminResource;
 use App\Models\User;
+use App\Services\DeviceSessionLimitService;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class AdminAuthController extends Controller
      * @param AdminLoginRequest $request
      * @return JsonResponse
      */
-    public function login(AdminLoginRequest $request): JsonResponse
+    public function login(AdminLoginRequest $request, DeviceSessionLimitService $deviceSessionLimitService): JsonResponse
     {
         $validated = $request->validated();
 
@@ -59,6 +60,13 @@ class AdminAuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Akun Anda sedang tidak aktif. Hubungi super admin untuk informasi lebih lanjut.'
+            ], 403);
+        }
+
+        if (!$deviceSessionLimitService->canIssueFreshApiToken($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => $deviceSessionLimitService->limitMessage(),
             ], 403);
         }
 

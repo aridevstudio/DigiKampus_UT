@@ -12,6 +12,7 @@ use App\Models\Enrollment;
 use App\Models\Message;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\DeviceSessionLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -25,40 +26,6 @@ use Carbon\Carbon;
 
 class DosenController extends Controller
 {
-    private function activeSessionCount(int $userId): int
-    {
-        if (config('session.driver') !== 'database') {
-            return 0;
-        }
-
-        $lifetimeMinutes = (int) config('session.lifetime', 120);
-        $activeSince = now()->subMinutes($lifetimeMinutes)->timestamp;
-        $sessionTable = (string) config('session.table', 'sessions');
-
-        return DB::table($sessionTable)
-            ->where('user_id', $userId)
-            ->where('last_activity', '>=', $activeSince)
-            ->count();
-    }
-
-    private function bindCurrentSessionToUser(Request $request, int $userId): void
-    {
-        if (config('session.driver') !== 'database') {
-            return;
-        }
-
-        $sessionTable = (string) config('session.table', 'sessions');
-
-        DB::table($sessionTable)
-            ->where('id', $request->session()->getId())
-            ->update([
-                'user_id' => $userId,
-                'ip_address' => $request->ip(),
-                'user_agent' => (string) $request->userAgent(),
-                'last_activity' => now()->timestamp,
-            ]);
-    }
-
     /**
      * Show login form
      */
@@ -110,7 +77,7 @@ class DosenController extends Controller
     /**
      * Handle login
      */
-    public function login(Request $request)
+    public function login(Request $request, DeviceSessionLimitService $deviceSessionLimitService)
     {
         $request->validate([
             'nomor_induk' => ['required', 'string'],
@@ -145,17 +112,16 @@ class DosenController extends Controller
                 ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi admin.');
         }
 
-        $activeSessions = $this->activeSessionCount((int) $user->id);
-        if ($activeSessions >= 2) {
+        if ($deviceSessionLimitService->hasReachedWebLoginLimit($user)) {
             return back()
                 ->withInput()
-                ->with('alert', 'Akun sudah aktif di 2 perangkat. Logout dari perangkat lain terlebih dahulu.');
+                ->with('alert', $deviceSessionLimitService->limitMessage());
         }
 
         // Login using Laravel Auth guard
         Auth::guard('dosen')->login($user, $request->boolean('remember'));
         $request->session()->regenerate();
-        $this->bindCurrentSessionToUser($request, (int) $user->id);
+        $deviceSessionLimitService->bindCurrentSessionToUser($request, (int) $user->id);
 
         return redirect()->route('dosen.dashboard')
             ->with('status', 'Login berhasil. Selamat datang!');
@@ -378,19 +344,14 @@ class DosenController extends Controller
     /**
      * Logout
      */
-    public function logout(Request $request)
+    public function logout(Request $request, DeviceSessionLimitService $deviceSessionLimitService)
     {
         $currentSessionId = $request->session()->getId();
         Auth::guard('dosen')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        if (config('session.driver') === 'database') {
-            DB::table((string) config('session.table', 'sessions'))
-                ->where('id', $currentSessionId)
-                ->delete();
-        }
+        $deviceSessionLimitService->deleteSessionById($currentSessionId);
 
         return redirect()->route('dosen.login')
             ->with('status', 'Logout berhasil.');

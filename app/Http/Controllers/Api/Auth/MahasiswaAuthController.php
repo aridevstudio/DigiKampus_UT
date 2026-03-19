@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\MahasiswaLoginRequest;
 use App\Http\Resources\MahasiswaResource;
 use App\Models\User;
+use App\Services\DeviceSessionLimitService;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class MahasiswaAuthController extends Controller
      * @param MahasiswaLoginRequest $request
      * @return JsonResponse
      */
-    public function login(MahasiswaLoginRequest $request): JsonResponse
+    public function login(MahasiswaLoginRequest $request, DeviceSessionLimitService $deviceSessionLimitService): JsonResponse
     {
         $validated = $request->validated();
 
@@ -66,6 +67,13 @@ class MahasiswaAuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Akun Anda sedang tidak aktif. Hubungi admin untuk informasi lebih lanjut.'
+            ], 403);
+        }
+
+        if (!$deviceSessionLimitService->canIssueFreshApiToken($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => $deviceSessionLimitService->limitMessage(),
             ], 403);
         }
 

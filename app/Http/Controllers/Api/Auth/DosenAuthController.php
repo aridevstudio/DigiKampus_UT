@@ -7,6 +7,7 @@ use App\Http\Requests\Api\DosenLoginRequest;
 use App\Http\Requests\Api\DosenRegisterRequest;
 use App\Http\Resources\DosenResource;
 use App\Models\User;
+use App\Services\DeviceSessionLimitService;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,7 +71,7 @@ class DosenAuthController extends Controller
      * }
      * @response 200
      */
-    public function login(DosenLoginRequest $request): JsonResponse
+    public function login(DosenLoginRequest $request, DeviceSessionLimitService $deviceSessionLimitService): JsonResponse
     {
         $validated = $request->validated();
 
@@ -91,6 +92,13 @@ class DosenAuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Akun Anda tidak aktif.'
+            ], 403);
+        }
+
+        if (!$deviceSessionLimitService->canIssueFreshApiToken($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => $deviceSessionLimitService->limitMessage(),
             ], 403);
         }
 
@@ -133,7 +141,7 @@ class DosenAuthController extends Controller
      * @operationId dosenAuth.googleCallback
      * @response 200
      */
-    public function handleGoogleCallback(): JsonResponse
+    public function handleGoogleCallback(DeviceSessionLimitService $deviceSessionLimitService): JsonResponse
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
@@ -163,6 +171,14 @@ class DosenAuthController extends Controller
                 ]);
             }
 
+            if (!$deviceSessionLimitService->canIssueFreshApiToken($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $deviceSessionLimitService->limitMessage(),
+                ], 403);
+            }
+
+            $user->tokens()->delete();
             $token = $user->createToken('dosen-token')->plainTextToken;
 
             return response()->json([
