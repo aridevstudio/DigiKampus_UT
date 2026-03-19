@@ -346,6 +346,9 @@
                                     <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" class="hidden" onchange="previewPhoto(this)">
                                 </label>
                                 <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
+                                @if(old('_modal') === 'add' && $errors->has('foto'))
+                                    <p class="text-xs text-red-500 mt-2">{{ $errors->first('foto') }}</p>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -483,6 +486,9 @@
                                     <input type="file" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" class="hidden" onchange="previewEditPhoto(this)">
                                 </label>
                                 <p class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
+                                @if(old('_modal') === 'edit' && $errors->has('foto'))
+                                    <p class="text-xs text-red-500 mt-2">{{ $errors->first('foto') }}</p>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -681,6 +687,33 @@
 
     @push('scripts')
     <script>
+        const defaultPhotoPreviewSvg = '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+
+        function resetPhotoPreview(previewId) {
+            const preview = document.getElementById(previewId);
+            if (preview) {
+                preview.innerHTML = defaultPhotoPreviewSvg;
+            }
+        }
+
+        function validatePhotoBeforePreview(input, previewId) {
+            if (!input.files || !input.files[0]) {
+                resetPhotoPreview(previewId);
+                return false;
+            }
+
+            const file = input.files[0];
+            const maxSizeBytes = 2 * 1024 * 1024;
+            if (file.size > maxSizeBytes) {
+                alert(`File "${file.name}" terlalu besar. Maksimal 2MB.`);
+                input.value = '';
+                resetPhotoPreview(previewId);
+                return false;
+            }
+
+            return true;
+        }
+
         // Add Modal functions
         function openAddModal() {
             document.getElementById('addDosenModal').classList.remove('hidden');
@@ -693,6 +726,10 @@
         }
         
         function previewPhoto(input) {
+            if (!validatePhotoBeforePreview(input, 'photoPreview')) {
+                return;
+            }
+
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -701,8 +738,7 @@
                 }
                 reader.readAsDataURL(input.files[0]);
             } else {
-                const preview = document.getElementById('photoPreview');
-                preview.innerHTML = '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+                resetPhotoPreview('photoPreview');
             }
         }
         
@@ -753,6 +789,10 @@
         }
         
         function previewEditPhoto(input) {
+            if (!validatePhotoBeforePreview(input, 'editPhotoPreview')) {
+                return;
+            }
+
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -761,8 +801,7 @@
                 }
                 reader.readAsDataURL(input.files[0]);
             } else {
-                const preview = document.getElementById('editPhotoPreview');
-                preview.innerHTML = '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+                resetPhotoPreview('editPhotoPreview');
             }
         }
         
@@ -911,4 +950,3 @@
     </script>
     @endpush
 </x-layouts.admin>
-

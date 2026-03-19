@@ -12,7 +12,9 @@ use App\Models\User;
 use App\Models\YoutubePlaylistVideo;
 use App\Services\ExcelImportService;
 use App\Services\YoutubePlaylistService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -452,6 +454,10 @@ class AdminController extends Controller
      */
     public function storeDosen(Request $request)
     {
+        if ($response = $this->rejectOversizedPhotoUpload($request, 'foto')) {
+            return $response;
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -529,6 +535,10 @@ class AdminController extends Controller
         if (!$dosen || $dosen->role !== 'dosen') {
             return redirect()->route('admin.dosen')
                 ->with('error', 'Dosen tidak ditemukan');
+        }
+
+        if ($response = $this->rejectOversizedPhotoUpload($request, 'foto')) {
+            return $response;
         }
 
         $profileId = $dosen->profile?->id;
@@ -699,6 +709,10 @@ class AdminController extends Controller
      */
     public function storeMahasiswa(Request $request)
     {
+        if ($response = $this->rejectOversizedPhotoUpload($request, 'foto')) {
+            return $response;
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -806,6 +820,10 @@ class AdminController extends Controller
         if (!$mhs || $mhs->role !== 'mahasiswa') {
             return redirect()->route('admin.mahasiswa')
                 ->with('error', 'Mahasiswa tidak ditemukan');
+        }
+
+        if ($response = $this->rejectOversizedPhotoUpload($request, 'foto')) {
+            return $response;
         }
 
         $request->validate([
@@ -1951,6 +1969,10 @@ class AdminController extends Controller
     {
         $admin = Auth::guard('admin')->user();
 
+        if ($response = $this->rejectOversizedPhotoUpload($request, 'foto')) {
+            return $response;
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $admin->id,
@@ -1989,6 +2011,37 @@ class AdminController extends Controller
 
         return redirect()->route('admin.profile')
             ->with('success', 'Profil berhasil diperbarui!');
+    }
+
+    private function rejectOversizedPhotoUpload(Request $request, string $fieldName): ?RedirectResponse
+    {
+        $rawUpload = $_FILES[$fieldName] ?? null;
+        $uploadError = is_array($rawUpload) ? ($rawUpload['error'] ?? null) : null;
+
+        if (in_array($uploadError, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            return back()
+                ->withInput()
+                ->withErrors([$fieldName => 'Ukuran foto maksimal 2MB.']);
+        }
+
+        $file = $request->file($fieldName);
+        if (!$file instanceof UploadedFile) {
+            return null;
+        }
+
+        if (!$file->isValid()) {
+            return back()
+                ->withInput()
+                ->withErrors([$fieldName => 'Upload foto gagal. Silakan pilih ulang file dengan ukuran maksimal 2MB.']);
+        }
+
+        if (($file->getSize() ?? 0) > (2 * 1024 * 1024)) {
+            return back()
+                ->withInput()
+                ->withErrors([$fieldName => 'Ukuran foto maksimal 2MB.']);
+        }
+
+        return null;
     }
 
     /**
