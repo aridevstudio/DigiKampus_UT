@@ -7,6 +7,7 @@ use App\Models\AdminNotification;
 use App\Models\Course;
 use App\Models\DosenNotification;
 use App\Models\Notification;
+use App\Models\Profile;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\YoutubePlaylistVideo;
@@ -367,10 +368,7 @@ class AdminController extends Controller
 
         // Query dosen from users table with role 'dosen'
         $query = User::where('role', 'dosen')
-
-
-
-            ->with('profile.jurusan');
+            ->with(['profile.jurusan', 'profile.jurusans']);
 
         // Search filter
         if ($request->has('search') && $request->search) {
@@ -393,10 +391,10 @@ class AdminController extends Controller
         if ($request->has('jurusan') && $request->jurusan !== 'all') {
             $jurusanId = $request->jurusan;
             $query->whereHas('profile', function($pq) use ($jurusanId) {
-                // Adjusting filter depending on whether the backend implements it as JSON or directly if still currently a scalar ID
                 $pq->where('id_jurusan', $jurusanId)
-                   ->orWhereJsonContains('id_jurusan', $jurusanId)
-                   ->orWhereJsonContains('id_jurusan', (string)$jurusanId);
+                   ->orWhereHas('jurusans', function ($jurusanQuery) use ($jurusanId) {
+                       $jurusanQuery->where('jurusans.id_jurusan', $jurusanId);
+                   });
             });
         }
 
@@ -412,7 +410,9 @@ class AdminController extends Controller
                 'foto' => $dosen->profile?->foto_profile,
                 'nama' => $dosen->name,
                 'nomor_induk' => $dosen->profile?->nomor_induk ?? '-',
-                'program_studi' => $dosen->profile?->jurusan?->nama_jurusan ?? '-',
+                'program_studi' => !empty($dosen->profile?->jurusan_names)
+                    ? implode(', ', $dosen->profile->jurusan_names)
+                    : '-',
                 'email' => $dosen->email,
                 'no_telepon' => $dosen->profile?->no_hp ?? '-',
                 'status' => match($dosen->status) {
@@ -462,16 +462,23 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'nomor_induk' => 'required|string|max:50|unique:profiles,nomor_induk',
-            'id_jurusan' => 'required|exists:jurusans,id_jurusan',
+            'id_jurusan' => 'required|array|min:1',
+            'id_jurusan.*' => 'required|distinct|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
             'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
+            'id_jurusan.required' => 'Program Studi wajib dipilih.',
+            'id_jurusan.array' => 'Program Studi wajib dipilih.',
+            'id_jurusan.min' => 'Pilih minimal satu Program Studi.',
+            'id_jurusan.*.exists' => 'Program Studi yang dipilih tidak valid.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
         ]);
+
+        $jurusanIds = $this->normalizeJurusanIds($request->input('id_jurusan', []));
 
         // Create user (P0 FIX: Generate secure random password instead of hardcoded)
         $defaultPassword = \Illuminate\Support\Str::random(12);
@@ -490,12 +497,14 @@ class AdminController extends Controller
         }
 
         // Create profile
-        $user->profile()->create([
+        $profile = $user->profile()->create([
             'nomor_induk' => $request->nomor_induk,
-            'id_jurusan' => $request->id_jurusan,
+            'id_jurusan' => $jurusanIds[0] ?? null,
             'no_hp' => $request->no_hp,
             'foto_profile' => $fotoPath,
         ]);
+
+        $this->syncDosenJurusans($profile, $jurusanIds);
 
         return redirect()->route('admin.dosen')
             ->with('success', "Dosen berhasil ditambahkan! Password default: {$defaultPassword} (catat sekarang, tidak ditampilkan lagi)");
@@ -506,7 +515,7 @@ class AdminController extends Controller
      */
     public function getDosen($id)
     {
-        $dosen = User::with('profile')->find($id);
+        $dosen = User::with(['profile.jurusans'])->find($id);
         
         if (!$dosen || $dosen->role !== 'dosen') {
             return response()->json(['error' => 'Dosen tidak ditemukan'], 404);
@@ -518,7 +527,7 @@ class AdminController extends Controller
             'email' => $dosen->email,
             'status' => $dosen->status,
             'nomor_induk' => $dosen->profile?->nomor_induk,
-            'id_jurusan' => $dosen->profile?->id_jurusan,
+            'id_jurusan' => $dosen->profile?->jurusan_ids ?? [],
             'no_hp' => $dosen->profile?->no_hp,
             'foto' => $dosen->profile?->foto_profile,
         ]);
@@ -545,16 +554,23 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'nomor_induk' => 'required|string|max:50|unique:profiles,nomor_induk,' . ($profileId ?? 'NULL') . ',id',
-            'id_jurusan' => 'required|exists:jurusans,id_jurusan',
+            'id_jurusan' => 'required|array|min:1',
+            'id_jurusan.*' => 'required|distinct|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
             'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
+            'id_jurusan.required' => 'Program Studi wajib dipilih.',
+            'id_jurusan.array' => 'Program Studi wajib dipilih.',
+            'id_jurusan.min' => 'Pilih minimal satu Program Studi.',
+            'id_jurusan.*.exists' => 'Program Studi yang dipilih tidak valid.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
         ]);
+
+        $jurusanIds = $this->normalizeJurusanIds($request->input('id_jurusan', []));
 
         // Update user
         $dosen->update([
@@ -574,15 +590,17 @@ class AdminController extends Controller
         }
 
         // Update or create profile
-        $dosen->profile()->updateOrCreate(
+        $profile = $dosen->profile()->updateOrCreate(
             ['user_id' => $dosen->id],
             [
                 'nomor_induk' => $request->nomor_induk,
-                'id_jurusan' => $request->id_jurusan,
+                'id_jurusan' => $jurusanIds[0] ?? null,
                 'no_hp' => $request->no_hp,
                 'foto_profile' => $fotoPath,
             ]
         );
+
+        $this->syncDosenJurusans($profile, $jurusanIds);
 
         return redirect()->route('admin.dosen')
             ->with('success', 'Data dosen berhasil diperbarui!');
@@ -2042,6 +2060,26 @@ class AdminController extends Controller
         return null;
     }
 
+    private function normalizeJurusanIds(array $jurusanIds): array
+    {
+        return collect($jurusanIds)
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function syncDosenJurusans(Profile $profile, array $jurusanIds): void
+    {
+        $profile->jurusans()->sync($jurusanIds);
+
+        $primaryJurusanId = $jurusanIds[0] ?? null;
+        if ((string) $profile->id_jurusan !== (string) $primaryJurusanId) {
+            $profile->forceFill(['id_jurusan' => $primaryJurusanId])->save();
+        }
+    }
+
     /**
      * Import mahasiswa from CSV file
      */
@@ -2863,7 +2901,9 @@ class AdminController extends Controller
         }
 
         $users = \App\Models\User::where('role', $type)
-            ->with('profile.jurusan')
+            ->with($type === 'dosen'
+                ? ['profile.jurusan', 'profile.jurusans']
+                : ['profile.jurusan'])
             ->get();
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
@@ -2905,7 +2945,11 @@ class AdminController extends Controller
             $sheet->setCellValue('B' . $rowNum, $user->name);
             $sheet->setCellValueExplicit('C' . $rowNum, $user->profile?->nomor_induk ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('D' . $rowNum, $user->email);
-            $sheet->setCellValue('E' . $rowNum, $user->profile?->jurusan?->nama_jurusan ?? '-');
+            $programStudi = $type === 'dosen'
+                ? (!empty($user->profile?->jurusan_names) ? implode(', ', $user->profile->jurusan_names) : '-')
+                : ($user->profile?->jurusan?->nama_jurusan ?? '-');
+
+            $sheet->setCellValue('E' . $rowNum, $programStudi);
             $sheet->setCellValueExplicit('F' . $rowNum, $user->profile?->no_hp ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('G' . $rowNum, ucfirst($user->status));
             $rowNum++;

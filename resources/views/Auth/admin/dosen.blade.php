@@ -386,12 +386,15 @@
                                     <div x-show="open" style="display: none;" x-transition class="absolute z-[60] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl py-1.5 max-h-56 overflow-y-auto">
                                         @foreach($jurusanList as $jurusan)
                                         <label class="flex items-center gap-3 px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer group transition-colors">
-                                            <input type="checkbox" name="id_jurusan[]" value="{{ $jurusan->id_jurusan }}" @change="selectedCount = $el.closest('[x-data]').querySelectorAll('input[type=checkbox]:checked').length" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600 transition-colors">
+                                            <input type="checkbox" name="id_jurusan[]" value="{{ $jurusan->id_jurusan }}" {{ old('_modal') === 'add' && collect(old('id_jurusan', []))->map(fn ($id) => (string) $id)->contains((string) $jurusan->id_jurusan) ? 'checked' : '' }} @change="selectedCount = $el.closest('[x-data]').querySelectorAll('input[type=checkbox]:checked').length" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600 transition-colors">
                                             <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{{ $jurusan->nama_jurusan }}</span>
                                         </label>
                                         @endforeach
                                     </div>
                                 </div>
+                                @if(old('_modal') === 'add' && ($errors->has('id_jurusan') || $errors->has('id_jurusan.*')))
+                                    <p class="text-xs text-red-500 mt-2">{{ $errors->first('id_jurusan') ?: $errors->first('id_jurusan.*') }}</p>
+                                @endif
                             </div>
                             
                             {{-- Email --}}
@@ -529,6 +532,9 @@
                                         @endforeach
                                     </div>
                                 </div>
+                                @if(old('_modal') === 'edit' && ($errors->has('id_jurusan') || $errors->has('id_jurusan.*')))
+                                    <p class="text-xs text-red-500 mt-2">{{ $errors->first('id_jurusan') ?: $errors->first('id_jurusan.*') }}</p>
+                                @endif
                             </div>
                             
                             <div>
