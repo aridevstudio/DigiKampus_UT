@@ -30,8 +30,8 @@ class ExcelImportService
      * Optional columns for each type.
      */
     private static array $optionalColumns = [
-        'mahasiswa' => ['jurusan', 'no_hp', 'status'],
-        'dosen' => ['jurusan', 'no_hp', 'status'],
+        'mahasiswa' => ['jurusan', 'id_jurusan', 'no_hp', 'status'],
+        'dosen' => ['jurusan', 'id_jurusan', 'no_hp', 'status'],
     ];
 
     /**
@@ -136,6 +136,16 @@ class ExcelImportService
             $errors[] = "Baris {$rowNumber}: Format No HP tidak valid (harus 10-15 digit).";
         }
 
+        $status = self::normalizeImportedStatus($row['status'] ?? null);
+        if ($status === null && filled($row['status'] ?? null)) {
+            $errors[] = "Baris {$rowNumber}: Status harus aktif atau nonaktif.";
+        }
+
+        $idJurusan = trim((string) ($row['id_jurusan'] ?? ''));
+        if ($idJurusan !== '' && !ctype_digit($idJurusan)) {
+            $errors[] = "Baris {$rowNumber}: ID Program Studi harus berupa angka.";
+        }
+
         return $errors;
     }
 
@@ -169,6 +179,7 @@ class ExcelImportService
     public static function executeImport(array $validRows, string $type, string $strategy, int $adminId): array
     {
         $jurusanMap = \App\Models\Jurusan::pluck('id_jurusan', 'nama_jurusan')->toArray();
+        $jurusanById = \App\Models\Jurusan::pluck('id_jurusan', 'id_jurusan')->toArray();
 
         $imported = 0;
         $skipped = 0;
@@ -201,9 +212,13 @@ class ExcelImportService
                     }
 
                     if ($strategy === 'update') {
-                        $existingUser->update(['name' => $row['nama']]);
+                        $status = self::normalizeImportedStatus($row['status'] ?? null) ?? 'aktif';
+                        $existingUser->update([
+                            'name' => $row['nama'],
+                            'status' => $status,
+                        ]);
 
-                        $jurusanId = self::matchJurusan($row['jurusan'] ?? '', $jurusanMap);
+                        $jurusanId = self::resolveJurusanId($row, $jurusanMap, $jurusanById);
                         $existingUser->profile()->updateOrCreate(
                             ['user_id' => $existingUser->id],
                             array_filter([
@@ -241,10 +256,10 @@ class ExcelImportService
                     'email' => $email,
                     'password' => Hash::make($password),
                     'role' => $type,
-                    'status' => strtolower($row['status'] ?? '') === 'nonaktif' ? 'nonaktif' : 'aktif',
+                    'status' => self::normalizeImportedStatus($row['status'] ?? null) ?? 'aktif',
                 ]);
 
-                $jurusanId = self::matchJurusan($row['jurusan'] ?? '', $jurusanMap);
+                $jurusanId = self::resolveJurusanId($row, $jurusanMap, $jurusanById);
                 $user->profile()->create([
                     'nomor_induk' => $identifier,
                     'id_jurusan' => $jurusanId,
@@ -310,16 +325,43 @@ class ExcelImportService
     /**
      * Match jurusan name to ID (fuzzy).
      */
-    private static function matchJurusan(string $name, array $map): ?int
+    private static function resolveJurusanId(array $row, array $jurusanMap, array $jurusanById): ?int
     {
-        if (empty($name)) return null;
+        $idJurusan = trim((string) ($row['id_jurusan'] ?? ''));
+        if ($idJurusan !== '' && isset($jurusanById[(int) $idJurusan])) {
+            return (int) $idJurusan;
+        }
 
-        foreach ($map as $jurusanName => $id) {
+        $name = trim((string) ($row['jurusan'] ?? ''));
+        if ($name === '') {
+            return null;
+        }
+
+        if (ctype_digit($name) && isset($jurusanById[(int) $name])) {
+            return (int) $name;
+        }
+
+        foreach ($jurusanMap as $jurusanName => $id) {
             if (stripos($jurusanName, $name) !== false || stripos($name, $jurusanName) !== false) {
                 return $id;
             }
         }
         return null;
+    }
+
+    private static function normalizeImportedStatus(?string $status): ?string
+    {
+        $normalized = strtolower(trim((string) $status));
+
+        if ($normalized === '') {
+            return 'aktif';
+        }
+
+        return match ($normalized) {
+            'aktif', 'active', '1' => 'aktif',
+            'nonaktif', 'non-aktif', 'inactive', '0' => 'nonaktif',
+            default => null,
+        };
     }
 
     /**
@@ -337,8 +379,8 @@ class ExcelImportService
 
         // Headers
         $headers = $isMahasiswa
-            ? ['Nama', 'Nomor Induk', 'Email', 'Jurusan', 'No HP', 'Status']
-            : ['Nama', 'Nomor Induk', 'Email', 'Jurusan', 'No HP', 'Status'];
+            ? ['Nama', 'Nomor Induk', 'Email', 'ID Jurusan', 'Jurusan', 'No HP', 'Status']
+            : ['Nama', 'Nomor Induk', 'Email', 'ID Jurusan', 'Jurusan', 'No HP', 'Status'];
 
         foreach ($headers as $col => $header) {
             $cell = chr(65 + $col) . '1';
@@ -371,21 +413,21 @@ class ExcelImportService
         // Sample rows
         $sampleData = $isMahasiswa
             ? [
-                ['Budi Santoso', '2024001001', 'budi.santoso@example.com', 'Teknik Informatika', '081234567890', 'aktif'],
-                ['Siti Rahayu', '2024001002', 'siti.rahayu@example.com', 'Sistem Informasi', '081234567891', 'aktif'],
-                ['Ahmad Fadli', '2024001003', 'ahmad.fadli@example.com', 'Teknik Informatika', '081234567892', 'aktif'],
+                ['Budi Santoso', '2024001001', 'budi.santoso@example.com', '1', 'Teknik Informatika', '081234567890', 'aktif'],
+                ['Siti Rahayu', '2024001002', 'siti.rahayu@example.com', '2', 'Sistem Informasi', '081234567891', ''],
+                ['Ahmad Fadli', '2024001003', 'ahmad.fadli@example.com', '', 'Teknik Informatika', '081234567892', 'aktif'],
             ]
             : [
-                ['Dr. Ahmad Susanto', '198501012010011001', 'ahmad.susanto@example.com', 'Teknik Informatika', '081234567890', 'aktif'],
-                ['Prof. Siti Aminah', '197803152005012002', 'siti.aminah@example.com', 'Sistem Informasi', '081234567891', 'aktif'],
-                ['Dr. Budi Prakoso', '199002202015011003', 'budi.prakoso@example.com', 'Teknik Informatika', '081234567892', 'aktif'],
+                ['Dr. Ahmad Susanto', '198501012010011001', 'ahmad.susanto@example.com', '1', 'Teknik Informatika', '081234567890', 'aktif'],
+                ['Prof. Siti Aminah', '197803152005012002', 'siti.aminah@example.com', '2', 'Sistem Informasi', '081234567891', ''],
+                ['Dr. Budi Prakoso', '199002202015011003', 'budi.prakoso@example.com', '', 'Teknik Informatika', '081234567892', 'aktif'],
             ];
 
         $row = 2;
         foreach ($sampleData as $data) {
             foreach ($data as $col => $value) {
                 $cell = chr(65 + $col) . $row;
-                if (in_array($col, [1, 4], true)) {
+                if (in_array($col, [1, 3, 5], true)) {
                     $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_STRING);
                     continue;
                 }
@@ -405,9 +447,9 @@ class ExcelImportService
         $sheet->setCellValue("A{$notesRow}", 'Catatan:');
         $sheet->getStyle("A{$notesRow}")->getFont()->setBold(true);
         $sheet->setCellValue("A" . ($notesRow + 1), '- Kolom Nama, Nomor Induk, Email wajib diisi');
-        $sheet->setCellValue("A" . ($notesRow + 2), '- Kolom Jurusan, No HP, Status opsional');
-        $sheet->setCellValue("A" . ($notesRow + 3), '- Status: aktif atau nonaktif (default: aktif)');
-        $sheet->setCellValue("A" . ($notesRow + 4), '- Email harus unik (belum terdaftar di sistem)');
+        $sheet->setCellValue("A" . ($notesRow + 2), '- Kolom ID Jurusan atau Jurusan bisa dipakai. Prioritas baca dari ID Jurusan jika diisi');
+        $sheet->setCellValue("A" . ($notesRow + 3), '- Status: aktif atau nonaktif. Jika kosong akan otomatis menjadi aktif');
+        $sheet->setCellValue("A" . ($notesRow + 4), '- Duplikat dicek berdasarkan Email dan Nomor Induk, bukan Nama');
         $sheet->setCellValue("A" . ($notesRow + 5), '- Format No HP: 10-15 digit angka');
 
         $writer = new Xlsx($spreadsheet);
