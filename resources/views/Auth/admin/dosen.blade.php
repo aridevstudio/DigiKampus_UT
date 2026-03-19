@@ -2,7 +2,7 @@
     {{-- Page Header --}}
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Manajemen Dosen</h1>
-        <p class="text-gray-500 dark:text-gray-400 mt-1">Kelola data dosen, tambah dosen baru, dan atur status keaktifan.</p>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">Kelola data dosen dan tambah dosen baru dengan status aktif.</p>
     </div>
 
     {{-- Actions Bar --}}
@@ -408,21 +408,16 @@
                         </div>
                     </div>
                     
-                    {{-- Status Keaktifan --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Status Keaktifan</h4>
-                                <p class="text-xs text-blue-500">Tentukan status aktif dosen</p>
+                    <div class="border border-emerald-200 bg-emerald-50/80 dark:border-emerald-800/40 dark:bg-emerald-900/10 rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-500 dark:text-gray-400">Tidak Aktif</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="hidden" name="status" value="nonaktif">
-                                    <input type="checkbox" name="status" value="aktif" checked class="sr-only peer">
-                                    <div class="w-10 h-5 bg-gray-300 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                                </label>
-                                <span class="text-xs text-blue-500 font-medium">Aktif</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Status Dosen Otomatis Aktif</h4>
+                                <p class="text-xs text-emerald-600/90 dark:text-emerald-300/80 mt-1">Setiap data dosen yang disimpan dari form ini akan langsung berstatus aktif.</p>
                             </div>
                         </div>
                     </div>
@@ -548,21 +543,16 @@
                         </div>
                     </div>
                     
-                    {{-- Status Keaktifan --}}
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Status Keaktifan</h4>
-                                <p class="text-xs text-blue-500">Tentukan status aktif dosen</p>
+                    <div class="border border-emerald-200 bg-emerald-50/80 dark:border-emerald-800/40 dark:bg-emerald-900/10 rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-500 dark:text-gray-400">Tidak Aktif</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="hidden" name="status" value="nonaktif">
-                                    <input type="checkbox" name="status" id="edit_status" value="aktif" class="sr-only peer">
-                                    <div class="w-10 h-5 bg-gray-300 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                                </label>
-                                <span class="text-xs text-blue-500 font-medium">Aktif</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Status Dosen Akan Tetap Aktif</h4>
+                                <p class="text-xs text-emerald-600/90 dark:text-emerald-300/80 mt-1">Perubahan data dosen dari form ini tetap mempertahankan status aktif.</p>
                             </div>
                         </div>
                     </div>
@@ -753,7 +743,6 @@
                     document.getElementById('edit_email').value = data.email || '';
                     document.getElementById('edit_nomor_induk').value = data.nomor_induk || '';
                     document.getElementById('edit_no_hp').value = data.no_hp || '';
-                    document.getElementById('edit_status').checked = data.status === 'aktif';
                     
                     // Uncheck all jurusan checkboxes first
                     document.querySelectorAll('.edit_id_jurusan_checkbox').forEach(cb => cb.checked = false);
@@ -941,7 +930,6 @@
                     cb.checked = jurusans.includes(cb.value) || jurusans.includes(Number(cb.value));
                 });
                 
-                document.getElementById('edit_status').checked = '{{ old('status') }}' === 'aktif';
             }
             document.getElementById('editDosenModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';

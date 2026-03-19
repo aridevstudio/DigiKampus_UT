@@ -465,7 +465,6 @@ class AdminController extends Controller
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'status' => 'required|in:aktif,nonaktif',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
             'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
@@ -481,7 +480,7 @@ class AdminController extends Controller
             'email' => $request->email,
             'password' => Hash::make($defaultPassword),
             'role' => 'dosen',
-            'status' => $request->status,
+            'status' => 'aktif',
         ]);
 
         // Handle photo upload
@@ -549,7 +548,6 @@ class AdminController extends Controller
             'id_jurusan' => 'required|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'status' => 'required|in:aktif,nonaktif',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
             'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
@@ -562,7 +560,7 @@ class AdminController extends Controller
         $dosen->update([
             'name' => $request->name,
             'email' => $request->email,
-            'status' => $request->status,
+            'status' => 'aktif',
         ]);
 
         // Handle photo upload
