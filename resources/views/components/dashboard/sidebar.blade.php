@@ -22,7 +22,7 @@ $userProfilePicture = $profile?->foto_profile;
 @endphp
 
 {{-- Sidebar - Soft Dark Mode --}}
-<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#1f2937] border-r border-gray-100 dark:border-gray-700/50 flex flex-col z-40 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 overflow-hidden bg-white dark:bg-[#1f2937] border-r border-gray-100 dark:border-gray-700/50 flex flex-col z-40 transition-transform duration-300 -translate-x-full lg:translate-x-0">
     {{-- Logo with Close Button (mobile) --}}
     <div class="sidebar-logo-wrap p-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between transition-all duration-300">
         <img 
@@ -56,7 +56,7 @@ $userProfilePicture = $profile?->foto_profile;
     </div>
 
     {{-- Navigation Menu --}}
-    <nav class="flex-1 overflow-y-auto py-4">
+    <nav class="min-h-0 flex-1 overflow-y-auto overscroll-contain py-4">
         <ul class="space-y-1 px-3">
             @foreach($menuItems as $item)
                 <li>
