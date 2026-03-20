@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
+use App\Models\AutomaticCertificate;
 use App\Models\Category;
+use App\Models\CertificateTemplate;
 use App\Models\Course;
 use App\Models\DosenNotification;
 use App\Models\Jurusan;
@@ -3001,6 +3003,377 @@ class AdminController extends Controller
             ->max() ?? 0;
 
         return 'KAT-' . str_pad((string) ($maxNumber + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    // ========================
+    // AUTOMATIC CERTIFICATE MANAGEMENT
+    // ========================
+
+    public function showSertifikasi()
+    {
+        $this->ensureDefaultCertificateTemplates();
+
+        $templates = CertificateTemplate::query()
+            ->latest('id')
+            ->get()
+            ->map(fn (CertificateTemplate $template) => $this->transformCertificateTemplate($template))
+            ->values();
+
+        $certificates = AutomaticCertificate::query()
+            ->with('template')
+            ->latest('id')
+            ->get()
+            ->map(fn (AutomaticCertificate $certificate) => $this->transformAutomaticCertificate($certificate))
+            ->values();
+
+        return view('Auth.admin.sertifikasi', [
+            'initialTemplates' => $templates,
+            'initialCertificates' => $certificates,
+        ]);
+    }
+
+    public function storeCertificateTemplate(Request $request)
+    {
+        $request->validate([
+            'blangko' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'name' => ['nullable', 'string', 'max:255'],
+        ], [
+            'blangko.required' => 'Blangko wajib diupload.',
+            'blangko.image' => 'Blangko harus berupa gambar.',
+            'blangko.max' => 'Ukuran blangko maksimal 5MB.',
+        ]);
+
+        $file = $request->file('blangko');
+        $path = $file->store('certificate-templates', 'public');
+        $defaultName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+
+        $template = CertificateTemplate::create([
+            'name' => $this->cleanTextInput($request->input('name', $defaultName ?: 'Blangko Sertifikat')),
+            'background_type' => 'image',
+            'background_image_path' => $path,
+            'background_gradient' => null,
+            ...$this->defaultCertificateTemplateSettings(),
+        ]);
+
+        return response()->json([
+            'message' => 'Blangko berhasil ditambahkan.',
+            'template' => $this->transformCertificateTemplate($template),
+        ]);
+    }
+
+    public function updateCertificateTemplate(Request $request, $id)
+    {
+        $template = CertificateTemplate::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'nomor_x' => ['required', 'numeric', 'between:0,100'],
+            'nomor_y' => ['required', 'numeric', 'between:0,100'],
+            'nomor_size' => ['required', 'integer', 'between:10,72'],
+            'nama_x' => ['required', 'numeric', 'between:0,100'],
+            'nama_y' => ['required', 'numeric', 'between:0,100'],
+            'nama_size' => ['required', 'integer', 'between:14,96'],
+            'program_x' => ['required', 'numeric', 'between:0,100'],
+            'program_y' => ['required', 'numeric', 'between:0,100'],
+            'program_size' => ['required', 'integer', 'between:10,56'],
+            'tanggal_x' => ['required', 'numeric', 'between:0,100'],
+            'tanggal_y' => ['required', 'numeric', 'between:0,100'],
+            'tanggal_size' => ['required', 'integer', 'between:10,42'],
+        ], [
+            'name.required' => 'Nama blangko wajib diisi.',
+        ]);
+
+        $template->update([
+            'name' => $this->cleanTextInput($validated['name']),
+            'nomor_x' => $validated['nomor_x'],
+            'nomor_y' => $validated['nomor_y'],
+            'nomor_size' => $validated['nomor_size'],
+            'nama_x' => $validated['nama_x'],
+            'nama_y' => $validated['nama_y'],
+            'nama_size' => $validated['nama_size'],
+            'program_x' => $validated['program_x'],
+            'program_y' => $validated['program_y'],
+            'program_size' => $validated['program_size'],
+            'tanggal_x' => $validated['tanggal_x'],
+            'tanggal_y' => $validated['tanggal_y'],
+            'tanggal_size' => $validated['tanggal_size'],
+        ]);
+
+        return response()->json([
+            'message' => 'Pengaturan blangko berhasil diperbarui.',
+            'template' => $this->transformCertificateTemplate($template->fresh()),
+        ]);
+    }
+
+    public function showCertificateTemplateImage($id)
+    {
+        $template = CertificateTemplate::findOrFail($id);
+
+        abort_unless(
+            $template->background_type === 'image' && filled($template->background_image_path),
+            404
+        );
+
+        $fullPath = Storage::disk('public')->path($template->background_image_path);
+        abort_unless(is_file($fullPath), 404);
+
+        return response()->file($fullPath);
+    }
+
+    public function deleteCertificateTemplate($id)
+    {
+        $template = CertificateTemplate::findOrFail($id);
+
+        $usageCount = $template->certificates()->count();
+        if ($usageCount > 0) {
+            return response()->json([
+                'message' => "Blangko tidak bisa dihapus karena masih dipakai oleh {$usageCount} sertifikat.",
+            ], 422);
+        }
+
+        if ($template->background_type === 'image' && filled($template->background_image_path)) {
+            Storage::disk('public')->delete($template->background_image_path);
+        }
+
+        $template->delete();
+
+        return response()->json([
+            'message' => 'Blangko berhasil dihapus.',
+        ]);
+    }
+
+    public function storeAutomaticCertificate(Request $request)
+    {
+        $validated = $this->validateAutomaticCertificatePayload($request);
+
+        $certificate = AutomaticCertificate::create($validated);
+
+        return response()->json([
+            'message' => 'Sertifikat otomatis berhasil ditambahkan.',
+            'certificate' => $this->transformAutomaticCertificate($certificate->load('template')),
+        ]);
+    }
+
+    public function getAutomaticCertificate($id)
+    {
+        $certificate = AutomaticCertificate::with('template')->findOrFail($id);
+
+        return response()->json($this->transformAutomaticCertificate($certificate));
+    }
+
+    public function updateAutomaticCertificate(Request $request, $id)
+    {
+        $certificate = AutomaticCertificate::findOrFail($id);
+
+        $validated = $this->validateAutomaticCertificatePayload($request, $certificate);
+        $certificate->update($validated);
+
+        return response()->json([
+            'message' => 'Sertifikat otomatis berhasil diperbarui.',
+            'certificate' => $this->transformAutomaticCertificate($certificate->fresh()->load('template')),
+        ]);
+    }
+
+    public function deleteAutomaticCertificate($id)
+    {
+        $certificate = AutomaticCertificate::findOrFail($id);
+        $certificate->delete();
+
+        return response()->json([
+            'message' => 'Sertifikat otomatis berhasil dihapus.',
+        ]);
+    }
+
+    private function validateAutomaticCertificatePayload(Request $request, ?AutomaticCertificate $certificate = null): array
+    {
+        $request->merge([
+            'nomor_sertifikat' => Str::upper($this->cleanTextInput(
+                $request->input('nomor_sertifikat') ?: $this->generateNextCertificateNumber()
+            )),
+            'nama_peserta' => $this->cleanTextInput($request->input('nama_peserta')),
+            'nama_program' => $this->cleanTextInput($request->input('nama_program')),
+        ]);
+
+        return $request->validate([
+            'certificate_template_id' => ['required', 'exists:certificate_templates,id'],
+            'nomor_sertifikat' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('automatic_certificates', 'nomor_sertifikat')
+                    ->ignore($certificate?->id),
+            ],
+            'nama_peserta' => ['required', 'string', 'max:255'],
+            'nama_program' => ['required', 'string', 'max:255'],
+            'tanggal_terbit' => ['required', 'date'],
+        ], [
+            'certificate_template_id.required' => 'Blangko wajib dipilih.',
+            'certificate_template_id.exists' => 'Blangko yang dipilih tidak valid.',
+            'nomor_sertifikat.required' => 'Nomor sertifikat wajib diisi.',
+            'nomor_sertifikat.unique' => 'Nomor sertifikat sudah digunakan.',
+            'nama_peserta.required' => 'Nama peserta wajib diisi.',
+            'nama_program.required' => 'Program wajib diisi.',
+            'tanggal_terbit.required' => 'Tanggal terbit wajib diisi.',
+        ]);
+    }
+
+    private function ensureDefaultCertificateTemplates(): void
+    {
+        if (CertificateTemplate::query()->exists()) {
+            return;
+        }
+
+        CertificateTemplate::query()->insert([
+            [
+                'name' => 'Blangko Biru Classic',
+                'background_type' => 'gradient',
+                'background_gradient' => 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 40%, #bfdbfe 100%)',
+                'background_image_path' => null,
+                ...$this->defaultCertificateTemplateSettings(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Blangko Emas Formal',
+                'background_type' => 'gradient',
+                'background_gradient' => 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 45%, #fed7aa 100%)',
+                'background_image_path' => null,
+                ...$this->defaultCertificateTemplateSettings(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+    }
+
+    private function defaultCertificateTemplateSettings(): array
+    {
+        return [
+            'nomor_x' => 50.00,
+            'nomor_y' => 24.00,
+            'nomor_size' => 26,
+            'nama_x' => 50.00,
+            'nama_y' => 43.00,
+            'nama_size' => 42,
+            'program_x' => 50.00,
+            'program_y' => 58.00,
+            'program_size' => 18,
+            'tanggal_x' => 50.00,
+            'tanggal_y' => 72.00,
+            'tanggal_size' => 14,
+        ];
+    }
+
+    private function resolveCertificateTemplateSettings(CertificateTemplate $template): array
+    {
+        $defaults = $this->defaultCertificateTemplateSettings();
+
+        $legacyTopRightSettings = [
+            'nomor_x' => 82.00,
+            'nomor_y' => 10.50,
+            'nomor_size' => 28,
+            'nama_x' => 50.00,
+            'nama_y' => 54.00,
+            'nama_size' => 52,
+            'program_x' => 50.00,
+            'program_y' => 71.00,
+            'program_size' => 18,
+            'tanggal_x' => 16.00,
+            'tanggal_y' => 89.00,
+            'tanggal_size' => 14,
+        ];
+
+        $currentSettings = [
+            'nomor_x' => (float) $template->nomor_x,
+            'nomor_y' => (float) $template->nomor_y,
+            'nomor_size' => (int) $template->nomor_size,
+            'nama_x' => (float) $template->nama_x,
+            'nama_y' => (float) $template->nama_y,
+            'nama_size' => (int) $template->nama_size,
+            'program_x' => (float) $template->program_x,
+            'program_y' => (float) $template->program_y,
+            'program_size' => (int) $template->program_size,
+            'tanggal_x' => (float) ($template->tanggal_x ?? 0),
+            'tanggal_y' => (float) ($template->tanggal_y ?? 0),
+            'tanggal_size' => (int) ($template->tanggal_size ?? 0),
+        ];
+
+        $hasZeroCoordinates = collect($currentSettings)
+            ->only(['nomor_x', 'nomor_y', 'nama_x', 'nama_y', 'program_x', 'program_y', 'tanggal_x', 'tanggal_y'])
+            ->contains(fn ($value) => (float) $value <= 0);
+
+        $isLegacyLayout = $currentSettings === $legacyTopRightSettings;
+
+        if ($hasZeroCoordinates || $isLegacyLayout) {
+            return $defaults;
+        }
+
+        return $currentSettings;
+    }
+
+    private function generateNextCertificateNumber(): string
+    {
+        $currentYear = now()->year;
+
+        $maxNumber = AutomaticCertificate::query()
+            ->where('nomor_sertifikat', 'like', "SRT-{$currentYear}-%")
+            ->get(['nomor_sertifikat'])
+            ->map(function (AutomaticCertificate $certificate): int {
+                if (preg_match('/(\d+)$/', $certificate->nomor_sertifikat, $matches)) {
+                    return (int) $matches[1];
+                }
+
+                return 0;
+            })
+            ->max() ?? 0;
+
+        return 'SRT-' . $currentYear . '-' . str_pad((string) ($maxNumber + 1), 4, '0', STR_PAD_LEFT);
+    }
+
+    private function transformCertificateTemplate(CertificateTemplate $template): array
+    {
+        $settings = $this->resolveCertificateTemplateSettings($template);
+
+        return [
+            'id' => $template->id,
+            'name' => $template->name,
+            'kind' => $template->background_type,
+            'image' => $template->background_image_path ? route('admin.sertifikasi.templates.image', $template->id) : null,
+            'gradient' => $template->background_gradient,
+            'settings' => [
+                'nomor' => [
+                    'x' => (float) $settings['nomor_x'],
+                    'y' => (float) $settings['nomor_y'],
+                    'size' => (int) $settings['nomor_size'],
+                ],
+                'nama' => [
+                    'x' => (float) $settings['nama_x'],
+                    'y' => (float) $settings['nama_y'],
+                    'size' => (int) $settings['nama_size'],
+                ],
+                'program' => [
+                    'x' => (float) $settings['program_x'],
+                    'y' => (float) $settings['program_y'],
+                    'size' => (int) $settings['program_size'],
+                ],
+                'tanggal' => [
+                    'x' => (float) $settings['tanggal_x'],
+                    'y' => (float) $settings['tanggal_y'],
+                    'size' => (int) $settings['tanggal_size'],
+                ],
+            ],
+        ];
+    }
+
+    private function transformAutomaticCertificate(AutomaticCertificate $certificate): array
+    {
+        return [
+            'id' => $certificate->id,
+            'nomor' => $certificate->nomor_sertifikat,
+            'nama' => $certificate->nama_peserta,
+            'program' => $certificate->nama_program,
+            'tanggal' => optional($certificate->tanggal_terbit)->format('Y-m-d'),
+            'templateId' => $certificate->certificate_template_id,
+        ];
     }
 
     // ========================

@@ -1,50 +1,21 @@
 <x-layouts.admin title="Sertifikasi Otomatis" active="sertifikasi">
-    @php
-        $initialTemplates = [
-            [
-                'id' => 'tpl-1',
-                'name' => 'Blangko Biru Classic',
-                'kind' => 'gradient',
-                'gradient' => 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 40%, #bfdbfe 100%)',
-            ],
-            [
-                'id' => 'tpl-2',
-                'name' => 'Blangko Emas Formal',
-                'kind' => 'gradient',
-                'gradient' => 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 45%, #fed7aa 100%)',
-            ],
-        ];
-
-        $initialCertificates = [
-            [
-                'id' => 'cert-1',
-                'nomor' => 'SRT-2026-0001',
-                'nama' => 'Rina Kurniawati',
-                'program' => 'Kursus Dasar Manajemen Proyek',
-                'tanggal' => '2026-03-05',
-                'templateId' => 'tpl-1',
-            ],
-            [
-                'id' => 'cert-2',
-                'nomor' => 'SRT-2026-0002',
-                'nama' => 'Agus Setiawan',
-                'program' => 'Webinar Strategi Pembelajaran Digital',
-                'tanggal' => '2026-03-08',
-                'templateId' => 'tpl-2',
-            ],
-        ];
-    @endphp
-
     <div
         id="sertifikasiApp"
         data-templates='@json($initialTemplates)'
         data-certificates='@json($initialCertificates)'
+        data-csrf='{{ csrf_token() }}'
+        data-template-store-url='{{ route('admin.sertifikasi.templates.store') }}'
+        data-template-update-url='{{ route('admin.sertifikasi.templates.update', ':id') }}'
+        data-template-delete-url='{{ route('admin.sertifikasi.templates.delete', ':id') }}'
+        data-certificate-store-url='{{ route('admin.sertifikasi.certificates.store') }}'
+        data-certificate-update-url='{{ route('admin.sertifikasi.certificates.update', ':id') }}'
+        data-certificate-delete-url='{{ route('admin.sertifikasi.certificates.delete', ':id') }}'
         class="space-y-6"
     >
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Sertifikat Otomatis</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Frontend UI untuk upload blangko, atur ukuran teks, kelola sertifikat otomatis, dan export PDF.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola blangko, atur posisi teks, edit data sertifikat otomatis, dan export PDF hasil sertifikat.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button id="btnOpenCreateCert" type="button" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
@@ -66,55 +37,31 @@
                         <span id="previewMeta" class="text-xs text-gray-500 dark:text-gray-400"></span>
                     </div>
 
-                    <div id="certificateCanvas" class="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner">
+                    <div id="certificateCanvas" class="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner bg-white">
                         <div id="certificateBgLayer" class="absolute inset-0"></div>
-                        <div class="absolute inset-0 bg-white/70"></div>
+                        <div id="certificateOverlayTint" class="absolute inset-0 bg-white/15"></div>
+                        <div id="certificateFrameOuter" class="absolute inset-3 sm:inset-4 rounded-lg border-4 border-amber-300/90"></div>
+                        <div id="certificateFrameInner" class="absolute inset-5 sm:inset-7 rounded-md border border-amber-400/80"></div>
 
-                        <div class="absolute inset-3 sm:inset-4 rounded-lg border-4 border-amber-300/90"></div>
-                        <div class="absolute inset-5 sm:inset-7 rounded-md border border-amber-400/80"></div>
-
-                        <div class="absolute inset-0 px-6 py-5 sm:px-10 sm:py-7 md:px-14 md:py-9 flex flex-col text-gray-800">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <img
-                                        src="{{ asset('assets/image/Logo/Logo_Universitas_Terbuka.png') }}"
-                                        alt="Universitas Terbuka"
-                                        class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain"
-                                    >
-                                    <div class="min-w-0">
-                                        <p class="text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.14em] uppercase">Universitas Terbuka</p>
-                                        <p class="text-[10px] sm:text-[11px] text-gray-600">Pusat Sertifikasi Kompetensi</p>
-                                    </div>
-                                </div>
-
-                                <div class="text-right">
-                                    <p class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600">Nomor Sertifikat</p>
-                                    <p id="previewNomor" class="font-semibold leading-tight text-gray-800" style="font-size: clamp(14px, 3vw, 28px);">SRT-XXXX</p>
-                                </div>
+                        <div class="absolute inset-0 text-gray-800">
+                            <div id="previewNomorGroup" class="absolute w-[72%] text-center" style="left: 50%; top: 24%; transform: translate(-50%, -50%);">
+                                <p id="previewNomorLabel" class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600">Nomor Sertifikat</p>
+                                <p id="previewNomor" class="font-semibold leading-tight text-gray-800" style="font-size: 26pt;">SRT-XXXX</p>
                             </div>
 
-                            <div class="flex-1 flex flex-col items-center justify-center text-center px-2 sm:px-8">
-                                <p class="text-[10px] sm:text-xs uppercase tracking-[0.42em] text-gray-600">Sertifikat</p>
-                                <h3 class="mt-1 text-2xl sm:text-4xl md:text-5xl font-black tracking-wide" style="font-family: 'Times New Roman', serif;">PENGHARGAAN</h3>
-                                <p class="mt-2 text-[11px] sm:text-sm text-gray-600">Diberikan kepada</p>
-
-                                <p id="previewNama" class="mt-3 sm:mt-4 text-gray-900 leading-tight" style="font-family: 'Times New Roman', serif; font-size: clamp(20px, 5vw, 52px); font-weight: 700;">Nama Peserta</p>
-
-                                <p class="mt-2 text-[11px] sm:text-sm text-gray-700">atas keberhasilan menyelesaikan program</p>
-                                <p id="previewProgram" class="mt-1 px-4 text-sm sm:text-base md:text-lg font-semibold text-gray-800">Nama Program</p>
+                            <div id="previewNamaGroup" class="absolute w-[80%] text-center" style="left: 50%; top: 43%; transform: translate(-50%, -50%);">
+                                <p id="previewNamaLabel" class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600 mb-1">Nama Peserta</p>
+                                <p id="previewNama" class="text-gray-900 leading-tight" style="font-family: 'Times New Roman', serif; font-size: 42pt; font-weight: 700;">Nama Peserta</p>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-center">
-                                <div>
-                                    <p class="text-[10px] sm:text-xs text-gray-600">Tanggal Terbit</p>
-                                    <p id="previewTanggal" class="mt-0.5 text-[11px] sm:text-sm font-medium">-</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] sm:text-xs text-gray-600">Direktur Program</p>
-                                    <div class="mt-6 sm:mt-8 border-t border-gray-500/70 pt-1.5">
-                                        <p class="text-[10px] sm:text-xs font-semibold tracking-wide">SALUT DIGITAL CAMPUS</p>
-                                    </div>
-                                </div>
+                            <div id="previewProgramGroup" class="absolute w-[72%] text-center" style="left: 50%; top: 58%; transform: translate(-50%, -50%);">
+                                <p id="previewProgramLabel" class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600 mb-1">Program</p>
+                                <p id="previewProgram" class="font-semibold text-gray-800" style="font-size: 18pt;">Nama Program</p>
+                            </div>
+
+                            <div id="previewTanggalGroup" class="absolute w-[60%] text-center" style="left: 50%; top: 72%; transform: translate(-50%, -50%);">
+                                <p id="previewTanggalLabel" class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600">Tanggal</p>
+                                <p id="previewTanggal" class="mt-0.5 text-[11px] sm:text-sm font-medium">-</p>
                             </div>
                         </div>
                     </div>
@@ -127,7 +74,7 @@
                     </div>
 
                     <div class="overflow-x-auto responsive-table">
-                        <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list min-w-[620px] lg:min-w-full">
+                        <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list min-w-[680px] lg:min-w-full">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-gray-700/40 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                     <th class="text-left px-4 py-3">Nomor</th>
@@ -153,29 +100,101 @@
                             <input id="uploadBlangkoInput" type="file" accept="image/*" class="hidden">
                         </label>
                     </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Blangko yang diupload bersifat frontend-only (simulasi UI).</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Upload blangko baru untuk dipakai pada sertifikat otomatis. Format JPG/PNG/WebP maksimal 5MB.</p>
 
                     <div id="templateList" class="space-y-2"></div>
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl p-4 sm:p-5">
-                    <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">Ukuran Teks Otomatis</h2>
-                    <div class="space-y-4">
+                    <div class="flex items-start justify-between gap-3 mb-4">
                         <div>
-                            <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300 mb-1">
-                                <span>Nama Peserta</span>
-                                <span id="fontSizeNamaLabel">52 px</span>
+                            <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Posisi Teks Otomatis</h2>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Atur posisi `X`, `Y`, dan ukuran teks untuk blangko yang sedang dipilih.</p>
+                        </div>
+                        <span id="selectedTemplateBadge" class="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">-</span>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div class="space-y-2">
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Nomor Sertifikat</h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">X (%)</label>
+                                    <input id="settingNomorX" type="number" min="0" max="100" step="0.1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">Y (%)</label>
+                                    <input id="settingNomorY" type="number" min="0" max="100" step="0.1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">Size (pt)</label>
+                                    <input id="settingNomorSize" type="number" min="10" max="72" step="1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
                             </div>
-                            <input id="fontSizeNama" type="range" min="30" max="72" value="52" class="w-full">
+                        </div>
+
+                        <div class="space-y-2">
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Nama Peserta</h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">X (%)</label>
+                                    <input id="settingNamaX" type="number" min="0" max="100" step="0.1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">Y (%)</label>
+                                    <input id="settingNamaY" type="number" min="0" max="100" step="0.1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">Size (pt)</label>
+                                    <input id="settingNamaSize" type="number" min="14" max="96" step="1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Program</h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">X (%)</label>
+                                    <input id="settingProgramX" type="number" min="0" max="100" step="0.1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">Y (%)</label>
+                                    <input id="settingProgramY" type="number" min="0" max="100" step="0.1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">Size (pt)</label>
+                                    <input id="settingProgramSize" type="number" min="10" max="56" step="1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Tanggal</h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">X (%)</label>
+                                    <input id="settingTanggalX" type="number" min="0" max="100" step="0.1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">Y (%)</label>
+                                    <input id="settingTanggalY" type="number" min="0" max="100" step="0.1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-1">Size (pt)</label>
+                                    <input id="settingTanggalSize" type="number" min="10" max="42" step="1" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                                </div>
+                            </div>
                         </div>
 
                         <div>
-                            <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300 mb-1">
-                                <span>Nomor Sertif</span>
-                                <span id="fontSizeNomorLabel">28 px</span>
-                            </div>
-                            <input id="fontSizeNomor" type="range" min="14" max="44" value="28" class="w-full">
+                            <label class="block text-[11px] text-gray-500 mb-1">Nama Blangko</label>
+                            <input id="selectedTemplateName" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
                         </div>
+
+                        <button id="btnSaveTemplateSettings" type="button" class="w-full px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition">
+                            Simpan Pengaturan Blangko
+                        </button>
                     </div>
                 </div>
             </div>
@@ -195,7 +214,7 @@
                     <input id="certFormId" type="hidden" value="">
 
                     <h3 id="certModalTitle" class="text-lg font-bold text-gray-900 dark:text-white">Tambah Sertif Otomatis</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Isi data sertifikat. Nomor bisa otomatis.</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Isi data sertifikat. Nomor bisa dikosongkan untuk auto generate.</p>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                         <div>
@@ -237,9 +256,17 @@
             const app = document.getElementById('sertifikasiApp');
             if (!app) return;
 
+            const csrfToken = app.dataset.csrf;
+            const templateStoreUrl = app.dataset.templateStoreUrl;
+            const templateUpdateUrl = app.dataset.templateUpdateUrl;
+            const templateDeleteUrl = app.dataset.templateDeleteUrl;
+            const certificateStoreUrl = app.dataset.certificateStoreUrl;
+            const certificateUpdateUrl = app.dataset.certificateUpdateUrl;
+            const certificateDeleteUrl = app.dataset.certificateDeleteUrl;
+
             let templates = JSON.parse(app.dataset.templates || '[]');
             let certificates = JSON.parse(app.dataset.certificates || '[]');
-            let selectedTemplateId = templates[0]?.id || null;
+            let selectedTemplateId = templates[0]?.id || certificates[0]?.templateId || null;
             let selectedCertificateId = certificates[0]?.id || null;
 
             const templateList = document.getElementById('templateList');
@@ -251,13 +278,34 @@
             const previewNomor = document.getElementById('previewNomor');
             const previewProgram = document.getElementById('previewProgram');
             const previewTanggal = document.getElementById('previewTanggal');
+            const previewNomorLabel = document.getElementById('previewNomorLabel');
+            const previewNamaLabel = document.getElementById('previewNamaLabel');
+            const previewProgramLabel = document.getElementById('previewProgramLabel');
+            const previewTanggalLabel = document.getElementById('previewTanggalLabel');
+            const previewNamaGroup = document.getElementById('previewNamaGroup');
+            const previewNomorGroup = document.getElementById('previewNomorGroup');
+            const previewProgramGroup = document.getElementById('previewProgramGroup');
+            const previewTanggalGroup = document.getElementById('previewTanggalGroup');
             const certificateBgLayer = document.getElementById('certificateBgLayer');
+            const certificateOverlayTint = document.getElementById('certificateOverlayTint');
+            const certificateFrameOuter = document.getElementById('certificateFrameOuter');
+            const certificateFrameInner = document.getElementById('certificateFrameInner');
 
-            const fontSizeNama = document.getElementById('fontSizeNama');
-            const fontSizeNomor = document.getElementById('fontSizeNomor');
-            const fontSizeNamaLabel = document.getElementById('fontSizeNamaLabel');
-            const fontSizeNomorLabel = document.getElementById('fontSizeNomorLabel');
-
+            const selectedTemplateBadge = document.getElementById('selectedTemplateBadge');
+            const selectedTemplateName = document.getElementById('selectedTemplateName');
+            const settingNomorX = document.getElementById('settingNomorX');
+            const settingNomorY = document.getElementById('settingNomorY');
+            const settingNomorSize = document.getElementById('settingNomorSize');
+            const settingNamaX = document.getElementById('settingNamaX');
+            const settingNamaY = document.getElementById('settingNamaY');
+            const settingNamaSize = document.getElementById('settingNamaSize');
+            const settingProgramX = document.getElementById('settingProgramX');
+            const settingProgramY = document.getElementById('settingProgramY');
+            const settingProgramSize = document.getElementById('settingProgramSize');
+            const settingTanggalX = document.getElementById('settingTanggalX');
+            const settingTanggalY = document.getElementById('settingTanggalY');
+            const settingTanggalSize = document.getElementById('settingTanggalSize');
+            const btnSaveTemplateSettings = document.getElementById('btnSaveTemplateSettings');
             const uploadBlangkoInput = document.getElementById('uploadBlangkoInput');
 
             const certificateModal = document.getElementById('certificateModal');
@@ -269,71 +317,154 @@
             const certForm = document.getElementById('certificateForm');
             const certFormMode = document.getElementById('certFormMode');
             const certFormId = document.getElementById('certFormId');
-
             const inputNomor = document.getElementById('inputNomor');
             const inputTanggal = document.getElementById('inputTanggal');
             const inputNama = document.getElementById('inputNama');
             const inputProgram = document.getElementById('inputProgram');
             const inputTemplateId = document.getElementById('inputTemplateId');
-
             const btnExportCurrentPdf = document.getElementById('btnExportCurrentPdf');
 
+            function replaceRouteId(url, id) {
+                return url.replace(':id', id);
+            }
+
             function getTemplateById(id) {
-                return templates.find(t => t.id === id) || templates[0] || null;
+                return templates.find((template) => String(template.id) === String(id)) || templates[0] || null;
             }
 
             function getCertById(id) {
-                return certificates.find(c => c.id === id) || certificates[0] || null;
+                return certificates.find((certificate) => String(certificate.id) === String(id)) || null;
             }
 
             function formatDateIndonesia(isoDate) {
                 if (!isoDate) return '-';
                 const dt = new Date(isoDate);
-                return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                return Number.isNaN(dt.getTime())
+                    ? '-'
+                    : dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+            }
+
+            function buildSettingsPayload() {
+                return {
+                    name: selectedTemplateName.value.trim(),
+                    nomor_x: settingNomorX.value,
+                    nomor_y: settingNomorY.value,
+                    nomor_size: settingNomorSize.value,
+                    nama_x: settingNamaX.value,
+                    nama_y: settingNamaY.value,
+                    nama_size: settingNamaSize.value,
+                    program_x: settingProgramX.value,
+                    program_y: settingProgramY.value,
+                    program_size: settingProgramSize.value,
+                    tanggal_x: settingTanggalX.value,
+                    tanggal_y: settingTanggalY.value,
+                    tanggal_size: settingTanggalSize.value,
+                };
+            }
+
+            function applyPreviewSettings(template) {
+                const settings = template?.settings || {};
+                const nomor = settings.nomor || { x: 50, y: 24, size: 26 };
+                const nama = settings.nama || { x: 50, y: 43, size: 42 };
+                const program = settings.program || { x: 50, y: 58, size: 18 };
+                const tanggal = settings.tanggal || { x: 50, y: 72, size: 14 };
+
+                previewNomorGroup.style.left = `${nomor.x}%`;
+                previewNomorGroup.style.top = `${nomor.y}%`;
+                previewNomor.style.fontSize = `${nomor.size}pt`;
+
+                previewNamaGroup.style.left = `${nama.x}%`;
+                previewNamaGroup.style.top = `${nama.y}%`;
+                previewNama.style.fontSize = `${nama.size}pt`;
+
+                previewProgramGroup.style.left = `${program.x}%`;
+                previewProgramGroup.style.top = `${program.y}%`;
+                previewProgram.style.fontSize = `${program.size}pt`;
+
+                previewTanggalGroup.style.left = `${tanggal.x}%`;
+                previewTanggalGroup.style.top = `${tanggal.y}%`;
+                previewTanggal.style.fontSize = `${tanggal.size}pt`;
+            }
+
+            function syncSettingsForm() {
+                const template = getTemplateById(selectedTemplateId);
+                if (!template) {
+                    selectedTemplateBadge.textContent = 'Belum ada blangko';
+                    selectedTemplateName.value = '';
+                    return;
+                }
+
+                selectedTemplateBadge.textContent = template.name;
+                selectedTemplateName.value = template.name || '';
+
+                settingNomorX.value = template.settings.nomor.x;
+                settingNomorY.value = template.settings.nomor.y;
+                settingNomorSize.value = template.settings.nomor.size;
+                settingNamaX.value = template.settings.nama.x;
+                settingNamaY.value = template.settings.nama.y;
+                settingNamaSize.value = template.settings.nama.size;
+                settingProgramX.value = template.settings.program.x;
+                settingProgramY.value = template.settings.program.y;
+                settingProgramSize.value = template.settings.program.size;
+                settingTanggalX.value = template.settings.tanggal.x;
+                settingTanggalY.value = template.settings.tanggal.y;
+                settingTanggalSize.value = template.settings.tanggal.size;
+
+                applyPreviewSettings(template);
             }
 
             function renderTemplateOptions() {
-                inputTemplateId.innerHTML = templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+                inputTemplateId.innerHTML = templates.map((template) => `<option value="${template.id}">${template.name}</option>`).join('');
             }
 
             function renderTemplateList() {
-                templateList.innerHTML = templates.map((tpl) => {
-                    const isActive = tpl.id === selectedTemplateId;
-                    const bgStyle = tpl.kind === 'image'
-                        ? `background-image:url('${tpl.image}');background-size:cover;background-position:center;`
-                        : `background:${tpl.gradient};`;
+                templateList.innerHTML = templates.map((template) => {
+                    const isActive = String(template.id) === String(selectedTemplateId);
+                    const backgroundStyle = template.kind === 'image'
+                        ? `background-image:url('${template.image}');background-size:cover;background-position:center;`
+                        : `background:${template.gradient};`;
+                    const deleteButton = templates.length > 1
+                        ? `<button type="button" data-delete-template-id="${template.id}" class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition">Hapus</button>`
+                        : '';
 
                     return `
-                        <button type="button" data-template-id="${tpl.id}" class="w-full text-left p-2 rounded-lg border ${isActive ? 'border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900/30' : 'border-gray-200 dark:border-gray-600'} hover:border-blue-400 transition">
-                            <div class="h-16 rounded-md" style="${bgStyle}"></div>
+                        <div data-template-id="${template.id}" class="w-full text-left p-2 rounded-lg border cursor-pointer ${isActive ? 'border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900/30' : 'border-gray-200 dark:border-gray-600'} hover:border-blue-400 transition">
+                            <div class="h-20 rounded-md" style="${backgroundStyle}"></div>
                             <div class="mt-2 flex items-center justify-between gap-2">
-                                <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">${tpl.name}</span>
-                                <span class="text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}">${isActive ? 'Dipakai' : 'Pilih'}</span>
+                                <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">${template.name}</span>
+                                <div class="flex items-center gap-1">
+                                    ${deleteButton}
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}">${isActive ? 'Dipakai' : 'Pilih'}</span>
+                                </div>
                             </div>
-                        </button>
+                        </div>
                     `;
                 }).join('');
+
+                if (!templates.length) {
+                    templateList.innerHTML = '<div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 px-4 py-6 text-center text-xs text-gray-500">Belum ada blangko. Upload blangko terlebih dahulu.</div>';
+                }
             }
 
             function renderCertificateTable() {
                 const keyword = (searchCertInput.value || '').toLowerCase().trim();
-                const filtered = certificates.filter(c => {
-                    const haystack = `${c.nomor} ${c.nama} ${c.program}`.toLowerCase();
+                const filtered = certificates.filter((certificate) => {
+                    const haystack = `${certificate.nomor} ${certificate.nama} ${certificate.program}`.toLowerCase();
                     return haystack.includes(keyword);
                 });
 
-                certificateTableBody.innerHTML = filtered.map((c) => `
+                certificateTableBody.innerHTML = filtered.map((certificate) => `
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                        <td class="px-4 py-3 text-sm font-mono text-gray-700 dark:text-gray-200">${c.nomor}</td>
-                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">${c.nama}</td>
-                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${c.program}</td>
-                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${formatDateIndonesia(c.tanggal)}</td>
+                        <td class="px-4 py-3 text-sm font-mono text-gray-700 dark:text-gray-200">${certificate.nomor}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">${certificate.nama}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${certificate.program}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${formatDateIndonesia(certificate.tanggal)}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-center gap-1">
-                                <button type="button" data-action="preview" data-id="${c.id}" class="px-2.5 py-1 text-xs rounded-md bg-indigo-100 text-indigo-700 hover:bg-indigo-200">Preview</button>
-                                <button type="button" data-action="edit" data-id="${c.id}" class="px-2.5 py-1 text-xs rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200">Edit</button>
-                                <button type="button" data-action="pdf" data-id="${c.id}" class="px-2.5 py-1 text-xs rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200">PDF</button>
-                                <button type="button" data-action="delete" data-id="${c.id}" class="px-2.5 py-1 text-xs rounded-md bg-red-100 text-red-700 hover:bg-red-200">Hapus</button>
+                                <button type="button" data-action="preview" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-indigo-100 text-indigo-700 hover:bg-indigo-200">Preview</button>
+                                <button type="button" data-action="edit" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200">Edit</button>
+                                <button type="button" data-action="pdf" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200">PDF</button>
+                                <button type="button" data-action="delete" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-red-100 text-red-700 hover:bg-red-200">Hapus</button>
                             </div>
                         </td>
                     </tr>
@@ -349,54 +480,72 @@
             }
 
             function renderPreview() {
-                const cert = getCertById(selectedCertificateId);
-                if (!cert) {
+                const certificate = getCertById(selectedCertificateId);
+                const template = getTemplateById(selectedTemplateId || certificate?.templateId);
+
+                if (template) {
+                    selectedTemplateId = template.id;
+                    if (template.kind === 'image' && template.image) {
+                        certificateBgLayer.style.backgroundImage = `url('${template.image}')`;
+                        certificateBgLayer.style.backgroundSize = 'cover';
+                        certificateBgLayer.style.backgroundPosition = 'center';
+                        certificateBgLayer.style.backgroundColor = 'transparent';
+                        certificateOverlayTint.classList.add('hidden');
+                        certificateFrameOuter.classList.add('hidden');
+                        certificateFrameInner.classList.add('hidden');
+                        previewNomorLabel.classList.add('hidden');
+                        previewNamaLabel.classList.add('hidden');
+                        previewProgramLabel.classList.add('hidden');
+                        previewTanggalLabel.classList.add('hidden');
+                    } else {
+                        certificateBgLayer.style.backgroundImage = 'none';
+                        certificateBgLayer.style.background = template.gradient || 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 40%, #bfdbfe 100%)';
+                        certificateOverlayTint.classList.remove('hidden');
+                        certificateFrameOuter.classList.remove('hidden');
+                        certificateFrameInner.classList.remove('hidden');
+                        previewNomorLabel.classList.remove('hidden');
+                        previewNamaLabel.classList.remove('hidden');
+                        previewProgramLabel.classList.remove('hidden');
+                        previewTanggalLabel.classList.remove('hidden');
+                    }
+                }
+
+                applyPreviewSettings(template);
+
+                if (!certificate) {
                     previewNama.textContent = 'Nama Peserta';
                     previewNomor.textContent = 'SRT-XXXX';
                     previewProgram.textContent = 'Nama Program';
                     previewTanggal.textContent = '-';
-                    previewMeta.textContent = 'Belum ada data';
+                    previewMeta.textContent = template ? `Blangko: ${template.name}` : 'Belum ada data';
                     return;
                 }
 
-                const tpl = getTemplateById(cert.templateId || selectedTemplateId);
-                if (tpl) {
-                    selectedTemplateId = tpl.id;
-                    if (tpl.kind === 'image') {
-                        certificateBgLayer.style.backgroundImage = `url('${tpl.image}')`;
-                        certificateBgLayer.style.backgroundSize = 'cover';
-                        certificateBgLayer.style.backgroundPosition = 'center';
-                        certificateBgLayer.style.backgroundColor = 'transparent';
-                    } else {
-                        certificateBgLayer.style.background = tpl.gradient;
-                        certificateBgLayer.style.backgroundImage = 'none';
-                    }
-                }
-
-                previewNama.textContent = cert.nama;
-                previewNomor.textContent = cert.nomor;
-                previewProgram.textContent = cert.program;
-                previewTanggal.textContent = formatDateIndonesia(cert.tanggal);
-                previewMeta.textContent = `${cert.nomor} - ${cert.nama}`;
+                previewNama.textContent = certificate.nama;
+                previewNomor.textContent = certificate.nomor;
+                previewProgram.textContent = certificate.program;
+                previewTanggal.textContent = formatDateIndonesia(certificate.tanggal);
+                previewMeta.textContent = `${certificate.nomor} - ${certificate.nama}`;
             }
 
             function renderAll() {
                 renderTemplateOptions();
                 renderTemplateList();
                 renderCertificateTable();
+                syncSettingsForm();
                 renderPreview();
             }
 
-            function openModal(mode, cert = null) {
+            function openModal(mode, certificate = null) {
                 certFormMode.value = mode;
-                certFormId.value = cert?.id || '';
+                certFormId.value = certificate?.id || '';
                 certModalTitle.textContent = mode === 'edit' ? 'Edit Sertif Otomatis' : 'Tambah Sertif Otomatis';
 
-                inputNomor.value = cert?.nomor || '';
-                inputNama.value = cert?.nama || '';
-                inputProgram.value = cert?.program || '';
-                inputTanggal.value = cert?.tanggal || new Date().toISOString().slice(0, 10);
-                inputTemplateId.value = cert?.templateId || selectedTemplateId || templates[0]?.id || '';
+                inputNomor.value = certificate?.nomor || '';
+                inputNama.value = certificate?.nama || '';
+                inputProgram.value = certificate?.program || '';
+                inputTanggal.value = certificate?.tanggal || new Date().toISOString().slice(0, 10);
+                inputTemplateId.value = certificate?.templateId || selectedTemplateId || templates[0]?.id || '';
 
                 certificateModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
@@ -407,23 +556,19 @@
                 document.body.style.overflow = 'auto';
             }
 
-            function generateNomor() {
-                const year = new Date().getFullYear();
-                const count = certificates.length + 1;
-                return `SRT-${year}-${String(count).padStart(4, '0')}`;
-            }
-
-            async function exportCertificatePdf(certId) {
-                const cert = getCertById(certId || selectedCertificateId);
-                if (!cert) {
+            async function exportCertificatePdf(certificateId) {
+                const certificate = getCertById(certificateId || selectedCertificateId);
+                if (!certificate) {
                     Swal.fire('Info', 'Pilih data sertifikat terlebih dahulu.', 'info');
                     return;
                 }
 
-                selectedCertificateId = cert.id;
-                renderPreview();
+                selectedCertificateId = certificate.id;
+                selectedTemplateId = certificate.templateId;
+                renderAll();
 
                 const canvasNode = document.getElementById('certificateCanvas');
+
                 try {
                     const canvas = await html2canvas(canvasNode, {
                         scale: 2,
@@ -437,104 +582,396 @@
                     const pageHeight = pdf.internal.pageSize.getHeight();
 
                     pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
-                    pdf.save(`${cert.nomor}.pdf`);
+                    pdf.save(`${certificate.nomor}.pdf`);
                 } catch (error) {
                     console.error(error);
                     Swal.fire('Error', 'Gagal membuat PDF. Coba ulangi lagi.', 'error');
                 }
             }
 
-            templateList.addEventListener('click', (e) => {
-                const button = e.target.closest('[data-template-id]');
+            function showValidationError(message) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Validasi',
+                    text: message,
+                    confirmButtonText: 'Oke',
+                    buttonsStyling: false,
+                    customClass: {
+                        confirmButton: 'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold',
+                    },
+                });
+            }
+
+            async function uploadTemplate(file) {
+                const formData = new FormData();
+                formData.append('_token', csrfToken);
+                formData.append('blangko', file);
+                formData.append('name', file.name.replace(/\.[^.]+$/, ''));
+
+                const response = await fetch(templateStoreUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.message || Object.values(payload.errors || {}).flat()[0] || 'Gagal menambahkan blangko.');
+                }
+
+                templates.unshift(payload.template);
+                selectedTemplateId = payload.template.id;
+                renderAll();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: payload.message,
+                    timer: 1800,
+                    showConfirmButton: false,
+                });
+            }
+
+            async function saveTemplateSettings() {
+                const template = getTemplateById(selectedTemplateId);
+                if (!template) {
+                    showValidationError('Pilih blangko terlebih dahulu.');
+                    return;
+                }
+
+                const payload = buildSettingsPayload();
+                const response = await fetch(replaceRouteId(templateUpdateUrl, template.id), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-HTTP-Method-Override': 'PUT',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || Object.values(result.errors || {}).flat()[0] || 'Gagal menyimpan pengaturan blangko.');
+                }
+
+                templates = templates.map((item) => String(item.id) === String(result.template.id) ? result.template : item);
+                selectedTemplateId = result.template.id;
+                renderAll();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Tersimpan',
+                    text: result.message,
+                    timer: 1600,
+                    showConfirmButton: false,
+                });
+            }
+
+            async function saveCertificate() {
+                const payload = {
+                    certificate_template_id: inputTemplateId.value,
+                    nomor_sertifikat: inputNomor.value.trim(),
+                    nama_peserta: inputNama.value.trim(),
+                    nama_program: inputProgram.value.trim(),
+                    tanggal_terbit: inputTanggal.value,
+                };
+
+                if (!payload.certificate_template_id || !payload.nama_peserta || !payload.nama_program || !payload.tanggal_terbit) {
+                    showValidationError('Lengkapi semua field wajib pada sertifikat.');
+                    return;
+                }
+
+                const isEdit = certFormMode.value === 'edit' && certFormId.value;
+                const url = isEdit ? replaceRouteId(certificateUpdateUrl, certFormId.value) : certificateStoreUrl;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-HTTP-Method-Override': isEdit ? 'PUT' : 'POST',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || Object.values(result.errors || {}).flat()[0] || 'Gagal menyimpan sertifikat otomatis.');
+                }
+
+                if (isEdit) {
+                    certificates = certificates.map((item) => String(item.id) === String(result.certificate.id) ? result.certificate : item);
+                } else {
+                    certificates.unshift(result.certificate);
+                }
+
+                selectedCertificateId = result.certificate.id;
+                selectedTemplateId = result.certificate.templateId;
+                closeModal();
+                renderAll();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: result.message,
+                    timer: 1800,
+                    showConfirmButton: false,
+                });
+            }
+
+            async function deleteCertificate(certificate) {
+                const result = await Swal.fire({
+                    title: 'Hapus Sertifikat?',
+                    html: `<p class="text-sm text-gray-500">Data <strong>${certificate.nomor}</strong> untuk <strong>${certificate.nama}</strong> akan dihapus.</p>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    buttonsStyling: false,
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        actions: 'gap-2',
+                        confirmButton: 'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold',
+                        cancelButton: 'px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold',
+                    },
+                });
+
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                const response = await fetch(replaceRouteId(certificateDeleteUrl, certificate.id), {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-HTTP-Method-Override': 'DELETE',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.message || 'Gagal menghapus sertifikat otomatis.');
+                }
+
+                certificates = certificates.filter((item) => String(item.id) !== String(certificate.id));
+                if (String(selectedCertificateId) === String(certificate.id)) {
+                    selectedCertificateId = certificates[0]?.id || null;
+                    if (!selectedCertificateId) {
+                        selectedTemplateId = templates[0]?.id || null;
+                    }
+                }
+
+                renderAll();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Terhapus',
+                    text: payload.message,
+                    timer: 1600,
+                    showConfirmButton: false,
+                });
+            }
+
+            async function deleteTemplate(template) {
+                const result = await Swal.fire({
+                    title: 'Hapus Blangko?',
+                    html: `<p class="text-sm text-gray-500">Blangko <strong>${template.name}</strong> akan dihapus.</p>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    buttonsStyling: false,
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        actions: 'gap-2',
+                        confirmButton: 'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold',
+                        cancelButton: 'px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold',
+                    },
+                });
+
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                const response = await fetch(replaceRouteId(templateDeleteUrl, template.id), {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-HTTP-Method-Override': 'DELETE',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.message || 'Gagal menghapus blangko.');
+                }
+
+                templates = templates.filter((item) => String(item.id) !== String(template.id));
+                if (String(selectedTemplateId) === String(template.id)) {
+                    selectedTemplateId = templates[0]?.id || null;
+                }
+
+                certificates = certificates.map((certificate) => {
+                    if (String(certificate.templateId) === String(template.id)) {
+                        return {
+                            ...certificate,
+                            templateId: templates[0]?.id || null,
+                        };
+                    }
+
+                    return certificate;
+                });
+
+                renderAll();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Terhapus',
+                    text: payload.message,
+                    timer: 1600,
+                    showConfirmButton: false,
+                });
+            }
+
+            templateList.addEventListener('click', async (event) => {
+                const deleteButton = event.target.closest('[data-delete-template-id]');
+                if (deleteButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    const template = getTemplateById(deleteButton.dataset.deleteTemplateId);
+                    if (!template) return;
+
+                    try {
+                        await deleteTemplate(template);
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire('Error', error.message || 'Gagal menghapus blangko.', 'error');
+                    }
+                    return;
+                }
+
+                const button = event.target.closest('[data-template-id]');
                 if (!button) return;
 
                 selectedTemplateId = button.dataset.templateId;
-                const cert = getCertById(selectedCertificateId);
-                if (cert) {
-                    cert.templateId = selectedTemplateId;
-                }
                 renderAll();
             });
 
-            certificateTableBody.addEventListener('click', (e) => {
-                const button = e.target.closest('button[data-action]');
+            certificateTableBody.addEventListener('click', async (event) => {
+                const button = event.target.closest('button[data-action]');
                 if (!button) return;
 
                 const action = button.dataset.action;
-                const cert = getCertById(button.dataset.id);
-                if (!cert) return;
+                const certificate = getCertById(button.dataset.id);
+                if (!certificate) return;
 
                 if (action === 'preview') {
-                    selectedCertificateId = cert.id;
-                    selectedTemplateId = cert.templateId;
+                    selectedCertificateId = certificate.id;
+                    selectedTemplateId = certificate.templateId;
                     renderAll();
+                    return;
                 }
 
                 if (action === 'edit') {
-                    openModal('edit', cert);
+                    openModal('edit', certificate);
+                    return;
                 }
 
                 if (action === 'pdf') {
-                    exportCertificatePdf(cert.id);
+                    await exportCertificatePdf(certificate.id);
+                    return;
                 }
 
                 if (action === 'delete') {
-                    Swal.fire({
-                        title: 'Hapus Sertifikat?',
-                        html: `<p class="text-sm text-gray-500">Data <strong>${cert.nomor}</strong> untuk <strong>${cert.nama}</strong> akan dihapus.</p>`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#ef4444',
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: 'Ya, Hapus',
-                        cancelButtonText: 'Batal',
-                        reverseButtons: true,
-                    }).then((result) => {
-                        if (!result.isConfirmed) return;
-
-                        certificates = certificates.filter(c => c.id !== cert.id);
-                        if (selectedCertificateId === cert.id) {
-                            selectedCertificateId = certificates[0]?.id || null;
-                        }
-                        renderAll();
-                    });
+                    try {
+                        await deleteCertificate(certificate);
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire('Error', error.message || 'Gagal menghapus sertifikat otomatis.', 'error');
+                    }
                 }
             });
 
             searchCertInput.addEventListener('input', renderCertificateTable);
 
-            fontSizeNama.addEventListener('input', () => {
-                const value = fontSizeNama.value;
-                previewNama.style.fontSize = `${value}px`;
-                fontSizeNamaLabel.textContent = `${value} px`;
+            [
+                settingNomorX,
+                settingNomorY,
+                settingNomorSize,
+                settingNamaX,
+                settingNamaY,
+                settingNamaSize,
+                settingProgramX,
+                settingProgramY,
+                settingProgramSize,
+                settingTanggalX,
+                settingTanggalY,
+                settingTanggalSize,
+            ].forEach((input) => {
+                input.addEventListener('input', () => {
+                    const template = getTemplateById(selectedTemplateId);
+                    if (!template) return;
+
+                    template.settings.nomor.x = Number(settingNomorX.value || 0);
+                    template.settings.nomor.y = Number(settingNomorY.value || 0);
+                    template.settings.nomor.size = Number(settingNomorSize.value || 0);
+                    template.settings.nama.x = Number(settingNamaX.value || 0);
+                    template.settings.nama.y = Number(settingNamaY.value || 0);
+                    template.settings.nama.size = Number(settingNamaSize.value || 0);
+                    template.settings.program.x = Number(settingProgramX.value || 0);
+                    template.settings.program.y = Number(settingProgramY.value || 0);
+                    template.settings.program.size = Number(settingProgramSize.value || 0);
+                    template.settings.tanggal.x = Number(settingTanggalX.value || 0);
+                    template.settings.tanggal.y = Number(settingTanggalY.value || 0);
+                    template.settings.tanggal.size = Number(settingTanggalSize.value || 0);
+
+                    applyPreviewSettings(template);
+                });
             });
 
-            fontSizeNomor.addEventListener('input', () => {
-                const value = fontSizeNomor.value;
-                previewNomor.style.fontSize = `${value}px`;
-                fontSizeNomorLabel.textContent = `${value} px`;
+            selectedTemplateName.addEventListener('input', () => {
+                const template = getTemplateById(selectedTemplateId);
+                if (!template) return;
+                template.name = selectedTemplateName.value;
+                renderTemplateList();
+                selectedTemplateBadge.textContent = selectedTemplateName.value || template.name;
             });
 
-            uploadBlangkoInput.addEventListener('change', (e) => {
-                const file = e.target.files?.[0];
+            uploadBlangkoInput.addEventListener('change', async (event) => {
+                const file = event.target.files?.[0];
                 if (!file) return;
 
-                const objectUrl = URL.createObjectURL(file);
-                const template = {
-                    id: `tpl-${Date.now()}`,
-                    name: file.name.replace(/\.[^/.]+$/, ''),
-                    kind: 'image',
-                    image: objectUrl,
-                };
+                try {
+                    await uploadTemplate(file);
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Error', error.message || 'Gagal menambahkan blangko.', 'error');
+                } finally {
+                    event.target.value = '';
+                }
+            });
 
-                templates.unshift(template);
-                selectedTemplateId = template.id;
-
-                const cert = getCertById(selectedCertificateId);
-                if (cert) cert.templateId = template.id;
-
-                renderAll();
-                e.target.value = '';
+            btnSaveTemplateSettings.addEventListener('click', async () => {
+                try {
+                    await saveTemplateSettings();
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Error', error.message || 'Gagal menyimpan pengaturan blangko.', 'error');
+                }
             });
 
             btnOpenCreateCert.addEventListener('click', () => openModal('create'));
@@ -542,41 +979,23 @@
             btnCancelCertModal.addEventListener('click', closeModal);
             certificateModalOverlay.addEventListener('click', closeModal);
 
-            certForm.addEventListener('submit', (e) => {
-                e.preventDefault();
+            certForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
 
-                const payload = {
-                    id: certFormMode.value === 'edit' ? certFormId.value : `cert-${Date.now()}`,
-                    nomor: (inputNomor.value || '').trim() || generateNomor(),
-                    nama: (inputNama.value || '').trim(),
-                    program: (inputProgram.value || '').trim(),
-                    tanggal: inputTanggal.value,
-                    templateId: inputTemplateId.value,
-                };
-
-                if (!payload.nama || !payload.program || !payload.tanggal || !payload.templateId) {
-                    Swal.fire('Validasi', 'Lengkapi semua field wajib.', 'warning');
-                    return;
+                try {
+                    await saveCertificate();
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Error', error.message || 'Gagal menyimpan sertifikat otomatis.', 'error');
                 }
-
-                if (certFormMode.value === 'edit') {
-                    certificates = certificates.map(c => c.id === payload.id ? payload : c);
-                } else {
-                    certificates.unshift(payload);
-                }
-
-                selectedCertificateId = payload.id;
-                selectedTemplateId = payload.templateId;
-
-                closeModal();
-                renderAll();
             });
 
-            btnExportCurrentPdf.addEventListener('click', () => exportCertificatePdf(selectedCertificateId));
+            btnExportCurrentPdf.addEventListener('click', async () => {
+                await exportCertificatePdf(selectedCertificateId);
+            });
 
             renderAll();
         })();
     </script>
     @endpush
 </x-layouts.admin>
-

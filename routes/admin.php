@@ -130,7 +130,15 @@ Route::prefix('admin')
 
         // Frontend-only pages
         Route::view('/bootcamp-tiket', 'Auth.admin.bootcamp-tiket')->name('admin.bootcamp-tiket');
-        Route::view('/sertifikasi', 'Auth.admin.sertifikasi')->name('admin.sertifikasi');
+        Route::get('/sertifikasi', [AdminController::class, 'showSertifikasi'])->name('admin.sertifikasi');
+        Route::post('/sertifikasi/blangko', [AdminController::class, 'storeCertificateTemplate'])->name('admin.sertifikasi.templates.store');
+        Route::get('/sertifikasi/blangko/{id}/image', [AdminController::class, 'showCertificateTemplateImage'])->name('admin.sertifikasi.templates.image');
+        Route::put('/sertifikasi/blangko/{id}', [AdminController::class, 'updateCertificateTemplate'])->name('admin.sertifikasi.templates.update');
+        Route::delete('/sertifikasi/blangko/{id}', [AdminController::class, 'deleteCertificateTemplate'])->name('admin.sertifikasi.templates.delete');
+        Route::post('/sertifikasi/certificates', [AdminController::class, 'storeAutomaticCertificate'])->name('admin.sertifikasi.certificates.store');
+        Route::get('/sertifikasi/certificates/{id}', [AdminController::class, 'getAutomaticCertificate'])->name('admin.sertifikasi.certificates.get');
+        Route::put('/sertifikasi/certificates/{id}', [AdminController::class, 'updateAutomaticCertificate'])->name('admin.sertifikasi.certificates.update');
+        Route::delete('/sertifikasi/certificates/{id}', [AdminController::class, 'deleteAutomaticCertificate'])->name('admin.sertifikasi.certificates.delete');
         Route::view('/chat', 'Auth.admin.chat')->name('admin.chat');
         Route::view('/finance-report', 'Auth.admin.finance-report')->name('admin.finance-report');
 
