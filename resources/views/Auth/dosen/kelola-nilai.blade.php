@@ -191,9 +191,9 @@
                             type="button"
                             @click="publishGrades()"
                             class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            :disabled="!canPublish"
+                            :disabled="!canPublish || isPublished"
+                            x-text="isPublished ? 'Sudah Dipublish' : 'Publish Nilai'"
                         >
-                            Publish Nilai
                         </button>
                     </div>
                 </div>
@@ -344,13 +344,26 @@
                                             <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
                                         </td>
                                         <td class="px-4 py-4 text-right">
-                                            <button
-                                                type="button"
-                                                @click.stop="selectStudent(row)"
-                                                class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
-                                            >
-                                                Buka Detail
-                                            </button>
+                                            <div class="flex justify-end gap-2">
+                                                <button
+                                                    type="button"
+                                                    @click.stop="selectStudent(row)"
+                                                    class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                                                >
+                                                    Buka Detail
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    @click.stop="markReviewComplete(row)"
+                                                    class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs font-semibold transition"
+                                                    :class="isReviewActionable(row)
+                                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                                        : 'border border-slate-200 text-slate-400 dark:border-gray-700 dark:text-gray-500'"
+                                                    :disabled="!isReviewActionable(row)"
+                                                >
+                                                    <span x-text="isReviewActionable(row) ? 'Selesai Review' : 'Sudah Lengkap'"></span>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </template>
@@ -399,6 +412,27 @@
                                 <div class="mt-4 rounded-2xl border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-500 dark:border-gray-700 dark:text-gray-400">
                                     <span class="font-semibold text-slate-700 dark:text-gray-200">Catatan:</span>
                                     <span x-text="row.note"></span>
+                                </div>
+
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        @click.stop="selectStudent(row)"
+                                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                                    >
+                                        Buka Detail
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click.stop="markReviewComplete(row)"
+                                        class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs font-semibold transition"
+                                        :class="isReviewActionable(row)
+                                            ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                            : 'border border-slate-200 text-slate-400 dark:border-gray-700 dark:text-gray-500'"
+                                        :disabled="!isReviewActionable(row)"
+                                    >
+                                        <span x-text="isReviewActionable(row) ? 'Selesai Review' : 'Sudah Lengkap'"></span>
+                                    </button>
                                 </div>
                             </article>
                         </template>
@@ -581,6 +615,20 @@
                                 <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Review</p>
                                 <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-gray-300" x-text="selectedRow.note"></p>
                             </div>
+
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    @click="markReviewComplete(selectedRow)"
+                                    class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition"
+                                    :class="selectedRow && isReviewActionable(selectedRow)
+                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                        : 'border border-slate-200 text-slate-400 dark:border-gray-700 dark:text-gray-500'"
+                                    :disabled="!selectedRow || !isReviewActionable(selectedRow)"
+                                >
+                                    <span x-text="selectedRow && isReviewActionable(selectedRow) ? 'Selesai Review Mahasiswa Ini' : 'Mahasiswa Sudah Lengkap'"></span>
+                                </button>
+                            </div>
                         </div>
                     </template>
                 </div>
@@ -609,6 +657,8 @@
                     compositionCards: [],
                     activeWeightTotal: 0,
                     editableWeights: [],
+                    publishedCourses: {},
+                    isPublished: false,
                     publishState: {
                         title: 'Draft Nilai Semester',
                         helper: '',
@@ -629,6 +679,10 @@
                     ],
 
                     init() {
+                        this.publishedCourses = this.courses.reduce((acc, course) => {
+                            acc[course.id] = false;
+                            return acc;
+                        }, {});
                         this.$watch('search', () => this.syncDerivedState());
                         this.$watch('statusFilter', () => this.syncDerivedState());
                         this.syncDerivedState();
@@ -640,6 +694,10 @@
                     },
 
                     syncDerivedState() {
+                        this.courses.forEach((course) => {
+                            course.pending_reviews = this.rows.filter((row) => row.course_id === course.id && row.status !== 'Lengkap').length;
+                        });
+
                         this.activeCourse = this.courses.find((course) => course.id === this.selectedCourse) ?? this.courses[0];
                         const courseRows = this.rows.filter((row) => row.course_id === this.selectedCourse);
 
@@ -747,15 +805,27 @@
 
                         this.weightValidation = this.getWeightValidation();
                         this.canPublish = this.activeWeightTotal === 100 && this.coursePendingCount === 0 && readyCount > 0;
+                        if (this.publishedCourses[this.selectedCourse] && !this.canPublish) {
+                            this.publishedCourses[this.selectedCourse] = false;
+                        }
+                        this.isPublished = !!this.publishedCourses[this.selectedCourse];
                         this.publishState = {
-                            title: this.canPublish ? 'Siap Publish ke Mahasiswa' : 'Draft Nilai Semester',
-                            helper: this.canPublish
-                                ? 'Semua checklist utama terpenuhi. Draft bisa dipublish dari halaman ini.'
-                                : 'Masih ada item yang harus dibenahi sebelum nilai dikirim ke mahasiswa.',
-                            badge: this.canPublish ? 'Siap' : 'Draft',
-                            badgeClass: this.canPublish
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
-                                : 'bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-gray-200',
+                            title: this.isPublished
+                                ? 'Sudah Dipublish ke Mahasiswa'
+                                : this.canPublish
+                                    ? 'Siap Publish ke Mahasiswa'
+                                    : 'Draft Nilai Semester',
+                            helper: this.isPublished
+                                ? 'Halaman preview ini sudah menandai nilai sebagai published. Sinkronisasi backend masih belum diaktifkan.'
+                                : this.canPublish
+                                    ? 'Semua checklist utama terpenuhi. Draft bisa dipublish dari halaman ini.'
+                                    : 'Masih ada item yang harus dibenahi sebelum nilai dikirim ke mahasiswa.',
+                            badge: this.isPublished ? 'Published' : (this.canPublish ? 'Siap' : 'Draft'),
+                            badgeClass: this.isPublished
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'
+                                : this.canPublish
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+                                    : 'bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-gray-200',
                             checklist: [
                                 {
                                     label: 'Bobot aktif sudah 100%',
@@ -775,6 +845,13 @@
                                         ? `${readyCount} mahasiswa siap masuk draft publish.`
                                         : 'Belum ada mahasiswa lengkap untuk dipublish.',
                                     done: readyCount > 0,
+                                },
+                                {
+                                    label: 'Status publish frontend',
+                                    helper: this.isPublished
+                                        ? 'Halaman ini sudah menandai nilai sebagai published.'
+                                        : 'Belum dipublish ke preview mahasiswa.',
+                                    done: this.isPublished,
                                 },
                             ],
                         };
@@ -900,6 +977,55 @@
                         this.selectedRow = row;
                     },
 
+                    isReviewActionable(row) {
+                        return row?.status !== 'Lengkap';
+                    },
+
+                    completeRowData(row) {
+                        const target = this.rows.find((item) => this.getRowKey(item) === this.getRowKey(row));
+
+                        if (!target) {
+                            return null;
+                        }
+
+                        if (this.activeCourse.has_final_assignment && !Number.isFinite(target.final_assignment)) {
+                            target.final_assignment = Math.round(((target.pretest || 0) + (target.assignment || 0)) / 2);
+                        }
+
+                        target.status = 'Lengkap';
+                        target.last_update = 'Baru saja';
+                        target.note = this.activeCourse.has_final_assignment
+                            ? 'Review dosen selesai. Komponen nilai lengkap dan siap publish nilai akhir.'
+                            : 'Review dosen selesai. Nilai webinar lengkap dan siap dipublish.';
+
+                        return target;
+                    },
+
+                    async markReviewComplete(row) {
+                        if (!row || !this.isReviewActionable(row)) {
+                            return;
+                        }
+
+                        const updatedRow = this.completeRowData(row);
+                        this.syncDerivedState();
+
+                        if (updatedRow) {
+                            this.selectedStudentKey = this.getRowKey(updatedRow);
+                            this.selectedRow = updatedRow;
+                        }
+
+                        await this.notify(
+                            `Review ${row.student} ditandai selesai dan statusnya berubah ke Lengkap.`,
+                            'success',
+                            'Review Selesai',
+                            { toast: true }
+                        );
+
+                        if (this.canPublish && !this.isPublished) {
+                            await this.publishGrades({ skipConfirm: true, auto: true });
+                        }
+                    },
+
                     notify(message, icon = 'info', title = 'Informasi', options = {}) {
                         if (typeof window.showAppAlert === 'function') {
                             return window.showAppAlert(message, icon, title, options);
@@ -938,7 +1064,7 @@
                         );
                     },
 
-                    async publishGrades() {
+                    async publishGrades(options = {}) {
                         if (!this.canPublish) {
                             return this.notify(
                                 'Selesaikan dulu checklist publish: total bobot 100 persen, tidak ada pending review, dan minimal satu mahasiswa sudah lengkap.',
@@ -947,7 +1073,16 @@
                             );
                         }
 
-                        if (window.Swal && typeof window.Swal.fire === 'function') {
+                        if (this.isPublished) {
+                            return this.notify(
+                                `${this.activeCourse.name} sudah ditandai published di frontend preview.`,
+                                'info',
+                                'Sudah Published',
+                                { toast: true }
+                            );
+                        }
+
+                        if (!options.skipConfirm && window.Swal && typeof window.Swal.fire === 'function') {
                             const result = await window.Swal.fire({
                                 icon: 'question',
                                 title: 'Publish nilai sekarang?',
@@ -962,10 +1097,15 @@
                             }
                         }
 
+                        this.publishedCourses[this.selectedCourse] = true;
+                        this.syncDerivedState();
+
                         return this.notify(
-                            `Draft nilai ${this.activeCourse.name} ditandai siap publish. Sinkronisasi backend masih menunggu implementasi docs.`,
+                            options.auto
+                                ? `Semua review untuk ${this.activeCourse.name} sudah lengkap, jadi draft langsung ditandai published di frontend preview.`
+                                : `Draft nilai ${this.activeCourse.name} ditandai siap publish. Sinkronisasi backend masih menunggu implementasi docs.`,
                             'success',
-                            'Nilai Siap Publish'
+                            options.auto ? 'Auto Publish Selesai' : 'Nilai Siap Publish'
                         );
                     },
 
