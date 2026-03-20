@@ -122,7 +122,7 @@
 
                 <template x-if="activeConversation">
                     <div class="flex-1 min-h-0 flex flex-col">
-                        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
+                        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div class="flex items-center gap-3 min-w-0">
                                 <button type="button" @click="activeConversationId = null" class="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,9 +134,45 @@
                                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="`Terakhir aktif: ${formatDateTime(activeConversation.last_message_at)}`"></p>
                                 </div>
                             </div>
-                            <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold"
-                                  :class="badgeClass(activeConversation.status)"
-                                  x-text="badgeText(activeConversation.status)"></span>
+                            <div class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:min-w-[280px]">
+                                <div class="flex items-center justify-start sm:justify-end">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold"
+                                          :class="badgeClass(activeConversation.status)"
+                                          x-text="badgeText(activeConversation.status)"></span>
+                                </div>
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                                    <button
+                                        type="button"
+                                        @click="deleteMessagesByRole('student')"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Hapus Chat Mahasiswa
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="deleteMessagesByRole('lecturer')"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200 dark:hover:bg-orange-500/20"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Hapus Chat Dosen
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="deleteActiveConversation()"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                                        </svg>
+                                        Hapus Percakapan
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="admin-chat-messages" class="flex-1 overflow-y-auto px-4 py-4 bg-gray-50/60 dark:bg-gray-900/20 space-y-3">
@@ -376,8 +412,8 @@
                     const confirmed = await this.confirmDelete(message);
                     if (!confirmed) return;
 
-                    const previous = [...this.messages];
                     this.messages = this.messages.filter((m) => m.id !== message.id);
+                    this.syncActiveConversationMeta();
 
                     try {
                         const response = await fetch(`/admin/messages/${message.id}`, {
@@ -394,8 +430,77 @@
                         }
                         this.showToast('Pesan berhasil dihapus.', 'success');
                     } catch (error) {
-                        this.messages = previous;
-                        this.showToast('Backend hapus chat belum aktif. UI hanya simulasi.', 'info');
+                        this.showToast('Pesan dihapus pada UI. Backend moderasi chat belum aktif.', 'info');
+                    }
+                },
+
+                async deleteMessagesByRole(role) {
+                    if (!this.activeConversation) return;
+
+                    const targetMessages = this.messages.filter((message) => message.sender_role === role);
+                    if (targetMessages.length === 0) {
+                        this.showToast(`Tidak ada pesan ${this.roleLabel(role).toLowerCase()} untuk dihapus.`, 'info');
+                        return;
+                    }
+
+                    const confirmed = await this.confirmBulkDelete(role, targetMessages.length);
+                    if (!confirmed) return;
+
+                    this.messages = this.messages.filter((message) => message.sender_role !== role);
+                    this.syncActiveConversationMeta();
+
+                    try {
+                        const response = await fetch(`/admin/messages/conversation/${this.activeConversationId}/purge-role`, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                Accept: 'application/json',
+                            },
+                            body: JSON.stringify({ role }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Bulk delete endpoint not ready');
+                        }
+
+                        this.showToast(`Chat ${this.roleLabel(role).toLowerCase()} berhasil dihapus.`, 'success');
+                    } catch (error) {
+                        this.showToast(`Chat ${this.roleLabel(role).toLowerCase()} dihapus pada UI. Backend belum aktif.`, 'info');
+                    }
+                },
+
+                async deleteActiveConversation() {
+                    if (!this.activeConversation) return;
+
+                    const conversation = this.activeConversation;
+                    const confirmed = await this.confirmDeleteConversation(conversation);
+                    if (!confirmed) return;
+
+                    this.conversations = this.conversations.filter((item) => item.id !== conversation.id);
+                    this.messages = [];
+                    this.activeConversationId = null;
+                    this.applyFilters();
+                    this.recalculateStats();
+
+                    try {
+                        const response = await fetch(`/admin/messages/conversations/${conversation.id}`, {
+                            method: 'DELETE',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                Accept: 'application/json',
+                            },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Conversation delete endpoint not ready');
+                        }
+
+                        this.showToast('Percakapan berhasil dihapus.', 'success');
+                    } catch (error) {
+                        this.showToast('Percakapan dihapus pada UI. Backend moderasi chat belum aktif.', 'info');
                     }
                 },
 
@@ -496,6 +601,53 @@
                     return Promise.resolve(window.confirm('Hapus pesan ini?'));
                 },
 
+                confirmBulkDelete(role, total) {
+                    const label = this.roleLabel(role);
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        return window.Swal.fire({
+                            title: `Hapus Chat ${label}?`,
+                            html: `<span>${total} pesan dari <strong>${label}</strong> akan dihapus dari percakapan ini.</span>`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Hapus',
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true,
+                            focusCancel: true,
+                            buttonsStyling: false,
+                            customClass: {
+                                container: 'font-inter',
+                                actions: 'flex gap-2',
+                                confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-5 rounded-lg transition-colors',
+                                cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-5 rounded-lg transition-colors border border-gray-300'
+                            }
+                        }).then((r) => r.isConfirmed);
+                    }
+                    return Promise.resolve(window.confirm(`Hapus semua chat ${label.toLowerCase()}?`));
+                },
+
+                confirmDeleteConversation(conversation) {
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        return window.Swal.fire({
+                            title: 'Hapus Percakapan?',
+                            html: `<span>Percakapan <strong>${conversation.student_name}</strong> dengan <strong>${conversation.lecturer_name}</strong> akan dihapus.</span>`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Hapus',
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true,
+                            focusCancel: true,
+                            buttonsStyling: false,
+                            customClass: {
+                                container: 'font-inter',
+                                actions: 'flex gap-2',
+                                confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-5 rounded-lg transition-colors',
+                                cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-5 rounded-lg transition-colors border border-gray-300'
+                            }
+                        }).then((r) => r.isConfirmed);
+                    }
+                    return Promise.resolve(window.confirm('Hapus seluruh percakapan ini?'));
+                },
+
                 showToast(message, icon = 'info') {
                     if (window.Swal && typeof window.Swal.fire === 'function') {
                         window.Swal.fire({
@@ -529,6 +681,12 @@
                     return 'bg-white text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700';
                 },
 
+                roleLabel(role) {
+                    if (role === 'lecturer' || role === 'dosen') return 'Dosen';
+                    if (role === 'admin') return 'Admin';
+                    return 'Mahasiswa';
+                },
+
                 initials(name) {
                     return (name || 'U')
                         .split(' ')
@@ -558,6 +716,27 @@
                 scrollToBottom() {
                     const box = document.getElementById('admin-chat-messages');
                     if (box) box.scrollTop = box.scrollHeight;
+                },
+
+                syncActiveConversationMeta() {
+                    if (!this.activeConversationId) return;
+                    const idx = this.conversations.findIndex((item) => item.id === this.activeConversationId);
+                    if (idx === -1) return;
+
+                    const latestMessage = [...this.messages]
+                        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                        .at(-1);
+
+                    this.conversations.splice(idx, 1, {
+                        ...this.conversations[idx],
+                        last_message: latestMessage?.content || 'Belum ada pesan',
+                        last_message_at: latestMessage?.created_at || this.conversations[idx].last_message_at,
+                        message_count: this.messages.length,
+                    });
+
+                    this.applyFilters();
+                    this.recalculateStats();
+                    this.$nextTick(() => this.scrollToBottom());
                 },
             }));
         });
