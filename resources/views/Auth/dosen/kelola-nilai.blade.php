@@ -200,7 +200,7 @@
             </div>
         </section>
 
-        <section class="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_390px]">
+        <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_390px]">
             <div class="space-y-6">
                 <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
                     <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -387,7 +387,7 @@
             </aside>
         </section>
 
-        <section class="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_390px]">
+        <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_390px]">
             <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
                 <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                     <div>
