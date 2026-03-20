@@ -67,22 +67,26 @@
 @endphp
 
 <x-layouts.admin title="Bootcamp & Tiket" active="bootcamp">
-    <div class="space-y-6" id="bootcamp-ticket-page">
-        <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-gray-700/60 dark:bg-gray-800">
+    <div class="bootcamp-shell" id="bootcamp-ticket-page">
+        <section class="bootcamp-hero">
             <div class="relative px-6 py-7 sm:px-8">
-                <div class="absolute inset-y-0 right-0 hidden w-2/5 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.18),_transparent_58%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.16),_transparent_50%)] lg:block"></div>
                 <div class="relative flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                     <div class="max-w-3xl">
-                        <span class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white dark:bg-white dark:text-slate-900">
+                        <span class="bootcamp-badge-dark">
                             Ticket Ops Center
                         </span>
-                        <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Bootcamp dan tiket dikelola dari panel admin</h1>
+                        <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Pusat operasional bootcamp dan tiket</h1>
                         <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-gray-400 sm:text-base">
-                            Halaman ini jadi pusat operasional untuk batch, kuota, publish, mentor, dan alur penjualan. Dosen tetap fokus ke delivery dan kelas yang mereka ampu.
+                            Semua program, batch, publish, kuota, mentor, dan alur penjualan dipantau dari sini. Tampilan dosen dibuat seragam, tetapi panel admin tetap menampung data seluruh bootcamp dan tiket yang aktif.
                         </p>
+                        <div class="mt-5 flex flex-wrap gap-2 text-xs">
+                            <span class="rounded-full bg-slate-900 px-3 py-1.5 font-semibold text-white dark:bg-white dark:text-slate-900">All Program View</span>
+                            <span class="rounded-full bg-blue-50 px-3 py-1.5 font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">Admin Owned</span>
+                            <span class="rounded-full bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">Publish + Sales</span>
+                        </div>
                     </div>
 
-                    <div class="grid gap-2 sm:grid-cols-3 xl:w-[420px]">
+                    <div class="bootcamp-toolbar xl:w-[420px]">
                         <button id="bootcampCreateBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -108,10 +112,10 @@
 
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             @foreach ($bootcampStats as $item)
-                <article class="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-gray-700/60 dark:bg-gray-800">
+                <article class="bootcamp-kpi-card">
                     <div class="h-1.5 bg-gradient-to-r {{ $item['tone'] }}"></div>
                     <div class="p-5">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{{ $item['label'] }}</p>
+                        <p class="bootcamp-label">{{ $item['label'] }}</p>
                         <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ $item['value'] }}</p>
                         <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">{{ $item['helper'] }}</p>
                     </div>
@@ -120,11 +124,11 @@
         </section>
 
         <section class="grid gap-6 2xl:grid-cols-[1.45fr_0.95fr]">
-            <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/60 dark:bg-gray-800">
+            <div class="bootcamp-panel p-5">
                 <div class="flex flex-col gap-3 border-b border-slate-200 pb-4 dark:border-gray-700 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Program Aktif</p>
-                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Bootcamp dan tiket yang sedang dipantau</h2>
+                        <p class="bootcamp-label">Program Aktif</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Semua bootcamp dan tiket yang sedang dipantau</h2>
                     </div>
                     <div class="flex flex-wrap gap-2 text-xs">
                         <span class="rounded-full bg-slate-100 px-3 py-1.5 font-semibold text-slate-600 dark:bg-gray-900/60 dark:text-gray-300">Frontend Preview</span>
@@ -135,7 +139,7 @@
                 <div class="mt-5 grid gap-4" id="bootcampProgramList">
                     @foreach ($bootcampPrograms as $program)
                         <article
-                            class="rounded-[24px] border border-slate-200 p-5 transition hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600"
+                            class="bootcamp-program-card p-5"
                             data-bootcamp-card="true"
                             data-program-type="{{ $program['type'] }}"
                             data-title="{{ $program['title'] }}"
@@ -157,24 +161,28 @@
                                     <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{{ $program['title'] }}</h3>
                                     <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">{{ $program['schedule'] }}</p>
                                 </div>
-                                <div class="grid gap-2 text-right text-sm lg:min-w-[180px]">
+                                <div class="grid gap-2 text-left text-sm lg:min-w-[180px] lg:text-right">
                                     <p class="font-semibold text-slate-900 dark:text-white">{{ $program['price'] }}</p>
                                     <p class="text-slate-500 dark:text-gray-400">{{ $program['seats'] }}</p>
                                     <p class="text-xs font-medium text-amber-600 dark:text-amber-300">{{ $program['risk'] }}</p>
                                 </div>
                             </div>
 
-                            <div class="mt-4 grid gap-3 md:grid-cols-3">
-                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                            <div class="bootcamp-mini-grid mt-4">
+                                <div class="bootcamp-mini-stat">
+                                    <p class="bootcamp-label">Status</p>
                                     <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-status="true">{{ $program['status'] }}</p>
                                 </div>
-                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Mentor</p>
+                                <div class="bootcamp-mini-stat">
+                                    <p class="bootcamp-label">Mentor</p>
                                     <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ $program['mentor'] }}</p>
                                 </div>
-                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Operasi</p>
+                                <div class="bootcamp-mini-stat">
+                                    <p class="bootcamp-label">Seat</p>
+                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ $program['seats'] }}</p>
+                                </div>
+                                <div class="bootcamp-mini-stat">
+                                    <p class="bootcamp-label">Operasi</p>
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         <button type="button" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
                                         <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
@@ -187,10 +195,10 @@
             </div>
 
             <div class="space-y-6">
-                <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/60 dark:bg-gray-800">
+                <section class="bootcamp-panel p-5">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Ops Board</p>
+                            <p class="bootcamp-label">Ops Board</p>
                             <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Prioritas Operasional</h2>
                         </div>
                         <span class="rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">9 action items</span>
@@ -211,9 +219,9 @@
                     </div>
                 </section>
 
-                <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/60 dark:bg-gray-800">
+                <section class="bootcamp-panel p-5">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Funnel Tiket</p>
+                        <p class="bootcamp-label">Funnel Tiket</p>
                         <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Revenue Conversion</h2>
                     </div>
                     <div class="mt-4 space-y-3">
@@ -231,9 +239,9 @@
                     </div>
                 </section>
 
-                <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/60 dark:bg-gray-800">
+                <section class="bootcamp-panel p-5">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Mentor Roster</p>
+                        <p class="bootcamp-label">Mentor Roster</p>
                         <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Distribusi Pengampu</h2>
                     </div>
                     <div class="mt-4 space-y-3">
@@ -362,7 +370,7 @@
 
                 const renderCard = (program) => {
                     const article = document.createElement('article');
-                    article.className = 'rounded-[24px] border border-slate-200 p-5 transition hover:border-slate-300 dark:border-gray-700 dark:hover:border-gray-600';
+                    article.className = 'bootcamp-program-card p-5';
                     article.dataset.bootcampCard = 'true';
                     article.dataset.programType = program.type;
                     article.dataset.title = program.title;
@@ -385,23 +393,27 @@
                                 <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">${program.title}</h3>
                                 <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">${program.schedule}</p>
                             </div>
-                            <div class="grid gap-2 text-right text-sm lg:min-w-[180px]">
+                            <div class="grid gap-2 text-left text-sm lg:min-w-[180px] lg:text-right">
                                 <p class="font-semibold text-slate-900 dark:text-white">${program.price}</p>
                                 <p class="text-slate-500 dark:text-gray-400">${program.seats}</p>
                                 <p class="text-xs font-medium text-amber-600 dark:text-amber-300">${program.risk}</p>
                             </div>
                         </div>
-                        <div class="mt-4 grid gap-3 md:grid-cols-3">
-                            <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                        <div class="bootcamp-mini-grid mt-4">
+                            <div class="bootcamp-mini-stat">
+                                <p class="bootcamp-label">Status</p>
                                 <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-status="true">${program.status}</p>
                             </div>
-                            <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Mentor</p>
+                            <div class="bootcamp-mini-stat">
+                                <p class="bootcamp-label">Mentor</p>
                                 <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">${program.mentor}</p>
                             </div>
-                            <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Operasi</p>
+                            <div class="bootcamp-mini-stat">
+                                <p class="bootcamp-label">Seat</p>
+                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">${program.seats}</p>
+                            </div>
+                            <div class="bootcamp-mini-stat">
+                                <p class="bootcamp-label">Operasi</p>
                                 <div class="mt-2 flex flex-wrap gap-2">
                                     <button type="button" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
                                     <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
