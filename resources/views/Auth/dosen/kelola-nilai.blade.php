@@ -616,6 +616,79 @@
                                 <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-gray-300" x-text="selectedRow.note"></p>
                             </div>
 
+                            <div class="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-900/40">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Input Manual</p>
+                                        <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Masukkan nilai langsung</p>
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Ketik nilai 0 sampai 100, lalu simpan ke preview tabel.</p>
+                                    </div>
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-gray-700 dark:text-gray-300">
+                                        Frontend Draft
+                                    </span>
+                                </div>
+
+                                <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                                    <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80">
+                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pretest</span>
+                                        <input
+                                            x-model="scoreForm.pretest"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 dark:text-white"
+                                            placeholder="0 - 100"
+                                        >
+                                    </label>
+                                    <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80">
+                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Modul</span>
+                                        <input
+                                            x-model="scoreForm.assignment"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 dark:text-white"
+                                            placeholder="0 - 100"
+                                        >
+                                    </label>
+                                    <label
+                                        class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80"
+                                        :class="!activeCourse.has_final_assignment ? 'opacity-60' : ''"
+                                    >
+                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</span>
+                                        <input
+                                            x-model="scoreForm.final_assignment"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            :disabled="!activeCourse.has_final_assignment"
+                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 disabled:cursor-not-allowed disabled:text-slate-400 dark:text-white dark:disabled:text-gray-500"
+                                            :placeholder="activeCourse.has_final_assignment ? '0 - 100' : 'Tidak dipakai'"
+                                        >
+                                    </label>
+                                </div>
+
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        @click="saveManualScores()"
+                                        class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                                    >
+                                        Simpan Nilai Manual
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="resetManualScores()"
+                                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                                    >
+                                        Reset Input
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="mt-4 flex flex-wrap gap-2">
                                 <button
                                     type="button"
@@ -657,6 +730,11 @@
                     compositionCards: [],
                     activeWeightTotal: 0,
                     editableWeights: [],
+                    scoreForm: {
+                        pretest: '',
+                        assignment: '',
+                        final_assignment: '',
+                    },
                     publishedCourses: {},
                     isPublished: false,
                     publishState: {
@@ -860,6 +938,7 @@
                         const nextSelected = availableRows.find((row) => this.getRowKey(row) === this.selectedStudentKey) ?? availableRows[0] ?? null;
                         this.selectedStudentKey = nextSelected ? this.getRowKey(nextSelected) : null;
                         this.selectedRow = nextSelected;
+                        this.hydrateScoreForm(nextSelected);
                     },
 
                     getActiveWeightTotal() {
@@ -975,6 +1054,96 @@
                     selectStudent(row) {
                         this.selectedStudentKey = this.getRowKey(row);
                         this.selectedRow = row;
+                        this.hydrateScoreForm(row);
+                    },
+
+                    hydrateScoreForm(row) {
+                        this.scoreForm = {
+                            pretest: Number.isFinite(row?.pretest) ? String(row.pretest) : '',
+                            assignment: Number.isFinite(row?.assignment) ? String(row.assignment) : '',
+                            final_assignment: Number.isFinite(row?.final_assignment) ? String(row.final_assignment) : '',
+                        };
+                    },
+
+                    parseScoreInput(value) {
+                        if (value === '' || value === null || typeof value === 'undefined') {
+                            return null;
+                        }
+
+                        const parsed = Number.parseFloat(value);
+
+                        if (Number.isNaN(parsed)) {
+                            return null;
+                        }
+
+                        return Math.max(0, Math.min(100, parsed));
+                    },
+
+                    async saveManualScores() {
+                        if (!this.selectedRow) {
+                            return this.notify(
+                                'Pilih mahasiswa dulu sebelum memasukkan nilai manual.',
+                                'warning',
+                                'Mahasiswa Belum Dipilih'
+                            );
+                        }
+
+                        const target = this.rows.find((item) => this.getRowKey(item) === this.getRowKey(this.selectedRow));
+
+                        if (!target) {
+                            return this.notify(
+                                'Data mahasiswa tidak ditemukan di workspace nilai.',
+                                'error',
+                                'Simpan Gagal'
+                            );
+                        }
+
+                        const parsedPretest = this.parseScoreInput(this.scoreForm.pretest);
+                        const parsedAssignment = this.parseScoreInput(this.scoreForm.assignment);
+                        const parsedFinal = this.activeCourse.has_final_assignment
+                            ? this.parseScoreInput(this.scoreForm.final_assignment)
+                            : null;
+
+                        if (parsedPretest === null || parsedAssignment === null || (this.activeCourse.has_final_assignment && parsedFinal === null)) {
+                            return this.notify(
+                                'Lengkapi semua komponen nilai aktif dengan angka 0 sampai 100.',
+                                'warning',
+                                'Input Nilai Belum Lengkap'
+                            );
+                        }
+
+                        target.pretest = parsedPretest;
+                        target.assignment = parsedAssignment;
+                        target.final_assignment = this.activeCourse.has_final_assignment ? parsedFinal : null;
+                        target.last_update = 'Baru saja';
+                        target.note = this.activeCourse.has_final_assignment
+                            ? 'Nilai manual dosen sudah disimpan. Komponen nilai siap direview atau langsung dipublish jika lengkap.'
+                            : 'Nilai manual dosen sudah disimpan untuk webinar. Komponen aktif siap dipublish jika checklist terpenuhi.';
+                        target.status = 'Lengkap';
+
+                        this.syncDerivedState();
+
+                        const refreshed = this.rows.find((item) => this.getRowKey(item) === this.getRowKey(target));
+                        if (refreshed) {
+                            this.selectedStudentKey = this.getRowKey(refreshed);
+                            this.selectedRow = refreshed;
+                            this.hydrateScoreForm(refreshed);
+                        }
+
+                        await this.notify(
+                            `Nilai manual untuk ${target.student} berhasil disimpan.`,
+                            'success',
+                            'Nilai Tersimpan',
+                            { toast: true }
+                        );
+
+                        if (this.canPublish && !this.isPublished) {
+                            await this.publishGrades({ skipConfirm: true, auto: true });
+                        }
+                    },
+
+                    resetManualScores() {
+                        this.hydrateScoreForm(this.selectedRow);
                     },
 
                     isReviewActionable(row) {
