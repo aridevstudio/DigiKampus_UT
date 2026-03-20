@@ -1198,20 +1198,35 @@
     </form>
 
     
+    @php
+        $dosenSearchItems = $dosenList
+            ->map(function ($dosen) {
+                return [
+                    'id' => $dosen->id,
+                    'name' => $dosen->name,
+                    'role_label' => 'Dosen',
+                ];
+            })
+            ->values();
 
-    
+        $webinarSpeakerSearchItems = ($webinarSpeakerList ?? $dosenList)
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'role_label' => ($user->role ?? null) === 'admin' ? 'Admin' : 'Dosen',
+                ];
+            })
+            ->values();
+    @endphp
 
     @push('scripts')
     <script>
         // ============================================================
         // Dosen Search data
         // ============================================================
-        const dosenItems = @json($dosenList->map(fn($d) => ['id' => $d->id, 'name' => $d->name, 'role_label' => 'Dosen'])->values());
-        const webinarSpeakerItems = @json(($webinarSpeakerList ?? $dosenList)->map(fn($user) => [
-            'id' => $user->id,
-            'name' => $user->name,
-            'role_label' => $user->role === 'admin' ? 'Admin' : 'Dosen',
-        ])->values());
+        const dosenItems = @json($dosenSearchItems);
+        const webinarSpeakerItems = @json($webinarSpeakerSearchItems);
 
         // Alpine component for searchable dosen dropdown
         document.addEventListener('alpine:init', () => {
