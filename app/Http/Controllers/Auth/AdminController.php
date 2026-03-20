@@ -24,6 +24,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -1095,6 +1096,10 @@ class AdminController extends Controller
     public function storeKursus(Request $request)
     {
         $request->validate($this->courseValidationRules());
+        $playlistValidationError = $this->validateYoutubePlaylistForCourse($request);
+        if ($playlistValidationError) {
+            return redirect()->back()->withInput()->with('error', $playlistValidationError);
+        }
 
         // Handle status from button or toggle
         $status = $request->input('add_status_btn', $request->status);
@@ -1105,12 +1110,17 @@ class AdminController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
         }
 
-        Course::create($this->buildAdminCoursePayload($request, $status, $thumbnailPath));
+        $course = Course::create($this->buildAdminCoursePayload($request, $status, $thumbnailPath));
+        $playlistSummary = $this->syncPlaylistForCourse($course, $request->youtube_playlist, $request->kategori);
 
         $label = $request->kategori === 'webinar' ? 'Webinar' : 'Kursus';
+        $message = "{$label} berhasil ditambahkan!";
+        if ($playlistSummary) {
+            $message .= ' ' . $playlistSummary;
+        }
 
         return redirect()->route('admin.kursus')
-            ->with('success', "{$label} berhasil ditambahkan!");
+            ->with('success', $message);
     }
 
     /**
@@ -1118,7 +1128,7 @@ class AdminController extends Controller
      */
     public function getKursus($id)
     {
-        $kursus = \App\Models\Course::with(['dosen', 'jurusan'])->find($id);
+        $kursus = \App\Models\Course::with(['dosen', 'jurusan', 'youtubePlaylistVideos'])->find($id);
         
         if (!$kursus) {
             return response()->json(['error' => 'Kursus tidak ditemukan'], 404);
@@ -1150,6 +1160,15 @@ class AdminController extends Controller
             'approval_notes' => $kursus->approval_notes,
             'sertifikat' => (bool) $kursus->sertifikat,
             'akses_publik' => (bool) $kursus->akses_publik,
+            'youtube_videos_count' => $kursus->youtubePlaylistVideos->count(),
+            'youtube_videos' => $kursus->youtubePlaylistVideos->map(fn ($video) => [
+                'id' => $video->id,
+                'youtube_id' => $video->youtube_id,
+                'title' => $video->title,
+                'thumbnail_url' => $video->thumbnail_url,
+                'urutan' => $video->urutan,
+                'watch_url' => 'https://www.youtube.com/watch?v=' . $video->youtube_id,
+            ])->values(),
         ]);
     }
 
@@ -1166,6 +1185,10 @@ class AdminController extends Controller
         }
 
         $request->validate($this->courseValidationRules($id));
+        $playlistValidationError = $this->validateYoutubePlaylistForCourse($request);
+        if ($playlistValidationError) {
+            return redirect()->back()->withInput()->with('error', $playlistValidationError);
+        }
 
         // Handle thumbnail upload
         $thumbnailPath = null;
@@ -1178,11 +1201,16 @@ class AdminController extends Controller
         }
 
         $kursus->update($this->buildAdminCoursePayload($request, $request->status, $thumbnailPath, $kursus));
+        $playlistSummary = $this->syncPlaylistForCourse($kursus->fresh(), $request->youtube_playlist, $request->kategori);
 
         $label = $request->kategori === 'webinar' ? 'Webinar' : 'Kursus';
+        $message = "{$label} berhasil diperbarui!";
+        if ($playlistSummary) {
+            $message .= ' ' . $playlistSummary;
+        }
 
         return redirect()->route('admin.kursus')
-            ->with('success', "{$label} berhasil diperbarui!");
+            ->with('success', $message);
     }
 
     public function approveWebinar($id)
@@ -2505,6 +2533,10 @@ class AdminController extends Controller
             return response()->json(['error' => 'Kursus tidak ditemukan.'], 404);
         }
 
+        if ($course->kategori !== 'kursus') {
+            return response()->json(['error' => 'Sinkronisasi playlist hanya tersedia untuk kategori kursus.'], 422);
+        }
+
         $playlistUrl = $request->input('youtube_playlist', $course->youtube_playlist);
 
         if (empty($playlistUrl)) {
@@ -2527,7 +2559,7 @@ class AdminController extends Controller
                 ]);
             }
 
-            $sync = YoutubePlaylistService::syncToDatabase($course->id_course, $result['videos']);
+            $sync = YoutubePlaylistService::syncCourseContent($course->id_course, $result['videos']);
 
             // Update playlist URL on course if changed
             if ($course->youtube_playlist !== $playlistUrl) {
@@ -2537,7 +2569,7 @@ class AdminController extends Controller
             // Notify admin
             AdminNotification::notifyAllAdmins(
                 "YouTube Playlist disinkronkan",
-                "Kursus \"{$course->nama_course}\": {$sync['added']} video ditambah, {$sync['updated']} diperbarui, {$sync['removed']} dihapus.",
+                "Kursus \"{$course->nama_course}\": {$sync['database']['added']} video database ditambah, {$sync['materials']['total']} materi playlist aktif.",
                 'success',
                 'youtube',
                 route('admin.kursus')
@@ -2545,11 +2577,22 @@ class AdminController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Sinkronisasi selesai: {$sync['added']} ditambah, {$sync['updated']} diperbarui, {$sync['removed']} dihapus.",
+                'message' => $this->buildPlaylistSyncSummary($sync, $result['message'] ?? null),
                 'sync' => $sync,
                 'videos' => YoutubePlaylistVideo::where('id_course', $course->id_course)
                     ->orderBy('urutan')
-                    ->get(),
+                    ->get()
+                    ->map(function ($video) {
+                        return [
+                            'id' => $video->id,
+                            'youtube_id' => $video->youtube_id,
+                            'title' => $video->title,
+                            'thumbnail_url' => $video->thumbnail_url,
+                            'urutan' => $video->urutan,
+                            'watch_url' => 'https://www.youtube.com/watch?v=' . $video->youtube_id,
+                        ];
+                    })
+                    ->values(),
             ]);
         } catch (\RuntimeException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -2564,11 +2607,31 @@ class AdminController extends Controller
      */
     public function getYoutubeVideos($id)
     {
-        $videos = YoutubePlaylistVideo::where('id_course', $id)
+        $course = Course::with('youtubePlaylistVideos')->find($id);
+
+        if (!$course) {
+            return response()->json(['error' => 'Kursus tidak ditemukan.'], 404);
+        }
+
+        $videos = $course->youtubePlaylistVideos()
             ->orderBy('urutan')
             ->get();
 
-        return response()->json(['videos' => $videos]);
+        return response()->json([
+            'videos' => $videos->map(function ($video) {
+                return [
+                    'id' => $video->id,
+                    'youtube_id' => $video->youtube_id,
+                    'title' => $video->title,
+                    'thumbnail_url' => $video->thumbnail_url,
+                    'urutan' => $video->urutan,
+                    'watch_url' => 'https://www.youtube.com/watch?v=' . $video->youtube_id,
+                ];
+            })->values(),
+            'count' => $videos->count(),
+            'playlist_url' => $course->youtube_playlist,
+            'kategori' => $course->kategori,
+        ]);
     }
 
     // ==========================================
@@ -3704,6 +3767,75 @@ class AdminController extends Controller
         }
 
         return $data;
+    }
+
+    private function validateYoutubePlaylistForCourse(Request $request): ?string
+    {
+        if ($request->kategori !== 'kursus' || !$request->filled('youtube_playlist')) {
+            return null;
+        }
+
+        if (!YoutubePlaylistService::extractPlaylistId((string) $request->youtube_playlist)) {
+            return 'Playlist YouTube untuk kursus tidak valid. Gunakan URL playlist YouTube yang memiliki parameter list=...';
+        }
+
+        return null;
+    }
+
+    private function syncPlaylistForCourse(Course $course, ?string $playlistUrl, string $kategori): ?string
+    {
+        $playlistUrl = trim((string) $playlistUrl);
+
+        if ($kategori !== 'kursus' || $playlistUrl === '') {
+            $cleanup = YoutubePlaylistService::clearCourseContent($course->id_course);
+
+            if (($cleanup['videos_deleted'] ?? 0) > 0 || ($cleanup['materials_deleted'] ?? 0) > 0) {
+                return 'Sinkronisasi playlist lama dibersihkan karena kursus tidak lagi memakai playlist YouTube.';
+            }
+
+            return null;
+        }
+
+        try {
+            $result = YoutubePlaylistService::fetchPlaylistVideos(
+                YoutubePlaylistService::extractPlaylistId($playlistUrl)
+            );
+
+            if (empty($result['videos'])) {
+                return $result['message'] ?? 'Playlist valid tetapi tidak ada video publik yang berhasil diimpor.';
+            }
+
+            $sync = YoutubePlaylistService::syncCourseContent($course->id_course, $result['videos']);
+            if ($course->youtube_playlist !== $playlistUrl) {
+                $course->update(['youtube_playlist' => $playlistUrl]);
+            }
+
+            return $this->buildPlaylistSyncSummary($sync, $result['message'] ?? null);
+        } catch (\Throwable $e) {
+            Log::warning('Auto sync YouTube playlist gagal', [
+                'course' => $course->id_course,
+                'playlist' => $playlistUrl,
+                'error' => $e->getMessage(),
+            ]);
+
+            return 'Kursus tersimpan, tetapi sinkronisasi playlist gagal: ' . $e->getMessage();
+        }
+    }
+
+    private function buildPlaylistSyncSummary(array $sync, ?string $extraMessage = null): string
+    {
+        $summary = sprintf(
+            'Playlist tersinkron: %d video database, %d materi siap diputar, %d video lama dibersihkan.',
+            (int) ($sync['database']['total'] ?? 0),
+            (int) ($sync['materials']['total'] ?? 0),
+            (int) ($sync['materials']['removed'] ?? 0)
+        );
+
+        if ($extraMessage) {
+            $summary .= ' ' . $extraMessage;
+        }
+
+        return $summary;
     }
 
     private function resolveEnrollmentStatusForCourse(Course $course): string

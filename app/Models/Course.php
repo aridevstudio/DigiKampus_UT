@@ -112,6 +112,11 @@ class Course extends Model
         return $this->hasMany(CourseInstructorNote::class, 'id_course', 'id_course');
     }
 
+    public function youtubePlaylistVideos()
+    {
+        return $this->hasMany(YoutubePlaylistVideo::class, 'id_course', 'id_course')->orderBy('urutan');
+    }
+
     public function discussions()
     {
         return $this->hasMany(CourseDiscussion::class, 'id_course', 'id_course');

@@ -583,6 +583,15 @@
                                         <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </div>
                                 </div>
+
+                                <div>
+                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Playlist YouTube <span class="text-gray-300 dark:text-gray-600">(opsional, khusus kursus)</span></label>
+                                    <div class="relative">
+                                        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14m-6 4h4a2 2 0 002-2V8a2 2 0 00-2-2H9a2 2 0 00-2 2v8a2 2 0 002 2zM5 8v8" /></svg>
+                                        <input type="url" name="youtube_playlist" id="add_youtube_playlist" placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('_modal') === 'add' ? old('youtube_playlist') : '' }}" class="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <p class="text-[11px] text-gray-400 mt-1">Saat kursus disimpan, semua video playlist akan diimpor jadi materi video otomatis.</p>
+                                </div>
                                 
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                                     <div>
@@ -1117,6 +1126,22 @@
                                             <input type="url" name="youtube_playlist" id="edit_youtube_playlist" placeholder="https://zoom.us/j/... atau https://meet.google.com/..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         </div>
                                     </div>
+                                    <div id="editPlaylistPanel" class="rounded-xl border border-blue-100 dark:border-blue-800/40 bg-blue-50/40 dark:bg-blue-900/10 p-4 space-y-3 hidden">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <h5 class="font-medium text-gray-900 dark:text-white text-xs">Video Playlist Kursus</h5>
+                                                <p class="text-[10px] text-gray-500 dark:text-gray-400">Preview video yang sudah tersinkron ke database dan materi course.</p>
+                                            </div>
+                                            <button type="button" id="edit_sync_playlist_btn" onclick="syncPlaylistFromEditModal()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-blue-600">
+                                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m14.836 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-14.837-2M20 15h-4.999" /></svg>
+                                                Sinkronkan Playlist
+                                            </button>
+                                        </div>
+                                        <div id="editPlaylistStatus" class="rounded-lg border border-dashed border-blue-200 bg-white/80 px-3 py-2 text-xs text-blue-700 dark:border-blue-700 dark:bg-gray-800/60 dark:text-blue-300">
+                                            Belum ada data playlist yang dimuat.
+                                        </div>
+                                        <div id="editPlaylistList" class="grid gap-2 max-h-64 overflow-y-auto pr-1"></div>
+                                    </div>
                                     <div id="editApprovalNoteBox" class="hidden rounded-lg border border-rose-100 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-900/10 px-3 py-2 text-xs text-rose-700 dark:text-rose-300"></div>
                                 </div>
                                 
@@ -1269,7 +1294,7 @@
         const addFieldIds = [
             'add_nama_course', 'add_kode_course', 'add_deskripsi', 'add_persyaratan',
             'add_id_dosen', 'add_id_jurusan', 'add_level', 'add_estimasi_waktu', 'add_durasi_satuan',
-            'add_kategori', 'add_harga', 'add_diskon',
+            'add_kategori', 'add_youtube_playlist', 'add_harga', 'add_diskon',
             'add_status_input', 'add_tipe_input'
         ];
         const addCheckboxIds = [
@@ -1290,6 +1315,7 @@
             const isWebinar = kategori === 'webinar';
             const durationFields = document.getElementById('editDurationFields');
             const modulButton = document.getElementById('edit_modul_btn')?.closest('.border');
+            const playlistPanel = document.getElementById('editPlaylistPanel');
 
             if (durationFields) {
                 durationFields.classList.toggle('hidden', isWebinar);
@@ -1300,6 +1326,141 @@
 
             if (modulButton) {
                 modulButton.classList.toggle('hidden', isWebinar);
+            }
+
+            if (playlistPanel) {
+                playlistPanel.classList.toggle('hidden', kategori !== 'kursus');
+            }
+        }
+
+        function renderPlaylistStatus(message, tone = 'info') {
+            const box = document.getElementById('editPlaylistStatus');
+            if (!box) return;
+
+            const toneClasses = {
+                info: 'border-blue-200 bg-white/80 text-blue-700 dark:border-blue-700 dark:bg-gray-800/60 dark:text-blue-300',
+                success: 'border-green-200 bg-green-50/80 text-green-700 dark:border-green-700 dark:bg-green-900/20 dark:text-green-300',
+                warning: 'border-amber-200 bg-amber-50/80 text-amber-700 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300',
+                error: 'border-rose-200 bg-rose-50/80 text-rose-700 dark:border-rose-700 dark:bg-rose-900/20 dark:text-rose-300',
+            };
+
+            box.className = 'rounded-lg border px-3 py-2 text-xs ' + (toneClasses[tone] || toneClasses.info);
+            box.textContent = message;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function renderPlaylistVideos(videos = []) {
+            const list = document.getElementById('editPlaylistList');
+            if (!list) return;
+
+            if (!videos.length) {
+                list.innerHTML = '<div class="rounded-lg border border-dashed border-gray-200 px-3 py-4 text-center text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">Belum ada video playlist yang masuk ke database.</div>';
+                return;
+            }
+
+            list.innerHTML = videos.map((video, index) => `
+                <div class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/70">
+                    <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-[11px] font-semibold text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">${index + 1}</div>
+                    <img src="${escapeHtml(video.thumbnail_url || '')}" alt="${escapeHtml(video.title)}" class="h-10 w-16 rounded-lg object-cover bg-gray-100 dark:bg-gray-700" onerror="this.style.display='none'">
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">${escapeHtml(video.title)}</p>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">Video YouTube ID: ${escapeHtml(video.youtube_id)}</p>
+                    </div>
+                    <a href="${escapeHtml(video.watch_url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-lg border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20">
+                        Putar
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        async function loadPlaylistPreview(courseId, kategori) {
+            if (!courseId || kategori !== 'kursus') {
+                renderPlaylistStatus('Preview playlist hanya ditampilkan untuk kategori kursus.', 'warning');
+                renderPlaylistVideos([]);
+                return;
+            }
+
+            renderPlaylistStatus('Memuat playlist yang sudah tersinkron...', 'info');
+
+            try {
+                const response = await fetch('/admin/kursus/' + courseId + '/youtube-videos');
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Gagal memuat video playlist.');
+                }
+
+                if (!data.videos.length) {
+                    renderPlaylistStatus('Belum ada video playlist di database. Simpan kursus atau klik sinkronkan playlist.', 'warning');
+                    renderPlaylistVideos([]);
+                    return;
+                }
+
+                renderPlaylistStatus(data.count + ' video playlist sudah masuk ke database dan siap jadi materi video.', 'success');
+                renderPlaylistVideos(data.videos);
+            } catch (error) {
+                renderPlaylistStatus(error.message || 'Gagal memuat preview playlist.', 'error');
+                renderPlaylistVideos([]);
+            }
+        }
+
+        async function syncPlaylistFromEditModal() {
+            if (!currentEditCourseId) {
+                renderPlaylistStatus('Course belum dipilih.', 'error');
+                return;
+            }
+
+            const playlistUrl = document.getElementById('edit_youtube_playlist')?.value?.trim();
+            if (!playlistUrl) {
+                renderPlaylistStatus('Isi URL playlist YouTube dulu sebelum sinkronisasi.', 'warning');
+                return;
+            }
+
+            const syncButton = document.getElementById('edit_sync_playlist_btn');
+            if (syncButton) {
+                syncButton.disabled = true;
+                syncButton.classList.add('opacity-60', 'cursor-not-allowed');
+            }
+
+            renderPlaylistStatus('Sinkronisasi playlist sedang berjalan...', 'info');
+
+            try {
+                const response = await fetch('/admin/kursus/' + currentEditCourseId + '/sync-playlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || '',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        youtube_playlist: playlistUrl,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Sinkronisasi playlist gagal.');
+                }
+
+                renderPlaylistStatus(data.message || 'Playlist berhasil disinkronkan.', 'success');
+                renderPlaylistVideos(data.videos || []);
+            } catch (error) {
+                renderPlaylistStatus(error.message || 'Sinkronisasi playlist gagal.', 'error');
+                renderPlaylistVideos([]);
+            } finally {
+                if (syncButton) {
+                    syncButton.disabled = false;
+                    syncButton.classList.remove('opacity-60', 'cursor-not-allowed');
+                }
             }
         }
 
@@ -1603,6 +1764,7 @@
 
                         document.getElementById('editKursusModal').classList.remove('hidden');
                         document.body.style.overflow = 'hidden';
+                        loadPlaylistPreview(id, data.kategori || 'kursus');
                     })
                     .catch(error => {
                         console.error('Error:', error);
