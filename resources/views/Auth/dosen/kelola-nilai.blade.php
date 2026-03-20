@@ -243,6 +243,167 @@
                         </template>
                     </div>
                 </div>
+
+                <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
+                    <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Review Workspace</p>
+                            <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Daftar Mahasiswa dan Nilai Akhir</h2>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Pilih mahasiswa untuk melihat detail skornya. Baris pending akan terlihat lebih menonjol.</p>
+                        </div>
+
+                        <div class="grid gap-3 sm:grid-cols-2 xl:w-[520px]">
+                            <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                                <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Cari Mahasiswa</span>
+                                <input x-model="search" type="text" placeholder="Nama atau nomor induk" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 dark:text-white">
+                            </label>
+
+                            <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                                <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</span>
+                                <select x-model="statusFilter" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 focus:ring-0 dark:text-white">
+                                    <option value="all">Semua Status</option>
+                                    <option value="Perlu Review">Perlu Review</option>
+                                    <option value="Lengkap">Lengkap</option>
+                                    <option value="Revisi Tugas">Revisi Tugas</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white"><span x-text="filteredRows.length"></span> mahasiswa tampil di daftar review</p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Klik satu baris untuk fokus review tanpa pindah halaman.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                @click="exportGrades()"
+                                class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                            >
+                                Export Preview
+                            </button>
+                            <button
+                                type="button"
+                                @click="saveDraft()"
+                                class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                            >
+                                Simpan Draft
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 hidden overflow-x-auto xl:block">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-gray-700">
+                            <thead class="bg-slate-50 dark:bg-gray-900/40">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Mahasiswa</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Komponen</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Nilai Akhir</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+                                <template x-for="row in filteredRows" :key="getRowKey(row)">
+                                    <tr
+                                        class="cursor-pointer transition"
+                                        :class="selectedStudentKey === getRowKey(row) ? 'bg-blue-50/80 dark:bg-blue-500/10' : 'hover:bg-slate-50/80 dark:hover:bg-gray-900/30'"
+                                        @click="selectStudent(row)"
+                                    >
+                                        <td class="px-4 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
+                                                <div>
+                                                    <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
+                                                    <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nomor_induk} / ${row.cohort}`"></p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <div class="grid gap-2 text-xs text-slate-500 dark:text-gray-400 sm:grid-cols-3">
+                                                <div>
+                                                    <p class="uppercase tracking-[0.16em] text-slate-400">Pretest</p>
+                                                    <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.pretest)"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="uppercase tracking-[0.16em] text-slate-400">Tugas</p>
+                                                    <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.assignment)"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
+                                                    <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? row.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-4 text-center">
+                                            <p class="text-xl font-bold text-slate-900 dark:text-white" x-text="finalScore(row)"></p>
+                                            <p class="text-xs font-semibold" :class="gradeBand(row).tone" x-text="`Grade ${gradeBand(row).label}`"></p>
+                                        </td>
+                                        <td class="px-4 py-4 text-center">
+                                            <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
+                                        </td>
+                                        <td class="px-4 py-4 text-right">
+                                            <button
+                                                type="button"
+                                                @click.stop="selectStudent(row)"
+                                                class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                                            >
+                                                Buka Detail
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-5 grid gap-4 xl:hidden">
+                        <template x-for="row in filteredRows" :key="`${getRowKey(row)}-mobile`">
+                            <article
+                                class="rounded-3xl border p-4 transition"
+                                :class="selectedStudentKey === getRowKey(row) ? 'border-blue-300 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10' : 'border-slate-200 bg-slate-50 dark:border-gray-700 dark:bg-gray-900/40'"
+                                @click="selectStudent(row)"
+                            >
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
+                                        <div>
+                                            <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
+                                            <p class="text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nomor_induk} / ${row.cohort}`"></p>
+                                        </div>
+                                    </div>
+                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
+                                </div>
+
+                                <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                    <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
+                                        <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Pretest</p>
+                                        <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.pretest)"></p>
+                                    </div>
+                                    <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
+                                        <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Tugas</p>
+                                        <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.assignment)"></p>
+                                    </div>
+                                    <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
+                                        <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
+                                        <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? row.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
+                                    </div>
+                                    <div class="rounded-2xl bg-slate-900 px-3 py-3 text-white dark:bg-blue-500/20">
+                                        <p class="text-xs uppercase tracking-[0.16em] text-slate-300 dark:text-blue-200">Nilai Akhir</p>
+                                        <p class="mt-2 text-lg font-bold" x-text="finalScore(row)"></p>
+                                        <p class="text-xs font-semibold text-blue-200" x-text="`Grade ${gradeBand(row).label}`"></p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 rounded-2xl border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-500 dark:border-gray-700 dark:text-gray-400">
+                                    <span class="font-semibold text-slate-700 dark:text-gray-200">Catatan:</span>
+                                    <span x-text="row.note"></span>
+                                </div>
+                            </article>
+                        </template>
+                    </div>
+                </div>
             </div>
 
             <aside class="space-y-6 xl:sticky xl:top-24 xl:self-start">
@@ -384,172 +545,6 @@
                         </div>
                     </div>
                 </div>
-            </aside>
-        </section>
-
-        <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_390px]">
-            <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
-                <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Review Workspace</p>
-                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Daftar Mahasiswa dan Nilai Akhir</h2>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Pilih mahasiswa untuk melihat detail skornya. Baris pending akan terlihat lebih menonjol.</p>
-                    </div>
-
-                    <div class="grid gap-3 sm:grid-cols-2 xl:w-[520px]">
-                        <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
-                            <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Cari Mahasiswa</span>
-                            <input x-model="search" type="text" placeholder="Nama atau nomor induk" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 dark:text-white">
-                        </label>
-
-                        <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
-                            <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</span>
-                            <select x-model="statusFilter" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 focus:ring-0 dark:text-white">
-                                <option value="all">Semua Status</option>
-                                <option value="Perlu Review">Perlu Review</option>
-                                <option value="Lengkap">Lengkap</option>
-                                <option value="Revisi Tugas">Revisi Tugas</option>
-                            </select>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-900 dark:text-white"><span x-text="filteredRows.length"></span> mahasiswa tampil di daftar review</p>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Klik satu baris untuk fokus review tanpa pindah halaman.</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button
-                            type="button"
-                            @click="exportGrades()"
-                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
-                        >
-                            Export Preview
-                        </button>
-                        <button
-                            type="button"
-                            @click="saveDraft()"
-                            class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
-                        >
-                            Simpan Draft
-                        </button>
-                    </div>
-                </div>
-
-                <div class="mt-5 hidden overflow-x-auto xl:block">
-                    <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-gray-700">
-                        <thead class="bg-slate-50 dark:bg-gray-900/40">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Mahasiswa</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Komponen</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Nilai Akhir</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
-                            <template x-for="row in filteredRows" :key="getRowKey(row)">
-                                <tr
-                                    class="cursor-pointer transition"
-                                    :class="selectedStudentKey === getRowKey(row) ? 'bg-blue-50/80 dark:bg-blue-500/10' : 'hover:bg-slate-50/80 dark:hover:bg-gray-900/30'"
-                                    @click="selectStudent(row)"
-                                >
-                                    <td class="px-4 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
-                                            <div>
-                                                <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
-                                                <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nomor_induk} / ${row.cohort}`"></p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <div class="grid gap-2 text-xs text-slate-500 dark:text-gray-400 sm:grid-cols-3">
-                                            <div>
-                                                <p class="uppercase tracking-[0.16em] text-slate-400">Pretest</p>
-                                                <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.pretest)"></p>
-                                            </div>
-                                            <div>
-                                                <p class="uppercase tracking-[0.16em] text-slate-400">Tugas</p>
-                                                <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.assignment)"></p>
-                                            </div>
-                                            <div>
-                                                <p class="uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
-                                                <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? row.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-4 text-center">
-                                        <p class="text-xl font-bold text-slate-900 dark:text-white" x-text="finalScore(row)"></p>
-                                        <p class="text-xs font-semibold" :class="gradeBand(row).tone" x-text="`Grade ${gradeBand(row).label}`"></p>
-                                    </td>
-                                    <td class="px-4 py-4 text-center">
-                                        <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
-                                    </td>
-                                    <td class="px-4 py-4 text-right">
-                                        <button
-                                            type="button"
-                                            @click.stop="selectStudent(row)"
-                                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
-                                        >
-                                            Buka Detail
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="mt-5 grid gap-4 xl:hidden">
-                    <template x-for="row in filteredRows" :key="`${getRowKey(row)}-mobile`">
-                        <article
-                            class="rounded-3xl border p-4 transition"
-                            :class="selectedStudentKey === getRowKey(row) ? 'border-blue-300 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10' : 'border-slate-200 bg-slate-50 dark:border-gray-700 dark:bg-gray-900/40'"
-                            @click="selectStudent(row)"
-                        >
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
-                                    <div>
-                                        <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
-                                        <p class="text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nomor_induk} / ${row.cohort}`"></p>
-                                    </div>
-                                </div>
-                                <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
-                            </div>
-
-                            <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-                                <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
-                                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Pretest</p>
-                                    <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.pretest)"></p>
-                                </div>
-                                <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
-                                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Tugas</p>
-                                    <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.assignment)"></p>
-                                </div>
-                                <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
-                                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
-                                    <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? row.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
-                                </div>
-                                <div class="rounded-2xl bg-slate-900 px-3 py-3 text-white dark:bg-blue-500/20">
-                                    <p class="text-xs uppercase tracking-[0.16em] text-slate-300 dark:text-blue-200">Nilai Akhir</p>
-                                    <p class="mt-2 text-lg font-bold" x-text="finalScore(row)"></p>
-                                    <p class="text-xs font-semibold text-blue-200" x-text="`Grade ${gradeBand(row).label}`"></p>
-                                </div>
-                            </div>
-
-                            <div class="mt-4 rounded-2xl border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-500 dark:border-gray-700 dark:text-gray-400">
-                                <span class="font-semibold text-slate-700 dark:text-gray-200">Catatan:</span>
-                                <span x-text="row.note"></span>
-                            </div>
-                        </article>
-                    </template>
-                </div>
-            </div>
-
-            <aside class="space-y-6 xl:sticky xl:top-24 xl:self-start">
                 <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
                     <div class="flex items-start justify-between gap-3">
                         <div>

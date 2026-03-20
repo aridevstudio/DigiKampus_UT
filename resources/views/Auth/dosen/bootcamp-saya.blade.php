@@ -8,6 +8,8 @@
 
     $mentorBootcamps = [
         [
+            'id' => 'bootcamp-uiux',
+            'slug' => 'bootcamp-uiux-product-sprint',
             'title' => 'Bootcamp UI/UX Product Sprint',
             'type' => 'Bootcamp',
             'batch' => 'Batch April 2026',
@@ -22,6 +24,8 @@
             'accentBadge' => 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20',
         ],
         [
+            'id' => 'bootcamp-data-analyst',
+            'slug' => 'bootcamp-data-analyst-career-track',
             'title' => 'Bootcamp Data Analyst Career Track',
             'type' => 'Bootcamp',
             'batch' => 'Batch Mei 2026',
@@ -38,9 +42,9 @@
     ];
 
     $sessionQueue = [
-        ['time' => '09.00', 'session' => 'Critique wireframe cohort A', 'detail' => 'Perlu buka revisi batch 3', 'tag' => 'Live Review'],
-        ['time' => '11.30', 'session' => 'Office hour final assignment', 'detail' => '6 mahasiswa booked', 'tag' => 'Mentoring'],
-        ['time' => '19.00', 'session' => 'Data cleaning sprint', 'detail' => 'Module 4 + template notebook', 'tag' => 'Hands-on'],
+        ['id' => 'session-1', 'time' => '09.00', 'session' => 'Critique wireframe cohort A', 'detail' => 'Perlu buka revisi batch 3', 'tag' => 'Live Review'],
+        ['id' => 'session-2', 'time' => '11.30', 'session' => 'Office hour final assignment', 'detail' => '6 mahasiswa booked', 'tag' => 'Mentoring'],
+        ['id' => 'session-3', 'time' => '19.00', 'session' => 'Data cleaning sprint', 'detail' => 'Module 4 + template notebook', 'tag' => 'Hands-on'],
     ];
 
     $cohortRows = [
@@ -58,7 +62,20 @@
 @endphp
 
 <x-layouts.dosen title="Bootcamp Saya" active="bootcamp">
-    <div class="bootcamp-shell">
+    <div
+        class="bootcamp-shell"
+        x-data="bootcampMentorDesk({
+            bootcamps: @js($mentorBootcamps),
+            sessions: @js($sessionQueue),
+            routes: {
+                grades: @js(route('dosen.nilai')),
+                progress: @js(route('dosen.progres')),
+                chat: @js(route('dosen.pesan')),
+            },
+            initialScheduledSessions: @js($mentorStats[3]['value']),
+        })"
+        @keydown.escape.window="closeAllPanels()"
+    >
         <section class="bootcamp-hero">
             <div class="relative px-6 py-7 sm:px-8">
                 <div class="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -75,22 +92,26 @@
                             <span class="rounded-full bg-violet-50 px-3 py-1.5 font-semibold text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">Delivery Focus</span>
                             <span class="rounded-full bg-slate-100 px-3 py-1.5 font-semibold text-slate-600 dark:bg-gray-900/60 dark:text-gray-300">No Pricing / Refund</span>
                         </div>
+                        <p class="mt-4 text-xs font-medium text-slate-500 dark:text-gray-400">
+                            Batch aktif:
+                            <span class="font-semibold text-slate-700 dark:text-gray-200" x-text="activeBootcamp ? `${activeBootcamp.title} • ${activeBootcamp.batch}` : 'Belum dipilih'"></span>
+                        </p>
                     </div>
 
                     <div class="bootcamp-toolbar xl:w-[420px]">
-                        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+                        <button type="button" @click="openScheduleModal()" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             Jadwalkan Sesi
                         </button>
-                        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">
+                        <button type="button" @click="openReviewPage()" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             Review Tugas
                         </button>
-                        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-900">
+                        <button type="button" @click="openBroadcastModal()" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-900">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10m-4 4h4" />
                             </svg>
@@ -107,7 +128,11 @@
                     <div class="h-1.5 bg-gradient-to-r {{ $item['tone'] }}"></div>
                     <div class="p-5">
                         <p class="bootcamp-label">{{ $item['label'] }}</p>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ $item['value'] }}</p>
+                        @if ($item['label'] === 'Sesi Terjadwal')
+                            <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white" x-text="scheduledSessions"></p>
+                        @else
+                            <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ $item['value'] }}</p>
+                        @endif
                         <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">{{ $item['helper'] }}</p>
                     </div>
                 </article>
@@ -126,7 +151,11 @@
 
                 <div class="mt-5 grid gap-4">
                     @foreach ($mentorBootcamps as $bootcamp)
-                        <article class="bootcamp-program-card p-5">
+                        <article
+                            class="bootcamp-program-card p-5 transition"
+                            @click="selectBootcamp('{{ $bootcamp['id'] }}')"
+                            :class="activeBootcampId === '{{ $bootcamp['id'] }}' ? 'ring-2 ring-sky-200 border-sky-200 dark:ring-sky-500/30 dark:border-sky-500/20' : ''"
+                        >
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div class="min-w-0">
                                     <div class="flex flex-wrap items-center gap-2">
@@ -163,8 +192,8 @@
                                 <div class="bootcamp-mini-stat">
                                     <p class="bootcamp-label">Aksi</p>
                                     <div class="mt-2 flex flex-wrap gap-2">
-                                        <button type="button" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Buka Delivery</button>
-                                        <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Nilai & Review</button>
+                                        <button type="button" @click.stop="openDelivery('{{ $bootcamp['id'] }}')" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Buka Delivery</button>
+                                        <button type="button" @click.stop="openReviewPage('{{ $bootcamp['id'] }}')" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Nilai & Review</button>
                                     </div>
                                 </div>
                             </div>
@@ -174,7 +203,7 @@
             </div>
 
             <div class="space-y-6">
-                <section class="bootcamp-panel p-5">
+                <section class="bootcamp-panel p-5" x-ref="deliveryQueue">
                     <div class="flex flex-col gap-3 border-b border-slate-200 pb-4 dark:border-gray-700 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <p class="bootcamp-label">Queue Hari Ini</p>
@@ -184,29 +213,34 @@
                     </div>
 
                     <div class="mt-5 grid gap-3">
-                        @foreach ($sessionQueue as $session)
+                        <template x-for="session in sessions" :key="session.id">
                             <article class="rounded-[24px] border border-slate-200 px-4 py-4 dark:border-gray-700">
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div class="flex items-start gap-4">
                                         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-sm font-bold text-white dark:bg-white dark:text-slate-900">
-                                            {{ $session['time'] }}
+                                            <span x-text="session.time"></span>
                                         </div>
                                         <div>
-                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $session['session'] }}</p>
-                                            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">{{ $session['detail'] }}</p>
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-white" x-text="session.session"></p>
+                                            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" x-text="session.detail"></p>
                                         </div>
                                     </div>
-                                    <span class="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">{{ $session['tag'] }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300" x-text="session.tag"></span>
+                                        <button type="button" @click="openSessionChat(session)" class="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/50">
+                                            Buka Chat
+                                        </button>
+                                    </div>
                                 </div>
                             </article>
-                        @endforeach
+                        </template>
                     </div>
                 </section>
             </div>
         </section>
 
         <section class="grid gap-6 2xl:grid-cols-[1.2fr_0.8fr]">
-            <div class="bootcamp-panel p-5">
+            <div class="bootcamp-panel p-5" x-ref="cohortMonitor">
                 <div class="flex flex-col gap-3 border-b border-slate-200 pb-4 dark:border-gray-700 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p class="bootcamp-label">Cohort Monitor</p>
@@ -289,5 +323,276 @@
                 </section>
             </div>
         </section>
+
+        <div x-cloak x-show="showScheduleModal" x-transition.opacity class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 py-8">
+            <div @click.outside="showScheduleModal = false" class="w-full max-w-2xl rounded-[28px] bg-white p-6 shadow-2xl dark:bg-slate-900">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="bootcamp-label">Schedule Session</p>
+                        <h3 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Jadwalkan sesi delivery baru</h3>
+                        <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">Aksi ini frontend dulu. Session baru langsung masuk ke queue hari ini sebagai preview kerja dosen.</p>
+                    </div>
+                    <button type="button" @click="showScheduleModal = false" class="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Tutup</button>
+                </div>
+
+                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                    <label class="grid gap-2">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Bootcamp</span>
+                        <select x-model="draftSchedule.bootcampId" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                            <template x-for="bootcamp in bootcamps" :key="bootcamp.id">
+                                <option :value="bootcamp.id" x-text="`${bootcamp.title} • ${bootcamp.batch}`"></option>
+                            </template>
+                        </select>
+                    </label>
+                    <label class="grid gap-2">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Jenis Sesi</span>
+                        <select x-model="draftSchedule.type" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                            <option value="Live Review">Live Review</option>
+                            <option value="Mentoring">Mentoring</option>
+                            <option value="Hands-on">Hands-on</option>
+                            <option value="Office Hour">Office Hour</option>
+                        </select>
+                    </label>
+                    <label class="grid gap-2">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Tanggal</span>
+                        <input x-model="draftSchedule.date" type="date" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                    </label>
+                    <label class="grid gap-2">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Jam</span>
+                        <input x-model="draftSchedule.time" type="time" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                    </label>
+                </div>
+
+                <div class="mt-6 flex flex-wrap justify-end gap-3">
+                    <button type="button" @click="showScheduleModal = false" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Batal</button>
+                    <button type="button" @click="submitSchedule()" class="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">Simpan Jadwal</button>
+                </div>
+            </div>
+        </div>
+
+        <div x-cloak x-show="showBroadcastModal" x-transition.opacity class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 py-8">
+            <div @click.outside="showBroadcastModal = false" class="w-full max-w-2xl rounded-[28px] bg-white p-6 shadow-2xl dark:bg-slate-900">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="bootcamp-label">Broadcast Cohort</p>
+                        <h3 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Kirim pengumuman ke cohort aktif</h3>
+                        <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">Dipakai untuk reminder sesi, revisi tugas, atau info office hour tanpa pindah halaman.</p>
+                    </div>
+                    <button type="button" @click="showBroadcastModal = false" class="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Tutup</button>
+                </div>
+
+                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                    <label class="grid gap-2">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Bootcamp</span>
+                        <select x-model="draftBroadcast.bootcampId" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                            <template x-for="bootcamp in bootcamps" :key="`${bootcamp.id}-broadcast`">
+                                <option :value="bootcamp.id" x-text="`${bootcamp.title} • ${bootcamp.batch}`"></option>
+                            </template>
+                        </select>
+                    </label>
+                    <label class="grid gap-2">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Audiens</span>
+                        <select x-model="draftBroadcast.audience" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                            <option value="Semua peserta">Semua peserta</option>
+                            <option value="Peserta tertinggal">Peserta tertinggal</option>
+                            <option value="Peserta tugas akhir">Peserta tugas akhir</option>
+                            <option value="Peserta hadir hari ini">Peserta hadir hari ini</option>
+                        </select>
+                    </label>
+                </div>
+
+                <label class="mt-4 grid gap-2">
+                    <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Pesan</span>
+                    <textarea x-model="draftBroadcast.message" rows="5" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200" placeholder="Contoh: Reminder live review malam ini jam 19.00, siapkan file revisi terbaru."></textarea>
+                </label>
+
+                <div class="mt-6 flex flex-wrap justify-end gap-3">
+                    <button type="button" @click="showBroadcastModal = false" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Batal</button>
+                    <button type="button" @click="submitBroadcast()" class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-900">Kirim Broadcast</button>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script>
+        function bootcampMentorDesk(config) {
+            return {
+                bootcamps: Array.isArray(config.bootcamps) ? config.bootcamps : [],
+                sessions: Array.isArray(config.sessions) ? config.sessions : [],
+                routes: config.routes || {},
+                scheduledSessions: Number(config.initialScheduledSessions || 0),
+                activeBootcampId: (config.bootcamps && config.bootcamps[0] ? config.bootcamps[0].id : null),
+                showScheduleModal: false,
+                showBroadcastModal: false,
+                draftSchedule: {
+                    bootcampId: (config.bootcamps && config.bootcamps[0] ? config.bootcamps[0].id : ''),
+                    type: 'Live Review',
+                    date: '',
+                    time: '09:00',
+                },
+                draftBroadcast: {
+                    bootcampId: (config.bootcamps && config.bootcamps[0] ? config.bootcamps[0].id : ''),
+                    audience: 'Semua peserta',
+                    message: '',
+                },
+
+                get activeBootcamp() {
+                    return this.bootcamps.find((item) => item.id === this.activeBootcampId) || this.bootcamps[0] || null;
+                },
+
+                selectBootcamp(id) {
+                    this.activeBootcampId = id;
+                },
+
+                closeAllPanels() {
+                    this.showScheduleModal = false;
+                    this.showBroadcastModal = false;
+                },
+
+                openScheduleModal(id = null) {
+                    const targetId = id || this.activeBootcampId || (this.bootcamps[0] ? this.bootcamps[0].id : '');
+                    this.selectBootcamp(targetId);
+                    this.draftSchedule = {
+                        bootcampId: targetId,
+                        type: 'Live Review',
+                        date: '',
+                        time: '09:00',
+                    };
+                    this.showScheduleModal = true;
+                },
+
+                submitSchedule() {
+                    const bootcamp = this.bootcamps.find((item) => item.id === this.draftSchedule.bootcampId);
+
+                    if (!bootcamp || !this.draftSchedule.date || !this.draftSchedule.time) {
+                        this.notify('Lengkapi bootcamp, tanggal, dan jam sesi terlebih dulu.', 'warning', 'Form Belum Lengkap');
+                        return;
+                    }
+
+                    const formattedTime = this.draftSchedule.time.replace(':', '.');
+
+                    this.sessions.unshift({
+                        id: `session-${Date.now()}`,
+                        time: formattedTime,
+                        session: `${this.draftSchedule.type} ${bootcamp.title}`,
+                        detail: `${bootcamp.batch} • ${this.formatDate(this.draftSchedule.date)}`,
+                        tag: 'Terjadwal',
+                    });
+
+                    this.scheduledSessions += 1;
+                    this.activeBootcampId = bootcamp.id;
+                    this.showScheduleModal = false;
+
+                    this.notify(`Sesi baru untuk ${bootcamp.title} masuk ke queue delivery.`, 'success', 'Jadwal Disimpan');
+
+                    this.$nextTick(() => {
+                        this.$refs.deliveryQueue?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                },
+
+                openBroadcastModal(id = null) {
+                    const targetId = id || this.activeBootcampId || (this.bootcamps[0] ? this.bootcamps[0].id : '');
+                    this.selectBootcamp(targetId);
+                    this.draftBroadcast = {
+                        bootcampId: targetId,
+                        audience: 'Semua peserta',
+                        message: '',
+                    };
+                    this.showBroadcastModal = true;
+                },
+
+                submitBroadcast() {
+                    const bootcamp = this.bootcamps.find((item) => item.id === this.draftBroadcast.bootcampId);
+
+                    if (!bootcamp || !this.draftBroadcast.message.trim()) {
+                        this.notify('Isi pesan broadcast sebelum dikirim.', 'warning', 'Pesan Masih Kosong');
+                        return;
+                    }
+
+                    this.activeBootcampId = bootcamp.id;
+                    this.showBroadcastModal = false;
+
+                    this.notify(
+                        `Broadcast untuk ${this.draftBroadcast.audience.toLowerCase()} di ${bootcamp.batch} siap dikirim.`,
+                        'success',
+                        'Broadcast Dibuat'
+                    );
+                },
+
+                openDelivery(id) {
+                    const bootcamp = this.bootcamps.find((item) => item.id === id);
+
+                    if (!bootcamp) {
+                        return;
+                    }
+
+                    this.activeBootcampId = bootcamp.id;
+                    this.notify(`Mode delivery aktif untuk ${bootcamp.title}. Fokus dipindah ke monitor cohort.`, 'info', 'Delivery Dibuka');
+
+                    this.$nextTick(() => {
+                        this.$refs.cohortMonitor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                },
+
+                openReviewPage(id = null) {
+                    const bootcamp = this.bootcamps.find((item) => item.id === (id || this.activeBootcampId)) || this.bootcamps[0];
+
+                    if (!bootcamp || !this.routes.grades) {
+                        this.notify('Halaman review nilai belum tersedia.', 'error', 'Aksi Gagal');
+                        return;
+                    }
+
+                    const url = new URL(this.routes.grades, window.location.origin);
+                    url.searchParams.set('source', 'bootcamp');
+                    url.searchParams.set('batch', bootcamp.slug || bootcamp.id);
+                    window.location.href = url.toString();
+                },
+
+                openSessionChat(session) {
+                    if (!this.routes.chat) {
+                        this.notify(`Chat untuk sesi ${session.session} belum tersedia.`, 'info', 'Info');
+                        return;
+                    }
+
+                    const url = new URL(this.routes.chat, window.location.origin);
+                    url.searchParams.set('source', 'bootcamp');
+                    url.searchParams.set('session', session.id);
+                    window.location.href = url.toString();
+                },
+
+                formatDate(rawDate) {
+                    const date = new Date(rawDate);
+
+                    if (Number.isNaN(date.getTime())) {
+                        return rawDate;
+                    }
+
+                    return date.toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                    });
+                },
+
+                notify(message, icon = 'info', title = 'Informasi', options = {}) {
+                    if (typeof window.showAppAlert === 'function') {
+                        return window.showAppAlert(message, icon, title, options);
+                    }
+
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        return window.Swal.fire({
+                            title,
+                            text: message,
+                            icon,
+                            confirmButtonText: 'Oke',
+                            ...options,
+                        });
+                    }
+
+                    window.alert(message);
+                    return Promise.resolve();
+                },
+            };
+        }
+    </script>
 </x-layouts.dosen>

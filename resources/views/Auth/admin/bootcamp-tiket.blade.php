@@ -8,6 +8,7 @@
 
     $bootcampPrograms = [
         [
+            'id' => 'bootcamp-uiux',
             'title' => 'Bootcamp UI/UX Product Sprint',
             'type' => 'Bootcamp',
             'batch' => 'Batch April 2026',
@@ -20,6 +21,7 @@
             'accent' => 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20',
         ],
         [
+            'id' => 'bootcamp-data-analyst',
             'title' => 'Bootcamp Data Analyst Career Track',
             'type' => 'Bootcamp',
             'batch' => 'Batch Mei 2026',
@@ -32,6 +34,7 @@
             'accent' => 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:border-violet-500/20',
         ],
         [
+            'id' => 'tiket-edutech-summit',
             'title' => 'Tiket EduTech Summit 2026',
             'type' => 'Tiket Event',
             'batch' => 'Event 24 Mei 2026',
@@ -141,6 +144,7 @@
                         <article
                             class="bootcamp-program-card p-5"
                             data-bootcamp-card="true"
+                            data-program-id="{{ $program['id'] }}"
                             data-program-type="{{ $program['type'] }}"
                             data-title="{{ $program['title'] }}"
                             data-batch="{{ $program['batch'] }}"
@@ -163,8 +167,8 @@
                                 </div>
                                 <div class="grid gap-2 text-left text-sm lg:min-w-[180px] lg:text-right">
                                     <p class="font-semibold text-slate-900 dark:text-white">{{ $program['price'] }}</p>
-                                    <p class="text-slate-500 dark:text-gray-400">{{ $program['seats'] }}</p>
-                                    <p class="text-xs font-medium text-amber-600 dark:text-amber-300">{{ $program['risk'] }}</p>
+                                    <p class="text-slate-500 dark:text-gray-400" data-card-seats="true">{{ $program['seats'] }}</p>
+                                    <p class="text-xs font-medium text-amber-600 dark:text-amber-300" data-card-risk="true">{{ $program['risk'] }}</p>
                                 </div>
                             </div>
 
@@ -175,17 +179,17 @@
                                 </div>
                                 <div class="bootcamp-mini-stat">
                                     <p class="bootcamp-label">Mentor</p>
-                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ $program['mentor'] }}</p>
+                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-mentor="true">{{ $program['mentor'] }}</p>
                                 </div>
                                 <div class="bootcamp-mini-stat">
                                     <p class="bootcamp-label">Seat</p>
-                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ $program['seats'] }}</p>
+                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-seats="true">{{ $program['seats'] }}</p>
                                 </div>
                                 <div class="bootcamp-mini-stat">
                                     <p class="bootcamp-label">Operasi</p>
                                     <div class="mt-2 flex flex-wrap gap-2">
-                                        <button type="button" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
-                                        <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
+                                        <button type="button" data-action="manage-batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
+                                        <button type="button" data-action="assign-mentor" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
                                     </div>
                                 </div>
                             </div>
@@ -332,6 +336,110 @@
         </div>
     </div>
 
+    <div id="bootcampBatchModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"></div>
+        <div class="relative flex min-h-full items-center justify-center px-4 py-6">
+            <div class="w-full max-w-2xl overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
+                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-gray-700">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Batch Ops</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Kelola Batch</h2>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Ubah status batch dan catatan risiko langsung dari halaman admin.</p>
+                    </div>
+                    <button id="bootcampBatchModalCloseBtn" type="button" class="rounded-2xl border border-slate-200 p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="bootcampBatchForm" class="space-y-5 px-6 py-6">
+                    <div class="rounded-2xl bg-slate-50 px-4 py-4 dark:bg-gray-900/50">
+                        <p class="text-sm font-semibold text-slate-900 dark:text-white" id="batchModalProgramTitle">Program</p>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" id="batchModalProgramMeta">Batch</p>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="block">
+                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status Batch</span>
+                            <select name="status" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                                <option value="Draft">Draft</option>
+                                <option value="Internal Review">Internal Review</option>
+                                <option value="Open Registration">Open Registration</option>
+                                <option value="Published">Published</option>
+                                <option value="Registration Closed">Registration Closed</option>
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Seat Batch</span>
+                            <input name="seats" type="text" placeholder="72 / 90 kursi" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                        </label>
+                    </div>
+
+                    <label class="block">
+                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Risiko</span>
+                        <textarea name="risk" rows="3" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white"></textarea>
+                    </label>
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-gray-700 sm:flex-row sm:justify-end">
+                        <button id="bootcampBatchModalCancelBtn" type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/60">
+                            Batal
+                        </button>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100">
+                            Simpan Update Batch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="bootcampMentorModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"></div>
+        <div class="relative flex min-h-full items-center justify-center px-4 py-6">
+            <div class="w-full max-w-xl overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
+                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-gray-700">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Mentor Ops</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Assign Mentor</h2>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Update jumlah mentor atau assign speaker untuk program yang dipilih.</p>
+                    </div>
+                    <button id="bootcampMentorModalCloseBtn" type="button" class="rounded-2xl border border-slate-200 p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="bootcampMentorForm" class="space-y-5 px-6 py-6">
+                    <div class="rounded-2xl bg-slate-50 px-4 py-4 dark:bg-gray-900/50">
+                        <p class="text-sm font-semibold text-slate-900 dark:text-white" id="mentorModalProgramTitle">Program</p>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" id="mentorModalProgramMeta">Batch</p>
+                    </div>
+
+                    <label class="block">
+                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Label Mentor</span>
+                        <input name="mentor" type="text" placeholder="4 mentor" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
+                    </label>
+
+                    <label class="block">
+                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Penugasan</span>
+                        <textarea name="risk" rows="3" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white"></textarea>
+                    </label>
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-gray-700 sm:flex-row sm:justify-end">
+                        <button id="bootcampMentorModalCancelBtn" type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/60">
+                            Batal
+                        </button>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+                            Simpan Mentor
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', () => {
@@ -344,8 +452,20 @@
                 const createForm = document.getElementById('bootcampCreateForm');
                 const programList = document.getElementById('bootcampProgramList');
                 const pageRoot = document.getElementById('bootcamp-ticket-page');
+                const batchModal = document.getElementById('bootcampBatchModal');
+                const batchModalCloseBtn = document.getElementById('bootcampBatchModalCloseBtn');
+                const batchModalCancelBtn = document.getElementById('bootcampBatchModalCancelBtn');
+                const batchForm = document.getElementById('bootcampBatchForm');
+                const batchModalProgramTitle = document.getElementById('batchModalProgramTitle');
+                const batchModalProgramMeta = document.getElementById('batchModalProgramMeta');
+                const mentorModal = document.getElementById('bootcampMentorModal');
+                const mentorModalCloseBtn = document.getElementById('bootcampMentorModalCloseBtn');
+                const mentorModalCancelBtn = document.getElementById('bootcampMentorModalCancelBtn');
+                const mentorForm = document.getElementById('bootcampMentorForm');
+                const mentorModalProgramTitle = document.getElementById('mentorModalProgramTitle');
+                const mentorModalProgramMeta = document.getElementById('mentorModalProgramMeta');
 
-                if (!createBtn || !salesToggleBtn || !exportBtn || !modal || !createForm || !programList || !pageRoot) {
+                if (!createBtn || !salesToggleBtn || !exportBtn || !modal || !createForm || !programList || !pageRoot || !batchModal || !batchForm || !mentorModal || !mentorForm) {
                     return;
                 }
 
@@ -355,23 +475,62 @@
                 };
 
                 let ticketSalesOpen = false;
+                let activeBatchCard = null;
+                let activeMentorCard = null;
 
                 const getCards = () => Array.from(programList.querySelectorAll('[data-bootcamp-card="true"]'));
 
-                const openModal = () => {
-                    modal.classList.remove('hidden');
+                const openModal = (targetModal) => {
+                    targetModal.classList.remove('hidden');
                     document.body.classList.add('overflow-hidden');
                 };
 
-                const closeModal = () => {
-                    modal.classList.add('hidden');
+                const closeModal = (targetModal) => {
+                    targetModal.classList.add('hidden');
                     document.body.classList.remove('overflow-hidden');
+                };
+
+                const getCardData = (card) => ({
+                    id: card.dataset.programId || '',
+                    type: card.dataset.programType || '',
+                    title: card.dataset.title || '',
+                    batch: card.dataset.batch || '',
+                    status: card.dataset.status || '',
+                    mentor: card.dataset.mentor || '',
+                    seats: card.dataset.seats || '',
+                    price: card.dataset.price || '',
+                    schedule: card.dataset.schedule || '',
+                    risk: card.dataset.risk || '',
+                    accent: card.dataset.accent || '',
+                });
+
+                const updateCard = (card, nextData) => {
+                    if (!card) return;
+
+                    const data = { ...getCardData(card), ...nextData };
+                    card.dataset.programId = data.id;
+                    card.dataset.programType = data.type;
+                    card.dataset.title = data.title;
+                    card.dataset.batch = data.batch;
+                    card.dataset.status = data.status;
+                    card.dataset.mentor = data.mentor;
+                    card.dataset.seats = data.seats;
+                    card.dataset.price = data.price;
+                    card.dataset.schedule = data.schedule;
+                    card.dataset.risk = data.risk;
+                    card.dataset.accent = data.accent;
+
+                    card.querySelectorAll('[data-card-status="true"]').forEach((node) => node.textContent = data.status);
+                    card.querySelectorAll('[data-card-mentor="true"]').forEach((node) => node.textContent = data.mentor);
+                    card.querySelectorAll('[data-card-seats="true"]').forEach((node) => node.textContent = data.seats);
+                    card.querySelectorAll('[data-card-risk="true"]').forEach((node) => node.textContent = data.risk);
                 };
 
                 const renderCard = (program) => {
                     const article = document.createElement('article');
                     article.className = 'bootcamp-program-card p-5';
                     article.dataset.bootcampCard = 'true';
+                    article.dataset.programId = program.id;
                     article.dataset.programType = program.type;
                     article.dataset.title = program.title;
                     article.dataset.batch = program.batch;
@@ -395,8 +554,8 @@
                             </div>
                             <div class="grid gap-2 text-left text-sm lg:min-w-[180px] lg:text-right">
                                 <p class="font-semibold text-slate-900 dark:text-white">${program.price}</p>
-                                <p class="text-slate-500 dark:text-gray-400">${program.seats}</p>
-                                <p class="text-xs font-medium text-amber-600 dark:text-amber-300">${program.risk}</p>
+                                <p class="text-slate-500 dark:text-gray-400" data-card-seats="true">${program.seats}</p>
+                                <p class="text-xs font-medium text-amber-600 dark:text-amber-300" data-card-risk="true">${program.risk}</p>
                             </div>
                         </div>
                         <div class="bootcamp-mini-grid mt-4">
@@ -406,17 +565,17 @@
                             </div>
                             <div class="bootcamp-mini-stat">
                                 <p class="bootcamp-label">Mentor</p>
-                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">${program.mentor}</p>
+                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-mentor="true">${program.mentor}</p>
                             </div>
                             <div class="bootcamp-mini-stat">
                                 <p class="bootcamp-label">Seat</p>
-                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">${program.seats}</p>
+                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-seats="true">${program.seats}</p>
                             </div>
                             <div class="bootcamp-mini-stat">
                                 <p class="bootcamp-label">Operasi</p>
                                 <div class="mt-2 flex flex-wrap gap-2">
-                                    <button type="button" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
-                                    <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
+                                    <button type="button" data-action="manage-batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
+                                    <button type="button" data-action="assign-mentor" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
                                 </div>
                             </div>
                         </div>
@@ -451,13 +610,30 @@
                     getCards()
                         .filter((card) => card.dataset.programType === 'Tiket Event')
                         .forEach((card) => {
-                            const statusNode = card.querySelector('[data-card-status="true"]');
                             const nextStatus = ticketSalesOpen ? 'Published' : 'Registration Closed';
-                            card.dataset.status = nextStatus;
-                            if (statusNode) {
-                                statusNode.textContent = nextStatus;
-                            }
+                            updateCard(card, { status: nextStatus });
                         });
+                };
+
+                const openBatchModal = (card) => {
+                    activeBatchCard = card;
+                    const data = getCardData(card);
+                    batchModalProgramTitle.textContent = data.title;
+                    batchModalProgramMeta.textContent = `${data.batch} • ${data.type}`;
+                    batchForm.elements.status.value = data.status;
+                    batchForm.elements.seats.value = data.seats;
+                    batchForm.elements.risk.value = data.risk;
+                    openModal(batchModal);
+                };
+
+                const openMentorModal = (card) => {
+                    activeMentorCard = card;
+                    const data = getCardData(card);
+                    mentorModalProgramTitle.textContent = data.title;
+                    mentorModalProgramMeta.textContent = `${data.batch} • ${data.type}`;
+                    mentorForm.elements.mentor.value = data.mentor;
+                    mentorForm.elements.risk.value = data.risk;
+                    openModal(mentorModal);
                 };
 
                 const exportPrograms = () => {
@@ -501,19 +677,82 @@
                     showAppAlert('Data batch frontend berhasil diexport ke CSV.', 'success', 'Export Selesai', { toast: true });
                 };
 
-                createBtn.addEventListener('click', openModal);
-                modalCloseBtn?.addEventListener('click', closeModal);
-                modalCancelBtn?.addEventListener('click', closeModal);
-                modal.addEventListener('click', (event) => {
-                    if (event.target === modal || event.target === modal.firstElementChild) {
-                        closeModal();
+                createBtn.addEventListener('click', () => openModal(modal));
+                modalCloseBtn?.addEventListener('click', () => closeModal(modal));
+                modalCancelBtn?.addEventListener('click', () => closeModal(modal));
+                batchModalCloseBtn?.addEventListener('click', () => closeModal(batchModal));
+                batchModalCancelBtn?.addEventListener('click', () => closeModal(batchModal));
+                mentorModalCloseBtn?.addEventListener('click', () => closeModal(mentorModal));
+                mentorModalCancelBtn?.addEventListener('click', () => closeModal(mentorModal));
+
+                [modal, batchModal, mentorModal].forEach((targetModal) => {
+                    targetModal.addEventListener('click', (event) => {
+                        if (event.target === targetModal || event.target === targetModal.firstElementChild) {
+                            closeModal(targetModal);
+                        }
+                    });
+                });
+
+                programList.addEventListener('click', (event) => {
+                    const button = event.target.closest('button[data-action]');
+                    const card = event.target.closest('[data-bootcamp-card="true"]');
+
+                    if (!button || !card) {
+                        return;
+                    }
+
+                    if (button.dataset.action === 'manage-batch') {
+                        openBatchModal(card);
+                    }
+
+                    if (button.dataset.action === 'assign-mentor') {
+                        openMentorModal(card);
                     }
                 });
 
                 document.addEventListener('keydown', (event) => {
-                    if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
-                        closeModal();
+                    if (event.key !== 'Escape') {
+                        return;
                     }
+
+                    [modal, batchModal, mentorModal].forEach((targetModal) => {
+                        if (!targetModal.classList.contains('hidden')) {
+                            closeModal(targetModal);
+                        }
+                    });
+                });
+
+                batchForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+
+                    if (!activeBatchCard) {
+                        return;
+                    }
+
+                    updateCard(activeBatchCard, {
+                        status: batchForm.elements.status.value.trim() || 'Draft',
+                        seats: batchForm.elements.seats.value.trim() || '0 / 0 kursi',
+                        risk: batchForm.elements.risk.value.trim() || 'Belum ada catatan risiko',
+                    });
+
+                    closeModal(batchModal);
+                    showAppAlert('Perubahan batch frontend berhasil diterapkan ke card program.', 'success', 'Batch Diperbarui', { toast: true });
+                });
+
+                mentorForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+
+                    if (!activeMentorCard) {
+                        return;
+                    }
+
+                    updateCard(activeMentorCard, {
+                        mentor: mentorForm.elements.mentor.value.trim() || '0 mentor',
+                        risk: mentorForm.elements.risk.value.trim() || 'Belum ada catatan penugasan',
+                    });
+
+                    closeModal(mentorModal);
+                    showAppAlert('Distribusi mentor frontend berhasil diupdate untuk program terpilih.', 'success', 'Mentor Diperbarui', { toast: true });
                 });
 
                 createForm.addEventListener('submit', (event) => {
@@ -521,6 +760,7 @@
                     const formData = new FormData(createForm);
                     const type = formData.get('type');
                     const program = {
+                        id: `program-${Date.now()}`,
                         title: formData.get('title')?.toString().trim() || 'Bootcamp Baru',
                         type: type?.toString() || 'Bootcamp',
                         batch: formData.get('batch')?.toString().trim() || 'Batch Baru',
@@ -535,7 +775,7 @@
 
                     programList.prepend(renderCard(program));
                     createForm.reset();
-                    closeModal();
+                    closeModal(modal);
                     showAppAlert(`Draft "${program.title}" berhasil ditambahkan ke daftar program.`, 'success', 'Draft Ditambahkan', { toast: true });
                 });
 
