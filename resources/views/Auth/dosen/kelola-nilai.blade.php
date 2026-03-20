@@ -125,129 +125,171 @@
         x-init="init()"
         class="space-y-6"
     >
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-                <span class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-                    Grade Center
-                </span>
-                <h1 class="mt-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Mengelola Nilai Mahasiswa</h1>
-                <p class="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-                    Akumulasi nilai dari pretest, tugas, dan tugas akhir dalam satu panel supaya dosen bisa review, finalisasi, dan publish nilai akhir dengan alur yang rapi.
-                </p>
-            </div>
+        <section class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
+            <div class="grid gap-6 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.16),_transparent_32%),linear-gradient(135deg,#ffffff_0%,#f8fbff_58%,#eef4ff_100%)] px-6 py-6 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(15,23,42,0.84))] lg:grid-cols-[1.45fr_0.9fr]">
+                <div>
+                    <span class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                        Grade Center
+                    </span>
+                    <h1 class="mt-4 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">Mengelola Nilai Mahasiswa</h1>
+                    <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-gray-300 sm:text-base">
+                        Flow halaman ini saya rapikan jadi satu workspace: pilih course, kunci komposisi nilai, review mahasiswa yang bermasalah, lalu publish saat draft sudah siap.
+                    </p>
 
-            <div class="rounded-2xl border border-blue-100 bg-white px-4 py-3 shadow-sm dark:border-blue-500/10 dark:bg-gray-800">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-500">Status Publish</p>
-                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">Draft Nilai Semester</p>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Perubahan di halaman ini masih frontend preview. Logic sinkronisasi backend disimpan di docs.</p>
-            </div>
-        </div>
-
-        <section class="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-            <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
-                <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Kursus Aktif</p>
-                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white" x-text="activeCourse.name"></h2>
-                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-gray-400">
-                            <span class="rounded-full bg-slate-100 px-2.5 py-1 font-medium dark:bg-gray-700/70" x-text="activeCourse.code"></span>
-                            <span x-text="activeCourse.period"></span>
-                            <span>&bull;</span>
-                            <span x-text="`${activeCourse.students} mahasiswa`"></span>
+                    <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Langkah 1</p>
+                            <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Pilih Course</p>
+                            <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-gray-400">Fokuskan workspace ke kelas atau webinar yang sedang dinilai.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Langkah 2</p>
+                            <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Kunci Bobot</p>
+                            <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-gray-400">Pastikan total bobot aktif tepat 100 persen sebelum publish.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Langkah 3</p>
+                            <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Review dan Publish</p>
+                            <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-gray-400">Cek mahasiswa pending, simpan draft, lalu publish ketika semua siap.</p>
                         </div>
                     </div>
-
-                    <div class="grid gap-2 sm:grid-cols-3 xl:w-[360px]">
-                        <template x-for="course in courses" :key="course.id">
-                            <button
-                                type="button"
-                                @click="setCourse(course.id)"
-                                class="rounded-2xl border px-3 py-3 text-left transition"
-                                :class="selectedCourse === course.id
-                                    ? 'border-blue-400 bg-blue-50 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10'
-                                    : 'border-slate-200 bg-slate-50 hover:border-slate-300 dark:border-gray-700 dark:bg-gray-900/40'"
-                            >
-                                <p class="text-xs font-semibold uppercase tracking-[0.16em]" :class="selectedCourse === course.id ? 'text-blue-600 dark:text-blue-300' : 'text-slate-400'" x-text="course.code"></p>
-                                <p class="mt-2 line-clamp-2 text-sm font-semibold text-slate-900 dark:text-white" x-text="course.name"></p>
-                                <p class="mt-2 text-xs text-slate-500 dark:text-gray-400" x-text="`${course.pending_reviews} butuh review`"></p>
-                            </button>
-                        </template>
-                    </div>
                 </div>
 
-                <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <div class="rounded-2xl bg-slate-50 p-4 dark:bg-gray-900/40">
-                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pretest</p>
-                        <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white" x-text="`${activeCourse.weights.pretest}%`"></p>
-                        <p class="mt-2 text-xs text-slate-500 dark:text-gray-400">Bobot nilai pemahaman awal.</p>
+                <div class="rounded-[28px] border border-blue-100 bg-white/95 p-5 shadow-sm dark:border-blue-500/10 dark:bg-gray-900/70">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-500">Status Publish</p>
+                            <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white" x-text="publishState.title"></h2>
+                            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-gray-400" x-text="publishState.helper"></p>
+                        </div>
+                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" :class="publishState.badgeClass" x-text="publishState.badge"></span>
                     </div>
-                    <div class="rounded-2xl bg-slate-50 p-4 dark:bg-gray-900/40">
-                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Modul</p>
-                        <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white" x-text="`${activeCourse.weights.assignment}%`"></p>
-                        <p class="mt-2 text-xs text-slate-500 dark:text-gray-400">Akumulasi tugas rutin dan penugasan modul.</p>
-                    </div>
-                    <div class="rounded-2xl bg-slate-50 p-4 dark:bg-gray-900/40">
-                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
-                        <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white" x-text="activeCourse.has_final_assignment ? `${activeCourse.weights.final}%` : 'Opsional'"></p>
-                        <p class="mt-2 text-xs text-slate-500 dark:text-gray-400" x-text="activeCourse.has_final_assignment ? 'Digunakan dalam nilai akhir.' : 'Course ini tidak memakai tugas akhir.'"></p>
-                    </div>
-                    <div class="rounded-2xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-600/20">
-                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">Pending Review</p>
-                        <p class="mt-2 text-3xl font-bold" x-text="coursePendingCount"></p>
-                        <p class="mt-2 text-xs text-blue-100">Mahasiswa yang perlu dicek sebelum publish.</p>
-                    </div>
-                </div>
-            </div>
 
-            <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Rumus Akhir</p>
-                        <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Komposisi Nilai</h2>
-                    </div>
-                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-gray-700 dark:text-gray-300">Frontend Preview</span>
-                </div>
-
-                <div class="mt-4 space-y-3">
-                    <template x-for="item in compositionCards" :key="item.key">
-                        <div class="rounded-2xl border border-slate-200 px-4 py-3 dark:border-gray-700">
-                            <div class="flex items-center justify-between gap-3">
+                    <div class="mt-5 space-y-3">
+                        <template x-for="item in publishState.checklist" :key="item.label">
+                            <div class="flex items-start gap-3 rounded-2xl border px-3 py-3" :class="item.done ? 'border-emerald-200 bg-emerald-50/70 dark:border-emerald-500/20 dark:bg-emerald-500/10' : 'border-slate-200 bg-slate-50 dark:border-gray-700 dark:bg-gray-800/80'">
+                                <div class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold" :class="item.done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-gray-700 dark:text-gray-300'">
+                                    <span x-text="item.done ? 'OK' : '!'"></span>
+                                </div>
                                 <div>
                                     <p class="text-sm font-semibold text-slate-900 dark:text-white" x-text="item.label"></p>
                                     <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" x-text="item.helper"></p>
                                 </div>
-                                <span class="text-lg font-bold text-slate-900 dark:text-white" x-text="item.value"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="mt-5 flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            @click="saveDraft()"
+                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                        >
+                            Simpan Draft
+                        </button>
+                        <button
+                            type="button"
+                            @click="publishGrades()"
+                            class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            :disabled="!canPublish"
+                        >
+                            Publish Nilai
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_390px]">
+            <div class="space-y-6">
+                <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
+                    <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Course Context</p>
+                            <h2 class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white" x-text="activeCourse.name"></h2>
+                            <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-gray-400">
+                                <span class="rounded-full bg-slate-100 px-2.5 py-1 font-semibold dark:bg-gray-700/70" x-text="activeCourse.code"></span>
+                                <span x-text="activeCourse.period"></span>
+                                <span class="hidden sm:inline">/</span>
+                                <span x-text="`${activeCourse.students} mahasiswa`"></span>
                             </div>
                         </div>
-                    </template>
+
+                        <div class="grid gap-2 sm:grid-cols-3 lg:w-[430px]">
+                            <template x-for="course in courses" :key="course.id">
+                                <button
+                                    type="button"
+                                    @click="setCourse(course.id)"
+                                    class="rounded-2xl border px-3 py-3 text-left transition"
+                                    :class="selectedCourse === course.id
+                                        ? 'border-blue-400 bg-blue-50 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10'
+                                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 dark:border-gray-700 dark:bg-gray-900/40'"
+                                >
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em]" :class="selectedCourse === course.id ? 'text-blue-600 dark:text-blue-300' : 'text-slate-400'" x-text="course.code"></p>
+                                    <p class="mt-2 line-clamp-2 text-sm font-semibold text-slate-900 dark:text-white" x-text="course.name"></p>
+                                    <p class="mt-2 text-xs text-slate-500 dark:text-gray-400" x-text="`${course.pending_reviews} butuh review`"></p>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <template x-for="item in summaryStats" :key="item.label">
+                            <div class="rounded-2xl border px-4 py-4" :class="item.cardClass">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.18em]" :class="item.labelClass" x-text="item.label"></p>
+                                <p class="mt-3 text-3xl font-bold text-slate-900 dark:text-white" x-text="item.value"></p>
+                                <p class="mt-2 text-xs leading-5 text-slate-500 dark:text-gray-400" x-text="item.helper"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="space-y-6 xl:sticky xl:top-24 xl:self-start">
+                <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Rumus Akhir</p>
+                            <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Komposisi Nilai</h2>
+                        </div>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-gray-700 dark:text-gray-300">Frontend Preview</span>
+                    </div>
+
+                    <div class="mt-4 space-y-3">
+                        <template x-for="item in compositionCards" :key="item.key">
+                            <div class="rounded-2xl border border-slate-200 px-4 py-3 dark:border-gray-700">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900 dark:text-white" x-text="item.label"></p>
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" x-text="item.helper"></p>
+                                    </div>
+                                    <span class="text-lg font-bold text-slate-900 dark:text-white" x-text="item.value"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Formula Aktif</p>
+                        <p class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
+                            Nilai akhir = <span x-text="`${activeCourse.weights.pretest}% x pretest`"></span>
+                            + <span x-text="`${activeCourse.weights.assignment}% x tugas`"></span>
+                            + <span x-show="activeCourse.has_final_assignment" x-text="`${activeCourse.weights.final}% x tugas akhir`"></span>
+                            <span x-show="!activeCourse.has_final_assignment">tanpa komponen tugas akhir.</span>
+                        </p>
+                        <p class="mt-2 text-xs text-slate-500 dark:text-gray-400">
+                            Preview memakai total bobot aktif <span class="font-semibold text-slate-700 dark:text-slate-200" x-text="`${activeWeightTotal}%`"></span> agar hasil tetap konsisten saat bobot sedang disesuaikan.
+                        </p>
+                    </div>
                 </div>
 
-                <div class="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Contoh Formula</p>
-                    <p class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-                        Nilai akhir = <span x-text="`${activeCourse.weights.pretest}% x pretest`"></span>
-                        + <span x-text="`${activeCourse.weights.assignment}% x tugas`"></span>
-                        + <span x-show="activeCourse.has_final_assignment" x-text="`${activeCourse.weights.final}% x tugas akhir`"></span>
-                        <span x-show="!activeCourse.has_final_assignment">tanpa komponen tugas akhir.</span>
-                    </p>
-                    <p class="mt-2 text-xs text-slate-500 dark:text-gray-400">
-                        Preview frontend selalu membagi dengan total bobot aktif <span class="font-semibold text-slate-700 dark:text-slate-200" x-text="`${activeWeightTotal}%`"></span> supaya hasil sementara tetap konsisten.
-                    </p>
-                    <p
-                        x-show="activeWeightTotal !== 100"
-                        class="mt-2 text-xs font-medium text-amber-600 dark:text-amber-300"
-                    >
-                        Total bobot belum 100 persen. Nilai akhir di preview dinormalisasi otomatis sampai dosen merapikan komposisinya.
-                    </p>
-                </div>
-
-                <div class="mt-5 rounded-3xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900/40">
+                <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Atur Bobot</p>
-                            <h3 class="mt-2 text-base font-semibold text-slate-900 dark:text-white">Kontrol Persentase Nilai</h3>
+                            <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Kontrol Persentase Nilai</h3>
                             <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">
-                                Dosen bisa tentukan komposisi pretest, tugas modul, dan tugas akhir sesuai format course.
+                                Atur bobot sekali lalu review hasil akhirnya di tabel dan kartu mahasiswa.
                             </p>
                         </div>
 
@@ -319,13 +361,12 @@
                         </template>
                     </div>
 
-                    <div class="mt-4 flex flex-col gap-3 rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Total Bobot Aktif</p>
-                            <p class="mt-1 text-lg font-bold" :class="weightValidation.tone" x-text="`${activeWeightTotal}%`"></p>
-                            <p class="mt-1 text-xs" :class="weightValidation.helperTone" x-text="weightValidation.helper"></p>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
+                    <div class="mt-4 rounded-2xl bg-slate-50 px-4 py-4 dark:bg-gray-900/40">
+                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Total Bobot Aktif</p>
+                        <p class="mt-2 text-lg font-bold" :class="weightValidation.tone" x-text="`${activeWeightTotal}%`"></p>
+                        <p class="mt-1 text-xs leading-5" :class="weightValidation.helperTone" x-text="weightValidation.helper"></p>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
                             <button
                                 type="button"
                                 @click="normalizeWeights()"
@@ -343,133 +384,214 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </aside>
         </section>
 
-        <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Antrian Penilaian</p>
-                    <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Daftar Mahasiswa & Nilai Akhir</h2>
-                </div>
+        <section class="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_390px]">
+            <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
+                <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Review Workspace</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Daftar Mahasiswa dan Nilai Akhir</h2>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Pilih mahasiswa untuk melihat detail skornya. Baris pending akan terlihat lebih menonjol.</p>
+                    </div>
 
-                <div class="grid gap-3 sm:grid-cols-3 lg:w-[720px]">
-                    <label class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900/40">
-                        <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Cari Mahasiswa</span>
-                        <input x-model="search" type="text" placeholder="Nama / Nomor Induk" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 dark:text-white">
-                    </label>
+                    <div class="grid gap-3 sm:grid-cols-2 xl:w-[520px]">
+                        <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                            <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Cari Mahasiswa</span>
+                            <input x-model="search" type="text" placeholder="Nama atau nomor induk" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 dark:text-white">
+                        </label>
 
-                    <label class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900/40">
-                        <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</span>
-                        <select x-model="statusFilter" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 focus:ring-0 dark:text-white">
-                            <option value="all">Semua Status</option>
-                            <option value="Perlu Review">Perlu Review</option>
-                            <option value="Lengkap">Lengkap</option>
-                            <option value="Revisi Tugas">Revisi Tugas</option>
-                        </select>
-                    </label>
-
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900/40">
-                        <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Aksi Cepat</span>
-                        <div class="flex gap-2">
-                            <button type="button" class="inline-flex flex-1 items-center justify-center rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100">
-                                Publish Nilai
-                            </button>
-                            <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-300 dark:hover:text-white">
-                                Export
-                            </button>
-                        </div>
+                        <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                            <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</span>
+                            <select x-model="statusFilter" class="w-full border-0 bg-transparent p-0 text-sm text-slate-900 focus:ring-0 dark:text-white">
+                                <option value="all">Semua Status</option>
+                                <option value="Perlu Review">Perlu Review</option>
+                                <option value="Lengkap">Lengkap</option>
+                                <option value="Revisi Tugas">Revisi Tugas</option>
+                            </select>
+                        </label>
                     </div>
                 </div>
-            </div>
 
-            <div class="mt-5 hidden overflow-x-auto lg:block">
-                <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-gray-700">
-                    <thead class="bg-slate-50 dark:bg-gray-900/40">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Mahasiswa</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Kelas</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Pretest</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Tugas</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Tugas Akhir</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Nilai Akhir</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
-                        <template x-for="row in filteredRows" :key="`${row.nomor_induk}-${row.course_id}`">
-                            <tr class="hover:bg-slate-50/80 dark:hover:bg-gray-900/30">
-                                <td class="px-4 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
-                                        <div>
-                                            <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
-                                            <p class="text-xs text-slate-500 dark:text-gray-400" x-text="row.nomor_induk"></p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-4">
-                                    <p class="font-medium text-slate-800 dark:text-gray-100" x-text="row.cohort"></p>
-                                    <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" x-text="row.last_update"></p>
-                                </td>
-                                <td class="px-4 py-4 text-center font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.pretest)"></td>
-                                <td class="px-4 py-4 text-center font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.assignment)"></td>
-                                <td class="px-4 py-4 text-center font-semibold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? row.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></td>
-                                <td class="px-4 py-4 text-center">
-                                    <p class="text-lg font-bold text-slate-900 dark:text-white" x-text="finalScore(row)"></p>
-                                    <p class="text-xs font-semibold" :class="gradeBand(row).tone" x-text="`Grade ${gradeBand(row).label}`"></p>
-                                </td>
-                                <td class="px-4 py-4 text-center">
-                                    <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
-                                </td>
+                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-900 dark:text-white"><span x-text="filteredRows.length"></span> mahasiswa tampil di daftar review</p>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Klik satu baris untuk fokus review tanpa pindah halaman.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            @click="exportGrades()"
+                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                        >
+                            Export Preview
+                        </button>
+                        <button
+                            type="button"
+                            @click="saveDraft()"
+                            class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                        >
+                            Simpan Draft
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-5 hidden overflow-x-auto xl:block">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-gray-700">
+                        <thead class="bg-slate-50 dark:bg-gray-900/40">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Mahasiswa</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Komponen</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Nilai Akhir</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Aksi</th>
                             </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+                            <template x-for="row in filteredRows" :key="getRowKey(row)">
+                                <tr
+                                    class="cursor-pointer transition"
+                                    :class="selectedStudentKey === getRowKey(row) ? 'bg-blue-50/80 dark:bg-blue-500/10' : 'hover:bg-slate-50/80 dark:hover:bg-gray-900/30'"
+                                    @click="selectStudent(row)"
+                                >
+                                    <td class="px-4 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
+                                            <div>
+                                                <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
+                                                <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nomor_induk} / ${row.cohort}`"></p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <div class="grid gap-2 text-xs text-slate-500 dark:text-gray-400 sm:grid-cols-3">
+                                            <div>
+                                                <p class="uppercase tracking-[0.16em] text-slate-400">Pretest</p>
+                                                <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.pretest)"></p>
+                                            </div>
+                                            <div>
+                                                <p class="uppercase tracking-[0.16em] text-slate-400">Tugas</p>
+                                                <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.assignment)"></p>
+                                            </div>
+                                            <div>
+                                                <p class="uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
+                                                <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? row.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <p class="text-xl font-bold text-slate-900 dark:text-white" x-text="finalScore(row)"></p>
+                                        <p class="text-xs font-semibold" :class="gradeBand(row).tone" x-text="`Grade ${gradeBand(row).label}`"></p>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
+                                    </td>
+                                    <td class="px-4 py-4 text-right">
+                                        <button
+                                            type="button"
+                                            @click.stop="selectStudent(row)"
+                                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                                        >
+                                            Buka Detail
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
 
-            <div class="mt-5 grid gap-4 lg:hidden">
-                <template x-for="row in filteredRows" :key="`${row.nomor_induk}-${row.course_id}-mobile`">
-                    <article class="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
-                                <div>
-                                    <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
-                                    <p class="text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nomor_induk} â€¢ ${row.cohort}`"></p>
+                <div class="mt-5 grid gap-4 xl:hidden">
+                    <template x-for="row in filteredRows" :key="`${getRowKey(row)}-mobile`">
+                        <article
+                            class="rounded-3xl border p-4 transition"
+                            :class="selectedStudentKey === getRowKey(row) ? 'border-blue-300 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10' : 'border-slate-200 bg-slate-50 dark:border-gray-700 dark:bg-gray-900/40'"
+                            @click="selectStudent(row)"
+                        >
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white" x-text="initials(row.student)"></div>
+                                    <div>
+                                        <p class="font-semibold text-slate-900 dark:text-white" x-text="row.student"></p>
+                                        <p class="text-xs text-slate-500 dark:text-gray-400" x-text="`${row.nomor_induk} / ${row.cohort}`"></p>
+                                    </div>
+                                </div>
+                                <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
+                            </div>
+
+                            <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
+                                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Pretest</p>
+                                    <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.pretest)"></p>
+                                </div>
+                                <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
+                                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Tugas</p>
+                                    <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.assignment)"></p>
+                                </div>
+                                <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
+                                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
+                                    <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? row.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
+                                </div>
+                                <div class="rounded-2xl bg-slate-900 px-3 py-3 text-white dark:bg-blue-500/20">
+                                    <p class="text-xs uppercase tracking-[0.16em] text-slate-300 dark:text-blue-200">Nilai Akhir</p>
+                                    <p class="mt-2 text-lg font-bold" x-text="finalScore(row)"></p>
+                                    <p class="text-xs font-semibold text-blue-200" x-text="`Grade ${gradeBand(row).label}`"></p>
                                 </div>
                             </div>
-                            <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold" :class="statusTone[row.status]" x-text="row.status"></span>
-                        </div>
 
-                        <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-                            <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
-                                <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Pretest</p>
-                                <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.pretest)"></p>
+                            <div class="mt-4 rounded-2xl border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-500 dark:border-gray-700 dark:text-gray-400">
+                                <span class="font-semibold text-slate-700 dark:text-gray-200">Catatan:</span>
+                                <span x-text="row.note"></span>
                             </div>
-                            <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
-                                <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Tugas</p>
-                                <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(row.assignment)"></p>
-                            </div>
-                            <div class="rounded-2xl bg-white px-3 py-3 dark:bg-gray-800">
-                                <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
-                                <p class="mt-2 font-semibold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? row.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
-                            </div>
-                            <div class="rounded-2xl bg-slate-900 px-3 py-3 text-white dark:bg-blue-500/20">
-                                <p class="text-xs uppercase tracking-[0.16em] text-slate-300 dark:text-blue-200">Nilai Akhir</p>
-                                <p class="mt-2 text-lg font-bold" x-text="finalScore(row)"></p>
-                                <p class="text-xs font-semibold text-blue-200" x-text="`Grade ${gradeBand(row).label}`"></p>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 rounded-2xl border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-500 dark:border-gray-700 dark:text-gray-400">
-                            <span class="font-semibold text-slate-700 dark:text-gray-200">Catatan:</span>
-                            <span x-text="row.note"></span>
-                        </div>
-                    </article>
-                </template>
+                        </article>
+                    </template>
+                </div>
             </div>
+
+            <aside class="space-y-6 xl:sticky xl:top-24 xl:self-start">
+                <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Mahasiswa Terpilih</p>
+                            <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white" x-text="selectedRow ? selectedRow.student : 'Belum ada mahasiswa dipilih'"></h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-gray-400" x-text="selectedRow ? `${selectedRow.nomor_induk} / ${selectedRow.cohort}` : 'Klik salah satu baris mahasiswa untuk fokus review.'"></p>
+                        </div>
+                        <span x-show="selectedRow" class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" :class="selectedRow ? statusTone[selectedRow.status] : 'hidden'" x-text="selectedRow ? selectedRow.status : ''"></span>
+                    </div>
+
+                    <template x-if="selectedRow">
+                        <div class="mt-5">
+                            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pretest</p>
+                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(selectedRow.pretest)"></p>
+                                </div>
+                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Modul</p>
+                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(selectedRow.assignment)"></p>
+                                </div>
+                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
+                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? selectedRow.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
+                                </div>
+                                <div class="rounded-2xl bg-blue-600 px-4 py-3 text-white shadow-lg shadow-blue-600/20">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">Nilai Akhir</p>
+                                    <p class="mt-2 text-2xl font-bold" x-text="finalScore(selectedRow)"></p>
+                                    <p class="mt-1 text-xs font-semibold text-blue-100" x-text="`Grade ${gradeBand(selectedRow).label}`"></p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/40">
+                                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Review</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-gray-300" x-text="selectedRow.note"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </aside>
         </section>
+
     </div>
 
     @push('scripts')
@@ -484,11 +606,22 @@
                     search: '',
                     statusFilter: 'all',
                     activeCourse: config.courses[0] ?? { weights: { pretest: 0, assignment: 0, final: 0 }, has_final_assignment: false },
+                    selectedStudentKey: null,
+                    selectedRow: null,
                     filteredRows: [],
                     coursePendingCount: 0,
+                    summaryStats: [],
                     compositionCards: [],
                     activeWeightTotal: 0,
                     editableWeights: [],
+                    publishState: {
+                        title: 'Draft Nilai Semester',
+                        helper: '',
+                        badge: 'Draft',
+                        badgeClass: 'bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-gray-200',
+                        checklist: [],
+                    },
+                    canPublish: false,
                     weightValidation: {
                         tone: 'text-slate-900 dark:text-white',
                         helperTone: 'text-slate-500 dark:text-gray-400',
@@ -513,10 +646,9 @@
 
                     syncDerivedState() {
                         this.activeCourse = this.courses.find((course) => course.id === this.selectedCourse) ?? this.courses[0];
+                        const courseRows = this.rows.filter((row) => row.course_id === this.selectedCourse);
 
-                        this.filteredRows = this.rows.filter((row) => {
-                            if (row.course_id !== this.selectedCourse) return false;
-
+                        this.filteredRows = courseRows.filter((row) => {
                             const query = this.search.trim().toLowerCase();
                             const matchesSearch = !query
                                 || row.student.toLowerCase().includes(query)
@@ -527,7 +659,7 @@
                             return matchesSearch && matchesStatus;
                         });
 
-                        this.coursePendingCount = this.rows.filter((row) => row.course_id === this.selectedCourse && row.status !== 'Lengkap').length;
+                        this.coursePendingCount = courseRows.filter((row) => row.status !== 'Lengkap').length;
 
                         this.compositionCards = [
                             {
@@ -553,6 +685,45 @@
                         ];
 
                         this.activeWeightTotal = this.getActiveWeightTotal();
+                        const readyCount = courseRows.filter((row) => row.status === 'Lengkap' && this.finalScore(row) !== 'Pending').length;
+                        const scoredRows = courseRows
+                            .map((row) => parseFloat(this.finalScore(row)))
+                            .filter((score) => !Number.isNaN(score));
+                        const averageScore = scoredRows.length
+                            ? (scoredRows.reduce((sum, score) => sum + score, 0) / scoredRows.length).toFixed(1)
+                            : '0.0';
+
+                        this.summaryStats = [
+                            {
+                                label: 'Siap Publish',
+                                value: `${readyCount}`,
+                                helper: 'Mahasiswa yang komponennya sudah lengkap.',
+                                cardClass: 'border-emerald-200 bg-emerald-50/70 dark:border-emerald-500/20 dark:bg-emerald-500/10',
+                                labelClass: 'text-emerald-600 dark:text-emerald-300',
+                            },
+                            {
+                                label: 'Perlu Review',
+                                value: `${this.coursePendingCount}`,
+                                helper: 'Baris yang masih perlu dicek sebelum final.',
+                                cardClass: 'border-amber-200 bg-amber-50/80 dark:border-amber-500/20 dark:bg-amber-500/10',
+                                labelClass: 'text-amber-600 dark:text-amber-300',
+                            },
+                            {
+                                label: 'Rata-rata Akhir',
+                                value: averageScore,
+                                helper: 'Rerata preview berdasarkan bobot aktif sekarang.',
+                                cardClass: 'border-blue-200 bg-blue-50/80 dark:border-blue-500/20 dark:bg-blue-500/10',
+                                labelClass: 'text-blue-600 dark:text-blue-300',
+                            },
+                            {
+                                label: 'Bobot Aktif',
+                                value: `${this.activeWeightTotal}%`,
+                                helper: 'Target ideal 100 persen sebelum publish.',
+                                cardClass: 'border-slate-200 bg-slate-50 dark:border-gray-700 dark:bg-gray-900/40',
+                                labelClass: 'text-slate-500 dark:text-gray-300',
+                            },
+                        ];
+
                         this.editableWeights = [
                             {
                                 key: 'pretest',
@@ -580,6 +751,43 @@
                         ];
 
                         this.weightValidation = this.getWeightValidation();
+                        this.canPublish = this.activeWeightTotal === 100 && this.coursePendingCount === 0 && readyCount > 0;
+                        this.publishState = {
+                            title: this.canPublish ? 'Siap Publish ke Mahasiswa' : 'Draft Nilai Semester',
+                            helper: this.canPublish
+                                ? 'Semua checklist utama terpenuhi. Draft bisa dipublish dari halaman ini.'
+                                : 'Masih ada item yang harus dibenahi sebelum nilai dikirim ke mahasiswa.',
+                            badge: this.canPublish ? 'Siap' : 'Draft',
+                            badgeClass: this.canPublish
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+                                : 'bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-gray-200',
+                            checklist: [
+                                {
+                                    label: 'Bobot aktif sudah 100%',
+                                    helper: `Total aktif saat ini ${this.activeWeightTotal}%.`,
+                                    done: this.activeWeightTotal === 100,
+                                },
+                                {
+                                    label: 'Tidak ada mahasiswa pending review',
+                                    helper: this.coursePendingCount === 0
+                                        ? 'Semua mahasiswa sudah berstatus lengkap.'
+                                        : `${this.coursePendingCount} mahasiswa masih perlu dicek.`,
+                                    done: this.coursePendingCount === 0,
+                                },
+                                {
+                                    label: 'Sudah ada nilai akhir yang siap dipublish',
+                                    helper: readyCount > 0
+                                        ? `${readyCount} mahasiswa siap masuk draft publish.`
+                                        : 'Belum ada mahasiswa lengkap untuk dipublish.',
+                                    done: readyCount > 0,
+                                },
+                            ],
+                        };
+
+                        const availableRows = this.filteredRows.length ? this.filteredRows : courseRows;
+                        const nextSelected = availableRows.find((row) => this.getRowKey(row) === this.selectedStudentKey) ?? availableRows[0] ?? null;
+                        this.selectedStudentKey = nextSelected ? this.getRowKey(nextSelected) : null;
+                        this.selectedRow = nextSelected;
                     },
 
                     getActiveWeightTotal() {
@@ -688,6 +896,84 @@
                         this.syncDerivedState();
                     },
 
+                    getRowKey(row) {
+                        return `${row.nomor_induk}-${row.course_id}`;
+                    },
+
+                    selectStudent(row) {
+                        this.selectedStudentKey = this.getRowKey(row);
+                        this.selectedRow = row;
+                    },
+
+                    notify(message, icon = 'info', title = 'Informasi', options = {}) {
+                        if (typeof window.showAppAlert === 'function') {
+                            return window.showAppAlert(message, icon, title, options);
+                        }
+
+                        if (window.Swal && typeof window.Swal.fire === 'function') {
+                            return window.Swal.fire({
+                                icon,
+                                title,
+                                text: message,
+                                confirmButtonText: options.confirmButtonText || 'Oke',
+                                showCancelButton: options.showCancelButton || false,
+                                cancelButtonText: options.cancelButtonText || 'Batal',
+                            });
+                        }
+
+                        window.alert(message);
+                        return Promise.resolve();
+                    },
+
+                    saveDraft() {
+                        return this.notify(
+                            `Draft nilai untuk ${this.activeCourse.name} disimpan di frontend preview.`,
+                            'success',
+                            'Draft Tersimpan',
+                            { toast: true }
+                        );
+                    },
+
+                    exportGrades() {
+                        return this.notify(
+                            `Export preview untuk ${this.activeCourse.name} siap dipakai setelah backend export diaktifkan.`,
+                            'info',
+                            'Export Preview',
+                            { toast: true }
+                        );
+                    },
+
+                    async publishGrades() {
+                        if (!this.canPublish) {
+                            return this.notify(
+                                'Selesaikan dulu checklist publish: total bobot 100 persen, tidak ada pending review, dan minimal satu mahasiswa sudah lengkap.',
+                                'warning',
+                                'Belum Bisa Publish'
+                            );
+                        }
+
+                        if (window.Swal && typeof window.Swal.fire === 'function') {
+                            const result = await window.Swal.fire({
+                                icon: 'question',
+                                title: 'Publish nilai sekarang?',
+                                text: `${this.activeCourse.name} akan ditandai siap publish dari halaman preview ini.`,
+                                confirmButtonText: 'Publish',
+                                cancelButtonText: 'Batal',
+                                showCancelButton: true,
+                            });
+
+                            if (!result.isConfirmed) {
+                                return;
+                            }
+                        }
+
+                        return this.notify(
+                            `Draft nilai ${this.activeCourse.name} ditandai siap publish. Sinkronisasi backend masih menunggu implementasi docs.`,
+                            'success',
+                            'Nilai Siap Publish'
+                        );
+                    },
+
                     initials(name) {
                         return name
                             .split(' ')
@@ -734,3 +1020,4 @@
         </script>
     @endpush
 </x-layouts.dosen>
+

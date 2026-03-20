@@ -572,7 +572,12 @@
                     position: isToast ? (options.position || 'top-end') : 'center',
                     timer: isToast ? (options.timer || 2600) : undefined,
                     timerProgressBar: isToast ? true : undefined,
-                    showConfirmButton: isToast ? false : true,
+                    showConfirmButton: isToast ? false : (options.showConfirmButton ?? true),
+                    showCancelButton: options.showCancelButton ?? false,
+                    showDenyButton: options.showDenyButton ?? false,
+                    confirmButtonText: options.confirmButtonText || 'Oke',
+                    cancelButtonText: options.cancelButtonText || 'Batal',
+                    denyButtonText: options.denyButtonText || 'Tidak',
                     buttonsStyling: !isToast,
                     customClass: {
                         container: 'font-inter',

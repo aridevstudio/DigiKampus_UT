@@ -8,6 +8,9 @@
                 icon: 'success',
                 title: 'Berhasil',
                 text: '{{ session('status') ?? session('success') }}',
+                confirmButtonText: 'Oke',
+                showCancelButton: false,
+                showDenyButton: false,
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
@@ -19,6 +22,9 @@
                 icon: 'error',
                 title: 'Terjadi Kesalahan',
                 text: '{{ session('error') }}',
+                confirmButtonText: 'Oke',
+                showCancelButton: false,
+                showDenyButton: false,
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
@@ -30,6 +36,9 @@
                 icon: 'warning',
                 title: 'Perhatian',
                 text: '{{ session('alert') }}',
+                confirmButtonText: 'Oke',
+                showCancelButton: false,
+                showDenyButton: false,
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
@@ -41,6 +50,9 @@
                 icon: 'info',
                 title: 'Informasi',
                 text: '{{ session('info') }}',
+                confirmButtonText: 'Oke',
+                showCancelButton: false,
+                showDenyButton: false,
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
@@ -58,6 +70,9 @@
                         @endforeach
                     </ul>
                 `,
+                confirmButtonText: 'Oke',
+                showCancelButton: false,
+                showDenyButton: false,
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',

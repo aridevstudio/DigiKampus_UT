@@ -289,15 +289,20 @@ a.btn-animate:active {
 }
 
 .swal2-popup .swal2-actions button {
-    display: inline-flex !important;
     align-items: center;
     justify-content: center;
     min-width: 110px;
     margin: 0 !important;
-    opacity: 1 !important;
-    visibility: visible !important;
     line-height: 1.25;
     transform: none !important;
+}
+
+.swal2-popup .swal2-actions .swal2-confirm,
+.swal2-popup .swal2-actions .swal2-cancel,
+.swal2-popup .swal2-actions .swal2-deny {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .swal2-popup .swal2-actions button:hover,
@@ -315,8 +320,15 @@ a.btn-animate:active {
     color: #ffffff !important;
 }
 
+.swal2-popup .swal2-actions .swal2-deny {
+    background: #f3f4f6 !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+}
+
 .swal2-popup .swal2-actions .swal2-cancel:focus,
-.swal2-popup .swal2-actions .swal2-confirm:focus {
+.swal2-popup .swal2-actions .swal2-confirm:focus,
+.swal2-popup .swal2-actions .swal2-deny:focus {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14) !important;
 }
 
