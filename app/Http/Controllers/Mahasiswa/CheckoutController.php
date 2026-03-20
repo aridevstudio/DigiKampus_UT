@@ -295,13 +295,24 @@ class CheckoutController extends Controller
         }
 
         if ($status !== '' && $status !== 'semua') {
-            $mappedStatus = match ($status) {
-                'aktif' => ['settlement', 'capture'],
-                'pending' => ['pending'],
-                'gagal' => ['deny', 'cancel', 'expire', 'failure'],
-                default => [$status],
-            };
-            $query->whereIn('transaction_status', $mappedStatus);
+            $pendingCutoff = PaymentTransaction::pendingExpiryCutoff();
+
+            if ($status === 'aktif') {
+                $query->whereIn('transaction_status', ['settlement', 'capture']);
+            } elseif ($status === 'pending') {
+                $query->where('transaction_status', 'pending')
+                    ->where('created_at', '>=', $pendingCutoff);
+            } elseif ($status === 'gagal') {
+                $query->where(function ($failedQuery) use ($pendingCutoff) {
+                    $failedQuery->whereIn('transaction_status', ['deny', 'cancel', 'expire', 'failure'])
+                        ->orWhere(function ($expiredPendingQuery) use ($pendingCutoff) {
+                            $expiredPendingQuery->where('transaction_status', 'pending')
+                                ->where('created_at', '<', $pendingCutoff);
+                        });
+                });
+            } else {
+                $query->where('transaction_status', $status);
+            }
         }
 
         if ($date === 'today') {
@@ -317,8 +328,8 @@ class CheckoutController extends Controller
         $allTransactions = PaymentTransaction::where('id_mahasiswa', $user->id)->get();
         $totalPayment = (float) $allTransactions->whereIn('transaction_status', ['settlement', 'capture'])->sum('gross_amount');
         $successCount = $allTransactions->whereIn('transaction_status', ['settlement', 'capture'])->count();
-        $pendingCount = $allTransactions->where('transaction_status', 'pending')->count();
-        $failedCount = $allTransactions->whereIn('transaction_status', ['deny', 'cancel', 'expire', 'failure'])->count();
+        $pendingCount = $allTransactions->filter(fn ($transaction) => $transaction->effective_transaction_status === 'pending')->count();
+        $failedCount = $allTransactions->filter(fn ($transaction) => in_array($transaction->effective_transaction_status, ['deny', 'cancel', 'expire', 'failure'], true))->count();
 
         return view('pages.mahasiswa.finance', [
             'transactions' => $transactions,

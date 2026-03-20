@@ -1,7 +1,7 @@
 <x-layouts.dashboard :active="'finance'">
 
 @php
-    $status = $paymentTransaction->transaction_status;
+    $status = $paymentTransaction->effective_transaction_status;
     $isSuccess = in_array($status, ['settlement', 'capture'], true);
     $isPending = $status === 'pending';
 @endphp
@@ -33,7 +33,7 @@
         @else
         <span class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-4 py-2 text-sm font-medium text-red-700 dark:bg-red-500/20 dark:text-red-400">
             <span class="h-2 w-2 rounded-full bg-red-500"></span>
-            {{ ucfirst($status) }}
+            Gagal
         </span>
         @endif
     </div>

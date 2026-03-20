@@ -62,7 +62,7 @@
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
                 @forelse($transactions as $transaction)
                 @php
-                    $status = $transaction->transaction_status;
+                    $status = $transaction->effective_transaction_status;
                     $courseNames = $transaction->items->pluck('course_name')->filter()->values();
                 @endphp
                 <tr onclick="window.location='{{ route('mahasiswa.transaction-detail', ['id' => $transaction->id_payment_transaction]) }}'" class="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/30">
@@ -91,7 +91,7 @@
                         @else
                         <span class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700 dark:bg-red-500/20 dark:text-red-400">
                             <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
-                            {{ ucfirst($status) }}
+                            Gagal
                         </span>
                         @endif
                     </td>

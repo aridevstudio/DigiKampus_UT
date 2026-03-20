@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PaymentTransaction extends Model
 {
     use HasFactory;
+
+    public const PENDING_EXPIRY_HOURS = 24;
 
     protected $table = 'payment_transactions';
     protected $primaryKey = 'id_payment_transaction';
@@ -55,5 +58,44 @@ class PaymentTransaction extends Model
     public function items()
     {
         return $this->hasMany(PaymentTransactionItem::class, 'id_payment_transaction', 'id_payment_transaction');
+    }
+
+    public static function pendingExpiryCutoff(): Carbon
+    {
+        return now()->subHours(self::PENDING_EXPIRY_HOURS);
+    }
+
+    public function getPendingExpiresAtAttribute(): ?Carbon
+    {
+        if (!$this->created_at) {
+            return null;
+        }
+
+        return $this->created_at->copy()->addHours(self::PENDING_EXPIRY_HOURS);
+    }
+
+    public function isExpiredPending(): bool
+    {
+        return $this->transaction_status === 'pending'
+            && $this->pending_expires_at instanceof Carbon
+            && now()->greaterThan($this->pending_expires_at);
+    }
+
+    public function getEffectiveTransactionStatusAttribute(): string
+    {
+        if ($this->isExpiredPending()) {
+            return 'expire';
+        }
+
+        return (string) $this->transaction_status;
+    }
+
+    public function getEffectiveStatusLabelAttribute(): string
+    {
+        return match ($this->effective_transaction_status) {
+            'settlement', 'capture' => 'Berhasil',
+            'pending' => 'Menunggu',
+            default => 'Gagal',
+        };
     }
 }

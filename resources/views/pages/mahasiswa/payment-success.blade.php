@@ -1,7 +1,7 @@
 <x-layouts.dashboard :active="'get-courses'">
 
 @php
-    $status = $paymentTransaction->transaction_status;
+    $status = $paymentTransaction->effective_transaction_status;
     $isSuccess = in_array($status, ['settlement', 'capture'], true);
     $isPending = $status === 'pending';
 @endphp
@@ -58,7 +58,7 @@
         @elseif($isPending)
             Silakan selesaikan pembayaran melalui Midtrans atau cek kembali status transaksi.
         @else
-            Transaksi tidak berhasil. Anda bisa mencoba pembayaran ulang dari detail transaksi.
+            Transaksi tidak berhasil atau batas waktu pembayaran sudah habis. Anda bisa mencoba pembayaran ulang dari detail transaksi.
         @endif
     </p>
 </div>

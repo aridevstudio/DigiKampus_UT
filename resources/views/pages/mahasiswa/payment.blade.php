@@ -1,6 +1,8 @@
 <x-layouts.dashboard :active="'get-courses'">
 @php
     $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop';
+    $status = $paymentTransaction->effective_transaction_status;
+    $isPending = $status === 'pending';
 @endphp
 
 <div class="mb-8 flex items-center justify-center gap-2 sm:gap-4 overflow-x-auto">
@@ -77,7 +79,9 @@
                 </div>
                 <div class="flex justify-between border-b border-gray-100 py-3 dark:border-gray-700/50">
                     <span class="text-gray-500 dark:text-gray-400">Status</span>
-                    <span class="font-semibold text-yellow-600 dark:text-yellow-400">{{ ucfirst($paymentTransaction->transaction_status) }}</span>
+                    <span class="font-semibold {{ $isPending ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400' }}">
+                        {{ $paymentTransaction->effective_status_label }}
+                    </span>
                 </div>
                 <div class="flex justify-between py-3">
                     <span class="text-gray-500 dark:text-gray-400">Gateway</span>
@@ -87,9 +91,11 @@
         </div>
 
         <div class="flex flex-col gap-3 sm:flex-row">
+            @if($isPending)
             <a href="{{ $snapRedirectUrl }}" target="_blank" rel="noopener noreferrer" class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
                 Lanjutkan Bayar di Midtrans
             </a>
+            @endif
             <a href="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}" class="flex-1 rounded-xl border border-gray-300 py-3 text-center font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700/50">
                 Cek Status Transaksi
             </a>
@@ -109,7 +115,11 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400">Midtrans Secure Checkout</p>
                 </div>
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Setelah pembayaran berhasil, kursus akan otomatis diaktifkan pada akun Anda.</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ $isPending
+                    ? 'Setelah pembayaran berhasil, kursus akan otomatis diaktifkan pada akun Anda.'
+                    : 'Batas waktu pembayaran telah lewat. Transaksi ini dianggap gagal di frontend sampai backend sinkron.' }}
+            </p>
         </div>
 
         <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700/50 dark:bg-[#1f2937]">
