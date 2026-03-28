@@ -403,14 +403,14 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                     </svg>
-                    <span x-text="selectedKategori === 'webinar' ? 'Simpan Draft Webinar' : 'Simpan Draft'"></span>
+                    <span>Simpan Draft</span>
                 </button>
 
                 <button type="submit" name="status_btn" value="aktif" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 text-white text-sm font-bold rounded-xl transition shadow-lg shadow-opacity-30 focus:ring-4" :class="selectedKategori === 'webinar' ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-purple-500 focus:ring-purple-200 dark:focus:ring-purple-900' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-500 focus:ring-blue-200 dark:focus:ring-blue-900'">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span x-text="selectedKategori === 'webinar' ? 'Ajukan Webinar' : 'Buat Kursus'"></span>
+                    <span>Simpan</span>
                 </button>
             </div>
             </div>
