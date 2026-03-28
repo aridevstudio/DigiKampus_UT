@@ -29,19 +29,6 @@
                         <span x-show="selectedKategori === 'webinar'" x-cloak>Lengkapi informasi webinar yang akan dilaksanakan.</span>
                     </p>
                 </div>
-                
-                <div class="flex items-center justify-end gap-2">
-                    <a href="{{ route('dosen.kursus') }}" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
-                        Batal
-                    </a>
-                    <button type="submit" name="status_btn" value="draft" class="px-4 py-2 bg-white dark:bg-gray-700 border text-sm font-medium rounded-lg transition" :class="selectedKategori === 'webinar' ? 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-gray-600' : 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-gray-600'">
-                        <span x-show="selectedKategori !== 'webinar'">Simpan Draft</span>
-                        <span x-show="selectedKategori === 'webinar'" x-cloak>Simpan Draft Webinar</span>
-                    </button>
-                    <button type="submit" name="status_btn" value="aktif" class="px-4 py-2 text-white text-sm font-medium rounded-lg transition shadow-sm" :class="selectedKategori === 'webinar' ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/25' : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'">
-                        <span x-show="selectedKategori === 'kursus'">Buat Kursus</span>
-                        <span x-show="selectedKategori === 'webinar'" x-cloak>Ajukan Webinar</span>
-                    </button>
                 </div>
             </div>
 
@@ -400,6 +387,23 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Bottom Action Buttons -->
+            <div class="mt-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sm:p-6 mb-6" :class="selectedKategori === 'webinar' ? 'border-purple-100 dark:border-purple-700/40 shadow-purple-500/5' : ''">
+                <div class="flex items-center justify-end gap-2">
+                    <a href="{{ route('dosen.kursus') }}" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
+                        Batal
+                    </a>
+                    <button type="submit" name="status_btn" value="draft" class="px-4 py-2 bg-white dark:bg-gray-700 border text-sm font-medium rounded-lg transition" :class="selectedKategori === 'webinar' ? 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-gray-600' : 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-gray-600'">
+                        <span x-show="selectedKategori !== 'webinar'">Simpan Draft</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Simpan Draft Webinar</span>
+                    </button>
+                    <button type="submit" name="status_btn" value="aktif" class="px-4 py-2 text-white text-sm font-medium rounded-lg transition shadow-sm" :class="selectedKategori === 'webinar' ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/25' : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'">
+                        <span x-show="selectedKategori === 'kursus'">Buat Kursus</span>
+                        <span x-show="selectedKategori === 'webinar'" x-cloak>Ajukan Webinar</span>
+                    </button>
                 </div>
             </div>
             </div>
