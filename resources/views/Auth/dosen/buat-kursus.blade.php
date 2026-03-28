@@ -391,22 +391,22 @@
             </div>
 
             <!-- Bottom Action Buttons -->
-            <div class="mt-8 flex flex-col sm:flex-row items-center justify-end gap-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+            <div class="mt-8 flex flex-col sm:flex-row items-center justify-start gap-4 border-t border-gray-200 dark:border-gray-700 pt-6">
                 <a href="{{ route('dosen.kursus') }}" class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-bold rounded-xl transition focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 border-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                     Batal
                 </a>
                 
-                <button type="submit" name="status_btn" value="draft" class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border text-sm font-bold rounded-xl transition focus:ring-4" :class="selectedKategori === 'webinar' ? 'text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 focus:ring-purple-100 dark:focus:ring-purple-900' : 'text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:ring-blue-100 dark:focus:ring-blue-900'">
+                <button type="submit" name="status_btn" value="draft" class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-600 text-sm font-bold rounded-xl transition hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900" :class="selectedKategori === 'webinar' ? 'text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 focus:ring-purple-100 dark:focus:ring-purple-900' : ''">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                     </svg>
                     <span>Simpan Draft</span>
                 </button>
 
-                <button type="submit" name="status_btn" value="aktif" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 text-white text-sm font-bold rounded-xl transition shadow-lg shadow-opacity-30 focus:ring-4" :class="selectedKategori === 'webinar' ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-purple-500 focus:ring-purple-200 dark:focus:ring-purple-900' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-500 focus:ring-blue-200 dark:focus:ring-blue-900'">
+                <button type="submit" name="status_btn" value="aktif" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 text-white bg-blue-600 hover:bg-blue-700 text-sm font-bold rounded-xl transition shadow-lg shadow-blue-500/30 focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900" :class="selectedKategori === 'webinar' ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/30 focus:ring-purple-200 dark:focus:ring-purple-900' : ''">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
