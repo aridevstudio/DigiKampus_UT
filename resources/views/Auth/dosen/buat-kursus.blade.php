@@ -20,15 +20,8 @@
             {{-- Page Header + Action Buttons --}}
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sm:p-6 mb-6" :class="selectedKategori === 'webinar' ? 'border-purple-100 dark:border-purple-700/40 shadow-purple-500/5' : ''">
                 <div class="mb-4">
-                    <h1 class="text-lg font-bold text-gray-900 dark:text-white">
-                        <span x-show="selectedKategori === 'kursus'">Buat Kursus Baru</span>
-                        <span x-show="selectedKategori === 'webinar'" x-cloak>Buat Webinar Baru</span>
-                    </h1>
-                    <p class="text-sm" :class="selectedKategori === 'webinar' ? 'text-purple-500' : 'text-blue-500'">
-                        <span x-show="selectedKategori === 'kursus'">Lengkapi informasi berikut untuk membuat kursus baru.</span>
-                        <span x-show="selectedKategori === 'webinar'" x-cloak>Lengkapi informasi webinar yang akan dilaksanakan.</span>
-                    </p>
-                </div>
+                    <h1 id="form-page-title" class="text-lg font-bold text-gray-900 dark:text-white">Buat Kursus Baru</h1>
+                    <p id="form-page-subtitle" class="text-sm text-blue-500">Lengkapi informasi berikut untuk membuat kursus baru.</p>
                 </div>
             </div>
 
@@ -38,25 +31,18 @@
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center" :class="selectedKategori === 'webinar' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'">1</span>
-                            <span x-show="selectedKategori === 'kursus'">Informasi Dasar Kursus</span>
-                            <span x-show="selectedKategori === 'webinar'" x-cloak>Informasi Dasar Webinar</span>
+                            <span id="basic-info-title">Informasi Dasar Kursus</span>
                         </h4>
                         
                         <div class="space-y-4">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div :class="selectedKategori === 'kursus' ? 'sm:col-span-2' : ''">
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                                        <span x-show="selectedKategori === 'kursus'">Judul Kursus <span class="text-red-400">*</span></span>
-                                        <span x-show="selectedKategori === 'webinar'" x-cloak>Judul Webinar <span class="text-red-400">*</span></span>
-                                    </label>
+                                    <label id="label-nama-course" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
                                     <input type="text" name="nama_course" id="add_nama_course" required :placeholder="selectedKategori === 'webinar' ? 'Masukkan judul webinar' : 'Masukkan judul kursus'" value="{{ old('nama_course') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-transparent" :class="selectedKategori === 'webinar' ? 'focus:ring-2 focus:ring-purple-500' : 'focus:ring-2 focus:ring-blue-500'">
                                     @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                                        <span x-show="selectedKategori === 'kursus'">Kode Kursus <span class="text-red-400">*</span></span>
-                                        <span x-show="selectedKategori === 'webinar'" x-cloak>Kode Webinar <span class="text-gray-300 dark:text-gray-600">(otomatis)</span></span>
-                                    </label>
+                                    <label id="label-kode-course" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
                                     <input
                                         type="text"
                                         name="kode_course"
@@ -70,22 +56,19 @@
                                         :class="selectedKategori === 'webinar'
                                             ? 'bg-gray-100 dark:bg-gray-600 border-gray-200 dark:border-gray-600 cursor-not-allowed focus:ring-2 focus:ring-purple-500'
                                             : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500'">
-                                    <p class="text-xs text-gray-400 mt-1" x-show="selectedKategori === 'kursus'">Gunakan kode unik untuk kursus ini.</p>
+                                    <p id="kode-course-help" class="text-xs text-gray-400 mt-1">Gunakan kode unik untuk kursus ini.</p>
                                     @error('kode_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                 </div>
                             </div>
 
                             {{-- Deskripsi Kursus --}}
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                                    <span x-show="selectedKategori === 'kursus'">Deskripsi Kursus</span>
-                                    <span x-show="selectedKategori === 'webinar'" x-cloak>Deskripsi Webinar <span class="text-gray-300 dark:text-gray-600">(opsional)</span></span>
-                                </label>
+                                <label id="label-deskripsi-course" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Kursus</label>
                                 <textarea name="deskripsi" id="add_deskripsi" rows="3" :placeholder="selectedKategori === 'webinar' ? 'Jelaskan topik dan manfaat webinar ini...' : 'Jelaskan tentang kursus ini...'" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-transparent resize-none" :class="selectedKategori === 'webinar' ? 'focus:ring-2 focus:ring-purple-500' : 'focus:ring-2 focus:ring-blue-500'">{{ old('deskripsi') }}</textarea>
                             </div>
 
                             {{-- Persyaratan Kursus --}}
-                            <div x-show="selectedKategori !== 'webinar'" x-transition>
+                            <div data-kategori-section="kursus" @class(['hidden' => $defaultKategori === 'webinar'])>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Persyaratan Kursus (Opsional)</label>
                                 <textarea name="persyaratan" id="add_persyaratan" data-course-only-field rows="3" placeholder="Contoh:&#10;STIN4101 - Pengantar Teknologi Informasi&#10;Memiliki laptop dan koneksi internet stabil" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">{{ old('persyaratan') }}</textarea>
                                 <p class="text-xs text-gray-400 mt-1">Tulis satu persyaratan per baris.</p>
@@ -93,7 +76,7 @@
                             </div>
 
                             {{-- Jurusan/Prodi & Tingkat Kesulitan --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="selectedKategori !== 'webinar'" x-transition>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" data-kategori-section="kursus" @class(['hidden' => $defaultKategori === 'webinar'])>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Jurusan/Prodi</label>
                                     <div class="relative">
@@ -121,7 +104,7 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="selectedKategori === 'webinar'" x-cloak x-transition>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" data-kategori-section="webinar" @class(['hidden' => $defaultKategori !== 'webinar'])>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pembicara / Dosen <span class="text-gray-300 dark:text-gray-600">(otomatis)</span></label>
                                     <input type="text" readonly value="{{ $dosen->name ?? Auth::guard('dosen')->user()->name ?? 'Dosen' }}" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white cursor-not-allowed focus:outline-none">
@@ -141,7 +124,7 @@
                             </div>
 
                             {{-- Estimasi Waktu --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="selectedKategori !== 'webinar'" x-transition>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" data-kategori-section="kursus" @class(['hidden' => $defaultKategori === 'webinar'])>
                                 <div>
                                     <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Estimasi Waktu Belajar</label>
                                     <input type="number" name="estimasi_waktu" id="add_estimasi_waktu" data-course-only-field min="0" placeholder="20" value="{{ old('estimasi_waktu', 20) }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -161,26 +144,21 @@
                             </div>
 
                             {{-- Playlist YouTube / Link Meeting --}}
-                            <div x-show="selectedKategori !== 'webinar'" x-transition>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                                    <span x-show="selectedKategori === 'kursus'">Link Playlist YouTube (Opsional)</span>
-                                </label>
+                            <div data-kategori-section="kursus" @class(['hidden' => $defaultKategori === 'webinar'])>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Playlist YouTube (Opsional)</label>
                                 <input type="url" name="youtube_playlist" id="add_youtube_playlist" data-course-only-field placeholder="https://www.youtube.com/playlist?list=..." value="{{ old('youtube_playlist') }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @error('youtube_playlist')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Thumbnail --}}
                             <div>
-                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                                    <span x-show="selectedKategori === 'kursus'">Thumbnail Kursus</span>
-                                    <span x-show="selectedKategori === 'webinar'" x-cloak>Thumbnail Webinar <span class="text-gray-300 dark:text-gray-600">(opsional)</span></span>
-                                </label>
+                                <label id="label-thumbnail-course" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Kursus</label>
                                 <div class="flex items-center gap-4">
                                     <div id="thumbnailPreview" class="w-20 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
-                                        <svg x-show="selectedKategori === 'kursus'" class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg data-thumbnail-icon="kursus" @class(['hidden' => $defaultKategori === 'webinar']) class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <svg x-show="selectedKategori === 'webinar'" x-cloak class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg data-thumbnail-icon="webinar" @class(['hidden' => $defaultKategori !== 'webinar']) class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                         </svg>
                                     </div>
@@ -189,12 +167,11 @@
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                             </svg>
-                                            <span x-show="selectedKategori === 'kursus'">Upload Thumbnail</span>
-                                            <span x-show="selectedKategori === 'webinar'" x-cloak>Unggah Gambar</span>
+                                            <span id="thumbnail-button-text">Upload Thumbnail</span>
                                             <input type="file" name="thumbnail" id="thumbnail-input" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" class="hidden" onchange="previewThumbnail(this)">
                                         </label>
-                                        <p class="text-xs text-gray-400 mt-1" x-show="selectedKategori === 'kursus'">Maksimal 2MB, JPG/PNG</p>
-                                        <p class="text-[11px] text-gray-400 mt-1" x-show="selectedKategori === 'webinar'" x-cloak>JPG, PNG, maks 2MB. Rasio 16:9 disarankan.</p>
+                                        <p id="thumbnail-help-course" @class(['hidden' => $defaultKategori === 'webinar']) class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
+                                        <p id="thumbnail-help-webinar" @class(['hidden' => $defaultKategori !== 'webinar']) class="text-[11px] text-gray-400 mt-1">JPG, PNG, maks 2MB. Rasio 16:9 disarankan.</p>
                                     </div>
                                 </div>
                             </div>
@@ -202,7 +179,7 @@
                     </div>
 
                     {{-- 2. Jadwal Pelaksanaan (Webinar Only) --}}
-                    <div x-show="selectedKategori === 'webinar'" x-transition x-cloak class="border border-purple-200 dark:border-purple-700/50 rounded-xl p-5 bg-purple-50/40 dark:bg-purple-900/10">
+                    <div data-kategori-section="webinar" @class(['hidden' => $defaultKategori !== 'webinar']) class="border border-purple-200 dark:border-purple-700/50 rounded-xl p-5 bg-purple-50/40 dark:bg-purple-900/10">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">2</span>
                             Jadwal Pelaksanaan
@@ -246,7 +223,7 @@
                     </div>
 
                     {{-- 2. Struktur Modul Awal (Hidden for Webinar) --}}
-                    <div x-show="selectedKategori !== 'webinar'" x-transition class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                    <div data-kategori-section="kursus" @class(['hidden' => $defaultKategori === 'webinar']) class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">2</span>
                             Struktur Modul Awal
@@ -292,8 +269,7 @@
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5" :class="selectedKategori === 'webinar' ? 'border-purple-100 dark:border-purple-700/30' : ''">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center" :class="selectedKategori === 'webinar' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'">3</span>
-                            <span x-show="selectedKategori === 'kursus'">Pengaturan Kursus</span>
-                            <span x-show="selectedKategori === 'webinar'" x-cloak>Pengaturan Webinar</span>
+                            <span id="settings-section-title">Pengaturan Kursus</span>
                         </h4>
                         
                         <div class="space-y-3">
@@ -301,10 +277,7 @@
                                 {{-- Status Kursus Toggle --}}
                                 <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                         <div>
-                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">
-                                                <span x-show="selectedKategori === 'kursus'">Status Kursus</span>
-                                            <span x-show="selectedKategori === 'webinar'" x-cloak>Status Pengajuan</span>
-                                            </h5>
+                                            <h5 id="status-card-title" class="font-medium text-gray-900 dark:text-white text-xs">Status Kursus</h5>
                                         <p class="text-[10px] text-gray-500 dark:text-gray-400" x-text="selectedKategori === 'webinar' ? 'Ajukan ke admin atau simpan draft' : 'Aktif atau simpan draft'"></p>
                                         </div>
                                     <input type="hidden" name="status" id="status_input" value="draft">
@@ -331,10 +304,7 @@
                             {{-- Sertifikat Toggle --}}
                             <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                 <div>
-                                    <h5 class="font-medium text-gray-900 dark:text-white text-xs">
-                                        <span x-show="selectedKategori === 'kursus'">Sertifikat Penyelesaian</span>
-                                        <span x-show="selectedKategori === 'webinar'" x-cloak>Sertifikat Kehadiran</span>
-                                    </h5>
+                                    <h5 id="certificate-card-title" class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
                                     <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
                                 </div>
                                 <input type="hidden" name="sertifikat" value="0">
@@ -350,8 +320,7 @@
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5" :class="selectedKategori === 'webinar' ? 'border-purple-100 dark:border-purple-700/30' : ''">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center" :class="selectedKategori === 'webinar' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'">4</span>
-                            <span x-show="selectedKategori === 'kursus'">Pricing & Akses Kursus</span>
-                            <span x-show="selectedKategori === 'webinar'" x-cloak>Harga & Akses</span>
+                            <span id="pricing-section-title">Pricing & Akses Kursus</span>
                         </h4>
                         
                         <div class="space-y-4">
@@ -413,7 +382,6 @@
                     <span>Simpan</span>
                 </button>
             </div>
-            </div>
         </form>
     </div>
 
@@ -445,6 +413,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             const kategoriSelect = document.getElementById('add_kategori');
             const kodeCourseInput = document.getElementById('add_kode_course');
+            const pageTitle = document.getElementById('form-page-title');
+            const pageSubtitle = document.getElementById('form-page-subtitle');
+            const basicInfoTitle = document.getElementById('basic-info-title');
+            const namaCourseLabel = document.getElementById('label-nama-course');
+            const kodeCourseLabel = document.getElementById('label-kode-course');
+            const kodeCourseHelp = document.getElementById('kode-course-help');
+            const deskripsiLabel = document.getElementById('label-deskripsi-course');
+            const thumbnailLabel = document.getElementById('label-thumbnail-course');
+            const thumbnailButtonText = document.getElementById('thumbnail-button-text');
+            const thumbnailHelpCourse = document.getElementById('thumbnail-help-course');
+            const thumbnailHelpWebinar = document.getElementById('thumbnail-help-webinar');
+            const settingsSectionTitle = document.getElementById('settings-section-title');
+            const statusCardTitle = document.getElementById('status-card-title');
+            const certificateCardTitle = document.getElementById('certificate-card-title');
+            const pricingSectionTitle = document.getElementById('pricing-section-title');
             const statusToggle = document.getElementById('status_toggle');
             const statusInput = document.getElementById('status_input');
             const gratisToggle = document.getElementById('gratis_toggle');
@@ -478,6 +461,10 @@
                 const webinarDefault = kodeCourseInput.dataset.webinarDefault || generateWebinarCode();
                 const courseOnlyFields = document.querySelectorAll('[data-course-only-field]');
                 const webinarOnlyFields = document.querySelectorAll('[data-webinar-only-field]');
+                const courseSections = document.querySelectorAll('[data-kategori-section=\"kursus\"]');
+                const webinarSections = document.querySelectorAll('[data-kategori-section=\"webinar\"]');
+                const courseIcons = document.querySelectorAll('[data-thumbnail-icon=\"kursus\"]');
+                const webinarIcons = document.querySelectorAll('[data-thumbnail-icon=\"webinar\"]');
 
                 courseOnlyFields.forEach((field) => {
                     field.disabled = isWebinar;
@@ -486,6 +473,48 @@
                 webinarOnlyFields.forEach((field) => {
                     field.disabled = !isWebinar;
                 });
+
+                courseSections.forEach((section) => {
+                    section.classList.toggle('hidden', isWebinar);
+                });
+
+                webinarSections.forEach((section) => {
+                    section.classList.toggle('hidden', !isWebinar);
+                });
+
+                courseIcons.forEach((icon) => {
+                    icon.classList.toggle('hidden', isWebinar);
+                });
+
+                webinarIcons.forEach((icon) => {
+                    icon.classList.toggle('hidden', !isWebinar);
+                });
+
+                if (pageTitle) {
+                    pageTitle.textContent = isWebinar ? 'Buat Webinar Baru' : 'Buat Kursus Baru';
+                }
+
+                if (pageSubtitle) {
+                    pageSubtitle.textContent = isWebinar
+                        ? 'Lengkapi informasi webinar yang akan dilaksanakan.'
+                        : 'Lengkapi informasi berikut untuk membuat kursus baru.';
+                    pageSubtitle.classList.toggle('text-purple-500', isWebinar);
+                    pageSubtitle.classList.toggle('text-blue-500', !isWebinar);
+                }
+
+                if (basicInfoTitle) basicInfoTitle.textContent = isWebinar ? 'Informasi Dasar Webinar' : 'Informasi Dasar Kursus';
+                if (namaCourseLabel) namaCourseLabel.innerHTML = isWebinar ? 'Judul Webinar <span class=\"text-red-400\">*</span>' : 'Judul Kursus <span class=\"text-red-400\">*</span>';
+                if (kodeCourseLabel) kodeCourseLabel.innerHTML = isWebinar ? 'Kode Webinar <span class=\"text-gray-300 dark:text-gray-600\">(otomatis)</span>' : 'Kode Kursus <span class=\"text-red-400\">*</span>';
+                if (kodeCourseHelp) kodeCourseHelp.classList.toggle('hidden', isWebinar);
+                if (deskripsiLabel) deskripsiLabel.innerHTML = isWebinar ? 'Deskripsi Webinar <span class=\"text-gray-300 dark:text-gray-600\">(opsional)</span>' : 'Deskripsi Kursus';
+                if (thumbnailLabel) thumbnailLabel.innerHTML = isWebinar ? 'Thumbnail Webinar <span class=\"text-gray-300 dark:text-gray-600\">(opsional)</span>' : 'Thumbnail Kursus';
+                if (thumbnailButtonText) thumbnailButtonText.textContent = isWebinar ? 'Unggah Gambar' : 'Upload Thumbnail';
+                if (thumbnailHelpCourse) thumbnailHelpCourse.classList.toggle('hidden', isWebinar);
+                if (thumbnailHelpWebinar) thumbnailHelpWebinar.classList.toggle('hidden', !isWebinar);
+                if (settingsSectionTitle) settingsSectionTitle.textContent = isWebinar ? 'Pengaturan Webinar' : 'Pengaturan Kursus';
+                if (statusCardTitle) statusCardTitle.textContent = isWebinar ? 'Status Pengajuan' : 'Status Kursus';
+                if (certificateCardTitle) certificateCardTitle.textContent = isWebinar ? 'Sertifikat Kehadiran' : 'Sertifikat Penyelesaian';
+                if (pricingSectionTitle) pricingSectionTitle.textContent = isWebinar ? 'Harga & Akses' : 'Pricing & Akses Kursus';
 
                 if (isWebinar) {
                     kodeCourseInput.readOnly = true;
