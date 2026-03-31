@@ -1006,17 +1006,14 @@ class DosenController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
         }
 
-        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath) {
+        $initialMaterials = $this->normalizeInitialMaterials($request->input('initial_modules', []));
+
+        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath, $initialMaterials) {
             $course = \App\Models\Course::create(
                 $this->buildDosenCoursePayload($request, $dosen->id, $thumbnailPath)
             );
 
-            // Build "Modul Utama" when initial structure fields are filled.
-            $hasInitialStructure =
-                $request->filled('modul_judul') ||
-                $request->filled('modul_konten') ||
-                $request->filled('modul_video_url') ||
-                $request->filled('modul_durasi');
+            $hasInitialStructure = !empty($initialMaterials);
 
             if ($hasInitialStructure) {
                 $mainModule = \App\Models\CourseModule::create([
@@ -1026,21 +1023,16 @@ class DosenController extends Controller
                     'urutan' => 1,
                 ]);
 
-                // If title provided, create first material inside the main module.
-                // Prevent duplicate first material:
-                // when user is redirected to typed content page, that page will create the material.
-                if ($request->filled('modul_judul')) {
-                    $materialType = $request->modul_tipe ?? 'video';
-
+                foreach ($initialMaterials as $index => $material) {
                     \App\Models\CourseMaterial::create([
                         'id_course' => $course->id_course,
                         'id_module' => $mainModule->id_module,
-                        'judul_material' => $request->modul_judul,
-                        'tipe' => $materialType,
-                        'konten' => $request->modul_konten,
-                        'video_url' => $materialType === 'video' ? $request->modul_video_url : null,
-                        'durasi' => $materialType === 'tugas' ? null : $request->modul_durasi,
-                        'urutan' => 1,
+                        'judul_material' => $material['judul'],
+                        'tipe' => $material['tipe'],
+                        'konten' => $material['konten'],
+                        'video_url' => $material['tipe'] === 'video' ? $material['video_url'] : null,
+                        'durasi' => $material['tipe'] === 'tugas' ? null : $material['durasi'],
+                        'urutan' => $index + 1,
                     ]);
                 }
             }
@@ -1121,12 +1113,52 @@ class DosenController extends Controller
             'jam_mulai_webinar' => 'required_if:kategori,webinar|nullable|date_format:H:i',
             'jam_selesai_webinar' => 'required_if:kategori,webinar|nullable|date_format:H:i|after:jam_mulai_webinar',
             'kuota_peserta' => 'nullable|integer|min:1',
-            'modul_judul' => 'nullable|string|max:255',
-            'modul_tipe' => 'nullable|in:video,bacaan,kuis,tugas',
-            'modul_konten' => 'nullable|string',
-            'modul_video_url' => 'nullable|url|max:500|exclude_unless:modul_tipe,video',
-            'modul_durasi' => 'nullable|integer|min:0|exclude_if:modul_tipe,tugas',
+            'initial_modules' => 'nullable|array',
+            'initial_modules.*.judul' => 'nullable|string|max:255',
+            'initial_modules.*.tipe' => 'nullable|in:video,bacaan,kuis,tugas',
+            'initial_modules.*.konten' => 'nullable|string',
+            'initial_modules.*.video_url' => 'nullable|url|max:500',
+            'initial_modules.*.durasi' => 'nullable|integer|min:0',
         ];
+    }
+
+    private function normalizeInitialMaterials(array $modules): array
+    {
+        return collect($modules)
+            ->map(function ($module) {
+                $judul = trim((string) data_get($module, 'judul', ''));
+                $tipe = data_get($module, 'tipe', 'video');
+                $konten = trim((string) data_get($module, 'konten', ''));
+                $videoUrl = trim((string) data_get($module, 'video_url', ''));
+                $durasiValue = data_get($module, 'durasi');
+                $durasi = $durasiValue === '' || $durasiValue === null ? null : (int) $durasiValue;
+
+                if ($judul === '' && $konten === '' && $videoUrl === '' && $durasi === null) {
+                    return null;
+                }
+
+                if ($judul === '') {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'initial_modules' => 'Setiap modul awal yang diisi wajib memiliki judul modul.',
+                    ]);
+                }
+
+                $allowedTypes = ['video', 'bacaan', 'kuis', 'tugas'];
+                if (!in_array($tipe, $allowedTypes, true)) {
+                    $tipe = 'video';
+                }
+
+                return [
+                    'judul' => $judul,
+                    'tipe' => $tipe,
+                    'konten' => $konten !== '' ? $konten : null,
+                    'video_url' => $tipe === 'video' && $videoUrl !== '' ? $videoUrl : null,
+                    'durasi' => $tipe === 'tugas' ? null : $durasi,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function buildDosenCoursePayload(Request $request, int $dosenId, ?string $thumbnailPath = null, ?Course $existingCourse = null): array

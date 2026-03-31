@@ -335,31 +335,31 @@
                     <button type="button" @click="showScheduleModal = false" class="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Tutup</button>
                 </div>
 
-                <div class="mt-6 grid gap-4 md:grid-cols-2">
-                    <label class="grid gap-2">
+                <div class="mt-6 grid gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(220px,0.65fr)]">
+                    <label class="grid min-w-0 gap-2">
                         <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Bootcamp</span>
-                        <select x-model="draftSchedule.bootcampId" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                        <select x-model="draftSchedule.bootcampId" class="min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
                             <template x-for="bootcamp in bootcamps" :key="bootcamp.id">
                                 <option :value="bootcamp.id" x-text="`${bootcamp.title} • ${bootcamp.batch}`"></option>
                             </template>
                         </select>
                     </label>
-                    <label class="grid gap-2">
+                    <label class="grid min-w-0 gap-2">
                         <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Jenis Sesi</span>
-                        <select x-model="draftSchedule.type" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                        <select x-model="draftSchedule.type" class="min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
                             <option value="Live Review">Live Review</option>
                             <option value="Mentoring">Mentoring</option>
                             <option value="Hands-on">Hands-on</option>
                             <option value="Office Hour">Office Hour</option>
                         </select>
                     </label>
-                    <label class="grid gap-2">
+                    <label class="grid min-w-0 gap-2">
                         <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Tanggal</span>
-                        <input x-model="draftSchedule.date" type="date" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                        <input x-model="draftSchedule.date" type="date" class="min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
                     </label>
-                    <label class="grid gap-2">
+                    <label class="grid min-w-0 gap-2">
                         <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Jam</span>
-                        <input x-model="draftSchedule.time" type="time" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                        <input x-model="draftSchedule.time" type="time" class="min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
                     </label>
                 </div>
 

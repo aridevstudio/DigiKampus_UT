@@ -10,6 +10,15 @@
         'kursus' => 'Buat Kursus Baru',
         'webinar' => 'Buat Webinar Baru',
     ];
+    $initialModules = old('initial_modules', [
+        [
+            'judul' => '',
+            'tipe' => 'video',
+            'konten' => '',
+            'video_url' => '',
+            'durasi' => '',
+        ],
+    ]);
 @endphp
 
 <x-layouts.dosen :title="$pageTitles[$defaultKategori] ?? 'Buat Kursus Baru'" active="buat-kursus">
@@ -153,8 +162,8 @@
                             {{-- Thumbnail --}}
                             <div>
                                 <label id="label-thumbnail-course" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Kursus</label>
-                                <div class="flex items-center gap-4">
-                                    <div id="thumbnailPreview" class="w-20 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                    <div id="thumbnailPreview" class="w-20 h-14 shrink-0 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
                                         <svg data-thumbnail-icon="kursus" @class(['hidden' => $defaultKategori === 'webinar']) class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
@@ -162,16 +171,16 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                         </svg>
                                     </div>
-                                    <div>
-                                        <label class="inline-flex items-center gap-2 px-3 py-1.5 border text-sm font-medium rounded-lg cursor-pointer transition" :class="selectedKategori === 'webinar' ? 'border-purple-500 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20' : 'border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'">
+                                    <div class="min-w-0">
+                                        <label class="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2 border text-sm font-medium rounded-xl cursor-pointer transition" :class="selectedKategori === 'webinar' ? 'border-purple-500 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20' : 'border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                             </svg>
                                             <span id="thumbnail-button-text">Upload Thumbnail</span>
                                             <input type="file" name="thumbnail" id="thumbnail-input" accept="image/jpeg,image/png,image/jpg,image/webp" data-max-size-mb="2" class="hidden" onchange="previewThumbnail(this)">
                                         </label>
-                                        <p id="thumbnail-help-course" @class(['hidden' => $defaultKategori === 'webinar']) class="text-xs text-gray-400 mt-1">Maksimal 2MB, JPG/PNG</p>
-                                        <p id="thumbnail-help-webinar" @class(['hidden' => $defaultKategori !== 'webinar']) class="text-[11px] text-gray-400 mt-1">JPG, PNG, maks 2MB. Rasio 16:9 disarankan.</p>
+                                        <p id="thumbnail-help-course" @class(['hidden' => $defaultKategori === 'webinar']) class="text-xs text-gray-400 mt-1.5 leading-relaxed">Maksimal 2MB, format JPG/PNG.</p>
+                                        <p id="thumbnail-help-webinar" @class(['hidden' => $defaultKategori !== 'webinar']) class="text-[11px] text-gray-400 mt-1.5 leading-relaxed">JPG/PNG, maksimal 2MB. Rasio 16:9 disarankan.</p>
                                     </div>
                                 </div>
                             </div>
@@ -230,38 +239,78 @@
                         </h4>
 
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Judul Modul</label>
-                                <input type="text" name="modul_judul" data-course-only-field value="{{ old('modul_judul') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Masukkan judul modul">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Tambahkan beberapa modul awal sekaligus</p>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Semua item di sini akan otomatis dibuat ke modul default kursus saat disimpan.</p>
+                                </div>
+                                <button type="button" id="addInitialModuleButton" class="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-600 transition hover:border-blue-300 hover:bg-blue-100">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Tambah Modul
+                                </button>
                             </div>
-                            <div>
-                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
-                                <select name="modul_tipe" id="modul_tipe" data-course-only-field class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                    <option value="video" {{ old('modul_tipe') == 'video' ? 'selected' : '' }}>Video</option>
-                                    <option value="bacaan" {{ old('modul_tipe') == 'bacaan' ? 'selected' : '' }}>Bacaan</option>
-                                    <option value="kuis" {{ old('modul_tipe') == 'kuis' ? 'selected' : '' }}>Kuis</option>
-                                    <option value="tugas" {{ old('modul_tipe') == 'tugas' ? 'selected' : '' }}>Tugas Akhir (Opsional)</option>
-                                </select>
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Jika Judul Modul diisi, setelah kursus dibuat Anda akan diarahkan ke halaman kelola sesuai tipe ini.
-                                </p>
+
+                            <div id="initialModulesContainer" class="space-y-4">
+                                @foreach ($initialModules as $index => $module)
+                                    <div class="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-800/60" data-initial-module-card>
+                                        <div class="mb-4 flex items-start justify-between gap-3">
+                                            <div>
+                                                <h5 class="text-sm font-semibold text-gray-900 dark:text-white">Modul Awal {{ $index + 1 }}</h5>
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Tentukan tipe materi dan konten dasar yang ingin langsung dibuat.</p>
+                                            </div>
+                                            <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-500 transition hover:bg-red-50" data-remove-initial-module {{ count($initialModules) === 1 ? 'disabled' : '' }}>
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Judul Modul</label>
+                                                <input type="text" name="initial_modules[{{ $index }}][judul]" data-course-only-field value="{{ $module['judul'] ?? '' }}" class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600" placeholder="Masukkan judul modul">
+                                            </div>
+
+                                            <div>
+                                                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Tipe</label>
+                                                <select name="initial_modules[{{ $index }}][tipe]" data-course-only-field data-initial-module-type class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600">
+                                                    <option value="video" {{ ($module['tipe'] ?? 'video') == 'video' ? 'selected' : '' }}>Video</option>
+                                                    <option value="bacaan" {{ ($module['tipe'] ?? '') == 'bacaan' ? 'selected' : '' }}>Bacaan</option>
+                                                    <option value="kuis" {{ ($module['tipe'] ?? '') == 'kuis' ? 'selected' : '' }}>Kuis</option>
+                                                    <option value="tugas" {{ ($module['tipe'] ?? '') == 'tugas' ? 'selected' : '' }}>Tugas Akhir (Opsional)</option>
+                                                </select>
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Saat kursus dibuat, item ini langsung masuk ke modul default dan bisa diedit lagi setelahnya.</p>
+                                            </div>
+
+                                            <div>
+                                                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400" data-initial-module-content-label>Konten/Deskripsi</label>
+                                                <textarea name="initial_modules[{{ $index }}][konten]" data-course-only-field data-initial-module-content rows="3" class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600 resize-none" placeholder="Deskripsi modul...">{{ $module['konten'] ?? '' }}</textarea>
+                                            </div>
+
+                                            <div data-initial-module-video-group>
+                                                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">URL Video (opsional)</label>
+                                                <input type="url" name="initial_modules[{{ $index }}][video_url]" data-course-only-field data-initial-module-video value="{{ $module['video_url'] ?? '' }}" class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600" placeholder="https://www.youtube.com/watch?v=...">
+                                            </div>
+
+                                            <div data-initial-module-duration-group>
+                                                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400" data-initial-module-duration-label>Durasi (menit)</label>
+                                                <input type="number" name="initial_modules[{{ $index }}][durasi]" data-course-only-field data-initial-module-duration min="0" value="{{ $module['durasi'] ?? '' }}" class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600" placeholder="0">
+                                            </div>
+
+                                            <p class="text-xs text-gray-500 dark:text-gray-400" data-initial-module-hint></p>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-                            <div>
-                                <label id="modul_konten_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
-                                <textarea id="modul_konten" name="modul_konten" data-course-only-field rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Deskripsi modul...">{{ old('modul_konten') }}</textarea>
-                            </div>
-                            <div id="modul_video_url_group">
-                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
-                                <input type="url" id="modul_video_url" name="modul_video_url" data-course-only-field value="{{ old('modul_video_url') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://www.youtube.com/watch?v=...">
-                            </div>
-                            <div id="modul_durasi_group">
-                                <label id="modul_durasi_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Durasi (menit)</label>
-                                <input type="number" id="modul_durasi" name="modul_durasi" data-course-only-field min="0" value="{{ old('modul_durasi') }}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="0">
-                            </div>
-                            <p id="modul_type_hint" class="text-xs text-gray-500 dark:text-gray-400"></p>
-                            @error('modul_video_url')<p class="text-red-500 text-xs -mt-2">{{ $message }}</p>@enderror
-                            @error('modul_konten')<p class="text-red-500 text-xs -mt-2">{{ $message }}</p>@enderror
-                            @error('modul_durasi')<p class="text-red-500 text-xs -mt-2">{{ $message }}</p>@enderror
+
+                            @error('initial_modules')<p class="text-red-500 text-xs">{{ $message }}</p>@enderror
+                            @error('initial_modules.*.judul')<p class="text-red-500 text-xs">{{ $message }}</p>@enderror
+                            @error('initial_modules.*.tipe')<p class="text-red-500 text-xs">{{ $message }}</p>@enderror
+                            @error('initial_modules.*.konten')<p class="text-red-500 text-xs">{{ $message }}</p>@enderror
+                            @error('initial_modules.*.video_url')<p class="text-red-500 text-xs">{{ $message }}</p>@enderror
+                            @error('initial_modules.*.durasi')<p class="text-red-500 text-xs">{{ $message }}</p>@enderror
                         </div>
                     </div>
 
@@ -434,15 +483,8 @@
             const tipeInput = document.getElementById('tipe_input');
             const hargaInput = document.getElementById('harga_input');
             const diskonInput = document.getElementById('diskon_input');
-            const modulTipeSelect = document.getElementById('modul_tipe');
-            const modulKontenLabel = document.getElementById('modul_konten_label');
-            const modulKontenInput = document.getElementById('modul_konten');
-            const modulVideoGroup = document.getElementById('modul_video_url_group');
-            const modulVideoInput = document.getElementById('modul_video_url');
-            const modulDurasiGroup = document.getElementById('modul_durasi_group');
-            const modulDurasiLabel = document.getElementById('modul_durasi_label');
-            const modulDurasiInput = document.getElementById('modul_durasi');
-            const modulTypeHint = document.getElementById('modul_type_hint');
+            const initialModulesContainer = document.getElementById('initialModulesContainer');
+            const addInitialModuleButton = document.getElementById('addInitialModuleButton');
 
             const generateWebinarCode = () => {
                 const now = new Date();
@@ -568,73 +610,185 @@
                 });
             }
 
-            // Struktur Modul Awal adaptif berdasarkan tipe materi
-            const syncModuleFieldsByType = () => {
-                if (!modulTipeSelect) return;
+            const initialModuleTypeConfig = {
+                video: {
+                    contentLabel: 'Ringkasan Video (opsional)',
+                    contentPlaceholder: 'Ringkas isi video yang akan dipelajari...',
+                    showVideoUrl: true,
+                    showDuration: true,
+                    durationLabel: 'Durasi Video (menit)',
+                    hint: 'Tipe video menampilkan URL video dan durasi tayang.',
+                },
+                bacaan: {
+                    contentLabel: 'Konten Bacaan',
+                    contentPlaceholder: 'Tulis isi materi bacaan, rangkuman, atau poin utama...',
+                    showVideoUrl: false,
+                    showDuration: true,
+                    durationLabel: 'Estimasi Baca (menit)',
+                    hint: 'Tipe bacaan fokus ke isi materi. URL video disembunyikan.',
+                },
+                kuis: {
+                    contentLabel: 'Instruksi Kuis',
+                    contentPlaceholder: 'Jelaskan aturan, jumlah soal, dan nilai minimum kelulusan...',
+                    showVideoUrl: false,
+                    showDuration: true,
+                    durationLabel: 'Durasi Kuis (menit)',
+                    hint: 'Tipe kuis cocok untuk evaluasi belajar dengan batas waktu.',
+                },
+                tugas: {
+                    contentLabel: 'Instruksi Tugas Akhir (Opsional)',
+                    contentPlaceholder: 'Tuliskan instruksi pengerjaan, format pengumpulan, dan kriteria penilaian tugas akhir...',
+                    showVideoUrl: false,
+                    showDuration: false,
+                    durationLabel: 'Durasi (menit)',
+                    hint: 'Tugas akhir bersifat opsional: dosen bebas menambahkan atau tidak.',
+                },
+            };
 
-                const type = modulTipeSelect.value || 'video';
+            const syncInitialModuleCard = (card) => {
+                if (!card) return;
 
-                const config = {
-                    video: {
-                        kontenLabel: 'Ringkasan Video (opsional)',
-                        kontenPlaceholder: 'Ringkas isi video yang akan dipelajari...',
-                        showVideoUrl: true,
-                        showDurasi: true,
-                        durasiLabel: 'Durasi Video (menit)',
-                        hint: 'Tipe Video menampilkan URL video dan durasi tayang.',
-                    },
-                    bacaan: {
-                        kontenLabel: 'Konten Bacaan',
-                        kontenPlaceholder: 'Tulis isi materi bacaan, rangkuman, atau poin utama...',
-                        showVideoUrl: false,
-                        showDurasi: true,
-                        durasiLabel: 'Estimasi Baca (menit)',
-                        hint: 'Tipe Bacaan fokus ke konten teks. URL video disembunyikan.',
-                    },
-                    kuis: {
-                        kontenLabel: 'Instruksi Kuis',
-                        kontenPlaceholder: 'Jelaskan aturan, jumlah soal, dan nilai minimum kelulusan...',
-                        showVideoUrl: false,
-                        showDurasi: true,
-                        durasiLabel: 'Durasi Kuis (menit)',
-                        hint: 'Tipe Kuis cocok untuk evaluasi belajar dengan batas waktu.',
-                    },
-                    tugas: {
-                        kontenLabel: 'Instruksi Tugas Akhir (Opsional)',
-                        kontenPlaceholder: 'Tuliskan instruksi pengerjaan, format pengumpulan, dan kriteria penilaian tugas akhir...',
-                        showVideoUrl: false,
-                        showDurasi: false,
-                        durasiLabel: 'Durasi (menit)',
-                        hint: 'Tugas akhir bersifat opsional: dosen bebas menambahkan atau tidak.',
-                    },
-                };
+                const typeSelect = card.querySelector('[data-initial-module-type]');
+                const contentLabel = card.querySelector('[data-initial-module-content-label]');
+                const contentInput = card.querySelector('[data-initial-module-content]');
+                const videoGroup = card.querySelector('[data-initial-module-video-group]');
+                const videoInput = card.querySelector('[data-initial-module-video]');
+                const durationGroup = card.querySelector('[data-initial-module-duration-group]');
+                const durationLabel = card.querySelector('[data-initial-module-duration-label]');
+                const durationInput = card.querySelector('[data-initial-module-duration]');
+                const hint = card.querySelector('[data-initial-module-hint]');
+                const selectedType = typeSelect?.value || 'video';
+                const selected = initialModuleTypeConfig[selectedType] || initialModuleTypeConfig.video;
 
-                const selected = config[type] || config.video;
+                if (contentLabel) contentLabel.textContent = selected.contentLabel;
+                if (contentInput) contentInput.placeholder = selected.contentPlaceholder;
+                if (durationLabel) durationLabel.textContent = selected.durationLabel;
+                if (hint) hint.textContent = selected.hint;
+                if (videoGroup) videoGroup.classList.toggle('hidden', !selected.showVideoUrl);
+                if (durationGroup) durationGroup.classList.toggle('hidden', !selected.showDuration);
 
-                if (modulKontenLabel) modulKontenLabel.textContent = selected.kontenLabel;
-                if (modulKontenInput) modulKontenInput.placeholder = selected.kontenPlaceholder;
-                if (modulDurasiLabel) modulDurasiLabel.textContent = selected.durasiLabel;
-                if (modulTypeHint) modulTypeHint.textContent = selected.hint;
-
-                if (modulVideoGroup) {
-                    modulVideoGroup.classList.toggle('hidden', !selected.showVideoUrl);
+                if (!selected.showVideoUrl && videoInput) {
+                    videoInput.value = '';
                 }
-                if (modulDurasiGroup) {
-                    modulDurasiGroup.classList.toggle('hidden', !selected.showDurasi);
-                }
 
-                // Hindari data lintas tipe ikut terkirim.
-                if (!selected.showVideoUrl && modulVideoInput) {
-                    modulVideoInput.value = '';
-                }
-                if (!selected.showDurasi && modulDurasiInput) {
-                    modulDurasiInput.value = '';
+                if (!selected.showDuration && durationInput) {
+                    durationInput.value = '';
                 }
             };
 
-            if (modulTipeSelect) {
-                modulTipeSelect.addEventListener('change', syncModuleFieldsByType);
-                syncModuleFieldsByType();
+            const renumberInitialModuleCards = () => {
+                if (!initialModulesContainer) return;
+
+                const cards = Array.from(initialModulesContainer.querySelectorAll('[data-initial-module-card]'));
+
+                cards.forEach((card, index) => {
+                    const title = card.querySelector('h5');
+                    const removeButton = card.querySelector('[data-remove-initial-module]');
+
+                    if (title) {
+                        title.textContent = `Modul Awal ${index + 1}`;
+                    }
+
+                    card.querySelectorAll('input, textarea, select').forEach((field) => {
+                        const currentName = field.getAttribute('name');
+                        if (!currentName) return;
+                        field.setAttribute('name', currentName.replace(/initial_modules\[\d+\]/, `initial_modules[${index}]`));
+                    });
+
+                    if (removeButton) {
+                        removeButton.disabled = cards.length === 1;
+                    }
+                });
+            };
+
+            const createInitialModuleCard = (index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-800/60';
+                wrapper.setAttribute('data-initial-module-card', 'true');
+                wrapper.innerHTML = `
+                    <div class="mb-4 flex items-start justify-between gap-3">
+                        <div>
+                            <h5 class="text-sm font-semibold text-gray-900 dark:text-white">Modul Awal ${index + 1}</h5>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Tentukan tipe materi dan konten dasar yang ingin langsung dibuat.</p>
+                        </div>
+                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-500 transition hover:bg-red-50" data-remove-initial-module>
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Judul Modul</label>
+                            <input type="text" name="initial_modules[${index}][judul]" data-course-only-field class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600" placeholder="Masukkan judul modul">
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Tipe</label>
+                            <select name="initial_modules[${index}][tipe]" data-course-only-field data-initial-module-type class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600">
+                                <option value="video">Video</option>
+                                <option value="bacaan">Bacaan</option>
+                                <option value="kuis">Kuis</option>
+                                <option value="tugas">Tugas Akhir (Opsional)</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Saat kursus dibuat, item ini langsung masuk ke modul default dan bisa diedit lagi setelahnya.</p>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400" data-initial-module-content-label>Konten/Deskripsi</label>
+                            <textarea name="initial_modules[${index}][konten]" data-course-only-field data-initial-module-content rows="3" class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600 resize-none" placeholder="Deskripsi modul..."></textarea>
+                        </div>
+                        <div data-initial-module-video-group>
+                            <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">URL Video (opsional)</label>
+                            <input type="url" name="initial_modules[${index}][video_url]" data-course-only-field data-initial-module-video class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600" placeholder="https://www.youtube.com/watch?v=...">
+                        </div>
+                        <div data-initial-module-duration-group>
+                            <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400" data-initial-module-duration-label>Durasi (menit)</label>
+                            <input type="number" name="initial_modules[${index}][durasi]" data-course-only-field data-initial-module-duration min="0" class="w-full rounded-lg bg-white px-3 py-2 text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600" placeholder="0">
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400" data-initial-module-hint></p>
+                    </div>
+                `;
+
+                return wrapper;
+            };
+
+            const bindInitialModuleCardEvents = (card) => {
+                if (!card) return;
+
+                const typeSelect = card.querySelector('[data-initial-module-type]');
+                const removeButton = card.querySelector('[data-remove-initial-module]');
+
+                if (typeSelect) {
+                    typeSelect.addEventListener('change', () => syncInitialModuleCard(card));
+                }
+
+                if (removeButton) {
+                    removeButton.addEventListener('click', () => {
+                        const cards = initialModulesContainer?.querySelectorAll('[data-initial-module-card]') || [];
+                        if (cards.length <= 1) return;
+
+                        card.remove();
+                        renumberInitialModuleCards();
+                    });
+                }
+
+                syncInitialModuleCard(card);
+            };
+
+            if (initialModulesContainer) {
+                initialModulesContainer.querySelectorAll('[data-initial-module-card]').forEach((card) => {
+                    bindInitialModuleCardEvents(card);
+                });
+                renumberInitialModuleCards();
+            }
+
+            if (addInitialModuleButton && initialModulesContainer) {
+                addInitialModuleButton.addEventListener('click', () => {
+                    const nextIndex = initialModulesContainer.querySelectorAll('[data-initial-module-card]').length;
+                    const card = createInitialModuleCard(nextIndex);
+                    initialModulesContainer.appendChild(card);
+                    bindInitialModuleCardEvents(card);
+                    renumberInitialModuleCards();
+                });
             }
 
             // Handle submit buttons — set status based on which button was clicked
