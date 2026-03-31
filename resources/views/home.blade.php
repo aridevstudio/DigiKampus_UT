@@ -581,6 +581,29 @@
     </section>
 
     {{-- ═══════════ FOOTER ═══════════ --}}
+    <section style="padding:72px 24px;background:var(--c-surface-alt)">
+        <div class="max-w-6xl mx-auto" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px">
+            <article id="tentang" class="anim-up" style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:24px;padding:28px;box-shadow:var(--shadow-sm);scroll-margin-top:110px">
+                <div class="section-badge" style="margin-bottom:16px">Tentang</div>
+                <h3 style="font-family:var(--font-display);font-size:1.2rem;font-weight:800;color:var(--c-text);margin-bottom:12px">Belajar digital yang lebih ringkas untuk mahasiswa UT</h3>
+                <p style="font-size:14px;line-height:1.7;color:var(--c-text-muted);margin:0">DigiKampus UT menggabungkan akses materi, tugas, kuis, dan pemantauan progres belajar dalam satu platform yang lebih praktis untuk aktivitas akademik harian.</p>
+            </article>
+            <article id="kontak" class="anim-up" style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:24px;padding:28px;box-shadow:var(--shadow-sm);scroll-margin-top:110px">
+                <div class="section-badge" style="margin-bottom:16px">Kontak</div>
+                <h3 style="font-family:var(--font-display);font-size:1.2rem;font-weight:800;color:var(--c-text);margin-bottom:12px">Hubungi tim support</h3>
+                <div style="display:grid;gap:10px;font-size:14px;color:var(--c-text-muted);line-height:1.7">
+                    <div>Email: support@digikampusut.id</div>
+                    <div>WhatsApp: +62 812-3456-7890</div>
+                    <div>Jam layanan: Senin - Jumat, 08.00 - 17.00 WIB</div>
+                </div>
+            </article>
+            <article id="privasi" class="anim-up" style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:24px;padding:28px;box-shadow:var(--shadow-sm);scroll-margin-top:110px">
+                <div class="section-badge" style="margin-bottom:16px">Privasi</div>
+                <h3 style="font-family:var(--font-display);font-size:1.2rem;font-weight:800;color:var(--c-text);margin-bottom:12px">Penggunaan data untuk kebutuhan pembelajaran</h3>
+                <p style="font-size:14px;line-height:1.7;color:var(--c-text-muted);margin:0">Data akun, aktivitas belajar, dan transaksi diproses untuk mendukung layanan akademik, operasional platform, serta peningkatan kualitas pengalaman pengguna sesuai akses masing-masing peran.</p>
+            </article>
+        </div>
+    </section>
     <footer style="border-top:1px solid var(--c-border);padding:32px 24px;background:var(--c-surface)">
         <div class="max-w-6xl mx-auto" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;font-size:13px;color:var(--c-text-muted)">
             <div style="display:flex;align-items:center;gap:8px">
@@ -588,9 +611,9 @@
                 <span>© {{ date('Y') }} DigiKampus UT</span>
             </div>
             <div style="display:flex;gap:24px">
-                <a href="javascript:void(0)" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Tentang</a>
-                <a href="javascript:void(0)" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Kontak</a>
-                <a href="javascript:void(0)" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Privasi</a>
+                <a href="#tentang" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Tentang</a>
+                <a href="#kontak" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Kontak</a>
+                <a href="#privasi" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Privasi</a>
             </div>
         </div>
     </footer>
@@ -658,3 +681,4 @@
     </script>
 </body>
 </html>
+
