@@ -4,7 +4,7 @@
 <nav class="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pt-4">
     <div class="nav-glass max-w-6xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
         <a href="/" class="flex items-center gap-2.5" style="text-decoration:none">
-            <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="DigiKampus" class="h-8" loading="eager">
+            <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="DigiKampus" class="h-8" loading="eager">
             <div>
                 <span style="font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:#1E293B">DigiKampus</span>
                 <span style="font-size:11px;color:#94A3B8;margin-left:3px;font-weight:500">UT</span>
@@ -46,3 +46,4 @@
         box-shadow: 0 4px 30px rgba(0,0,0,0.04);
     }
 </style>
+

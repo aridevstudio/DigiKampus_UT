@@ -385,7 +385,7 @@
     <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pt-4">
         <div class="nav-glass max-w-6xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
             <a href="/" class="flex items-center gap-2.5" style="text-decoration:none">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="DigiKampus" class="h-8" loading="eager">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="DigiKampus" class="h-8" loading="eager">
                 <div>
                     <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--c-text)">DigiKampus</span>
                     <span style="font-size:11px;color:var(--c-text-light);margin-left:3px;font-weight:500">UT</span>
@@ -605,9 +605,9 @@
         </div>
     </section>
     <footer style="border-top:1px solid var(--c-border);padding:32px 24px;background:var(--c-surface)">
-        <div class="max-w-6xl mx-auto" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;font-size:13px;color:var(--c-text-muted)">
-            <div style="display:flex;align-items:center;gap:8px">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="Logo" style="height:20px;opacity:0.4" loading="lazy">
+        <div class="max-w-6xl mx-auto" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:16px;font-size:13px;color:var(--c-text-muted)">
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;text-align:center">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="Logo" style="height:20px;opacity:0.4" loading="lazy">
                 <span>© {{ date('Y') }} DigiKampus UT</span>
             </div>
         </div>
@@ -676,5 +676,6 @@
     </script>
 </body>
 </html>
+
 
 

@@ -203,7 +203,7 @@
         <aside id="sidebar" class="fixed inset-y-0 left-0 flex w-64 flex-col overflow-hidden bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
             {{-- Logo --}}
             <div class="sidebar-logo-wrap h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700 transition-all duration-300">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="SALUT" class="sidebar-logo-image h-10 object-contain transition-all duration-300">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="SALUT" class="sidebar-logo-image h-10 object-contain transition-all duration-300">
             </div>
             
             {{-- User Info --}}
@@ -341,7 +341,7 @@
                         
                         {{-- Mobile Logo --}}
                         <img 
-                            src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" 
+                            src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" 
                             alt="SALUT Logo" 
                             class="h-8 object-contain lg:hidden"
                         >
@@ -906,3 +906,4 @@
     @stack('scripts')
 </body>
 </html>
+

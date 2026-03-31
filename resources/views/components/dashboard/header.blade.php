@@ -64,7 +64,7 @@ if ($userType === 'mahasiswa' && $user) {
             
             {{-- Mobile Logo --}}
             <img 
-                src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" 
+                src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" 
                 alt="SALUT Logo" 
                 class="h-8 object-contain lg:hidden"
             >
@@ -171,3 +171,4 @@ if ($userType === 'mahasiswa' && $user) {
         </div>
     </div>
 </header>
+

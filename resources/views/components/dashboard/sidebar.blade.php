@@ -26,7 +26,7 @@ $userProfilePicture = $profile?->foto_profile;
     {{-- Logo with Close Button (mobile) --}}
     <div class="sidebar-logo-wrap p-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between transition-all duration-300">
         <img 
-            src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" 
+            src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" 
             alt="SALUT Logo" 
             class="sidebar-logo-image h-10 object-contain transition-all duration-300"
         >
@@ -133,3 +133,4 @@ $userProfilePicture = $profile?->foto_profile;
         </ul>
     </nav>
 </aside>
+
