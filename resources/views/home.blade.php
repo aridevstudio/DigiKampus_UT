@@ -442,7 +442,7 @@
 
             {{-- Hero Illustration (large screens) --}}
             <div class="hidden lg:flex" style="justify-content:center;align-items:center;animation:fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.5s both">
-                <img src="{{ asset('assets/image/auth/Illustration 1 Login Mahasiswa.png') }}" alt="DigiKampus Illustration" class="float-anim" style="width:100%;max-width:440px;object-fit:contain" loading="eager">
+                <img src="{{ asset('assets/image/auth/Illustration 1 Login Mahasiswa.png') }}?v={{ @filemtime(public_path('assets/image/auth/Illustration 1 Login Mahasiswa.png')) }}" alt="DigiKampus Illustration" class="float-anim" style="width:100%;max-width:440px;object-fit:contain" loading="eager">
             </div>
         </div>
     </section>
@@ -610,11 +610,6 @@
                 <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}" alt="Logo" style="height:20px;opacity:0.4" loading="lazy">
                 <span>© {{ date('Y') }} DigiKampus UT</span>
             </div>
-            <div style="display:flex;gap:24px">
-                <a href="#tentang" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Tentang</a>
-                <a href="#kontak" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Kontak</a>
-                <a href="#privasi" style="color:var(--c-text-muted);text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Privasi</a>
-            </div>
         </div>
     </footer>
 
@@ -681,4 +676,5 @@
     </script>
 </body>
 </html>
+
 
