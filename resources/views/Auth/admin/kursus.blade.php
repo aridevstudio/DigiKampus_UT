@@ -885,8 +885,8 @@
                     
                     {{-- Modal Header --}}
                     <div class="mb-4">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Kursus</h3>
-                        <p class="text-sm text-blue-500">Ubah informasi kursus yang ada.</p>
+                        <h3 id="edit_modal_title" class="text-lg font-bold text-gray-900 dark:text-white">Edit Kursus</h3>
+                        <p id="edit_modal_subtitle" class="text-sm text-blue-500">Ubah informasi kursus yang ada.</p>
                     </div>
                     
                     <div class="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
@@ -894,35 +894,35 @@
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center">1</span>
-                                Informasi Dasar Kursus
+                                <span id="edit_basic_section_title">Informasi Dasar Kursus</span>
                             </h4>
                             
                             <div class="space-y-4">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
+                                        <label id="edit_nama_course_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Judul Kursus <span class="text-red-400">*</span></label>
                                         <input type="text" name="nama_course" id="edit_nama_course" required placeholder="Masukkan judul kursus" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
+                                        <label id="edit_kode_course_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-red-400">*</span></label>
                                         <input type="text" name="kode_course" id="edit_kode_course" required placeholder="Contoh: CS101" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Kursus</label>
+                                    <label id="edit_deskripsi_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Deskripsi Kursus</label>
                                     <textarea name="deskripsi" id="edit_deskripsi" rows="3" placeholder="Jelaskan tentang kursus ini..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Persyaratan Kursus (Opsional)</label>
+                                    <label id="edit_persyaratan_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Persyaratan Kursus (Opsional)</label>
                                     <textarea name="persyaratan" id="edit_persyaratan" rows="3" placeholder="Contoh:&#10;STIN4101 - Pengantar Teknologi Informasi&#10;Memiliki laptop dan koneksi internet stabil" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
                                     <p class="text-xs text-gray-400 mt-1">Tulis satu persyaratan per baris.</p>
                                 </div>
                                 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div x-data="dosenSearch('edit')" x-ref="editDosenWrap" class="relative">
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
+                                        <label id="edit_dosen_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Dosen Pengampu <span class="text-gray-300 dark:text-gray-600">(opsional)</span></label>
                                         <input type="hidden" name="id_dosen" :value="selectedId" id="edit_id_dosen">
                                         <div class="relative">
                                             <input type="text" x-model="search" @focus="open = true" @click="open = true" @input="open = true" placeholder="Cari dosen..." autocomplete="off" class="w-full px-3 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -987,7 +987,7 @@
                                 
                                 {{-- Thumbnail --}}
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Kursus</label>
+                                    <label id="edit_thumbnail_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Thumbnail Kursus</label>
                                     <div class="flex items-center gap-4">
                                         <div id="editThumbnailPreview" class="w-20 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
                                             <svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1013,15 +1013,15 @@
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center justify-center">2</span>
-                                Modul Kursus
+                                <span id="edit_module_section_title">Modul Kursus</span>
                             </h4>
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Kelola struktur modul, video pembelajaran, bahan bacaan, kuis, dan tugas untuk kursus ini.</p>
+                                <p id="edit_module_section_desc" class="text-sm text-gray-500 dark:text-gray-400 mb-4">Kelola struktur modul, video pembelajaran, bahan bacaan, kuis, dan tugas untuk kursus ini.</p>
                                 <a href="#" id="edit_modul_btn" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 font-medium rounded-lg transition border border-blue-200 dark:border-blue-800 w-full justify-center">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                     </svg>
-                                    Kelola Modul Kursus
+                                    <span id="edit_module_button_text">Kelola Modul Kursus</span>
                                 </a>
                             </div>
                         </div>
@@ -1030,7 +1030,7 @@
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold flex items-center justify-center">3</span>
-                                Pengaturan Kursus
+                                <span id="edit_settings_section_title">Pengaturan Kursus</span>
                             </h4>
                             
                             <div class="space-y-3">
@@ -1038,8 +1038,8 @@
                                     {{-- Status Kursus Toggle --}}
                                     <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                         <div>
-                                            <h5 class="font-medium text-gray-900 dark:text-white text-xs">Status Kursus</h5>
-                                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Aktif atau simpan draft</p>
+                                            <h5 id="edit_status_title" class="font-medium text-gray-900 dark:text-white text-xs">Status Kursus</h5>
+                                            <p id="edit_status_desc" class="text-[10px] text-gray-500 dark:text-gray-400">Aktif atau simpan draft</p>
                                         </div>
                                         <input type="hidden" name="status" id="edit_status_input" value="draft">
                                         <label class="relative inline-flex items-center cursor-pointer">
@@ -1065,8 +1065,8 @@
                                 {{-- Sertifikat Toggle --}}
                                 <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                     <div>
-                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
-                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
+                                        <h5 id="edit_certificate_title" class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
+                                        <p id="edit_certificate_desc" class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
                                     </div>
                                     <input type="hidden" name="sertifikat" value="0">
                                     <label class="relative inline-flex items-center cursor-pointer">
@@ -1081,12 +1081,12 @@
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center">4</span>
-                                Pricing & Akses Kursus
+                                <span id="edit_pricing_section_title">Pricing & Akses Kursus</span>
                             </h4>
                             
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
+                                    <label id="edit_category_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kategori Kursus</label>
                                     <div class="relative">
                                         <select name="kategori" id="edit_kategori" required class="w-full px-3 py-2.5 pr-10 appearance-none bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                             <option value="kursus">Kursus</option>
@@ -1097,12 +1097,12 @@
                                     </div>
                                 </div>
 
-                                <div class="rounded-xl border border-purple-100 dark:border-purple-800/40 bg-purple-50/40 dark:bg-purple-900/10 p-4 space-y-4">
+                                <div id="edit_category_meta_panel" class="rounded-xl border border-purple-100 dark:border-purple-800/40 bg-purple-50/40 dark:bg-purple-900/10 p-4 space-y-4">
                                     <div>
-                                        <h5 class="font-medium text-gray-900 dark:text-white text-xs">Jadwal Webinar</h5>
-                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Field ini digunakan saat kategori webinar.</p>
+                                        <h5 id="edit_category_meta_title" class="font-medium text-gray-900 dark:text-white text-xs">Jadwal Webinar</h5>
+                                        <p id="edit_category_meta_desc" class="text-[10px] text-gray-500 dark:text-gray-400">Field ini digunakan saat kategori webinar.</p>
                                     </div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div id="edit_webinar_datetime_group" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div>
                                             <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Webinar</label>
                                             <input type="date" name="tanggal_webinar" id="edit_tanggal_webinar" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -1116,13 +1116,13 @@
                                             <input type="time" name="jam_selesai_webinar" id="edit_jam_selesai_webinar" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta</label>
+                                    <div id="edit_category_meta_fields" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div id="edit_kuota_group">
+                                            <label id="edit_kuota_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kuota Peserta</label>
                                             <input type="number" name="kuota_peserta" id="edit_kuota_peserta" min="1" placeholder="Kosongkan jika tidak dibatasi" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         </div>
-                                        <div>
-                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Meeting / Playlist</label>
+                                        <div id="edit_link_group">
+                                            <label id="edit_link_label" class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Link Meeting / Playlist</label>
                                             <input type="url" name="youtube_playlist" id="edit_youtube_playlist" placeholder="https://zoom.us/j/... atau https://meet.google.com/..." class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         </div>
                                     </div>
@@ -1313,9 +1313,130 @@
 
         function syncEditCategoryUI(kategori = '') {
             const isWebinar = kategori === 'webinar';
+            const isKursus = kategori === 'kursus';
+            const isTiket = kategori === 'tiket';
+            const normalizedCategory = ['kursus', 'webinar', 'tiket'].includes(kategori) ? kategori : 'kursus';
             const durationFields = document.getElementById('editDurationFields');
             const modulButton = document.getElementById('edit_modul_btn')?.closest('.border');
             const playlistPanel = document.getElementById('editPlaylistPanel');
+            const categoryMetaPanel = document.getElementById('edit_category_meta_panel');
+            const webinarDatetimeGroup = document.getElementById('edit_webinar_datetime_group');
+            const kuotaGroup = document.getElementById('edit_kuota_group');
+            const linkLabel = document.getElementById('edit_link_label');
+            const linkInput = document.getElementById('edit_youtube_playlist');
+            const copyMap = {
+                kursus: {
+                    modalTitle: 'Edit Kursus',
+                    modalSubtitle: 'Ubah informasi kursus yang ada.',
+                    basicTitle: 'Informasi Dasar Kursus',
+                    nameLabel: 'Judul Kursus <span class="text-red-400">*</span>',
+                    codeLabel: 'Kode Kursus <span class="text-red-400">*</span>',
+                    descriptionLabel: 'Deskripsi Kursus',
+                    requirementsLabel: 'Persyaratan Kursus (Opsional)',
+                    teacherLabel: 'Dosen Pengampu <span class="text-gray-300 dark:text-gray-600">(opsional)</span>',
+                    thumbnailLabel: 'Thumbnail Kursus',
+                    moduleTitle: 'Modul Kursus',
+                    moduleDesc: 'Kelola struktur modul, video pembelajaran, bahan bacaan, kuis, dan tugas untuk kursus ini.',
+                    moduleButton: 'Kelola Modul Kursus',
+                    settingsTitle: 'Pengaturan Kursus',
+                    statusTitle: 'Status Kursus',
+                    statusDesc: 'Aktif atau simpan draft',
+                    certificateTitle: 'Sertifikat Penyelesaian',
+                    certificateDesc: 'Berikan sertifikat setelah selesai',
+                    pricingTitle: 'Pricing & Akses Kursus',
+                    categoryLabel: 'Kategori Kursus',
+                    metaTitle: 'Playlist Kursus',
+                    metaDesc: 'Masukkan URL playlist YouTube untuk sinkronisasi materi kursus.',
+                    linkLabel: 'Link Playlist YouTube',
+                    linkPlaceholder: 'https://www.youtube.com/playlist?list=...',
+                },
+                webinar: {
+                    modalTitle: 'Edit Webinar',
+                    modalSubtitle: 'Ubah informasi webinar yang ada.',
+                    basicTitle: 'Informasi Dasar Webinar',
+                    nameLabel: 'Judul Webinar <span class="text-red-400">*</span>',
+                    codeLabel: 'Kode Webinar <span class="text-red-400">*</span>',
+                    descriptionLabel: 'Deskripsi Webinar',
+                    requirementsLabel: 'Catatan Webinar (Opsional)',
+                    teacherLabel: 'Pembicara / Dosen <span class="text-gray-300 dark:text-gray-600">(opsional)</span>',
+                    thumbnailLabel: 'Thumbnail Webinar',
+                    moduleTitle: 'Materi Webinar',
+                    moduleDesc: 'Webinar tidak memakai struktur modul kursus. Fokus pengelolaan ada pada jadwal, link meeting, dan akses peserta.',
+                    moduleButton: 'Kelola Materi Webinar',
+                    settingsTitle: 'Pengaturan Webinar',
+                    statusTitle: 'Status Webinar',
+                    statusDesc: 'Draft atau siap tayang',
+                    certificateTitle: 'Sertifikat Kehadiran',
+                    certificateDesc: 'Berikan sertifikat kepada peserta webinar',
+                    pricingTitle: 'Pricing & Akses Webinar',
+                    categoryLabel: 'Kategori Konten',
+                    metaTitle: 'Jadwal Webinar',
+                    metaDesc: 'Field ini digunakan saat kategori webinar.',
+                    linkLabel: 'Link Meeting / Playlist',
+                    linkPlaceholder: 'https://zoom.us/j/... atau https://meet.google.com/...',
+                },
+                tiket: {
+                    modalTitle: 'Edit Tiket',
+                    modalSubtitle: 'Ubah informasi tiket acara yang ada.',
+                    basicTitle: 'Informasi Dasar Tiket',
+                    nameLabel: 'Nama Tiket <span class="text-red-400">*</span>',
+                    codeLabel: 'Kode Tiket <span class="text-red-400">*</span>',
+                    descriptionLabel: 'Deskripsi Tiket',
+                    requirementsLabel: 'Catatan Tiket (Opsional)',
+                    teacherLabel: 'PIC / Pengelola <span class="text-gray-300 dark:text-gray-600">(opsional)</span>',
+                    thumbnailLabel: 'Thumbnail Tiket',
+                    moduleTitle: 'Akses Tiket',
+                    moduleDesc: 'Tiket acara tidak memakai struktur modul kursus. Pengelolaan difokuskan pada akses, jadwal, kuota, dan harga.',
+                    moduleButton: 'Kelola Akses Tiket',
+                    settingsTitle: 'Pengaturan Tiket',
+                    statusTitle: 'Status Tiket',
+                    statusDesc: 'Draft, aktif, atau nonaktif',
+                    certificateTitle: 'Dokumen Kehadiran',
+                    certificateDesc: 'Aktifkan jika peserta perlu bukti kehadiran',
+                    pricingTitle: 'Pricing & Akses Tiket',
+                    categoryLabel: 'Kategori Konten',
+                    metaTitle: 'Info Akses Tiket',
+                    metaDesc: 'Tambahkan link informasi, landing page, atau halaman akses tiket jika diperlukan.',
+                    linkLabel: 'Link Informasi / Landing Page',
+                    linkPlaceholder: 'https://example.com/event atau halaman detail tiket',
+                },
+            };
+            const copy = copyMap[normalizedCategory];
+            const setHtml = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = value;
+            };
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            };
+
+            setText('edit_modal_title', copy.modalTitle);
+            setText('edit_modal_subtitle', copy.modalSubtitle);
+            setText('edit_basic_section_title', copy.basicTitle);
+            setHtml('edit_nama_course_label', copy.nameLabel);
+            setHtml('edit_kode_course_label', copy.codeLabel);
+            setText('edit_deskripsi_label', copy.descriptionLabel);
+            setText('edit_persyaratan_label', copy.requirementsLabel);
+            setHtml('edit_dosen_label', copy.teacherLabel);
+            setText('edit_thumbnail_label', copy.thumbnailLabel);
+            setText('edit_module_section_title', copy.moduleTitle);
+            setText('edit_module_section_desc', copy.moduleDesc);
+            setText('edit_module_button_text', copy.moduleButton);
+            setText('edit_settings_section_title', copy.settingsTitle);
+            setText('edit_status_title', copy.statusTitle);
+            setText('edit_status_desc', copy.statusDesc);
+            setText('edit_certificate_title', copy.certificateTitle);
+            setText('edit_certificate_desc', copy.certificateDesc);
+            setText('edit_pricing_section_title', copy.pricingTitle);
+            setText('edit_category_label', copy.categoryLabel);
+            setText('edit_category_meta_title', copy.metaTitle);
+            setText('edit_category_meta_desc', copy.metaDesc);
+            setText('edit_link_label', copy.linkLabel);
+
+            if (linkInput) {
+                linkInput.placeholder = copy.linkPlaceholder;
+            }
 
             if (durationFields) {
                 durationFields.classList.toggle('hidden', isWebinar);
@@ -1328,8 +1449,26 @@
                 modulButton.classList.toggle('hidden', isWebinar);
             }
 
+            if (categoryMetaPanel) {
+                categoryMetaPanel.classList.toggle('hidden', false);
+            }
+
+            if (webinarDatetimeGroup) {
+                webinarDatetimeGroup.classList.toggle('hidden', !isWebinar);
+                webinarDatetimeGroup.querySelectorAll('input').forEach((field) => {
+                    field.disabled = !isWebinar;
+                });
+            }
+
+            if (kuotaGroup) {
+                kuotaGroup.classList.toggle('hidden', !isWebinar);
+                kuotaGroup.querySelectorAll('input').forEach((field) => {
+                    field.disabled = !isWebinar;
+                });
+            }
+
             if (playlistPanel) {
-                playlistPanel.classList.toggle('hidden', kategori !== 'kursus');
+                playlistPanel.classList.toggle('hidden', !isKursus);
             }
         }
 
