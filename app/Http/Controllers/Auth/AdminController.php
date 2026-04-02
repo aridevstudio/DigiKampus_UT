@@ -1112,6 +1112,7 @@ class AdminController extends Controller
 
         $course = Course::create($this->buildAdminCoursePayload($request, $status, $thumbnailPath));
         $playlistSummary = $this->syncPlaylistForCourse($course, $request->youtube_playlist, $request->kategori);
+        $this->notifyMahasiswaAboutPublishedProgram($course, 'Admin');
 
         $label = $request->kategori === 'webinar' ? 'Webinar' : 'Kursus';
         $message = "{$label} berhasil ditambahkan!";
@@ -1245,6 +1246,8 @@ class AdminController extends Controller
             );
             }
         }
+
+        $this->notifyMahasiswaAboutPublishedProgram($kursus, 'Admin');
 
         return redirect()->route('admin.kursus')
             ->with('success', 'Webinar berhasil disetujui dan dipublikasikan.');
@@ -2501,6 +2504,51 @@ class AdminController extends Controller
                 'search' => $request->query('search', ''),
             ])
             ->with('success', 'Balasan support berhasil dikirim.');
+    }
+
+    private function notifyMahasiswaAboutPublishedProgram(Course $course, string $sourceLabel): void
+    {
+        if ($course->status !== 'aktif' || !$course->akses_publik) {
+            return;
+        }
+
+        $config = match ($course->kategori) {
+            'webinar' => [
+                'judul' => 'Webinar Baru Tersedia',
+                'konten' => sprintf(
+                    '%s mempublikasikan webinar "%s". Cek sekarang di katalog pembelajaran.',
+                    $sourceLabel,
+                    $course->nama_course
+                ),
+                'icon_color' => '#7C3AED',
+            ],
+            'tiket' => [
+                'judul' => 'Program Tiket Baru Tersedia',
+                'konten' => sprintf(
+                    '%s menambahkan program "%s". Detailnya sudah tersedia untuk mahasiswa.',
+                    $sourceLabel,
+                    $course->nama_course
+                ),
+                'icon_color' => '#059669',
+            ],
+            default => [
+                'judul' => 'Kursus Baru Tersedia',
+                'konten' => sprintf(
+                    '%s mempublikasikan kursus "%s". Cek sekarang di katalog pembelajaran.',
+                    $sourceLabel,
+                    $course->nama_course
+                ),
+                'icon_color' => '#2563EB',
+            ],
+        };
+
+        Notification::notifyAllMahasiswa(
+            $config['judul'],
+            $config['konten'],
+            'umum',
+            'info',
+            $config['icon_color']
+        );
     }
 
     private function resolveNotificationLink(AdminNotification $notification): ?string

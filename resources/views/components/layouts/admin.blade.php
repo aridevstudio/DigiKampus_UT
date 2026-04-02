@@ -635,7 +635,116 @@
             }
         }
         // Notifications
+        const ADMIN_LOCAL_NOTIFICATION_KEY = 'admin-local-notifications';
         let notifLoaded = false;
+
+        function readLocalNotifications() {
+            try {
+                const raw = localStorage.getItem(ADMIN_LOCAL_NOTIFICATION_KEY);
+                const items = raw ? JSON.parse(raw) : [];
+                return Array.isArray(items) ? items : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function writeLocalNotifications(items) {
+            try {
+                localStorage.setItem(ADMIN_LOCAL_NOTIFICATION_KEY, JSON.stringify(items));
+            } catch (error) {
+                // Ignore storage failures and keep UI functional.
+            }
+        }
+
+        function getLocalUnreadCount() {
+            return readLocalNotifications().filter((item) => !item.is_read).length;
+        }
+
+        function getUnreadCount(items) {
+            return items.filter((item) => !item.is_read).length;
+        }
+
+        function mergeNotifications(serverData = {}) {
+            const serverItems = Array.isArray(serverData.items) ? serverData.items : [];
+            const localItems = readLocalNotifications();
+            const items = [...localItems, ...serverItems];
+
+            return {
+                items,
+                count: getUnreadCount(items),
+            };
+        }
+
+        function renderNotificationState(data) {
+            const list = document.getElementById('notifList');
+            const subtitle = document.getElementById('notifSubtitle');
+            const markAllBtn = document.getElementById('markAllBtn');
+
+            updateBadge(data.count);
+            subtitle.textContent = data.count > 0 ? data.count + ' belum dibaca' : 'Semua sudah dibaca';
+            markAllBtn.style.display = data.count > 0 ? 'inline' : 'none';
+
+            if (data.items.length === 0) {
+                list.innerHTML = '<div class="px-4 py-6 text-center text-sm text-gray-400">Tidak ada notifikasi</div>';
+                return;
+            }
+
+            let html = '';
+            data.items.forEach(item => {
+                const iconMap = {
+                    'student': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>',
+                    'teacher': '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
+                    'support': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>',
+                    'youtube': '<svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.5 6.2c-.3-1-1-1.8-2-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.5.6c-1 .3-1.7 1.1-2 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8c.3 1 1 1.8 2 2.1 1.9.6 9.5.6 9.5.6s7.6 0 9.5-.6c1-.3 1.7-1.1 2-2.1.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>',
+                    'import': '<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/></svg>',
+                    'success': '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                    'warning': '<svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>',
+                    'info': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+                };
+                const iconSvg = iconMap[item.icon] || iconMap['info'];
+                const unreadBg = item.is_read ? '' : 'bg-blue-50/50 dark:bg-blue-500/5';
+                const unreadDot = item.is_read ? '' : '<span class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>';
+                const canClick = Boolean(item.link) || !item.is_read;
+                const cursor = canClick ? 'cursor-pointer' : '';
+                const encodedLink = item.link ? encodeURIComponent(item.link) : '';
+
+                html += `<div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-start gap-3 transition ${unreadBg} ${cursor}" data-notif-id="${item.id}" data-notif-read="${item.is_read ? '1' : '0'}" data-notif-link="${encodedLink}">`;
+                html += '<div class="mt-0.5 flex-shrink-0">' + iconSvg + '</div>';
+                html += '<div class="flex-1 min-w-0"><p class="text-sm text-gray-700 dark:text-gray-300 truncate font-medium">' + item.message + '</p>';
+                if (item.detail) html += '<p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">' + item.detail + '</p>';
+                html += '<p class="text-xs text-gray-400 mt-0.5">' + item.time + '</p></div>' + unreadDot + '</div>';
+            });
+            list.innerHTML = html;
+
+            list.querySelectorAll('[data-notif-id]').forEach((notifEl) => {
+                notifEl.addEventListener('click', () => {
+                    handleNotificationClick(notifEl);
+                });
+            });
+        }
+
+        function refreshNotificationCounter() {
+            return fetch('/admin/notifications/count')
+                .then(r => r.json())
+                .then(data => {
+                    const total = (data.count || 0) + getLocalUnreadCount();
+                    updateBadge(total);
+                    const subtitle = document.getElementById('notifSubtitle');
+                    const markAllBtn = document.getElementById('markAllBtn');
+
+                    if (subtitle) {
+                        subtitle.textContent = total > 0 ? total + ' belum dibaca' : 'Semua sudah dibaca';
+                    }
+
+                    if (markAllBtn) {
+                        markAllBtn.style.display = total > 0 ? 'inline' : 'none';
+                    }
+                })
+                .catch(() => {
+                    const total = getLocalUnreadCount();
+                    updateBadge(total);
+                });
+        }
 
         function toggleNotifications() {
             const dropdown = document.getElementById('notifDropdown');
@@ -666,53 +775,15 @@
                 .then(r => r.json())
                 .then(data => {
                     notifLoaded = true;
-                    const list = document.getElementById('notifList');
-                    const subtitle = document.getElementById('notifSubtitle');
-                    const markAllBtn = document.getElementById('markAllBtn');
-
-                    updateBadge(data.count);
-                    subtitle.textContent = data.count > 0 ? data.count + ' belum dibaca' : 'Semua sudah dibaca';
-                    markAllBtn.style.display = data.count > 0 ? 'inline' : 'none';
-                    
-                    if (data.items.length === 0) {
-                        list.innerHTML = '<div class="px-4 py-6 text-center text-sm text-gray-400">Tidak ada notifikasi</div>';
-                        return;
-                    }
-                    
-                    let html = '';
-                    data.items.forEach(item => {
-                        const iconMap = {
-                            'student': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>',
-                            'teacher': '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
-                            'support': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>',
-                            'youtube': '<svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.5 6.2c-.3-1-1-1.8-2-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.5.6c-1 .3-1.7 1.1-2 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8c.3 1 1 1.8 2 2.1 1.9.6 9.5.6 9.5.6s7.6 0 9.5-.6c1-.3 1.7-1.1 2-2.1.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>',
-                            'import': '<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/></svg>',
-                            'success': '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-                            'warning': '<svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>',
-                            'info': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
-                        };
-                        const iconSvg = iconMap[item.icon] || iconMap['info'];
-                        const unreadBg = item.is_read ? '' : 'bg-blue-50/50 dark:bg-blue-500/5';
-                        const unreadDot = item.is_read ? '' : '<span class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>';
-                        const canClick = Boolean(item.link) || !item.is_read;
-                        const cursor = canClick ? 'cursor-pointer' : '';
-                        const encodedLink = item.link ? encodeURIComponent(item.link) : '';
-
-                        html += `<div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-start gap-3 transition ${unreadBg} ${cursor}" data-notif-id="${item.id}" data-notif-read="${item.is_read ? '1' : '0'}" data-notif-link="${encodedLink}">`;
-                        html += '<div class="mt-0.5 flex-shrink-0">' + iconSvg + '</div>';
-                        html += '<div class="flex-1 min-w-0"><p class="text-sm text-gray-700 dark:text-gray-300 truncate font-medium">' + item.message + '</p>';
-                        if (item.detail) html += '<p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">' + item.detail + '</p>';
-                        html += '<p class="text-xs text-gray-400 mt-0.5">' + item.time + '</p></div>' + unreadDot + '</div>';
-                    });
-                    list.innerHTML = html;
-
-                    list.querySelectorAll('[data-notif-id]').forEach((notifEl) => {
-                        notifEl.addEventListener('click', () => {
-                            handleNotificationClick(notifEl);
-                        });
-                    });
+                    renderNotificationState(mergeNotifications(data));
                 })
                 .catch(() => {
+                    notifLoaded = true;
+                    const localOnly = mergeNotifications({ items: [] });
+                    if (localOnly.items.length > 0) {
+                        renderNotificationState(localOnly);
+                        return;
+                    }
                     document.getElementById('notifList').innerHTML = '<div class="px-4 py-6 text-center text-sm text-red-400">Gagal memuat notifikasi</div>';
                 });
         }
@@ -743,6 +814,27 @@
         function markRead(id, options = {}) {
             const { skipCounterRefresh = false } = options;
 
+            if (String(id).startsWith('local-')) {
+                const nextItems = readLocalNotifications().map((item) => (
+                    String(item.id) === String(id) ? { ...item, is_read: true } : item
+                ));
+                writeLocalNotifications(nextItems);
+
+                const el = document.querySelector(`[data-notif-id="${id}"]`);
+                if (el) {
+                    el.classList.remove('bg-blue-50/50', 'dark:bg-blue-500/5');
+                    const dot = el.querySelector('.w-2.h-2.bg-blue-500');
+                    if (dot) dot.remove();
+                    el.setAttribute('data-notif-read', '1');
+                }
+
+                if (skipCounterRefresh) {
+                    return Promise.resolve();
+                }
+
+                return refreshNotificationCounter();
+            }
+
             return fetch(`/admin/notifications/${id}/read`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
@@ -757,16 +849,14 @@
 
                 if (skipCounterRefresh) return;
 
-                // Update count
-                fetch('/admin/notifications/count').then(r => r.json()).then(data => {
-                    updateBadge(data.count);
-                    document.getElementById('notifSubtitle').textContent = data.count > 0 ? data.count + ' belum dibaca' : 'Semua sudah dibaca';
-                    document.getElementById('markAllBtn').style.display = data.count > 0 ? 'inline' : 'none';
-                });
+                return refreshNotificationCounter();
             });
         }
 
         function markAllRead() {
+            const localItems = readLocalNotifications().map((item) => ({ ...item, is_read: true }));
+            writeLocalNotifications(localItems);
+
             fetch('/admin/notifications/read-all', {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
@@ -777,8 +867,37 @@
                 // Reload list
                 notifLoaded = false;
                 loadNotifications();
+            }).catch(() => {
+                updateBadge(0);
+                document.getElementById('notifSubtitle').textContent = 'Semua sudah dibaca';
+                document.getElementById('markAllBtn').style.display = 'none';
+                notifLoaded = false;
+                loadNotifications();
             });
         }
+
+        window.pushAdminNotification = function pushAdminNotification(payload = {}) {
+            const nextItems = readLocalNotifications();
+            nextItems.unshift({
+                id: `local-${Date.now()}`,
+                icon: payload.icon || 'info',
+                message: payload.message || 'Ada pembaruan baru.',
+                detail: payload.detail || '',
+                time: payload.time || 'Baru saja',
+                link: payload.link || '',
+                is_read: false,
+            });
+            writeLocalNotifications(nextItems.slice(0, 20));
+            notifLoaded = false;
+            refreshNotificationCounter();
+
+            const dropdown = document.getElementById('notifDropdown');
+            if (dropdown && !dropdown.classList.contains('hidden')) {
+                loadNotifications();
+            }
+        };
+
+        refreshNotificationCounter();
 
         // Close notification dropdown when clicking outside
         document.addEventListener('click', function(e) {

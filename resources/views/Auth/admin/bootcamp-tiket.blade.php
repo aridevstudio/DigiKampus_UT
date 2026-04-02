@@ -776,6 +776,13 @@
                     programList.prepend(renderCard(program));
                     createForm.reset();
                     closeModal(modal);
+                    if (typeof window.pushAdminNotification === 'function') {
+                        window.pushAdminNotification({
+                            icon: 'success',
+                            message: `${program.type} baru dibuat`,
+                            detail: `${program.title} masuk ke daftar program dengan status ${program.status}.`,
+                        });
+                    }
                     showAppAlert(`Draft "${program.title}" berhasil ditambahkan ke daftar program.`, 'success', 'Draft Ditambahkan', { toast: true });
                 });
 

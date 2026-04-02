@@ -1050,6 +1050,8 @@ class DosenController extends Controller
             );
         }
 
+        $this->notifyMahasiswaAboutPublishedProgram($course, $dosen->name);
+
         $message = $course->kategori === 'webinar'
             ? ($course->approval_status === 'pending'
                 ? 'Webinar berhasil diajukan dan menunggu persetujuan admin.'
@@ -1273,6 +1275,51 @@ class DosenController extends Controller
                     ->update(['id_module' => $targetModule->id_module]);
             }
         });
+    }
+
+    private function notifyMahasiswaAboutPublishedProgram(\App\Models\Course $course, string $sourceLabel): void
+    {
+        if ($course->status !== 'aktif' || !$course->akses_publik) {
+            return;
+        }
+
+        $config = match ($course->kategori) {
+            'webinar' => [
+                'judul' => 'Webinar Baru Tersedia',
+                'konten' => sprintf(
+                    '%s mempublikasikan webinar "%s". Cek sekarang di katalog pembelajaran.',
+                    $sourceLabel,
+                    $course->nama_course
+                ),
+                'icon_color' => '#7C3AED',
+            ],
+            'tiket' => [
+                'judul' => 'Program Tiket Baru Tersedia',
+                'konten' => sprintf(
+                    '%s menambahkan program "%s". Detailnya sudah tersedia untuk mahasiswa.',
+                    $sourceLabel,
+                    $course->nama_course
+                ),
+                'icon_color' => '#059669',
+            ],
+            default => [
+                'judul' => 'Kursus Baru Tersedia',
+                'konten' => sprintf(
+                    '%s mempublikasikan kursus "%s". Cek sekarang di katalog pembelajaran.',
+                    $sourceLabel,
+                    $course->nama_course
+                ),
+                'icon_color' => '#2563EB',
+            ],
+        };
+
+        Notification::notifyAllMahasiswa(
+            $config['judul'],
+            $config['konten'],
+            'umum',
+            'info',
+            $config['icon_color']
+        );
     }
 
     /**

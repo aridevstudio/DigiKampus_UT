@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class Notification extends Model
 {
@@ -77,5 +78,39 @@ class Notification extends Model
             'icon_color' => $iconColor,
             'is_read' => false,
         ]);
+    }
+
+    public static function notifyAllMahasiswa(
+        string $judul,
+        ?string $konten = null,
+        string $tipe = 'umum',
+        ?string $icon = null,
+        string $iconColor = '#3B82F6'
+    ): void {
+        $now = now();
+
+        User::query()
+            ->where('role', 'mahasiswa')
+            ->where('status', 'aktif')
+            ->select('id')
+            ->chunkById(500, function (Collection $mahasiswas) use ($judul, $konten, $tipe, $icon, $iconColor, $now) {
+                $payload = $mahasiswas->map(function ($mahasiswa) use ($judul, $konten, $tipe, $icon, $iconColor, $now) {
+                    return [
+                        'id_mahasiswa' => $mahasiswa->id,
+                        'judul' => $judul,
+                        'konten' => $konten,
+                        'tipe' => $tipe,
+                        'icon' => $icon,
+                        'icon_color' => $iconColor,
+                        'is_read' => false,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                })->all();
+
+                if (!empty($payload)) {
+                    self::insert($payload);
+                }
+            });
     }
 }
