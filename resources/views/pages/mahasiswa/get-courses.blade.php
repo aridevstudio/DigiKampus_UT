@@ -75,11 +75,12 @@
 </div>
 
 {{-- Filter & Search Section --}}
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 animate-fade-in-up delay-100">
-    {{-- Filter Tabs --}}
+<div class="flex flex-col gap-3 mb-6 animate-fade-in-up delay-100 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
     @php
         $currentTipe = $selectedTipe ?? 'semua';
     @endphp
+
+    {{-- Filter Tabs --}}
     <div class="flex items-center gap-2 bg-white dark:bg-[#1f2937] rounded-lg p-1 border border-gray-200 dark:border-gray-700/50 overflow-x-auto">
         <a href="{{ route('mahasiswa.get-courses') }}" 
            class="filter-tab whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'semua' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
@@ -98,9 +99,9 @@
             Kursus
         </a>
     </div>
-    
+
     {{-- Search Bar (Live Search) --}}
-    <div class="relative">
+    <div class="relative w-full sm:w-72 lg:w-80">
         <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
         </svg>
@@ -108,7 +109,7 @@
             type="text" 
             id="search-courses"
             placeholder="Cari semua di sini..." 
-            class="pl-12 pr-4 py-2.5 w-full sm:w-64 border border-gray-200 dark:border-gray-700/50 rounded-lg bg-white dark:bg-[#1f2937] text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            class="pl-12 pr-4 py-2.5 w-full border border-gray-200 dark:border-gray-700/50 rounded-lg bg-white dark:bg-[#1f2937] text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             oninput="searchCourses(this.value)"
         >
     </div>
