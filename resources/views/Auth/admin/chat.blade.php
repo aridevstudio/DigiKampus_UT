@@ -300,12 +300,15 @@
                             headers: { Accept: 'application/json' },
                         });
 
-                        if (!response.ok) throw new Error('Endpoint not ready');
+                        if (!response.ok) throw new Error('Gagal memuat percakapan.');
                         const payload = await response.json();
                         const serverData = Array.isArray(payload?.data) ? payload.data : [];
                         this.conversations = this.normalizeConversations(serverData);
                     } catch (error) {
-                        this.conversations = this.mockConversations();
+                        this.conversations = [];
+                        if (showLoader) {
+                            this.showToast(error?.message || 'Gagal memuat percakapan.', 'error');
+                        }
                     } finally {
                         this.recalculateStats();
                         this.applyFilters();
@@ -326,15 +329,6 @@
                         last_message_at: item.last_message_at || new Date().toISOString(),
                         message_count: Number(item.message_count || 0),
                     }));
-                },
-
-                mockConversations() {
-                    return [
-                        { id: 'c-1', student_name: 'Rafi Akbar', lecturer_name: 'Dosen Matematika', status: 'ongoing', last_message: 'Pak, untuk quiz deadline jam berapa?', last_message_at: new Date(Date.now() - 2 * 60 * 1000).toISOString(), message_count: 34 },
-                        { id: 'c-2', student_name: 'Nabila Putri', lecturer_name: 'Dosen Bahasa Inggris', status: 'active24h', last_message: 'Baik bu, saya revisi tugasnya.', last_message_at: new Date(Date.now() - 90 * 60 * 1000).toISOString(), message_count: 18 },
-                        { id: 'c-3', student_name: 'Gilang Pratama', lecturer_name: 'Dosen Pemrograman', status: 'idle', last_message: 'Terima kasih penjelasannya pak.', last_message_at: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(), message_count: 9 },
-                        { id: 'c-4', student_name: 'Salsa Maharani', lecturer_name: 'Dosen UI/UX', status: 'ongoing', last_message: 'Saya sudah upload revisi wireframe.', last_message_at: new Date(Date.now() - 4 * 60 * 1000).toISOString(), message_count: 26 },
-                    ];
                 },
 
                 applyFilters() {
@@ -377,12 +371,15 @@
                             credentials: 'same-origin',
                             headers: { Accept: 'application/json' },
                         });
-                        if (!response.ok) throw new Error('Endpoint not ready');
+                        if (!response.ok) throw new Error('Gagal memuat pesan percakapan.');
                         const payload = await response.json();
                         const serverData = Array.isArray(payload?.data) ? payload.data : [];
                         this.messages = this.normalizeMessages(serverData);
                     } catch (error) {
-                        this.messages = this.mockMessages(conversationId);
+                        this.messages = [];
+                        if (!silent) {
+                            this.showToast(error?.message || 'Gagal memuat pesan percakapan.', 'error');
+                        }
                     } finally {
                         if (!silent) this.isLoadingMessages = false;
                         this.$nextTick(() => this.scrollToBottom());
@@ -397,15 +394,6 @@
                         content: item.content || '',
                         created_at: item.created_at || new Date().toISOString(),
                     }));
-                },
-
-                mockMessages(conversationId) {
-                    const common = [
-                        { id: `${conversationId}-1`, sender_name: 'Mahasiswa', sender_role: 'student', content: 'Pak, saya mau konfirmasi tugas minggu ini.', created_at: new Date(Date.now() - 50 * 60 * 1000).toISOString() },
-                        { id: `${conversationId}-2`, sender_name: 'Dosen', sender_role: 'lecturer', content: 'Silakan submit sebelum jam 23:59 malam ini.', created_at: new Date(Date.now() - 46 * 60 * 1000).toISOString() },
-                        { id: `${conversationId}-3`, sender_name: 'Mahasiswa', sender_role: 'student', content: 'Baik pak, terima kasih.', created_at: new Date(Date.now() - 42 * 60 * 1000).toISOString() },
-                    ];
-                    return common;
                 },
 
                 async deleteMessage(message) {
@@ -426,11 +414,12 @@
                         });
 
                         if (!response.ok) {
-                            throw new Error('Delete endpoint not ready');
+                            throw new Error('Gagal menghapus pesan.');
                         }
                         this.showToast('Pesan berhasil dihapus.', 'success');
                     } catch (error) {
-                        this.showToast('Pesan dihapus pada UI. Backend moderasi chat belum aktif.', 'info');
+                        await this.fetchMessages(this.activeConversationId, true);
+                        this.showToast(error?.message || 'Gagal menghapus pesan.', 'error');
                     }
                 },
 
@@ -462,12 +451,13 @@
                         });
 
                         if (!response.ok) {
-                            throw new Error('Bulk delete endpoint not ready');
+                            throw new Error('Gagal menghapus chat berdasarkan peran.');
                         }
 
                         this.showToast(`Chat ${this.roleLabel(role).toLowerCase()} berhasil dihapus.`, 'success');
                     } catch (error) {
-                        this.showToast(`Chat ${this.roleLabel(role).toLowerCase()} dihapus pada UI. Backend belum aktif.`, 'info');
+                        await this.fetchMessages(this.activeConversationId, true);
+                        this.showToast(error?.message || `Gagal menghapus chat ${this.roleLabel(role).toLowerCase()}.`, 'error');
                     }
                 },
 
@@ -495,18 +485,20 @@
                         });
 
                         if (!response.ok) {
-                            throw new Error('Conversation delete endpoint not ready');
+                            throw new Error('Gagal menghapus percakapan.');
                         }
 
                         this.showToast('Percakapan berhasil dihapus.', 'success');
                     } catch (error) {
-                        this.showToast('Percakapan dihapus pada UI. Backend moderasi chat belum aktif.', 'info');
+                        await this.fetchConversations(false);
+                        this.showToast(error?.message || 'Gagal menghapus percakapan.', 'error');
                     }
                 },
 
                 async sendAdminMessage() {
                     if (!this.activeConversation || !this.adminMessage.trim() || this.isSendingMessage) return;
                     this.isSendingMessage = true;
+                    let isDelivered = false;
 
                     const content = this.adminMessage.trim();
                     const optimisticMessage = {
@@ -537,7 +529,7 @@
                         });
 
                         if (!response.ok) {
-                            throw new Error('Send endpoint not ready');
+                            throw new Error('Gagal mengirim pesan admin.');
                         }
 
                         const payload = await response.json();
@@ -546,12 +538,16 @@
                             this.messages = this.messages.filter((m) => m.id !== optimisticMessage.id);
                             this.messages.push(sentMessage);
                         }
+                        isDelivered = true;
                         this.showToast('Pesan admin terkirim.', 'success');
                     } catch (error) {
-                        // Keep optimistic message for frontend-first flow.
-                        this.showToast('Backend kirim chat belum aktif. Pesan tampil sebagai simulasi frontend.', 'info');
+                        this.messages = this.messages.filter((m) => m.id !== optimisticMessage.id);
+                        this.adminMessage = content;
+                        this.showToast(error?.message || 'Gagal mengirim pesan admin.', 'error');
                     } finally {
-                        this.touchActiveConversation(content);
+                        if (isDelivered) {
+                            this.touchActiveConversation(content);
+                        }
                         this.recalculateStats();
                         this.isSendingMessage = false;
                         this.$nextTick(() => this.scrollToBottom());

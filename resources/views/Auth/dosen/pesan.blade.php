@@ -4,6 +4,10 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Pesan</h1>
             <p class="mt-1 text-gray-500 dark:text-gray-400">Komunikasi realtime dengan mahasiswa yang mengikuti kursus Anda.</p>
         </div>
+        <div x-show="bootcampContext" x-cloak class="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+            <p class="font-semibold">Konteks dari Bootcamp</p>
+            <p class="mt-1" x-text="bootcampContext?.label"></p>
+        </div>
 
         <div class="flex flex-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
             <div class="flex w-full flex-col border-r border-gray-100 dark:border-gray-700 md:w-80"
@@ -115,12 +119,22 @@
                         <template x-for="msg in messages" :key="msg.id">
                             <div class="flex max-w-[88%] items-end gap-2 sm:max-w-[82%] md:max-w-[75%]"
                                  :class="msg.sender_type === 'dosen' ? 'ml-auto flex-row-reverse' : ''">
-                                <template x-if="msg.sender_type !== 'dosen'">
+                                <template x-if="msg.sender_type === 'admin'">
+                                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-[11px] font-semibold text-red-700">
+                                        AD
+                                    </div>
+                                </template>
+                                <template x-if="msg.sender_type !== 'dosen' && msg.sender_type !== 'admin'">
                                     <img :src="activeConversation?.student_avatar" :alt="activeConversation?.student_name" class="h-8 w-8 rounded-full object-cover">
                                 </template>
                                 <div>
+                                    <span x-show="msg.sender_type === 'admin'" class="mb-1 block text-[11px] font-semibold text-red-600">Admin DigiKampus</span>
                                     <div class="rounded-2xl px-4 py-2.5 text-sm shadow-sm"
-                                         :class="msg.sender_type === 'dosen' ? 'rounded-br-sm bg-blue-500 text-white' : 'rounded-bl-sm bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300'">
+                                         :class="msg.sender_type === 'dosen'
+                                             ? 'rounded-br-sm bg-blue-500 text-white'
+                                             : (msg.sender_type === 'admin'
+                                                 ? 'rounded-bl-sm border border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200'
+                                                 : 'rounded-bl-sm bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300')">
                                         <p class="whitespace-pre-wrap break-words" x-text="msg.content"></p>
                                     </div>
                                     <span class="mt-1 block text-[10px] text-gray-400"
@@ -205,9 +219,15 @@
                 isSending: false,
                 showStudentProfile: false,
                 pollingInterval: null,
+                bootcampContext: null,
 
-                initChat() {
-                    this.fetchConversations();
+                async initChat() {
+                    this.readBootcampContext();
+                    await this.fetchConversations();
+
+                    if (this.bootcampContext && !this.activeConversation && this.conversations.length > 0) {
+                        await this.selectConversation(this.conversations[0]);
+                    }
 
                     this.pollingInterval = setInterval(() => {
                         this.fetchConversations(false);
@@ -222,6 +242,22 @@
                             clearInterval(this.pollingInterval);
                         }
                     });
+                },
+
+                readBootcampContext() {
+                    const params = new URLSearchParams(window.location.search);
+                    if (params.get('source') !== 'bootcamp') {
+                        return;
+                    }
+
+                    const sessionTitle = params.get('session_title');
+                    const batch = params.get('batch');
+
+                    this.bootcampContext = {
+                        label: sessionTitle
+                            ? `Sesi: ${sessionTitle}${batch ? ` | Batch: ${batch}` : ''}`
+                            : `Masuk dari menu bootcamp${batch ? ` | Batch: ${batch}` : ''}`,
+                    };
                 },
 
                 async fetchConversations(showLoading = true) {

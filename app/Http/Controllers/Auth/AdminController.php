@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
+use App\Models\Bootcamp;
+use App\Models\BootcampMentor;
 use App\Models\AutomaticCertificate;
 use App\Models\Category;
 use App\Models\CertificateTemplate;
 use App\Models\Course;
 use App\Models\DosenNotification;
 use App\Models\Jurusan;
+use App\Models\Message;
 use App\Models\Notification;
 use App\Models\Profile;
 use App\Models\SupportTicket;
@@ -371,6 +374,250 @@ class AdminController extends Controller
             'recentNews' => $recentNews,
             'unreadNotifCount' => $unreadNotifCount,
         ]);
+    }
+
+    public function showBootcampTiket()
+    {
+        $bootcamps = Bootcamp::query()
+            ->with(['mentorAssignments.user'])
+            ->latest('id_bootcamp')
+            ->get();
+
+        $bootcampPrograms = $bootcamps->map(function (Bootcamp $bootcamp) {
+            $isTicket = $bootcamp->program_type === 'ticketed_event';
+
+            return [
+                'id' => (string) $bootcamp->id_bootcamp,
+                'title' => $bootcamp->title,
+                'type' => $isTicket ? 'Tiket Event' : 'Bootcamp',
+                'batch' => $bootcamp->batch_label,
+                'status' => $this->bootcampStatusLabel($bootcamp->status),
+                'status_key' => $bootcamp->status,
+                'mentor' => $bootcamp->mentor_label,
+                'seats' => $bootcamp->seats_label,
+                'price' => $bootcamp->price_label,
+                'schedule' => $bootcamp->schedule_label ?: 'Jadwal belum diatur',
+                'risk' => $bootcamp->risk_note ?: 'Belum ada catatan risiko',
+                'accent' => $isTicket
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20'
+                    : 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20',
+            ];
+        })->values()->all();
+
+        $activeBootcampCount = $bootcamps
+            ->where('program_type', 'bootcamp')
+            ->whereIn('status', ['open_registration', 'published', 'in_progress'])
+            ->count();
+
+        $seatSummary = $bootcamps->reduce(function (array $carry, Bootcamp $bootcamp) {
+            [$filled, $total] = $this->parseSeatLabel($bootcamp->seats_label);
+            $carry['filled'] += $filled;
+            $carry['total'] += $total;
+            return $carry;
+        }, ['filled' => 0, 'total' => 0]);
+
+        $mentorAssignments = BootcampMentor::query()
+            ->with('user')
+            ->latest('id_bootcamp_mentor')
+            ->get();
+
+        $mentorRows = $mentorAssignments
+            ->groupBy('id_user')
+            ->map(function ($rows) {
+                $first = $rows->first();
+                $user = $first?->user;
+
+                if (!$user) {
+                    return null;
+                }
+
+                return [
+                    'name' => $user->name,
+                    'role' => $first->role_label ?: 'mentor',
+                    'load' => $rows->count() . ' batch aktif',
+                    'status' => 'Siap',
+                ];
+            })
+            ->filter()
+            ->take(5)
+            ->values()
+            ->all();
+
+        $pendingCount = $bootcamps->whereIn('status', ['draft', 'internal_review'])->count();
+        $needMentorCount = $bootcamps->filter(fn (Bootcamp $bootcamp) => blank(trim((string) $bootcamp->mentor_label)) || str_contains(strtolower((string) $bootcamp->mentor_label), '0 mentor'))->count();
+        $publishReadyCount = $bootcamps->whereIn('status', ['open_registration', 'published'])->count();
+        $opsBoard = [
+            ['label' => 'Draft Baru', 'count' => $pendingCount, 'helper' => 'Perlu review admin sebelum publish', 'tone' => 'bg-slate-50 dark:bg-gray-900/40'],
+            ['label' => 'Butuh Mentor', 'count' => $needMentorCount, 'helper' => 'Batch baru belum lengkap pengajar', 'tone' => 'bg-amber-50 dark:bg-amber-500/10'],
+            ['label' => 'Refund / Reschedule', 'count' => 0, 'helper' => 'Kasus peserta perlu tindak lanjut', 'tone' => 'bg-rose-50 dark:bg-rose-500/10'],
+            ['label' => 'Siap Publish', 'count' => $publishReadyCount, 'helper' => 'Konten, jadwal, kuota sudah lengkap', 'tone' => 'bg-emerald-50 dark:bg-emerald-500/10'],
+        ];
+
+        $occupancyPercent = $seatSummary['total'] > 0
+            ? (int) round(($seatSummary['filled'] / $seatSummary['total']) * 100)
+            : 0;
+
+        $ticketFlows = [
+            ['name' => 'Landing -> Checkout', 'value' => $occupancyPercent . '%', 'note' => 'Seat occupancy tiket dan bootcamp aktif'],
+            ['name' => 'Checkout -> Paid', 'value' => max(0, $occupancyPercent - 12) . '%', 'note' => 'Perlu reminder pembayaran otomatis'],
+            ['name' => 'Paid -> Attend', 'value' => max(0, min(100, $occupancyPercent + 8)) . '%', 'note' => 'Konversi attendance estimasi operasional'],
+            ['name' => 'Attend -> Certificate', 'value' => max(0, min(100, $occupancyPercent - 5)) . '%', 'note' => 'Menunggu integrasi sertifikat final'],
+        ];
+
+        $bootcampStats = [
+            ['label' => 'Bootcamp Aktif', 'value' => $activeBootcampCount, 'helper' => $activeBootcampCount . ' batch berjalan', 'tone' => 'from-sky-500 to-blue-600'],
+            ['label' => 'Kuota Terisi', 'value' => $seatSummary['filled'] . '/' . $seatSummary['total'], 'helper' => $occupancyPercent . '% seat occupancy', 'tone' => 'from-emerald-500 to-teal-600'],
+            ['label' => 'Mentor Aktif', 'value' => $mentorAssignments->pluck('id_user')->unique()->count(), 'helper' => 'dosen dan mentor eksternal', 'tone' => 'from-violet-500 to-fuchsia-600'],
+            ['label' => 'Pending Approval', 'value' => $pendingCount, 'helper' => 'draft dan internal review', 'tone' => 'from-amber-500 to-orange-500'],
+        ];
+
+        $availableMentors = User::query()
+            ->where('role', 'dosen')
+            ->where('status', 'aktif')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('Auth.admin.bootcamp-tiket', [
+            'bootcampStats' => $bootcampStats,
+            'bootcampPrograms' => $bootcampPrograms,
+            'opsBoard' => $opsBoard,
+            'ticketFlows' => $ticketFlows,
+            'mentorRows' => $mentorRows,
+            'availableMentors' => $availableMentors,
+        ]);
+    }
+
+    public function storeBootcamp(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'program_type' => ['required', Rule::in(['bootcamp', 'ticketed_event'])],
+            'batch' => ['required', 'string', 'max:255'],
+            'price' => ['required', 'string', 'max:100'],
+            'mentor' => ['required', 'string', 'max:100'],
+            'seats' => ['required', 'string', 'max:100'],
+            'schedule' => ['required', 'string', 'max:255'],
+            'risk' => ['required', 'string', 'max:2000'],
+            'mentor_user_id' => ['nullable', 'exists:users,id'],
+            'mentor_role' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $bootcamp = Bootcamp::create([
+            'program_type' => $validated['program_type'],
+            'title' => $this->cleanTextInput($validated['title']),
+            'batch_label' => $this->cleanTextInput($validated['batch']),
+            'status' => 'draft',
+            'mentor_label' => $this->cleanTextInput($validated['mentor']),
+            'seats_label' => $this->cleanTextInput($validated['seats']),
+            'price_label' => $this->cleanTextInput($validated['price']),
+            'schedule_label' => $this->cleanTextInput($validated['schedule']),
+            'risk_note' => $this->cleanTextInput($validated['risk']),
+            'created_by' => Auth::guard('admin')->id(),
+        ]);
+
+        if (!empty($validated['mentor_user_id'])) {
+            BootcampMentor::updateOrCreate(
+                [
+                    'id_bootcamp' => $bootcamp->id_bootcamp,
+                    'id_user' => (int) $validated['mentor_user_id'],
+                ],
+                [
+                    'role_label' => $validated['mentor_role'] ?? 'mentor',
+                    'assignment_note' => $validated['risk'],
+                ]
+            );
+        }
+
+        return redirect()
+            ->route('admin.bootcamp-tiket')
+            ->with('success', 'Bootcamp baru berhasil dibuat.');
+    }
+
+    public function updateBootcampBatch(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in([
+                'draft',
+                'internal_review',
+                'open_registration',
+                'published',
+                'registration_closed',
+                'in_progress',
+                'completed',
+                'archived',
+            ])],
+            'seats' => ['required', 'string', 'max:100'],
+            'risk' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $bootcamp = Bootcamp::findOrFail($id);
+        $bootcamp->update([
+            'status' => $validated['status'],
+            'seats_label' => $this->cleanTextInput($validated['seats']),
+            'risk_note' => $this->cleanTextInput($validated['risk'] ?? ''),
+        ]);
+
+        return redirect()
+            ->route('admin.bootcamp-tiket')
+            ->with('success', 'Batch bootcamp berhasil diperbarui.');
+    }
+
+    public function assignBootcampMentor(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'mentor' => ['required', 'string', 'max:100'],
+            'risk' => ['nullable', 'string', 'max:2000'],
+            'mentor_user_id' => ['nullable', 'exists:users,id'],
+            'mentor_role' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $bootcamp = Bootcamp::findOrFail($id);
+        $bootcamp->update([
+            'mentor_label' => $this->cleanTextInput($validated['mentor']),
+            'risk_note' => $this->cleanTextInput($validated['risk'] ?? ''),
+        ]);
+
+        if (!empty($validated['mentor_user_id'])) {
+            BootcampMentor::updateOrCreate(
+                [
+                    'id_bootcamp' => $bootcamp->id_bootcamp,
+                    'id_user' => (int) $validated['mentor_user_id'],
+                ],
+                [
+                    'role_label' => $validated['mentor_role'] ?? 'mentor',
+                    'assignment_note' => $validated['risk'] ?? null,
+                ]
+            );
+        }
+
+        return redirect()
+            ->route('admin.bootcamp-tiket')
+            ->with('success', 'Mentor bootcamp berhasil diperbarui.');
+    }
+
+    private function bootcampStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'internal_review' => 'Internal Review',
+            'open_registration' => 'Open Registration',
+            'published' => 'Published',
+            'registration_closed' => 'Registration Closed',
+            'in_progress' => 'In Progress',
+            'completed' => 'Completed',
+            'archived' => 'Archived',
+            default => 'Draft',
+        };
+    }
+
+    private function parseSeatLabel(?string $seatLabel): array
+    {
+        $label = (string) $seatLabel;
+
+        if (preg_match('/(\d+)\s*\/\s*(\d+)/', $label, $matches)) {
+            return [(int) $matches[1], (int) $matches[2]];
+        }
+
+        return [0, 0];
     }
 
     /**
@@ -3884,6 +4131,459 @@ class AdminController extends Controller
         }
 
         return $summary;
+    }
+
+    // ==========================================
+    // Chat Management (Admin)
+    // ==========================================
+
+    public function getChatConversations(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+        $adminId = (int) (Auth::guard('admin')->id() ?? 0);
+
+        $baseMessages = DB::table('messages')
+            ->join('users as sender', 'sender.id', '=', 'messages.id_sender')
+            ->join('users as receiver', 'receiver.id', '=', 'messages.id_receiver')
+            ->where(function ($query) {
+                $query
+                    ->where(function ($q) {
+                        $q->where('sender.role', 'mahasiswa')
+                            ->where('receiver.role', 'dosen');
+                    })
+                    ->orWhere(function ($q) {
+                        $q->where('sender.role', 'dosen')
+                            ->where('receiver.role', 'mahasiswa');
+                    });
+            })
+            ->orderByDesc('messages.created_at')
+            ->get([
+                'messages.id_message',
+                'messages.content',
+                'messages.created_at',
+                'sender.id as sender_id',
+                'sender.name as sender_name',
+                'sender.role as sender_role',
+                'receiver.id as receiver_id',
+                'receiver.name as receiver_name',
+                'receiver.role as receiver_role',
+            ]);
+
+        $grouped = [];
+        foreach ($baseMessages as $message) {
+            $isSenderStudent = $message->sender_role === 'mahasiswa';
+            $studentId = (int) ($isSenderStudent ? $message->sender_id : $message->receiver_id);
+            $lecturerId = (int) ($isSenderStudent ? $message->receiver_id : $message->sender_id);
+            $studentName = $isSenderStudent ? (string) $message->sender_name : (string) $message->receiver_name;
+            $lecturerName = $isSenderStudent ? (string) $message->receiver_name : (string) $message->sender_name;
+            $conversationKey = $studentId . '-' . $lecturerId;
+
+            if (!isset($grouped[$conversationKey])) {
+                $latestIso = $this->toIsoTimestamp($message->created_at);
+                $grouped[$conversationKey] = [
+                    'id' => $conversationKey,
+                    'student_id' => $studentId,
+                    'lecturer_id' => $lecturerId,
+                    'student_name' => $studentName,
+                    'lecturer_name' => $lecturerName,
+                    'last_message' => Str::limit((string) $message->content, 90),
+                    'last_message_at' => $latestIso ?? now()->toISOString(),
+                    'message_count' => 0,
+                ];
+            }
+
+            $grouped[$conversationKey]['message_count']++;
+        }
+
+        if ($adminId > 0 && !empty($grouped)) {
+            $adminMessages = Message::query()
+                ->where('id_sender', $adminId)
+                ->where('content', 'like', '[ADMCHAT:%')
+                ->orderByDesc('created_at')
+                ->get(['id_message', 'content', 'created_at']);
+
+            foreach ($adminMessages as $adminMessage) {
+                $threadMeta = $this->extractAdminThreadMeta((string) $adminMessage->content);
+                if ($threadMeta === null || !isset($grouped[$threadMeta['conversation_id']])) {
+                    continue;
+                }
+
+                $conversation = &$grouped[$threadMeta['conversation_id']];
+                $conversation['message_count']++;
+
+                $adminCreatedAtIso = $adminMessage->created_at?->toISOString();
+                if (!$adminCreatedAtIso) {
+                    continue;
+                }
+
+                if (strtotime($adminCreatedAtIso) >= strtotime((string) $conversation['last_message_at'])) {
+                    $conversation['last_message'] = Str::limit((string) $threadMeta['content'], 90);
+                    $conversation['last_message_at'] = $adminCreatedAtIso;
+                }
+            }
+        }
+
+        $conversations = collect(array_values($grouped))
+            ->map(function (array $item) {
+                $item['status'] = $this->resolveChatStatus($item['last_message_at']);
+                return $item;
+            })
+            ->when($search !== '', function ($collection) use ($search) {
+                $keyword = Str::lower($search);
+                return $collection->filter(function (array $item) use ($keyword) {
+                    $haystack = Str::lower(
+                        implode(' ', [
+                            $item['student_name'] ?? '',
+                            $item['lecturer_name'] ?? '',
+                            $item['last_message'] ?? '',
+                        ])
+                    );
+                    return Str::contains($haystack, $keyword);
+                });
+            })
+            ->sortByDesc('last_message_at')
+            ->values()
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'data' => $conversations,
+        ]);
+    }
+
+    public function getChatConversationMessages(string $conversationId)
+    {
+        $parsed = $this->parseConversationId($conversationId);
+        if ($parsed === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Conversation tidak valid.',
+            ], 422);
+        }
+
+        [$studentId, $lecturerId] = $parsed;
+        $participants = $this->resolveConversationParticipants($studentId, $lecturerId);
+        if ($participants === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Percakapan tidak ditemukan.',
+            ], 404);
+        }
+
+        $admin = Auth::guard('admin')->user();
+        $adminId = (int) $admin->id;
+        $threadPrefix = $this->buildAdminThreadPrefix($studentId, $lecturerId);
+
+        $messages = Message::query()
+            ->with(['sender:id,name,role'])
+            ->where(function ($query) use ($studentId, $lecturerId, $adminId, $threadPrefix) {
+                $query
+                    ->where(function ($pairQuery) use ($studentId, $lecturerId) {
+                        $pairQuery
+                            ->where('id_sender', $studentId)
+                            ->where('id_receiver', $lecturerId);
+                    })
+                    ->orWhere(function ($pairQuery) use ($studentId, $lecturerId) {
+                        $pairQuery
+                            ->where('id_sender', $lecturerId)
+                            ->where('id_receiver', $studentId);
+                    })
+                    ->orWhere(function ($adminQuery) use ($adminId, $threadPrefix) {
+                        $adminQuery
+                            ->where('id_sender', $adminId)
+                            ->where('content', 'like', $threadPrefix . '%');
+                    });
+            })
+            ->orderBy('created_at')
+            ->get();
+
+        $payload = $messages->map(function (Message $message) use ($studentId, $lecturerId, $participants) {
+            $senderRole = 'admin';
+            $senderName = $message->sender?->name ?? 'Admin';
+            $content = (string) $message->content;
+
+            if ((int) $message->id_sender === $studentId) {
+                $senderRole = 'student';
+                $senderName = $participants['student']->name;
+            } elseif ((int) $message->id_sender === $lecturerId) {
+                $senderRole = 'lecturer';
+                $senderName = $participants['lecturer']->name;
+            } else {
+                $content = $this->stripAdminThreadPrefix($content);
+            }
+
+            return [
+                'id' => $message->id_message,
+                'sender_name' => $senderName,
+                'sender_role' => $senderRole,
+                'content' => $content,
+                'created_at' => $message->created_at?->toISOString(),
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $payload,
+        ]);
+    }
+
+    public function sendAdminChatMessage(Request $request)
+    {
+        $admin = Auth::guard('admin')->user();
+        $validated = $request->validate([
+            'conversation_id' => ['required', 'string'],
+            'content' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $parsed = $this->parseConversationId((string) $validated['conversation_id']);
+        if ($parsed === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Conversation tidak valid.',
+            ], 422);
+        }
+
+        [$studentId, $lecturerId] = $parsed;
+        $participants = $this->resolveConversationParticipants($studentId, $lecturerId);
+        if ($participants === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Percakapan tidak ditemukan.',
+            ], 404);
+        }
+
+        $threadPrefix = $this->buildAdminThreadPrefix($studentId, $lecturerId);
+        $content = trim((string) $validated['content']);
+
+        $message = Message::create([
+            'id_sender' => $admin->id,
+            'id_receiver' => $studentId,
+            'content' => $threadPrefix . $content,
+            'is_read' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $message->id_message,
+                'sender_name' => $admin->name ?? 'Admin',
+                'sender_role' => 'admin',
+                'content' => $content,
+                'created_at' => $message->created_at?->toISOString(),
+            ],
+        ]);
+    }
+
+    public function deleteChatMessage(int $messageId)
+    {
+        $message = Message::find($messageId);
+        if (!$message) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesan tidak ditemukan.',
+            ], 404);
+        }
+
+        $message->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesan berhasil dihapus.',
+        ]);
+    }
+
+    public function purgeChatByRole(Request $request, string $conversationId)
+    {
+        $validated = $request->validate([
+            'role' => ['required', Rule::in(['student', 'lecturer', 'admin'])],
+        ]);
+
+        $parsed = $this->parseConversationId($conversationId);
+        if ($parsed === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Conversation tidak valid.',
+            ], 422);
+        }
+
+        [$studentId, $lecturerId] = $parsed;
+        $participants = $this->resolveConversationParticipants($studentId, $lecturerId);
+        if ($participants === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Percakapan tidak ditemukan.',
+            ], 404);
+        }
+
+        $adminId = (int) (Auth::guard('admin')->id() ?? 0);
+        $role = (string) $validated['role'];
+
+        $query = Message::query()->whereRaw('1 = 0');
+        if ($role === 'student') {
+            $query = Message::query()
+                ->where('id_sender', $studentId)
+                ->where('id_receiver', $lecturerId);
+        } elseif ($role === 'lecturer') {
+            $query = Message::query()
+                ->where('id_sender', $lecturerId)
+                ->where('id_receiver', $studentId);
+        } elseif ($role === 'admin' && $adminId > 0) {
+            $query = Message::query()
+                ->where('id_sender', $adminId)
+                ->where('content', 'like', $this->buildAdminThreadPrefix($studentId, $lecturerId) . '%');
+        }
+
+        $deleted = $query->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesan berhasil dihapus.',
+            'data' => ['deleted' => (int) $deleted],
+        ]);
+    }
+
+    public function deleteChatConversation(string $conversationId)
+    {
+        $parsed = $this->parseConversationId($conversationId);
+        if ($parsed === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Conversation tidak valid.',
+            ], 422);
+        }
+
+        [$studentId, $lecturerId] = $parsed;
+        $participants = $this->resolveConversationParticipants($studentId, $lecturerId);
+        if ($participants === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Percakapan tidak ditemukan.',
+            ], 404);
+        }
+
+        $adminId = (int) (Auth::guard('admin')->id() ?? 0);
+        $threadPrefix = $this->buildAdminThreadPrefix($studentId, $lecturerId);
+
+        $deletedDirectMessages = Message::query()
+            ->where(function ($query) use ($studentId, $lecturerId) {
+                $query
+                    ->where(function ($q) use ($studentId, $lecturerId) {
+                        $q->where('id_sender', $studentId)->where('id_receiver', $lecturerId);
+                    })
+                    ->orWhere(function ($q) use ($studentId, $lecturerId) {
+                        $q->where('id_sender', $lecturerId)->where('id_receiver', $studentId);
+                    });
+            })
+            ->delete();
+
+        $deletedAdminMessages = 0;
+        if ($adminId > 0) {
+            $deletedAdminMessages = Message::query()
+                ->where('id_sender', $adminId)
+                ->where('content', 'like', $threadPrefix . '%')
+                ->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Percakapan berhasil dihapus.',
+            'data' => [
+                'deleted' => (int) ($deletedDirectMessages + $deletedAdminMessages),
+            ],
+        ]);
+    }
+
+    private function parseConversationId(string $conversationId): ?array
+    {
+        if (preg_match('/^(\d+)-(\d+)$/', trim($conversationId), $matches) !== 1) {
+            return null;
+        }
+
+        $studentId = (int) $matches[1];
+        $lecturerId = (int) $matches[2];
+
+        if ($studentId <= 0 || $lecturerId <= 0) {
+            return null;
+        }
+
+        return [$studentId, $lecturerId];
+    }
+
+    private function resolveConversationParticipants(int $studentId, int $lecturerId): ?array
+    {
+        $student = User::where('id', $studentId)->where('role', 'mahasiswa')->first();
+        $lecturer = User::where('id', $lecturerId)->where('role', 'dosen')->first();
+
+        if (!$student || !$lecturer) {
+            return null;
+        }
+
+        return [
+            'student' => $student,
+            'lecturer' => $lecturer,
+        ];
+    }
+
+    private function buildAdminThreadPrefix(int $studentId, int $lecturerId): string
+    {
+        return '[ADMCHAT:' . $studentId . '-' . $lecturerId . '] ';
+    }
+
+    private function stripAdminThreadPrefix(string $content): string
+    {
+        return preg_replace('/^\[ADMCHAT:\d+\-\d+\]\s*/', '', $content) ?? $content;
+    }
+
+    private function extractAdminThreadMeta(string $content): ?array
+    {
+        if (preg_match('/^\[ADMCHAT:(\d+\-\d+)\]\s*(.*)$/s', $content, $matches) !== 1) {
+            return null;
+        }
+
+        return [
+            'conversation_id' => $matches[1],
+            'content' => trim((string) $matches[2]),
+        ];
+    }
+
+    private function resolveChatStatus(?string $lastMessageAt): string
+    {
+        if (!$lastMessageAt) {
+            return 'idle';
+        }
+
+        try {
+            $last = \Carbon\Carbon::parse($lastMessageAt);
+            $minutes = $last->diffInMinutes(now());
+            if ($minutes <= 30) {
+                return 'ongoing';
+            }
+
+            if ($minutes <= 24 * 60) {
+                return 'active24h';
+            }
+        } catch (\Throwable $exception) {
+            return 'idle';
+        }
+
+        return 'idle';
+    }
+
+    private function toIsoTimestamp(mixed $value): ?string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return \Carbon\Carbon::instance($value)->toISOString();
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            try {
+                return \Carbon\Carbon::parse($value)->toISOString();
+            } catch (\Throwable $exception) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function resolveEnrollmentStatusForCourse(Course $course): string

@@ -4,6 +4,12 @@
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Progres Mahasiswa</h1>
         <p class="text-gray-500 dark:text-gray-400 mt-1">Pantau perkembangan mahasiswa pada semua kursus yang Anda ajar.</p>
     </div>
+    @if(request('source') === 'bootcamp')
+    <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+        <p class="font-semibold">Mode Delivery Bootcamp</p>
+        <p class="mt-1">Konteks batch: {{ request('batch', '-') }}.</p>
+    </div>
+    @endif
 
     {{-- Summary Stats --}}
     @if(($totalEnrollments ?? 0) > 0)

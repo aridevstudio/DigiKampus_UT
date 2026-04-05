@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Models\CourseRating;
 use App\Models\CourseDiscussion;
 use App\Models\CourseInstructorNote;
 use App\Models\CourseMaterial;
@@ -241,7 +242,7 @@ class CourseController extends Controller
         // Group materials by module number
         $modules = [];
         foreach ($materials as $material) {
-            $moduleNum = $material->modul ?? 1;
+            $moduleNum = $material->id_module ?? $material->modul ?? 1;
             $moduleTopic = trim((string) ($material->topik ?? 'Materi'));
             $moduleTopic = preg_replace('/^modul\s+\d+\s*:\s*/i', '', $moduleTopic) ?: 'Materi';
             if (!isset($modules[$moduleNum])) {
@@ -885,7 +886,7 @@ class CourseController extends Controller
         $course = \App\Models\Course::findOrFail($courseId);
 
         $hasAssignment = CourseMaterial::where('id_course', $courseId)
-            ->where('modul', $moduleId)
+            ->where('id_module', $moduleId)
             ->get()
             ->contains(fn ($material) => $this->normalizeMaterialType($material->tipe) === 'tugas');
 
@@ -1003,7 +1004,7 @@ class CourseController extends Controller
 
         // Mark assignment as completed in session (use module key so it matches learn() logic)
         $completedAssignments = session('completed_assignments', []);
-        $assignmentModule = $assignmentMaterial?->modul ?: $assignmentId;
+        $assignmentModule = $assignmentMaterial?->id_module ?: $assignmentId;
         $key = $courseId . '_' . $assignmentModule;
         if (!in_array($key, $completedAssignments)) {
             $completedAssignments[] = $key;
@@ -1121,7 +1122,7 @@ class CourseController extends Controller
             return back()->with('error', 'Anda harus menyelesaikan kursus terlebih dahulu untuk memberikan ulasan.');
         }
         
-        $existingReview = \App\Models\Rating::where('id_course', $courseId)
+        $existingReview = CourseRating::where('id_course', $courseId)
             ->where('id_mahasiswa', $user->id)
             ->first();
             
@@ -1131,7 +1132,7 @@ class CourseController extends Controller
                 'ulasan' => $request->ulasan,
             ]);
         } else {
-            \App\Models\Rating::create([
+            CourseRating::create([
                 'id_course' => $courseId,
                 'id_mahasiswa' => $user->id,
                 'rating' => $request->rating,

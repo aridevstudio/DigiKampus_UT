@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Agenda;
 use App\Models\AdminNotification;
+use App\Models\BootcampMentor;
 use App\Models\Course;
 use App\Models\CourseInstructorNote;
 use App\Models\DosenNotification;
@@ -26,6 +27,8 @@ use Carbon\Carbon;
 
 class DosenController extends Controller
 {
+    private const BOOTCAMP_SESSION_META_PREFIX = 'BOOTCAMP_SESSION|';
+
     /**
      * Show login form
      */
@@ -266,6 +269,220 @@ class DosenController extends Controller
             'recentProgress' => $recentProgress,
             'upcomingSchedules' => $upcomingSchedules,
         ]);
+    }
+
+    public function showBootcamp()
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $assignments = BootcampMentor::query()
+            ->with('bootcamp')
+            ->where('id_user', $dosen->id)
+            ->latest('id_bootcamp_mentor')
+            ->get()
+            ->filter(fn (BootcampMentor $assignment) => $assignment->bootcamp !== null)
+            ->values();
+
+        $mentorBootcamps = $assignments->map(function (BootcampMentor $assignment, int $index) {
+            $bootcamp = $assignment->bootcamp;
+            [$filledSeats] = $this->parseBootcampSeatLabel((string) $bootcamp->seats_label);
+
+            $accentPalettes = [
+                ['accent' => 'from-sky-500 to-blue-600', 'badge' => 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20'],
+                ['accent' => 'from-violet-500 to-fuchsia-600', 'badge' => 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:border-violet-500/20'],
+                ['accent' => 'from-emerald-500 to-teal-600', 'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20'],
+            ];
+            $palette = $accentPalettes[$index % count($accentPalettes)];
+
+            return [
+                'id' => (string) $bootcamp->id_bootcamp,
+                'slug' => Str::slug($bootcamp->title) . '-' . $bootcamp->id_bootcamp,
+                'title' => $bootcamp->title,
+                'type' => $bootcamp->program_type === 'ticketed_event' ? 'Tiket Event' : 'Bootcamp',
+                'batch' => $bootcamp->batch_label,
+                'role' => Str::headline((string) $assignment->role_label),
+                'progress' => $this->bootcampProgressByStatus((string) $bootcamp->status),
+                'next_session' => $bootcamp->schedule_label ?: 'Jadwal belum ditentukan',
+                'students' => $filledSeats,
+                'tasks' => filled($assignment->assignment_note) ? Str::limit($assignment->assignment_note, 40) : 'Belum ada catatan tugas',
+                'status' => $this->bootcampStatusLabel((string) $bootcamp->status),
+                'risk' => $bootcamp->risk_note ?: 'Belum ada catatan risiko',
+                'accent' => $palette['accent'],
+                'accentBadge' => $palette['badge'],
+            ];
+        })->values();
+
+        $mentorBootcampMap = $mentorBootcamps->keyBy('id');
+
+        $bootcampSchedules = Agenda::query()
+            ->where('id_dosen', $dosen->id)
+            ->whereNull('id_course')
+            ->whereNull('id_mahasiswa')
+            ->where('deskripsi', 'like', self::BOOTCAMP_SESSION_META_PREFIX . '%')
+            ->orderBy('tanggal')
+            ->orderBy('waktu_mulai')
+            ->limit(30)
+            ->get()
+            ->map(function (Agenda $agenda) use ($mentorBootcampMap) {
+                $meta = $this->parseBootcampSessionMeta($agenda->deskripsi);
+                if ($meta === null) {
+                    return null;
+                }
+
+                $bootcampId = (string) ($meta['id_bootcamp'] ?? '');
+                if (!$mentorBootcampMap->has($bootcampId)) {
+                    return null;
+                }
+
+                $bootcamp = $mentorBootcampMap->get($bootcampId);
+                $startTime = $this->formatScheduleTime($agenda->waktu_mulai) ?? '09:00';
+                $formattedDate = $agenda->tanggal?->translatedFormat('d M Y') ?? '-';
+                $sessionType = (string) ($meta['session_type'] ?? $this->bootcampSessionTagFromAgendaType($agenda->tipe));
+
+                return [
+                    'id' => 'bootcamp-session-' . $agenda->id_agenda,
+                    'id_bootcamp' => $bootcampId,
+                    'time' => str_replace(':', '.', $startTime),
+                    'session' => $agenda->judul ?: ($sessionType . ' ' . $bootcamp['title']),
+                    'detail' => $bootcamp['batch'] . ' - ' . $formattedDate,
+                    'tag' => $sessionType,
+                    'date_sort' => $agenda->tanggal?->format('Y-m-d') ?: '9999-12-31',
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $nextSessionByBootcamp = [];
+        foreach ($bootcampSchedules as $session) {
+            $bootcampId = (string) $session['id_bootcamp'];
+            if (!isset($nextSessionByBootcamp[$bootcampId])) {
+                $nextSessionByBootcamp[$bootcampId] = $session['date_sort'] . ' - ' . str_replace('.', ':', $session['time']);
+            }
+        }
+
+        $mentorBootcamps = $mentorBootcamps->map(function (array $item) use ($nextSessionByBootcamp) {
+            $bootcampId = (string) $item['id'];
+            if (isset($nextSessionByBootcamp[$bootcampId])) {
+                $item['next_session'] = $nextSessionByBootcamp[$bootcampId];
+            }
+
+            return $item;
+        })->values();
+
+        $batchCount = $mentorBootcamps->count();
+        $activeParticipants = (int) $mentorBootcamps->sum('students');
+        $reviewPending = (int) $mentorBootcamps->filter(fn (array $item) => in_array($item['status'], ['Draft', 'Internal Review', 'Open Registration'], true))->count() * 3;
+        $scheduledSessions = (int) $bootcampSchedules->count();
+
+        $mentorStats = [
+            ['label' => 'Batch Diampu', 'value' => $batchCount, 'helper' => 'aktif minggu ini', 'tone' => 'from-sky-500 to-blue-600'],
+            ['label' => 'Peserta Aktif', 'value' => $activeParticipants, 'helper' => 'gabungan seluruh cohort', 'tone' => 'from-emerald-500 to-teal-600'],
+            ['label' => 'Review Tertunda', 'value' => $reviewPending, 'helper' => 'submission dan rubrik', 'tone' => 'from-violet-500 to-fuchsia-600'],
+            ['label' => 'Sesi Terjadwal', 'value' => $scheduledSessions, 'helper' => 'agenda hasil jadwal dosen', 'tone' => 'from-amber-500 to-orange-500'],
+        ];
+
+        $sessionQueue = $bootcampSchedules
+            ->map(fn (array $item) => collect($item)->except(['date_sort'])->all())
+            ->values()
+            ->all();
+
+        $cohortRows = $mentorBootcamps->take(3)->values()->map(function (array $item, int $index) {
+            $attendance = max(70, min(100, 80 + ($item['progress'] - 20)));
+            return [
+                'name' => 'Cohort ' . chr(65 + $index),
+                'students' => $item['students'],
+                'attendance' => $attendance . '%',
+                'completion' => $item['progress'] . '%',
+                'risk' => $item['risk'],
+            ];
+        })->all();
+
+        $deliveryChecklist = [
+            ['label' => 'Materi sesi minggu ini', 'state' => 'Siap', 'note' => 'Materi mengacu ke batch yang sudah diassign admin'],
+            ['label' => 'Feedback tugas akhir', 'state' => 'Butuh Review', 'note' => 'Prioritaskan cohort dengan progres rendah'],
+            ['label' => 'Attendance recap', 'state' => 'Sinkron', 'note' => 'Data attendance mengikuti status batch operasional'],
+            ['label' => 'Sertifikat cohort lulus', 'state' => 'Blocked', 'note' => 'Menunggu logic publish nilai final'],
+        ];
+
+        return view('Auth.dosen.bootcamp-saya', [
+            'mentorStats' => $mentorStats,
+            'mentorBootcamps' => $mentorBootcamps->all(),
+            'sessionQueue' => $sessionQueue,
+            'cohortRows' => $cohortRows,
+            'deliveryChecklist' => $deliveryChecklist,
+        ]);
+    }
+
+    public function storeBootcampSession(Request $request)
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $validated = $request->validate([
+            'id_bootcamp' => ['required', 'integer'],
+            'session_type' => ['required', 'string', Rule::in(['Live Review', 'Mentoring', 'Hands-on', 'Office Hour'])],
+            'date' => ['required', 'date'],
+            'time' => ['required', 'date_format:H:i'],
+        ], [
+            'id_bootcamp.required' => 'Bootcamp harus dipilih.',
+            'session_type.required' => 'Jenis sesi harus dipilih.',
+            'date.required' => 'Tanggal sesi wajib diisi.',
+            'time.required' => 'Jam sesi wajib diisi.',
+        ]);
+
+        $assignment = BootcampMentor::query()
+            ->with('bootcamp')
+            ->where('id_user', $dosen->id)
+            ->where('id_bootcamp', $validated['id_bootcamp'])
+            ->first();
+
+        if (!$assignment || !$assignment->bootcamp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bootcamp tidak ditemukan atau belum di-assign ke akun dosen ini.',
+            ], 404);
+        }
+
+        $bootcamp = $assignment->bootcamp;
+        $startAt = Carbon::createFromFormat('H:i', $validated['time']);
+        $endAt = $startAt->copy()->addMinutes(90);
+        $agendaType = $validated['session_type'] === 'Hands-on' ? 'workshop' : 'webinar';
+
+        $meta = [
+            'context' => 'bootcamp_session',
+            'id_bootcamp' => (int) $bootcamp->id_bootcamp,
+            'session_type' => $validated['session_type'],
+            'batch_label' => (string) $bootcamp->batch_label,
+        ];
+
+        $agenda = Agenda::create([
+            'id_mahasiswa' => null,
+            'id_dosen' => $dosen->id,
+            'id_course' => null,
+            'judul' => $validated['session_type'] . ' ' . $bootcamp->title,
+            'deskripsi' => self::BOOTCAMP_SESSION_META_PREFIX . json_encode($meta, JSON_UNESCAPED_UNICODE),
+            'tanggal' => $validated['date'],
+            'waktu_mulai' => $startAt->format('H:i:s'),
+            'waktu_selesai' => $endAt->format('H:i:s'),
+            'tipe' => $agendaType,
+            'warna' => Agenda::getColorByType($agendaType),
+        ]);
+
+        $formattedDate = optional($agenda->tanggal)->translatedFormat('d M Y') ?? $validated['date'];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jadwal sesi bootcamp berhasil disimpan.',
+            'data' => [
+                'session' => [
+                    'id' => 'bootcamp-session-' . $agenda->id_agenda,
+                    'id_bootcamp' => (string) $bootcamp->id_bootcamp,
+                    'time' => str_replace(':', '.', $startAt->format('H:i')),
+                    'session' => $agenda->judul,
+                    'detail' => $bootcamp->batch_label . ' - ' . $formattedDate,
+                    'tag' => $validated['session_type'],
+                ],
+            ],
+        ], 201);
     }
 
     /**
@@ -1865,13 +2082,40 @@ class DosenController extends Controller
         $students = $studentsQuery->get();
 
         $conversations = $students->map(function ($student) use ($dosenId) {
-            $lastMessage = Message::conversation($dosenId, $student->id)
+            $directLastMessage = Message::conversation($dosenId, $student->id)
                 ->orderBy('created_at', 'desc')
                 ->first();
+
+            $threadPrefix = $this->buildAdminChatThreadPrefix((int) $student->id, (int) $dosenId);
+            $adminLastMessage = Message::query()
+                ->where('content', 'like', $threadPrefix . '%')
+                ->whereHas('sender', function ($query) {
+                    $query->where('role', 'admin');
+                })
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $lastMessage = $this->pickLatestMessage($directLastMessage, $adminLastMessage);
+            $lastMessageContent = $lastMessage
+                ? (
+                    $lastMessage === $adminLastMessage
+                        ? $this->stripAdminChatThreadPrefix((string) $lastMessage->content)
+                        : (string) $lastMessage->content
+                )
+                : null;
 
             $unreadCount = Message::where('id_sender', $student->id)
                 ->where('id_receiver', $dosenId)
                 ->where('is_read', false)
+                ->count();
+
+            $adminUnreadCount = Message::query()
+                ->where('id_receiver', $dosenId)
+                ->where('is_read', false)
+                ->where('content', 'like', $threadPrefix . '%')
+                ->whereHas('sender', function ($query) {
+                    $query->where('role', 'admin');
+                })
                 ->count();
 
             $fotoProfile = $student->profile->foto_profile ?? null;
@@ -1885,11 +2129,11 @@ class DosenController extends Controller
                 'student_nomor_induk' => $student->profile->nomor_induk ?? '-',
                 'student_email' => $student->email ?? '-',
                 'student_avatar' => $avatar,
-                'last_message' => $lastMessage
-                    ? (strlen($lastMessage->content) > 50 ? substr($lastMessage->content, 0, 50) . '...' : $lastMessage->content)
+                'last_message' => $lastMessageContent
+                    ? (strlen($lastMessageContent) > 50 ? substr($lastMessageContent, 0, 50) . '...' : $lastMessageContent)
                     : null,
                 'last_message_time' => $lastMessage ? $lastMessage->created_at->toISOString() : null,
-                'unread_count' => $unreadCount,
+                'unread_count' => $unreadCount + $adminUnreadCount,
             ];
         })
             ->sort(function (array $left, array $right) {
@@ -1944,15 +2188,46 @@ class DosenController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
-        // Get messages
-        $messages = Message::conversation($dosenId, $studentId)
+        $threadPrefix = $this->buildAdminChatThreadPrefix((int) $studentId, (int) $dosenId);
+        Message::query()
+            ->where('id_receiver', $dosenId)
+            ->where('is_read', false)
+            ->where('content', 'like', $threadPrefix . '%')
+            ->whereHas('sender', function ($query) {
+                $query->where('role', 'admin');
+            })
+            ->update(['is_read' => true]);
+
+        $directMessages = Message::conversation($dosenId, $studentId)
             ->orderBy('created_at', 'asc')
-            ->get()
-            ->map(function ($msg) use ($dosenId) {
+            ->get();
+
+        $adminMessages = Message::query()
+            ->where('content', 'like', $threadPrefix . '%')
+            ->whereHas('sender', function ($query) {
+                $query->where('role', 'admin');
+            })
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $messages = $directMessages
+            ->concat($adminMessages)
+            ->sortBy('created_at')
+            ->values()
+            ->map(function ($msg) use ($dosenId, $studentId) {
+                $senderType = 'admin';
+                if ((int) $msg->id_sender === (int) $dosenId) {
+                    $senderType = 'dosen';
+                } elseif ((int) $msg->id_sender === (int) $studentId) {
+                    $senderType = 'mahasiswa';
+                }
+
                 return [
                     'id' => $msg->id_message,
-                    'content' => $msg->content,
-                    'sender_type' => $msg->id_sender === $dosenId ? 'dosen' : 'mahasiswa',
+                    'content' => $senderType === 'admin'
+                        ? $this->stripAdminChatThreadPrefix((string) $msg->content)
+                        : $msg->content,
+                    'sender_type' => $senderType,
                     'created_at' => $msg->created_at->toISOString(),
                     'is_read' => $msg->is_read,
                 ];
@@ -2035,6 +2310,68 @@ class DosenController extends Controller
         return $this->getAvailableStudentIds($dosenId)->contains($studentId);
     }
 
+    private function buildAdminChatThreadPrefix(int $studentId, int $dosenId): string
+    {
+        return '[ADMCHAT:' . $studentId . '-' . $dosenId . '] ';
+    }
+
+    private function stripAdminChatThreadPrefix(string $content): string
+    {
+        return preg_replace('/^\[ADMCHAT:\d+\-\d+\]\s*/', '', $content) ?? $content;
+    }
+
+    private function pickLatestMessage(?Message $directMessage, ?Message $adminMessage): ?Message
+    {
+        if ($directMessage === null) {
+            return $adminMessage;
+        }
+
+        if ($adminMessage === null) {
+            return $directMessage;
+        }
+
+        return $adminMessage->created_at->greaterThan($directMessage->created_at)
+            ? $adminMessage
+            : $directMessage;
+    }
+
+    private function parseBootcampSeatLabel(string $seatLabel): array
+    {
+        if (preg_match('/(\d+)\s*\/\s*(\d+)/', $seatLabel, $matches)) {
+            return [(int) $matches[1], (int) $matches[2]];
+        }
+
+        return [0, 0];
+    }
+
+    private function bootcampStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'internal_review' => 'Internal Review',
+            'open_registration' => 'Open Registration',
+            'published' => 'Published',
+            'registration_closed' => 'Registration Closed',
+            'in_progress' => 'Sedang Jalan',
+            'completed' => 'Selesai',
+            'archived' => 'Arsip',
+            default => 'Draft',
+        };
+    }
+
+    private function bootcampProgressByStatus(string $status): int
+    {
+        return match ($status) {
+            'internal_review' => 25,
+            'open_registration' => 45,
+            'published' => 55,
+            'registration_closed' => 70,
+            'in_progress' => 82,
+            'completed' => 100,
+            'archived' => 100,
+            default => 10,
+        };
+    }
+
     private function formatScheduleTime(?string $time): ?string
     {
         if (!$time) {
@@ -2050,4 +2387,34 @@ class DosenController extends Controller
                 : null;
         }
     }
+
+    private function parseBootcampSessionMeta(?string $description): ?array
+    {
+        if (!is_string($description) || !Str::startsWith($description, self::BOOTCAMP_SESSION_META_PREFIX)) {
+            return null;
+        }
+
+        $json = substr($description, strlen(self::BOOTCAMP_SESSION_META_PREFIX));
+        if (!is_string($json) || trim($json) === '') {
+            return null;
+        }
+
+        try {
+            $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+            return is_array($decoded) ? $decoded : null;
+        } catch (\Throwable $exception) {
+            return null;
+        }
+    }
+
+    private function bootcampSessionTagFromAgendaType(?string $agendaType): string
+    {
+        return match ($agendaType) {
+            'workshop' => 'Hands-on',
+            'deadline' => 'Office Hour',
+            default => 'Live Review',
+        };
+    }
 }
+
+

@@ -125,6 +125,13 @@
         x-init="init()"
         class="space-y-6"
     >
+        @if(request('source') === 'bootcamp')
+            <div class="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200">
+                <p class="font-semibold">Mode Nilai & Review dari Bootcamp</p>
+                <p class="mt-1">Konteks batch: {{ request('batch', '-') }}.</p>
+            </div>
+        @endif
+
         <section class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
             <div class="grid gap-6 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.16),_transparent_32%),linear-gradient(135deg,#ffffff_0%,#f8fbff_58%,#eef4ff_100%)] px-6 py-6 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(15,23,42,0.84))] lg:grid-cols-[1.45fr_0.9fr]">
                 <div>
@@ -1324,4 +1331,3 @@
         </script>
     @endpush
 </x-layouts.dosen>
-

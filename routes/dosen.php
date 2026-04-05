@@ -114,7 +114,8 @@ Route::prefix('dosen')
         // Progres & Monitoring
         // ----------------------------------------------------------------------
         Route::get('/progres-mahasiswa', [DosenController::class, 'showProgresMahasiswa'])->name('dosen.progres');
-        Route::view('/bootcamp', 'Auth.dosen.bootcamp-saya')->name('dosen.bootcamp');
+        Route::get('/bootcamp', [DosenController::class, 'showBootcamp'])->name('dosen.bootcamp');
+        Route::post('/bootcamp/sessions', [DosenController::class, 'storeBootcampSession'])->name('dosen.bootcamp.sessions.store');
         Route::view('/kelola-nilai', 'Auth.dosen.kelola-nilai')->name('dosen.nilai');
         
         // ----------------------------------------------------------------------

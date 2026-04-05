@@ -106,12 +106,22 @@
                         <template x-for="msg in messages" :key="msg.id">
                             <div class="flex max-w-[88%] items-end gap-2 sm:max-w-[82%] md:max-w-[75%]"
                                  :class="msg.sender_type === 'mahasiswa' ? 'ml-auto flex-row-reverse' : ''">
-                                <template x-if="msg.sender_type !== 'mahasiswa'">
+                                <template x-if="msg.sender_type === 'admin'">
+                                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-[11px] font-semibold text-red-700">
+                                        AD
+                                    </div>
+                                </template>
+                                <template x-if="msg.sender_type !== 'mahasiswa' && msg.sender_type !== 'admin'">
                                     <img :src="activeConversation?.dosen_avatar" :alt="activeConversation?.dosen_name" class="h-8 w-8 rounded-full object-cover">
                                 </template>
                                 <div>
+                                    <span x-show="msg.sender_type === 'admin'" class="mb-1 block text-[11px] font-semibold text-red-600">Admin DigiKampus</span>
                                     <div class="rounded-2xl px-4 py-2.5 text-sm shadow-sm"
-                                         :class="msg.sender_type === 'mahasiswa' ? 'rounded-br-sm bg-blue-500 text-white' : 'rounded-bl-sm bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300'">
+                                         :class="msg.sender_type === 'mahasiswa'
+                                             ? 'rounded-br-sm bg-blue-500 text-white'
+                                             : (msg.sender_type === 'admin'
+                                                 ? 'rounded-bl-sm border border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200'
+                                                 : 'rounded-bl-sm bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300')">
                                         <p class="whitespace-pre-wrap break-words" x-text="msg.content"></p>
                                     </div>
                                     <span class="mt-1 block text-[10px] text-gray-400"

@@ -1,12 +1,12 @@
-﻿@php
-    $mentorStats = [
+@php
+    $mentorStats = $mentorStats ?? [
         ['label' => 'Batch Diampu', 'value' => 2, 'helper' => 'aktif minggu ini', 'tone' => 'from-sky-500 to-blue-600'],
         ['label' => 'Peserta Aktif', 'value' => 120, 'helper' => 'gabungan seluruh cohort', 'tone' => 'from-emerald-500 to-teal-600'],
         ['label' => 'Review Tertunda', 'value' => 18, 'helper' => 'submission dan rubrik', 'tone' => 'from-violet-500 to-fuchsia-600'],
         ['label' => 'Sesi Terjadwal', 'value' => 3, 'helper' => 'agenda hari ini', 'tone' => 'from-amber-500 to-orange-500'],
     ];
 
-    $mentorBootcamps = [
+    $mentorBootcamps = $mentorBootcamps ?? [
         [
             'id' => 'bootcamp-uiux',
             'slug' => 'bootcamp-uiux-product-sprint',
@@ -41,19 +41,19 @@
         ],
     ];
 
-    $sessionQueue = [
+    $sessionQueue = $sessionQueue ?? [
         ['id' => 'session-1', 'time' => '09.00', 'session' => 'Critique wireframe cohort A', 'detail' => 'Perlu buka revisi batch 3', 'tag' => 'Live Review'],
         ['id' => 'session-2', 'time' => '11.30', 'session' => 'Office hour final assignment', 'detail' => '6 mahasiswa booked', 'tag' => 'Mentoring'],
         ['id' => 'session-3', 'time' => '19.00', 'session' => 'Data cleaning sprint', 'detail' => 'Module 4 + template notebook', 'tag' => 'Hands-on'],
     ];
 
-    $cohortRows = [
+    $cohortRows = $cohortRows ?? [
         ['name' => 'Cohort A', 'students' => 24, 'attendance' => '92%', 'completion' => '81%', 'risk' => '2 peserta tertinggal tugas'],
         ['name' => 'Cohort B', 'students' => 28, 'attendance' => '88%', 'completion' => '74%', 'risk' => 'Mentoring tambahan dibutuhkan'],
         ['name' => 'Cohort C', 'students' => 20, 'attendance' => '95%', 'completion' => '86%', 'risk' => 'Aman'],
     ];
 
-    $deliveryChecklist = [
+    $deliveryChecklist = $deliveryChecklist ?? [
         ['label' => 'Materi sesi minggu ini', 'state' => 'Siap', 'note' => 'Slide, brief, dan template sudah final'],
         ['label' => 'Feedback tugas akhir', 'state' => 'Butuh Review', 'note' => '11 submission baru belum selesai diberi komentar'],
         ['label' => 'Attendance recap', 'state' => 'Sinkron', 'note' => 'Menunggu backend auto attendance'],
@@ -71,7 +71,9 @@
                 grades: @js(route('dosen.nilai')),
                 progress: @js(route('dosen.progres')),
                 chat: @js(route('dosen.pesan')),
+                scheduleStore: @js(route('dosen.bootcamp.sessions.store')),
             },
+            csrfToken: @js(csrf_token()),
             initialScheduledSessions: @js($mentorStats[3]['value']),
         })"
         @keydown.escape.window="closeAllPanels()"
@@ -150,7 +152,7 @@
                 </div>
 
                 <div class="mt-5 grid gap-4">
-                    @foreach ($mentorBootcamps as $bootcamp)
+                    @forelse ($mentorBootcamps as $bootcamp)
                         <article
                             class="bootcamp-program-card p-5 transition"
                             @click="selectBootcamp('{{ $bootcamp['id'] }}')"
@@ -198,7 +200,12 @@
                                 </div>
                             </div>
                         </article>
-                    @endforeach
+                    @empty
+                        <article class="bootcamp-program-card p-6">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Belum ada bootcamp diampu</p>
+                            <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">Admin belum melakukan assign mentor ke akun dosen ini.</p>
+                        </article>
+                    @endforelse
                 </div>
             </div>
 
@@ -330,7 +337,7 @@
                     <div>
                         <p class="bootcamp-label">Schedule Session</p>
                         <h3 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Jadwalkan sesi delivery baru</h3>
-                        <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">Aksi ini frontend dulu. Session baru langsung masuk ke queue hari ini sebagai preview kerja dosen.</p>
+                        <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">Sesi baru akan disimpan ke backend dan langsung masuk ke queue dosen.</p>
                     </div>
                     <button type="button" @click="showScheduleModal = false" class="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Tutup</button>
                 </div>
@@ -420,6 +427,7 @@
                 bootcamps: Array.isArray(config.bootcamps) ? config.bootcamps : [],
                 sessions: Array.isArray(config.sessions) ? config.sessions : [],
                 routes: config.routes || {},
+                csrfToken: config.csrfToken || '',
                 scheduledSessions: Number(config.initialScheduledSessions || 0),
                 activeBootcampId: (config.bootcamps && config.bootcamps[0] ? config.bootcamps[0].id : null),
                 showScheduleModal: false,
@@ -460,8 +468,7 @@
                     };
                     this.showScheduleModal = true;
                 },
-
-                submitSchedule() {
+                async submitSchedule() {
                     const bootcamp = this.bootcamps.find((item) => item.id === this.draftSchedule.bootcampId);
 
                     if (!bootcamp || !this.draftSchedule.date || !this.draftSchedule.time) {
@@ -469,25 +476,52 @@
                         return;
                     }
 
-                    const formattedTime = this.draftSchedule.time.replace(':', '.');
+                    if (!this.routes.scheduleStore) {
+                        this.notify('Endpoint jadwal bootcamp belum tersedia.', 'error', 'Aksi Gagal');
+                        return;
+                    }
 
-                    this.sessions.unshift({
-                        id: `session-${Date.now()}`,
-                        time: formattedTime,
-                        session: `${this.draftSchedule.type} ${bootcamp.title}`,
-                        detail: `${bootcamp.batch} • ${this.formatDate(this.draftSchedule.date)}`,
-                        tag: 'Terjadwal',
-                    });
+                    try {
+                        const response = await fetch(this.routes.scheduleStore, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': this.csrfToken,
+                            },
+                            body: JSON.stringify({
+                                id_bootcamp: Number(this.draftSchedule.bootcampId),
+                                session_type: this.draftSchedule.type,
+                                date: this.draftSchedule.date,
+                                time: this.draftSchedule.time,
+                            }),
+                        });
 
-                    this.scheduledSessions += 1;
-                    this.activeBootcampId = bootcamp.id;
-                    this.showScheduleModal = false;
+                        const payload = await response.json().catch(() => ({}));
 
-                    this.notify(`Sesi baru untuk ${bootcamp.title} masuk ke queue delivery.`, 'success', 'Jadwal Disimpan');
+                        if (!response.ok || !payload?.success) {
+                            const validationError = payload?.errors
+                                ? Object.values(payload.errors).flat().join(' ')
+                                : '';
+                            throw new Error(validationError || payload?.message || 'Gagal menyimpan jadwal sesi.');
+                        }
 
-                    this.$nextTick(() => {
-                        this.$refs.deliveryQueue?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    });
+                        if (payload?.data?.session) {
+                            this.sessions.unshift(payload.data.session);
+                        }
+
+                        this.scheduledSessions += 1;
+                        this.activeBootcampId = bootcamp.id;
+                        this.showScheduleModal = false;
+
+                        this.notify(payload?.message || `Sesi baru untuk ${bootcamp.title} berhasil disimpan.`, 'success', 'Jadwal Disimpan');
+
+                        this.$nextTick(() => {
+                            this.$refs.deliveryQueue?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        });
+                    } catch (error) {
+                        this.notify(error?.message || 'Gagal menyimpan jadwal sesi.', 'error', 'Aksi Gagal');
+                    }
                 },
 
                 openBroadcastModal(id = null) {
@@ -527,11 +561,17 @@
                     }
 
                     this.activeBootcampId = bootcamp.id;
-                    this.notify(`Mode delivery aktif untuk ${bootcamp.title}. Fokus dipindah ke monitor cohort.`, 'info', 'Delivery Dibuka');
+                    if (!this.routes.progress) {
+                        this.notify('Halaman delivery belum tersedia.', 'error', 'Aksi Gagal');
+                        return;
+                    }
 
-                    this.$nextTick(() => {
-                        this.$refs.cohortMonitor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    });
+                    const url = new URL(this.routes.progress, window.location.origin);
+                    url.searchParams.set('source', 'bootcamp');
+                    url.searchParams.set('mode', 'delivery');
+                    url.searchParams.set('batch', bootcamp.slug || bootcamp.id);
+                    url.searchParams.set('bootcamp_id', bootcamp.id);
+                    window.location.href = url.toString();
                 },
 
                 openReviewPage(id = null) {
@@ -545,6 +585,7 @@
                     const url = new URL(this.routes.grades, window.location.origin);
                     url.searchParams.set('source', 'bootcamp');
                     url.searchParams.set('batch', bootcamp.slug || bootcamp.id);
+                    url.searchParams.set('bootcamp_id', bootcamp.id);
                     window.location.href = url.toString();
                 },
 
@@ -557,6 +598,18 @@
                     const url = new URL(this.routes.chat, window.location.origin);
                     url.searchParams.set('source', 'bootcamp');
                     url.searchParams.set('session', session.id);
+
+                    const sessionBootcamp = this.bootcamps.find((item) =>
+                        (session.id_bootcamp && item.id === session.id_bootcamp) || item.id === this.activeBootcampId
+                    );
+                    if (sessionBootcamp) {
+                        url.searchParams.set('batch', sessionBootcamp.slug || sessionBootcamp.id);
+                        url.searchParams.set('bootcamp_id', sessionBootcamp.id);
+                    }
+                    if (session.session) {
+                        url.searchParams.set('session_title', session.session);
+                    }
+
                     window.location.href = url.toString();
                 },
 
@@ -596,3 +649,4 @@
         }
     </script>
 </x-layouts.dosen>
+

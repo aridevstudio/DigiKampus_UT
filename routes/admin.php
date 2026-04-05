@@ -128,8 +128,13 @@ Route::prefix('admin')
         Route::put('/kategori/{id}', [AdminController::class, 'updateKategori'])->name('admin.kategori.update');
         Route::delete('/kategori/{id}', [AdminController::class, 'deleteKategori'])->name('admin.kategori.delete');
 
+        // Bootcamp & Ticket Ops
+        Route::get('/bootcamp-tiket', [AdminController::class, 'showBootcampTiket'])->name('admin.bootcamp-tiket');
+        Route::post('/bootcamp-tiket', [AdminController::class, 'storeBootcamp'])->name('admin.bootcamp-tiket.store');
+        Route::put('/bootcamp-tiket/{id}/batch', [AdminController::class, 'updateBootcampBatch'])->name('admin.bootcamp-tiket.batch.update');
+        Route::post('/bootcamp-tiket/{id}/assign-mentor', [AdminController::class, 'assignBootcampMentor'])->name('admin.bootcamp-tiket.mentor.assign');
+
         // Frontend-only pages
-        Route::view('/bootcamp-tiket', 'Auth.admin.bootcamp-tiket')->name('admin.bootcamp-tiket');
         Route::get('/sertifikasi', [AdminController::class, 'showSertifikasi'])->name('admin.sertifikasi');
         Route::post('/sertifikasi/blangko', [AdminController::class, 'storeCertificateTemplate'])->name('admin.sertifikasi.templates.store');
         Route::get('/sertifikasi/blangko/{id}/image', [AdminController::class, 'showCertificateTemplateImage'])->name('admin.sertifikasi.templates.image');
@@ -140,6 +145,12 @@ Route::prefix('admin')
         Route::put('/sertifikasi/certificates/{id}', [AdminController::class, 'updateAutomaticCertificate'])->name('admin.sertifikasi.certificates.update');
         Route::delete('/sertifikasi/certificates/{id}', [AdminController::class, 'deleteAutomaticCertificate'])->name('admin.sertifikasi.certificates.delete');
         Route::view('/chat', 'Auth.admin.chat')->name('admin.chat');
+        Route::get('/messages/conversations', [AdminController::class, 'getChatConversations'])->name('admin.messages.conversations');
+        Route::get('/messages/chat/{conversationId}', [AdminController::class, 'getChatConversationMessages'])->name('admin.messages.chat');
+        Route::post('/messages/send', [AdminController::class, 'sendAdminChatMessage'])->name('admin.messages.send');
+        Route::delete('/messages/{messageId}', [AdminController::class, 'deleteChatMessage'])->name('admin.messages.delete');
+        Route::post('/messages/conversation/{conversationId}/purge-role', [AdminController::class, 'purgeChatByRole'])->name('admin.messages.purgeRole');
+        Route::delete('/messages/conversations/{conversationId}', [AdminController::class, 'deleteChatConversation'])->name('admin.messages.conversation.delete');
         Route::view('/finance-report', 'Auth.admin.finance-report')->name('admin.finance-report');
 
         Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('admin.pengumuman.store');

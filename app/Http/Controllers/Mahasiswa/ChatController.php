@@ -56,13 +56,40 @@ class ChatController extends Controller
         $dosens = $dosenQuery->get();
 
         $conversations = $dosens->map(function (User $dosen) use ($mahasiswaId) {
-            $lastMessage = Message::conversation($mahasiswaId, $dosen->id)
+            $directLastMessage = Message::conversation($mahasiswaId, $dosen->id)
                 ->orderBy('created_at', 'desc')
                 ->first();
+
+            $threadPrefix = $this->buildAdminChatThreadPrefix((int) $mahasiswaId, (int) $dosen->id);
+            $adminLastMessage = Message::query()
+                ->where('content', 'like', $threadPrefix . '%')
+                ->whereHas('sender', function ($query) {
+                    $query->where('role', 'admin');
+                })
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $lastMessage = $this->pickLatestMessage($directLastMessage, $adminLastMessage);
+            $lastMessageContent = $lastMessage
+                ? (
+                    $lastMessage === $adminLastMessage
+                        ? $this->stripAdminChatThreadPrefix((string) $lastMessage->content)
+                        : (string) $lastMessage->content
+                )
+                : null;
 
             $unreadCount = Message::where('id_sender', $dosen->id)
                 ->where('id_receiver', $mahasiswaId)
                 ->where('is_read', false)
+                ->count();
+
+            $adminUnreadCount = Message::query()
+                ->where('id_receiver', $mahasiswaId)
+                ->where('is_read', false)
+                ->where('content', 'like', $threadPrefix . '%')
+                ->whereHas('sender', function ($query) {
+                    $query->where('role', 'admin');
+                })
                 ->count();
 
             $fotoProfile = $dosen->profile->foto_profile ?? null;
@@ -75,11 +102,11 @@ class ChatController extends Controller
                 'dosen_name' => $dosen->name,
                 'dosen_email' => $dosen->email ?? '-',
                 'dosen_avatar' => $avatar,
-                'last_message' => $lastMessage
-                    ? (strlen($lastMessage->content) > 50 ? substr($lastMessage->content, 0, 50) . '...' : $lastMessage->content)
+                'last_message' => $lastMessageContent
+                    ? (strlen($lastMessageContent) > 50 ? substr($lastMessageContent, 0, 50) . '...' : $lastMessageContent)
                     : null,
                 'last_message_time' => $lastMessage ? $lastMessage->created_at->toISOString() : null,
-                'unread_count' => $unreadCount,
+                'unread_count' => $unreadCount + $adminUnreadCount,
             ];
         })
             ->sort(function (array $left, array $right) {
@@ -136,14 +163,46 @@ class ChatController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
-        $messages = Message::conversation($mahasiswaId, $dosenId)
+        $threadPrefix = $this->buildAdminChatThreadPrefix((int) $mahasiswaId, (int) $dosenId);
+        Message::query()
+            ->where('id_receiver', $mahasiswaId)
+            ->where('is_read', false)
+            ->where('content', 'like', $threadPrefix . '%')
+            ->whereHas('sender', function ($query) {
+                $query->where('role', 'admin');
+            })
+            ->update(['is_read' => true]);
+
+        $directMessages = Message::conversation($mahasiswaId, $dosenId)
             ->orderBy('created_at', 'asc')
-            ->get()
-            ->map(function (Message $msg) use ($mahasiswaId) {
+            ->get();
+
+        $adminMessages = Message::query()
+            ->where('content', 'like', $threadPrefix . '%')
+            ->whereHas('sender', function ($query) {
+                $query->where('role', 'admin');
+            })
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $messages = $directMessages
+            ->concat($adminMessages)
+            ->sortBy('created_at')
+            ->values()
+            ->map(function (Message $msg) use ($mahasiswaId, $dosenId) {
+                $senderType = 'admin';
+                if ((int) $msg->id_sender === (int) $mahasiswaId) {
+                    $senderType = 'mahasiswa';
+                } elseif ((int) $msg->id_sender === (int) $dosenId) {
+                    $senderType = 'dosen';
+                }
+
                 return [
                     'id' => $msg->id_message,
-                    'content' => $msg->content,
-                    'sender_type' => $msg->id_sender === $mahasiswaId ? 'mahasiswa' : 'dosen',
+                    'content' => $senderType === 'admin'
+                        ? $this->stripAdminChatThreadPrefix((string) $msg->content)
+                        : $msg->content,
+                    'sender_type' => $senderType,
                     'created_at' => $msg->created_at->toISOString(),
                     'is_read' => $msg->is_read,
                 ];
@@ -237,5 +296,30 @@ class ChatController extends Controller
         }
 
         return $this->getAvailableDosenIds($mahasiswaId)->contains($dosenId);
+    }
+
+    private function buildAdminChatThreadPrefix(int $studentId, int $dosenId): string
+    {
+        return '[ADMCHAT:' . $studentId . '-' . $dosenId . '] ';
+    }
+
+    private function stripAdminChatThreadPrefix(string $content): string
+    {
+        return preg_replace('/^\[ADMCHAT:\d+\-\d+\]\s*/', '', $content) ?? $content;
+    }
+
+    private function pickLatestMessage(?Message $directMessage, ?Message $adminMessage): ?Message
+    {
+        if ($directMessage === null) {
+            return $adminMessage;
+        }
+
+        if ($adminMessage === null) {
+            return $directMessage;
+        }
+
+        return $adminMessage->created_at->greaterThan($directMessage->created_at)
+            ? $adminMessage
+            : $directMessage;
     }
 }
