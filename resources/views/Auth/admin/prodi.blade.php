@@ -161,7 +161,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </button>
-                                <button onclick="confirmDelete({{ $prodi->id_jurusan }}, '{{ addslashes($prodi->nama_jurusan) }}')" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-white dark:hover:bg-gray-600 rounded-md transition shadow-none hover:shadow-sm" title="Hapus">
+                                <button onclick="confirmDelete({{ $prodi->id_jurusan }}, '{{ addslashes($prodi->nama_jurusan) }}')" class="p-1.5 text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition shadow-none hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800/60" title="Hapus program studi">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
@@ -443,15 +443,19 @@
                 html: '<p class="text-gray-500">Prodi <strong>' + nama + '</strong> akan dihapus permanen.</p>',
                 icon: 'warning',
                 showCancelButton: true,
+                buttonsStyling: false,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Ya, Hapus',
                 cancelButtonText: 'Batal',
                 reverseButtons: true,
                 customClass: {
-                    popup: 'rounded-2xl',
-                    confirmButton: 'rounded-lg text-sm font-medium px-5 py-2.5',
-                    cancelButton: 'rounded-lg text-sm font-medium px-5 py-2.5',
+                    popup: 'rounded-[28px] px-6 py-7 sm:px-8 sm:py-8',
+                    title: 'text-gray-900 text-3xl font-bold tracking-tight',
+                    htmlContainer: 'text-sm sm:text-base leading-relaxed',
+                    actions: 'mt-8 flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center',
+                    confirmButton: 'inline-flex w-full sm:w-auto items-center justify-center rounded-2xl bg-red-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-100',
+                    cancelButton: 'inline-flex w-full sm:w-auto items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-100',
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
