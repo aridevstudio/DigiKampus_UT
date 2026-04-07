@@ -559,7 +559,7 @@
             async function exportCertificatePdf(certificateId) {
                 const certificate = getCertById(certificateId || selectedCertificateId);
                 if (!certificate) {
-                    Swal.fire('Info', 'Pilih data sertifikat terlebih dahulu.', 'info');
+                    showInfoAlert('Pilih data sertifikat terlebih dahulu.');
                     return;
                 }
 
@@ -585,20 +585,42 @@
                     pdf.save(`${certificate.nomor}.pdf`);
                 } catch (error) {
                     console.error(error);
-                    Swal.fire('Error', 'Gagal membuat PDF. Coba ulangi lagi.', 'error');
+                    showErrorAlert('Gagal membuat PDF. Coba ulangi lagi.');
                 }
             }
 
+            function showAlert(options = {}) {
+                const mergedOptions = {
+                    confirmButtonText: 'Oke',
+                    confirmButtonColor: '#2563eb',
+                    ...options,
+                };
+
+                return Swal.fire(mergedOptions);
+            }
+
+            function showInfoAlert(message, title = 'Info') {
+                return showAlert({
+                    icon: 'info',
+                    title,
+                    text: message,
+                });
+            }
+
+            function showErrorAlert(message, title = 'Error') {
+                return showAlert({
+                    icon: 'error',
+                    title,
+                    text: message,
+                });
+            }
+
             function showValidationError(message) {
-                Swal.fire({
+                showAlert({
                     icon: 'warning',
                     title: 'Validasi',
                     text: message,
-                    confirmButtonText: 'Oke',
-                    buttonsStyling: false,
-                    customClass: {
-                        confirmButton: 'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold',
-                    },
+                    confirmButtonColor: '#d97706',
                 });
             }
 
@@ -735,13 +757,7 @@
                     confirmButtonText: 'Ya, Hapus',
                     cancelButtonText: 'Batal',
                     reverseButtons: true,
-                    buttonsStyling: false,
-                    customClass: {
-                        popup: 'rounded-2xl',
-                        actions: 'gap-2',
-                        confirmButton: 'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold',
-                        cancelButton: 'px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold',
-                    },
+                    confirmButtonColor: '#dc2626',
                 });
 
                 if (!result.isConfirmed) {
@@ -791,13 +807,7 @@
                     confirmButtonText: 'Ya, Hapus',
                     cancelButtonText: 'Batal',
                     reverseButtons: true,
-                    buttonsStyling: false,
-                    customClass: {
-                        popup: 'rounded-2xl',
-                        actions: 'gap-2',
-                        confirmButton: 'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold',
-                        cancelButton: 'px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold',
-                    },
+                    confirmButtonColor: '#dc2626',
                 });
 
                 if (!result.isConfirmed) {
@@ -859,7 +869,7 @@
                         await deleteTemplate(template);
                     } catch (error) {
                         console.error(error);
-                        Swal.fire('Error', error.message || 'Gagal menghapus blangko.', 'error');
+                        showErrorAlert(error.message || 'Gagal menghapus blangko.');
                     }
                     return;
                 }
@@ -901,7 +911,7 @@
                         await deleteCertificate(certificate);
                     } catch (error) {
                         console.error(error);
-                        Swal.fire('Error', error.message || 'Gagal menghapus sertifikat otomatis.', 'error');
+                        showErrorAlert(error.message || 'Gagal menghapus sertifikat otomatis.');
                     }
                 }
             });
@@ -959,7 +969,7 @@
                     await uploadTemplate(file);
                 } catch (error) {
                     console.error(error);
-                    Swal.fire('Error', error.message || 'Gagal menambahkan blangko.', 'error');
+                    showErrorAlert(error.message || 'Gagal menambahkan blangko.');
                 } finally {
                     event.target.value = '';
                 }
@@ -970,7 +980,7 @@
                     await saveTemplateSettings();
                 } catch (error) {
                     console.error(error);
-                    Swal.fire('Error', error.message || 'Gagal menyimpan pengaturan blangko.', 'error');
+                    showErrorAlert(error.message || 'Gagal menyimpan pengaturan blangko.');
                 }
             });
 
@@ -986,7 +996,7 @@
                     await saveCertificate();
                 } catch (error) {
                     console.error(error);
-                    Swal.fire('Error', error.message || 'Gagal menyimpan sertifikat otomatis.', 'error');
+                    showErrorAlert(error.message || 'Gagal menyimpan sertifikat otomatis.');
                 }
             });
 
