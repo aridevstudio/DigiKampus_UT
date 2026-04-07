@@ -1663,6 +1663,11 @@ class DosenController extends Controller
         $search = $request->input('search');
         $courseFilter = $request->input('course', 'all');
         $jurusanFilter = $request->input('prodi', 'all');
+        $statusFilter = $request->input('status', 'all');
+
+        if (!in_array($statusFilter, ['all', 'aktif', 'selesai', 'tidak_aktif'], true)) {
+            $statusFilter = 'all';
+        }
         
         $query = \App\Models\Enrollment::whereIn('id_course', $courses)
             ->with(['mahasiswa.profile.jurusan', 'course']);
@@ -1681,6 +1686,16 @@ class DosenController extends Controller
             $query->whereHas('mahasiswa.profile', function ($q) use ($jurusanFilter) {
                 $q->where('id_jurusan', $jurusanFilter);
             });
+        }
+
+        if ($statusFilter !== 'all') {
+            if ($statusFilter === 'selesai') {
+                $query->where('progress', '>=', 100);
+            } elseif ($statusFilter === 'aktif') {
+                $query->where('progress', '>', 0)->where('progress', '<', 100);
+            } elseif ($statusFilter === 'tidak_aktif') {
+                $query->where('progress', '<=', 0);
+            }
         }
         
         $enrollments = $query->orderBy('updated_at', 'desc')->paginate(10)->withQueryString();
@@ -1765,6 +1780,7 @@ class DosenController extends Controller
             'search' => $search,
             'courseFilter' => $courseFilter,
             'jurusanFilter' => $jurusanFilter,
+            'statusFilter' => $statusFilter,
             'jurusanList' => $jurusanList,
             'totalEnrollments' => $totalEnrollments,
             'selesaiCount' => $selesaiCount,

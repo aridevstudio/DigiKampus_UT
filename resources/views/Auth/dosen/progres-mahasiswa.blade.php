@@ -94,9 +94,9 @@
                     <div class="relative">
                         <select name="status" class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none pr-10">
                             <option value="all">Semua Status</option>
-                            <option value="aktif" {{ request('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
-                            <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                            <option value="tidak_aktif" {{ request('status') == 'tidak_aktif' ? 'selected' : '' }}>Tidak Aktif</option>
+                            <option value="aktif" {{ ($statusFilter ?? 'all') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                            <option value="selesai" {{ ($statusFilter ?? 'all') == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="tidak_aktif" {{ ($statusFilter ?? 'all') == 'tidak_aktif' ? 'selected' : '' }}>Tidak Aktif</option>
                         </select>
                         <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
