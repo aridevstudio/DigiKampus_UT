@@ -3,18 +3,19 @@
     $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop';
 
     $voucherCatalog = $vouchers->mapWithKeys(function ($voucher) {
+        $normalizedCode = strtoupper(trim((string) $voucher->code));
         $value = (float) $voucher->value;
-        $label = strtoupper($voucher->code) . ' - ' . ($voucher->type === 'percent'
+        $label = $normalizedCode . ' - ' . ($voucher->type === 'percent'
             ? ('Diskon ' . rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.') . '%')
             : ('Potongan Rp ' . number_format($value, 0, ',', '.')));
 
-        return [[strtoupper($voucher->code) => [
-            'code' => strtoupper($voucher->code),
+        return [$normalizedCode => [
+            'code' => $normalizedCode,
             'label' => $label,
             'type' => $voucher->type,
             'value' => $value,
             'minSubtotal' => (float) $voucher->min_subtotal,
-        ]]];
+        ]];
     });
 @endphp
 
