@@ -249,6 +249,78 @@
     </div>
 
     @push('scripts')
+    <style>
+        .swal-cert-popup {
+            border-radius: 1rem !important;
+        }
+
+        .swal-cert-actions {
+            gap: 0.5rem !important;
+        }
+
+        .swal-cert-confirm,
+        .swal-cert-cancel {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 112px !important;
+            border-radius: 0.6rem !important;
+            padding: 0.55rem 1rem !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            line-height: 1.25 !important;
+            margin: 0 !important;
+            text-decoration: none !important;
+        }
+
+        .swal-cert-confirm {
+            background-color: #2563eb !important;
+            border: 1px solid #2563eb !important;
+            color: #ffffff !important;
+        }
+
+        .swal-cert-confirm:hover {
+            background-color: #1d4ed8 !important;
+            border-color: #1d4ed8 !important;
+            color: #ffffff !important;
+        }
+
+        .swal-cert-confirm--warning {
+            background-color: #d97706 !important;
+            border-color: #d97706 !important;
+            color: #ffffff !important;
+        }
+
+        .swal-cert-confirm--warning:hover {
+            background-color: #b45309 !important;
+            border-color: #b45309 !important;
+            color: #ffffff !important;
+        }
+
+        .swal-cert-confirm--danger {
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+            color: #ffffff !important;
+        }
+
+        .swal-cert-confirm--danger:hover {
+            background-color: #b91c1c !important;
+            border-color: #b91c1c !important;
+            color: #ffffff !important;
+        }
+
+        .swal-cert-cancel {
+            background-color: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #374151 !important;
+        }
+
+        .swal-cert-cancel:hover {
+            background-color: #f9fafb !important;
+            border-color: #9ca3af !important;
+            color: #1f2937 !important;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script>
@@ -590,11 +662,25 @@
             }
 
             function showAlert(options = {}) {
+                const confirmVariant = options.confirmVariant || 'primary';
+                const confirmVariantClass = confirmVariant === 'danger'
+                    ? 'swal-cert-confirm--danger'
+                    : (confirmVariant === 'warning' ? 'swal-cert-confirm--warning' : '');
+                const customClass = {
+                    popup: 'swal-cert-popup',
+                    actions: 'swal-cert-actions',
+                    confirmButton: `swal-cert-confirm ${confirmVariantClass}`.trim(),
+                    cancelButton: 'swal-cert-cancel',
+                    ...(options.customClass || {}),
+                };
                 const mergedOptions = {
                     confirmButtonText: 'Oke',
-                    confirmButtonColor: '#2563eb',
+                    buttonsStyling: false,
+                    customClass,
                     ...options,
                 };
+
+                delete mergedOptions.confirmVariant;
 
                 return Swal.fire(mergedOptions);
             }
@@ -612,6 +698,7 @@
                     icon: 'error',
                     title,
                     text: message,
+                    confirmVariant: 'danger',
                 });
             }
 
@@ -620,7 +707,7 @@
                     icon: 'warning',
                     title: 'Validasi',
                     text: message,
-                    confirmButtonColor: '#d97706',
+                    confirmVariant: 'warning',
                 });
             }
 
@@ -749,7 +836,7 @@
             }
 
             async function deleteCertificate(certificate) {
-                const result = await Swal.fire({
+                const result = await showAlert({
                     title: 'Hapus Sertifikat?',
                     html: `<p class="text-sm text-gray-500">Data <strong>${certificate.nomor}</strong> untuk <strong>${certificate.nama}</strong> akan dihapus.</p>`,
                     icon: 'warning',
@@ -757,7 +844,7 @@
                     confirmButtonText: 'Ya, Hapus',
                     cancelButtonText: 'Batal',
                     reverseButtons: true,
-                    confirmButtonColor: '#dc2626',
+                    confirmVariant: 'danger',
                 });
 
                 if (!result.isConfirmed) {
@@ -799,7 +886,7 @@
             }
 
             async function deleteTemplate(template) {
-                const result = await Swal.fire({
+                const result = await showAlert({
                     title: 'Hapus Blangko?',
                     html: `<p class="text-sm text-gray-500">Blangko <strong>${template.name}</strong> akan dihapus.</p>`,
                     icon: 'warning',
@@ -807,7 +894,7 @@
                     confirmButtonText: 'Ya, Hapus',
                     cancelButtonText: 'Batal',
                     reverseButtons: true,
-                    confirmButtonColor: '#dc2626',
+                    confirmVariant: 'danger',
                 });
 
                 if (!result.isConfirmed) {
