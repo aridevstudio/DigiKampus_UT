@@ -749,35 +749,7 @@ class CourseController extends Controller
                 ->with('info', 'Modul ini tidak memiliki tugas akhir (opsional oleh dosen).');
         }
 
-        // Assignment data (frontend-first placeholder, sourced from real assignment material)
-        $assignment = [
-            'id' => $assignmentMaterial->id_material,
-            'title' => $assignmentMaterial->judul_material ?? $assignmentMaterial->judul ?? 'Tugas Akhir',
-            'description' => $assignmentMaterial->konten ?: 'Kerjakan tugas akhir sesuai instruksi dosen pada modul ini.',
-            'deadline' => now()->addDays(7),
-            'weight' => 40,
-            'format' => 'PDF, DOCX, ZIP',
-            'max_size' => '10 MB',
-            'learning_objectives' => [
-                'Mampu menganalisis sistem informasi perusahaan',
-                'Mengidentifikasi masalah dan memberikan solusi',
-                'Menyusun rekomendasi implementasi',
-            ],
-            'steps' => [
-                'Pilih perusahaan yang akan dianalisis',
-                'Lakukan observasi dan pengumpulan data',
-                'Analisis sistem informasi yang ada',
-                'Identifikasi masalah dan solusi',
-                'Susun laporan dan rekomendasi',
-            ],
-            'grading_criteria' => [
-                ['name' => 'Analisis Mendalam', 'percentage' => 30],
-                ['name' => 'Identifikasi Masalah', 'percentage' => 25],
-                ['name' => 'Solusi & Rekomendasi', 'percentage' => 25],
-                ['name' => 'Kualitas Laporan', 'percentage' => 20],
-            ],
-            'instructor_note' => 'Pastikan analisis didukung dengan data yang valid dan referensi yang relevan.',
-        ];
+        $assignment = $this->buildAssignmentViewData($assignmentMaterial);
         
         return view('pages.mahasiswa.assignment-detail', [
             'course' => $course,
@@ -813,14 +785,7 @@ class CourseController extends Controller
                 ->with('info', 'Modul ini tidak memiliki tugas akhir (opsional oleh dosen).');
         }
 
-        $assignment = [
-            'id' => $assignmentMaterial->id_material,
-            'title' => $assignmentMaterial->judul_material ?? $assignmentMaterial->judul ?? 'Tugas Akhir',
-            'deadline' => now()->addDays(7),
-            'weight' => 40,
-            'format' => 'PDF, DOCX, ZIP',
-            'max_size' => '10 MB',
-        ];
+        $assignment = $this->buildAssignmentViewData($assignmentMaterial);
 
         $submission = AssignmentSubmission::where('id_material', $assignmentMaterial->id_material)
             ->where('id_mahasiswa', $user->id)
@@ -1165,6 +1130,105 @@ class CourseController extends Controller
         }
 
         return $this->normalizeMaterialType($material->tipe) === 'tugas' ? $material : null;
+    }
+
+    private function buildAssignmentViewData(CourseMaterial $assignmentMaterial): array
+    {
+        $payload = $this->parseAssignmentPayload($assignmentMaterial->konten);
+        $description = trim((string) ($payload['deskripsi'] ?? ''));
+        $instructions = trim((string) ($payload['instruksi'] ?? ''));
+
+        return [
+            'id' => $assignmentMaterial->id_material,
+            'title' => $assignmentMaterial->judul_material ?? $assignmentMaterial->judul ?? 'Tugas Akhir',
+            'description' => $description !== ''
+                ? $description
+                : ($assignmentMaterial->konten ?: 'Kerjakan tugas akhir sesuai instruksi dosen pada modul ini.'),
+            'deadline' => $this->parseAssignmentDeadline($payload['deadline'] ?? null),
+            'weight' => 40,
+            'format' => $this->formatAssignmentFormat($payload['format'] ?? null),
+            'max_size' => '10 MB',
+            'learning_objectives' => [
+                'Mampu menganalisis sistem informasi perusahaan',
+                'Mengidentifikasi masalah dan memberikan solusi',
+                'Menyusun rekomendasi implementasi',
+            ],
+            'steps' => $this->buildAssignmentSteps($instructions),
+            'grading_criteria' => [
+                ['name' => 'Analisis Mendalam', 'percentage' => 30],
+                ['name' => 'Identifikasi Masalah', 'percentage' => 25],
+                ['name' => 'Solusi & Rekomendasi', 'percentage' => 25],
+                ['name' => 'Kualitas Laporan', 'percentage' => 20],
+            ],
+            'instructor_note' => !empty($payload['allowLinks'])
+                ? 'Anda boleh menambahkan link pendukung jika memang relevan dengan tugas.'
+                : 'Pastikan analisis didukung dengan data yang valid dan referensi yang relevan.',
+        ];
+    }
+
+    private function parseAssignmentPayload(?string $content): array
+    {
+        if (!$content) {
+            return [];
+        }
+
+        $decoded = json_decode($content, true);
+
+        return is_array($decoded) && !empty($decoded['is_tugas']) ? $decoded : [];
+    }
+
+    private function parseAssignmentDeadline(mixed $deadline): \Illuminate\Support\Carbon
+    {
+        if (is_string($deadline) && trim($deadline) !== '') {
+            try {
+                return \Illuminate\Support\Carbon::parse($deadline);
+            } catch (\Throwable $exception) {
+                // fall back to the default placeholder deadline below
+            }
+        }
+
+        return now()->addDays(7);
+    }
+
+    private function formatAssignmentFormat(mixed $format): string
+    {
+        if (is_array($format)) {
+            $items = array_filter(array_map(fn ($item) => strtoupper(trim((string) $item)), $format));
+
+            return !empty($items) ? implode(', ', $items) : 'PDF, DOCX, ZIP';
+        }
+
+        $value = strtoupper(trim((string) $format));
+
+        return $value !== '' ? str_replace('|', ', ', $value) : 'PDF, DOCX, ZIP';
+    }
+
+    private function buildAssignmentSteps(?string $instructions): array
+    {
+        $instructions = trim((string) $instructions);
+
+        if ($instructions === '') {
+            return [
+                'Pilih perusahaan yang akan dianalisis',
+                'Lakukan observasi dan pengumpulan data',
+                'Analisis sistem informasi yang ada',
+                'Identifikasi masalah dan solusi',
+                'Susun laporan dan rekomendasi',
+            ];
+        }
+
+        $normalized = preg_replace("/\r\n|\r/", "\n", $instructions) ?? $instructions;
+        $segments = preg_split('/\n+|(?=\d+\.\s+)/', $normalized) ?: [];
+        $steps = [];
+
+        foreach ($segments as $segment) {
+            $step = trim(preg_replace('/^(\d+\.\s*|[-*]\s*)/', '', trim($segment)) ?? '');
+            if ($step !== '') {
+                $steps[] = $step;
+            }
+        }
+
+        return !empty($steps) ? $steps : [$instructions];
     }
 
     private function isEnrolledInCourse(int $mahasiswaId, int $courseId): bool
