@@ -820,11 +820,16 @@ class DosenController extends Controller
 
         // Group materials by section (using first digit of urutan as section number)
         $materials = $course->materials->map(function($material) {
+            $displayMeta = $this->buildMaterialDisplayMeta($material->tipe, $material->konten);
+
             return [
                 'id' => $material->id_material,
                 'judul' => $material->judul_material,
                 'tipe' => $material->tipe,
                 'konten' => $material->konten,
+                'konten_display' => $displayMeta['display'],
+                'is_structured_content' => $displayMeta['is_structured'],
+                'structured_hint' => $displayMeta['hint'],
                 'video_url' => $material->video_url,
                 'urutan' => $material->urutan,
                 'durasi' => $material->durasi,
@@ -863,15 +868,152 @@ class DosenController extends Controller
             return response()->json(['error' => 'Material tidak ditemukan'], 404);
         }
 
+        $displayMeta = $this->buildMaterialDisplayMeta($material->tipe, $material->konten);
+
         return response()->json([
             'id_material' => $material->id_material,
             'judul_material' => $material->judul_material,
             'tipe' => $material->tipe,
             'konten' => $material->konten,
+            'konten_display' => $displayMeta['display'],
+            'is_structured_content' => $displayMeta['is_structured'],
+            'structured_hint' => $displayMeta['hint'],
             'video_url' => $material->video_url,
             'urutan' => $material->urutan,
             'durasi' => $material->durasi,
         ]);
+    }
+
+    private function buildMaterialDisplayMeta(?string $type, ?string $content): array
+    {
+        $rawContent = trim((string) $content);
+        $normalizedType = $this->normalizeMaterialTypeForDisplay($type, $rawContent);
+
+        if ($rawContent === '') {
+            return [
+                'display' => '',
+                'is_structured' => false,
+                'hint' => null,
+            ];
+        }
+
+        if ($normalizedType === 'tugas') {
+            $assignmentPayload = $this->parseAssignmentPayloadForDisplay($rawContent);
+
+            if ($assignmentPayload !== []) {
+                $assignmentDescription = trim((string) ($assignmentPayload['deskripsi'] ?? ''));
+                $assignmentInstruction = trim((string) ($assignmentPayload['instruksi'] ?? ''));
+                $assignmentDisplay = $assignmentDescription !== ''
+                    ? $assignmentDescription
+                    : ($assignmentInstruction !== '' ? $assignmentInstruction : 'Tugas terstruktur');
+
+                return [
+                    'display' => $assignmentDisplay,
+                    'is_structured' => true,
+                    'hint' => 'Detail tugas tersimpan sebagai data terstruktur. Ubah instruksi lengkap di halaman Kelola Tugas.',
+                ];
+            }
+        }
+
+        if ($normalizedType === 'kuis') {
+            $quizQuestionCount = $this->countQuizQuestionsForDisplay($rawContent);
+
+            if ($quizQuestionCount > 0) {
+                return [
+                    'display' => sprintf('Kuis berisi %d soal. Kelola pertanyaan melalui halaman Input Kuis.', $quizQuestionCount),
+                    'is_structured' => true,
+                    'hint' => 'Soal kuis tersimpan sebagai data terstruktur. Ubah daftar soal di halaman Input Kuis.',
+                ];
+            }
+        }
+
+        return [
+            'display' => $rawContent,
+            'is_structured' => false,
+            'hint' => null,
+        ];
+    }
+
+    private function normalizeMaterialTypeForDisplay(?string $type, ?string $content): string
+    {
+        $normalized = Str::lower((string) $type);
+
+        return match ($normalized) {
+            'quiz' => 'kuis',
+            'text' => $this->parseAssignmentPayloadForDisplay((string) $content) !== [] ? 'tugas' : 'bacaan',
+            'video', 'bacaan', 'kuis', 'tugas' => $normalized,
+            default => 'video',
+        };
+    }
+
+    private function parseAssignmentPayloadForDisplay(string $content): array
+    {
+        $decoded = json_decode($content, true);
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $hasAssignmentKeys = !empty($decoded['is_tugas'])
+            || array_key_exists('deskripsi', $decoded)
+            || array_key_exists('instruksi', $decoded)
+            || array_key_exists('deadline', $decoded)
+            || array_key_exists('format', $decoded)
+            || array_key_exists('allowLinks', $decoded);
+
+        return $hasAssignmentKeys ? $decoded : [];
+    }
+
+    private function countQuizQuestionsForDisplay(string $content): int
+    {
+        $decoded = json_decode($content, true);
+
+        if (is_array($decoded)) {
+            if ($this->looksLikeQuizQuestion($decoded)) {
+                return 1;
+            }
+
+            if (isset($decoded['questions']) && is_array($decoded['questions'])) {
+                return collect($decoded['questions'])
+                    ->filter(fn ($question) => is_array($question) && $this->looksLikeQuizQuestion($question))
+                    ->count();
+            }
+
+            if ($this->isSequentialArray($decoded)) {
+                return collect($decoded)
+                    ->filter(fn ($question) => is_array($question) && $this->looksLikeQuizQuestion($question))
+                    ->count();
+            }
+        }
+
+        preg_match_all('/"pertanyaan"\s*:/u', $content, $questionMatches);
+        if (!empty($questionMatches[0])) {
+            return count($questionMatches[0]);
+        }
+
+        preg_match_all('/"correctAnswer"\s*:/u', $content, $correctAnswerMatches);
+        if (!empty($correctAnswerMatches[0])) {
+            return count($correctAnswerMatches[0]);
+        }
+
+        return 0;
+    }
+
+    private function looksLikeQuizQuestion(array $question): bool
+    {
+        return array_key_exists('pertanyaan', $question)
+            || array_key_exists('question', $question)
+            || array_key_exists('correctAnswer', $question)
+            || array_key_exists('jawaban_benar', $question);
+    }
+
+    private function isSequentialArray(array $value): bool
+    {
+        if ($value === []) {
+            return false;
+        }
+
+        return array_keys($value) === range(0, count($value) - 1);
     }
 
     /**
@@ -2432,5 +2574,4 @@ class DosenController extends Controller
         };
     }
 }
-
 

@@ -570,6 +570,7 @@
                         <div>
                             <label id="edit_material_konten_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
                             <textarea name="konten" id="edit_material_konten" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                            <p id="edit_material_konten_hint" class="mt-1 hidden text-xs text-indigo-600 dark:text-indigo-300"></p>
                         </div>
                         <div id="edit_material_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
@@ -801,6 +802,36 @@
         function onEditMaterialTypeChange() {
             const select = document.getElementById('edit_material_tipe');
             applyMaterialTypeState('edit_material', select?.value || 'video');
+            syncStructuredEditMaterialContent();
+        }
+
+        function syncStructuredEditMaterialContent() {
+            const input = document.getElementById('edit_material_konten');
+            const hint = document.getElementById('edit_material_konten_hint');
+            const typeSelect = document.getElementById('edit_material_tipe');
+
+            if (!input || !hint || !typeSelect) {
+                return;
+            }
+
+            const isStructured = input.dataset.structured === 'true';
+            const originalType = input.dataset.structuredType || '';
+            const currentType = normalizeMaterialType(typeSelect.value || 'video');
+            const shouldLockStructuredPreview = isStructured && originalType === currentType;
+
+            input.readOnly = shouldLockStructuredPreview;
+            input.classList.toggle('cursor-not-allowed', shouldLockStructuredPreview);
+            input.classList.toggle('opacity-90', shouldLockStructuredPreview);
+
+            if (shouldLockStructuredPreview) {
+                input.value = input.dataset.displayContent || input.value;
+                hint.textContent = input.dataset.structuredHint || '';
+                hint.classList.toggle('hidden', !hint.textContent.trim());
+                return;
+            }
+
+            hint.textContent = '';
+            hint.classList.add('hidden');
         }
 
         function redirectToTypedContentSetup(form, rawType) {
@@ -972,7 +1003,13 @@
                     const normalizedType = normalizeMaterialType(data.tipe || 'video');
                     document.getElementById('edit_material_judul').value = data.judul_material || '';
                     document.getElementById('edit_material_tipe').value = normalizedType;
-                    document.getElementById('edit_material_konten').value = data.konten || '';
+                    const editKonten = document.getElementById('edit_material_konten');
+                    editKonten.value = data.konten_display || data.konten || '';
+                    editKonten.dataset.rawContent = data.konten || '';
+                    editKonten.dataset.displayContent = data.konten_display || data.konten || '';
+                    editKonten.dataset.structured = data.is_structured_content ? 'true' : 'false';
+                    editKonten.dataset.structuredType = normalizedType;
+                    editKonten.dataset.structuredHint = data.structured_hint || '';
                     document.getElementById('edit_material_video_url').value = data.video_url || '';
                     document.getElementById('edit_material_durasi').value = data.durasi || '';
                     onEditMaterialTypeChange();
@@ -984,6 +1021,22 @@
             document.getElementById('editMaterialModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
+
+        document.getElementById('editMaterialForm')?.addEventListener('submit', function () {
+            const editKonten = document.getElementById('edit_material_konten');
+            const typeSelect = document.getElementById('edit_material_tipe');
+
+            if (!editKonten || !typeSelect) {
+                return;
+            }
+
+            const shouldRestoreRawContent = editKonten.dataset.structured === 'true'
+                && normalizeMaterialType(typeSelect.value || 'video') === (editKonten.dataset.structuredType || '');
+
+            if (shouldRestoreRawContent) {
+                editKonten.value = editKonten.dataset.rawContent || '';
+            }
+        });
 
         function confirmDeleteMaterial(id) {
             document.getElementById('deleteMaterialForm').action = `/dosen/kursus/${courseId}/material/${id}`;

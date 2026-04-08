@@ -490,6 +490,20 @@
                         return;
                     }
 
+                    const confirmResult = await showAppConfirm(
+                        'Kuis akan dipublikasikan ke kursus terpilih. Pastikan semua soal dan bobot nilainya sudah benar.',
+                        'Publikasikan kuis?',
+                        {
+                            icon: 'warning',
+                            confirmButtonText: 'Ya, publikasikan',
+                            cancelButtonText: 'Cek lagi'
+                        }
+                    );
+
+                    if (!confirmResult.isConfirmed) {
+                        return;
+                    }
+
                     // Serialize questions to JSON string for storage in 'konten'
                     this.form.konten = JSON.stringify(this.questions);
 

@@ -59,9 +59,9 @@
                 Ubah Informasi Kursus
             </a>
         </div>
-        <form action="{{ route('dosen.kursus.publish', $course['id']) }}" method="POST" class="inline" onsubmit="return confirm('{{ ($course['kategori'] ?? 'kursus') === 'webinar' ? 'Ajukan webinar ini ke admin untuk persetujuan?' : 'Publikasikan kursus ini?' }}')" x-data="{ isLoading: false }" @submit="isLoading = true">
+        <form action="{{ route('dosen.kursus.publish', $course['id']) }}" method="POST" class="inline" x-data="{ isLoading: false }" @submit="isLoading = true">
             @csrf
-            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition">
+            <button type="button" onclick="confirmPublishCourse(this.form, '{{ ($course['kategori'] ?? 'kursus') === 'webinar' ? 'Ajukan webinar ini ke admin untuk persetujuan?' : 'Publikasikan kursus ini?' }}', '{{ ($course['kategori'] ?? 'kursus') === 'webinar' ? 'Ajukan webinar?' : 'Publikasikan perubahan?' }}')" class="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
@@ -85,7 +85,7 @@
                 {{-- Material Info --}}
                 <div class="flex-1">
                     <h3 class="font-semibold text-gray-900 dark:text-white">Modul {{ $index + 1 }}: {{ $material['judul'] }}</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ \Str::limit($material['konten'], 60) ?: 'Tidak ada deskripsi' }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ \Str::limit($material['konten_display'] ?? $material['konten'], 60) ?: 'Tidak ada deskripsi' }}</p>
                     
                     {{-- Material Stats --}}
                     <div class="flex flex-wrap gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -152,7 +152,10 @@
             <div id="details-{{ $material['id'] }}" class="hidden px-4 pb-4 pt-0 border-t border-gray-100 dark:border-gray-700 mt-2">
                 <div class="pt-4 text-sm text-gray-600 dark:text-gray-300">
                     <h4 class="font-medium mb-1">Deskripsi Lengkap:</h4>
-                    <p class="mb-3">{{ $material['konten'] ?: 'Tidak ada deskripsi' }}</p>
+                    <p class="mb-3">{{ ($material['konten_display'] ?? $material['konten']) ?: 'Tidak ada deskripsi' }}</p>
+                    @if(!empty($material['structured_hint']))
+                    <p class="mb-3 text-xs text-indigo-600 dark:text-indigo-300">{{ $material['structured_hint'] }}</p>
+                    @endif
                     
                     @if($material['video_url'])
                     <div class="mb-3">
@@ -272,6 +275,7 @@
                         <div>
                             <label id="edit_konten_label" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Konten/Deskripsi</label>
                             <textarea name="konten" id="edit_konten" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                            <p id="edit_konten_hint" class="mt-1 hidden text-xs text-indigo-600 dark:text-indigo-300"></p>
                         </div>
                         <div id="edit_video_group">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">URL Video (opsional)</label>
@@ -421,6 +425,36 @@
         function onEditTypeChange() {
             const select = document.getElementById('edit_tipe');
             applyTypeState('edit', select?.value || 'video');
+            syncStructuredEditContent();
+        }
+
+        function syncStructuredEditContent() {
+            const input = document.getElementById('edit_konten');
+            const hint = document.getElementById('edit_konten_hint');
+            const typeSelect = document.getElementById('edit_tipe');
+
+            if (!input || !hint || !typeSelect) {
+                return;
+            }
+
+            const isStructured = input.dataset.structured === 'true';
+            const originalType = input.dataset.structuredType || '';
+            const currentType = normalizeMaterialType(typeSelect.value || 'video');
+            const shouldLockStructuredPreview = isStructured && originalType === currentType;
+
+            input.readOnly = shouldLockStructuredPreview;
+            input.classList.toggle('cursor-not-allowed', shouldLockStructuredPreview);
+            input.classList.toggle('opacity-90', shouldLockStructuredPreview);
+
+            if (shouldLockStructuredPreview) {
+                input.value = input.dataset.displayContent || input.value;
+                hint.textContent = input.dataset.structuredHint || '';
+                hint.classList.toggle('hidden', !hint.textContent.trim());
+                return;
+            }
+
+            hint.textContent = '';
+            hint.classList.add('hidden');
         }
 
         function handleAddMaterialSubmit(event) {
@@ -508,7 +542,13 @@
                     document.getElementById('editForm').action = `/dosen/kursus/${courseId}/material/${id}`;
                     document.getElementById('edit_judul').value = data.judul_material || '';
                     document.getElementById('edit_tipe').value = normalizeMaterialType(data.tipe || 'video');
-                    document.getElementById('edit_konten').value = data.konten || '';
+                    const editKonten = document.getElementById('edit_konten');
+                    editKonten.value = data.konten_display || data.konten || '';
+                    editKonten.dataset.rawContent = data.konten || '';
+                    editKonten.dataset.displayContent = data.konten_display || data.konten || '';
+                    editKonten.dataset.structured = data.is_structured_content ? 'true' : 'false';
+                    editKonten.dataset.structuredType = normalizeMaterialType(data.tipe || 'video');
+                    editKonten.dataset.structuredHint = data.structured_hint || '';
                     document.getElementById('edit_video_url').value = data.video_url || '';
                     document.getElementById('edit_durasi').value = data.durasi || '';
                     onEditTypeChange();
@@ -521,6 +561,22 @@
             document.getElementById('editModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
+
+        document.getElementById('editForm')?.addEventListener('submit', function () {
+            const editKonten = document.getElementById('edit_konten');
+            const typeSelect = document.getElementById('edit_tipe');
+
+            if (!editKonten || !typeSelect) {
+                return;
+            }
+
+            const shouldRestoreRawContent = editKonten.dataset.structured === 'true'
+                && normalizeMaterialType(typeSelect.value || 'video') === (editKonten.dataset.structuredType || '');
+
+            if (shouldRestoreRawContent) {
+                editKonten.value = editKonten.dataset.rawContent || '';
+            }
+        });
         
         function confirmDelete(id) {
             document.getElementById('deleteForm').action = `/dosen/kursus/${courseId}/material/${id}`;
@@ -542,6 +598,18 @@
             } else {
                 details.classList.add('hidden');
                 icon.classList.remove('rotate-180');
+            }
+        }
+
+        async function confirmPublishCourse(form, message, title) {
+            const result = await showAppConfirm(message, title, {
+                icon: 'warning',
+                confirmButtonText: 'Ya, publikasikan',
+                cancelButtonText: 'Batal'
+            });
+
+            if (result.isConfirmed) {
+                form.requestSubmit();
             }
         }
 

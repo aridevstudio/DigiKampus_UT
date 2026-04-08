@@ -590,6 +590,35 @@
             return nativeAlert(text);
         }
 
+        function showAppConfirm(message, title = 'Konfirmasi', options = {}) {
+            const text = typeof message === 'string' ? message : String(message ?? '');
+
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                return window.Swal.fire({
+                    icon: options.icon || 'question',
+                    title,
+                    text,
+                    showCancelButton: true,
+                    reverseButtons: true,
+                    focusCancel: true,
+                    confirmButtonText: options.confirmButtonText || 'Ya, lanjutkan',
+                    cancelButtonText: options.cancelButtonText || 'Batal',
+                    buttonsStyling: false,
+                    customClass: {
+                        container: 'font-inter',
+                        popup: 'rounded-2xl',
+                        title: 'text-gray-900',
+                        htmlContainer: 'text-gray-600',
+                        confirmButton: 'inline-flex items-center justify-center rounded-xl bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30',
+                        cancelButton: 'mr-3 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                    }
+                });
+            }
+
+            const nativeConfirm = window.__nativeConfirm || window.confirm.bind(window);
+            return Promise.resolve({ isConfirmed: nativeConfirm(text) });
+        }
+
         (function patchNativeAlertToSweetAlert() {
             if (window.__alertPatchedToSweetAlert) return;
             window.__nativeAlert = window.__nativeAlert || window.alert.bind(window);
