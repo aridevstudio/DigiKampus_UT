@@ -4,12 +4,12 @@
         data-templates='@json($initialTemplates)'
         data-certificates='@json($initialCertificates)'
         data-csrf='{{ csrf_token() }}'
-        data-template-store-url='{{ route('admin.sertifikasi.templates.store') }}'
-        data-template-update-url='{{ route('admin.sertifikasi.templates.update', ':id') }}'
-        data-template-delete-url='{{ route('admin.sertifikasi.templates.delete', ':id') }}'
-        data-certificate-store-url='{{ route('admin.sertifikasi.certificates.store') }}'
-        data-certificate-update-url='{{ route('admin.sertifikasi.certificates.update', ':id') }}'
-        data-certificate-delete-url='{{ route('admin.sertifikasi.certificates.delete', ':id') }}'
+        data-template-store-url='{{ route('admin.sertifikasi.templates.store', [], false) }}'
+        data-template-update-url='{{ route('admin.sertifikasi.templates.update', ['id' => ':id'], false) }}'
+        data-template-delete-url='{{ route('admin.sertifikasi.templates.delete', ['id' => ':id'], false) }}'
+        data-certificate-store-url='{{ route('admin.sertifikasi.certificates.store', [], false) }}'
+        data-certificate-update-url='{{ route('admin.sertifikasi.certificates.update', ['id' => ':id'], false) }}'
+        data-certificate-delete-url='{{ route('admin.sertifikasi.certificates.delete', ['id' => ':id'], false) }}'
         class="space-y-6"
     >
         <div class="flex flex-wrap items-end justify-between gap-3">
@@ -396,6 +396,23 @@
             const inputTemplateId = document.getElementById('inputTemplateId');
             const btnExportCurrentPdf = document.getElementById('btnExportCurrentPdf');
 
+            function normalizeAppUrl(url) {
+                if (!url) {
+                    return url;
+                }
+
+                try {
+                    const normalizedUrl = new URL(url, window.location.origin);
+                    if (normalizedUrl.host === window.location.host) {
+                        return `${window.location.origin}${normalizedUrl.pathname}${normalizedUrl.search}${normalizedUrl.hash}`;
+                    }
+
+                    return normalizedUrl.toString();
+                } catch (error) {
+                    return url;
+                }
+            }
+
             function replaceRouteId(url, id) {
                 return url.replace(':id', id);
             }
@@ -535,7 +552,7 @@
                 templateList.innerHTML = templates.map((template) => {
                     const isActive = String(template.id) === String(selectedTemplateId);
                     const backgroundStyle = template.kind === 'image'
-                        ? `background-image:url('${template.image}');background-size:cover;background-position:center;`
+                        ? `background-image:url('${normalizeAppUrl(template.image)}');background-size:cover;background-position:center;`
                         : `background:${template.gradient};`;
                     const deleteButton = templates.length > 1
                         ? `<button type="button" data-delete-template-id="${template.id}" class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition">Hapus</button>`
@@ -600,7 +617,7 @@
                 if (template) {
                     selectedTemplateId = template.id;
                     if (template.kind === 'image' && template.image) {
-                        certificateBgLayer.style.backgroundImage = `url('${template.image}')`;
+                        certificateBgLayer.style.backgroundImage = `url('${normalizeAppUrl(template.image)}')`;
                         certificateBgLayer.style.backgroundSize = 'cover';
                         certificateBgLayer.style.backgroundPosition = 'center';
                         certificateBgLayer.style.backgroundColor = 'transparent';

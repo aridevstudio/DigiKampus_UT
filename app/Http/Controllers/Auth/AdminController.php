@@ -3695,7 +3695,9 @@ class AdminController extends Controller
             'id' => $template->id,
             'name' => $template->name,
             'kind' => $template->background_type,
-            'image' => $template->background_image_path ? route('admin.sertifikasi.templates.image', $template->id) : null,
+            'image' => $template->background_image_path
+                ? route('admin.sertifikasi.templates.image', ['id' => $template->id], false)
+                : null,
             'gradient' => $template->background_gradient,
             'settings' => [
                 'nomor' => [
