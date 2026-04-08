@@ -416,6 +416,48 @@
                     : dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
             }
 
+            async function parseResponsePayload(response) {
+                const contentType = response.headers.get('content-type') || '';
+
+                if (contentType.includes('application/json')) {
+                    return await response.json();
+                }
+
+                const text = await response.text();
+
+                try {
+                    return JSON.parse(text);
+                } catch (error) {
+                    return {
+                        message: text?.trim() || response.statusText || 'Terjadi kesalahan pada server.',
+                    };
+                }
+            }
+
+            async function requestJson(url, options = {}, fallbackMessage = 'Request gagal diproses.') {
+                const response = await fetch(url, {
+                    credentials: 'same-origin',
+                    ...options,
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        ...(options.headers || {}),
+                    },
+                });
+
+                const payload = await parseResponsePayload(response);
+
+                if (!response.ok) {
+                    throw new Error(
+                        payload?.message
+                        || Object.values(payload?.errors || {}).flat()?.[0]
+                        || fallbackMessage
+                    );
+                }
+
+                return payload;
+            }
+
             function buildSettingsPayload() {
                 return {
                     name: selectedTemplateName.value.trim(),
@@ -717,18 +759,10 @@
                 formData.append('blangko', file);
                 formData.append('name', file.name.replace(/\.[^.]+$/, ''));
 
-                const response = await fetch(templateStoreUrl, {
+                const payload = await requestJson(templateStoreUrl, {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                });
-
-                const payload = await response.json();
-                if (!response.ok) {
-                    throw new Error(payload.message || Object.values(payload.errors || {}).flat()[0] || 'Gagal menambahkan blangko.');
-                }
+                }, 'Gagal menambahkan blangko.');
 
                 templates.unshift(payload.template);
                 selectedTemplateId = payload.template.id;
@@ -751,22 +785,14 @@
                 }
 
                 const payload = buildSettingsPayload();
-                const response = await fetch(replaceRouteId(templateUpdateUrl, template.id), {
-                    method: 'POST',
+                const result = await requestJson(replaceRouteId(templateUpdateUrl, template.id), {
+                    method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
-                        'X-HTTP-Method-Override': 'PUT',
-                        'X-Requested-With': 'XMLHttpRequest',
                     },
                     body: JSON.stringify(payload),
-                });
-
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.message || Object.values(result.errors || {}).flat()[0] || 'Gagal menyimpan pengaturan blangko.');
-                }
+                }, 'Gagal menyimpan pengaturan blangko.');
 
                 templates = templates.map((item) => String(item.id) === String(result.template.id) ? result.template : item);
                 selectedTemplateId = result.template.id;
@@ -798,22 +824,14 @@
                 const isEdit = certFormMode.value === 'edit' && certFormId.value;
                 const url = isEdit ? replaceRouteId(certificateUpdateUrl, certFormId.value) : certificateStoreUrl;
 
-                const response = await fetch(url, {
-                    method: 'POST',
+                const result = await requestJson(url, {
+                    method: isEdit ? 'PUT' : 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
-                        'X-HTTP-Method-Override': isEdit ? 'PUT' : 'POST',
-                        'X-Requested-With': 'XMLHttpRequest',
                     },
                     body: JSON.stringify(payload),
-                });
-
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.message || Object.values(result.errors || {}).flat()[0] || 'Gagal menyimpan sertifikat otomatis.');
-                }
+                }, 'Gagal menyimpan sertifikat otomatis.');
 
                 if (isEdit) {
                     certificates = certificates.map((item) => String(item.id) === String(result.certificate.id) ? result.certificate : item);
@@ -851,20 +869,12 @@
                     return;
                 }
 
-                const response = await fetch(replaceRouteId(certificateDeleteUrl, certificate.id), {
-                    method: 'POST',
+                const payload = await requestJson(replaceRouteId(certificateDeleteUrl, certificate.id), {
+                    method: 'DELETE',
                     headers: {
-                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
-                        'X-HTTP-Method-Override': 'DELETE',
-                        'X-Requested-With': 'XMLHttpRequest',
                     },
-                });
-
-                const payload = await response.json();
-                if (!response.ok) {
-                    throw new Error(payload.message || 'Gagal menghapus sertifikat otomatis.');
-                }
+                }, 'Gagal menghapus sertifikat otomatis.');
 
                 certificates = certificates.filter((item) => String(item.id) !== String(certificate.id));
                 if (String(selectedCertificateId) === String(certificate.id)) {
@@ -901,20 +911,12 @@
                     return;
                 }
 
-                const response = await fetch(replaceRouteId(templateDeleteUrl, template.id), {
-                    method: 'POST',
+                const payload = await requestJson(replaceRouteId(templateDeleteUrl, template.id), {
+                    method: 'DELETE',
                     headers: {
-                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
-                        'X-HTTP-Method-Override': 'DELETE',
-                        'X-Requested-With': 'XMLHttpRequest',
                     },
-                });
-
-                const payload = await response.json();
-                if (!response.ok) {
-                    throw new Error(payload.message || 'Gagal menghapus blangko.');
-                }
+                }, 'Gagal menghapus blangko.');
 
                 templates = templates.filter((item) => String(item.id) !== String(template.id));
                 if (String(selectedTemplateId) === String(template.id)) {
