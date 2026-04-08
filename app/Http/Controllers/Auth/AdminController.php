@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
@@ -3371,9 +3372,12 @@ class AdminController extends Controller
     {
         $this->ensureDefaultCertificateTemplates();
 
-        $templates = CertificateTemplate::query()
+        $templateCollection = CertificateTemplate::query()
             ->latest('id')
-            ->get()
+            ->get();
+
+        $templates = $templateCollection
+            ->filter(fn (CertificateTemplate $template) => $this->isCertificateTemplateAvailable($template))
             ->map(fn (CertificateTemplate $template) => $this->transformCertificateTemplate($template))
             ->values();
 
@@ -3381,7 +3385,7 @@ class AdminController extends Controller
             ->with('template')
             ->latest('id')
             ->get()
-            ->map(fn (AutomaticCertificate $certificate) => $this->transformAutomaticCertificate($certificate))
+            ->map(fn (AutomaticCertificate $certificate) => $this->transformAutomaticCertificate($certificate, $templateCollection))
             ->values();
 
         return view('Auth.admin.sertifikasi', [
@@ -3516,7 +3520,12 @@ class AdminController extends Controller
     {
         $certificate = AutomaticCertificate::with('template')->findOrFail($id);
 
-        return response()->json($this->transformAutomaticCertificate($certificate));
+        return response()->json(
+            $this->transformAutomaticCertificate(
+                $certificate,
+                CertificateTemplate::query()->latest('id')->get()
+            )
+        );
     }
 
     public function updateAutomaticCertificate(Request $request, $id)
@@ -3552,7 +3561,7 @@ class AdminController extends Controller
             'nama_program' => $this->cleanTextInput($request->input('nama_program')),
         ]);
 
-        return $request->validate([
+        $validated = $request->validate([
             'certificate_template_id' => ['required', 'exists:certificate_templates,id'],
             'nomor_sertifikat' => [
                 'required',
@@ -3573,6 +3582,15 @@ class AdminController extends Controller
             'nama_program.required' => 'Program wajib diisi.',
             'tanggal_terbit.required' => 'Tanggal terbit wajib diisi.',
         ]);
+
+        $template = CertificateTemplate::query()->find($validated['certificate_template_id']);
+        if (! $this->isCertificateTemplateAvailable($template)) {
+            throw ValidationException::withMessages([
+                'certificate_template_id' => 'Blangko yang dipilih tidak tersedia atau file gambarnya hilang.',
+            ]);
+        }
+
+        return $validated;
     }
 
     private function ensureDefaultCertificateTemplates(): void
@@ -3724,16 +3742,55 @@ class AdminController extends Controller
         ];
     }
 
-    private function transformAutomaticCertificate(AutomaticCertificate $certificate): array
+    private function transformAutomaticCertificate(AutomaticCertificate $certificate, $templates = null): array
     {
+        $resolvedTemplate = $this->resolveAutomaticCertificateTemplateForDisplay($certificate, $templates);
+
         return [
             'id' => $certificate->id,
             'nomor' => $certificate->nomor_sertifikat,
             'nama' => $certificate->nama_peserta,
             'program' => $certificate->nama_program,
             'tanggal' => optional($certificate->tanggal_terbit)->format('Y-m-d'),
-            'templateId' => $certificate->certificate_template_id,
+            'templateId' => $resolvedTemplate?->id ?? $certificate->certificate_template_id,
         ];
+    }
+
+    private function isCertificateTemplateAvailable(?CertificateTemplate $template): bool
+    {
+        if (! $template) {
+            return false;
+        }
+
+        if ($template->background_type !== 'image') {
+            return true;
+        }
+
+        return filled($template->background_image_path)
+            && Storage::disk('public')->exists($template->background_image_path);
+    }
+
+    private function resolvePreferredCertificateTemplate($templates = null): ?CertificateTemplate
+    {
+        $templateCollection = $templates instanceof \Illuminate\Support\Collection
+            ? $templates
+            : CertificateTemplate::query()->latest('id')->get();
+
+        return $templateCollection
+            ->first(fn (CertificateTemplate $template) => $this->isCertificateTemplateAvailable($template));
+    }
+
+    private function resolveAutomaticCertificateTemplateForDisplay(AutomaticCertificate $certificate, $templates = null): ?CertificateTemplate
+    {
+        $template = $certificate->relationLoaded('template')
+            ? $certificate->template
+            : $certificate->template()->first();
+
+        if ($this->isCertificateTemplateAvailable($template)) {
+            return $template;
+        }
+
+        return $this->resolvePreferredCertificateTemplate($templates);
     }
 
     // ========================
