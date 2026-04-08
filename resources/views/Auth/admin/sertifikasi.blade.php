@@ -667,6 +667,44 @@
                 renderPreview();
             }
 
+            function createPdfExportStage() {
+                const sourceNode = document.getElementById('certificateCanvas');
+                const stage = document.createElement('div');
+                const exportNode = sourceNode.cloneNode(true);
+
+                stage.style.position = 'fixed';
+                stage.style.left = '-10000px';
+                stage.style.top = '0';
+                stage.style.width = '1600px';
+                stage.style.height = '900px';
+                stage.style.opacity = '0';
+                stage.style.pointerEvents = 'none';
+                stage.style.overflow = 'hidden';
+                stage.setAttribute('aria-hidden', 'true');
+
+                exportNode.style.width = '1600px';
+                exportNode.style.height = '900px';
+                exportNode.style.aspectRatio = 'unset';
+                exportNode.style.border = 'none';
+                exportNode.style.borderRadius = '0';
+                exportNode.style.boxShadow = 'none';
+
+                const exportBgLayer = exportNode.querySelector('#certificateBgLayer');
+                if (exportBgLayer?.style.backgroundImage) {
+                    exportBgLayer.style.backgroundSize = '100% 100%';
+                    exportBgLayer.style.backgroundRepeat = 'no-repeat';
+                    exportBgLayer.style.backgroundPosition = 'center';
+                }
+
+                stage.appendChild(exportNode);
+                document.body.appendChild(stage);
+
+                return {
+                    stage,
+                    exportNode,
+                };
+            }
+
             function openModal(mode, certificate = null) {
                 certFormMode.value = mode;
                 certFormId.value = certificate?.id || '';
@@ -698,25 +736,34 @@
                 selectedTemplateId = certificate.templateId;
                 renderAll();
 
-                const canvasNode = document.getElementById('certificateCanvas');
+                const { stage, exportNode } = createPdfExportStage();
 
                 try {
-                    const canvas = await html2canvas(canvasNode, {
+                    const canvas = await html2canvas(exportNode, {
                         scale: 2,
                         useCORS: true,
                         backgroundColor: '#ffffff',
+                        width: 1600,
+                        height: 900,
+                        windowWidth: 1600,
+                        windowHeight: 900,
                     });
 
                     const imgData = canvas.toDataURL('image/png');
-                    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-                    const pageWidth = pdf.internal.pageSize.getWidth();
-                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const pdf = new window.jspdf.jsPDF({
+                        orientation: 'landscape',
+                        unit: 'px',
+                        format: [canvas.width, canvas.height],
+                        compress: true,
+                    });
 
-                    pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
                     pdf.save(`${certificate.nomor}.pdf`);
                 } catch (error) {
                     console.error(error);
                     showErrorAlert('Gagal membuat PDF. Coba ulangi lagi.');
+                } finally {
+                    stage.remove();
                 }
             }
 
