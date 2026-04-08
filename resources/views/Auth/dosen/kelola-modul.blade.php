@@ -170,7 +170,6 @@
                     @endif
                 </div>
             </div>
-            </div>
         </div>
         @empty
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-12 text-center">
