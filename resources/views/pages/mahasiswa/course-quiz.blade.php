@@ -305,7 +305,7 @@ function toggleFlag() {
 }
 
 function confirmSubmit() {
-    if (confirm('Apakah Anda yakin ingin menyelesaikan kuis?')) {
+    const submitQuizRequest = () => {
         fetch(quizSubmitEndpoint, {
             method: 'POST',
             headers: {
@@ -326,6 +326,33 @@ function confirmSubmit() {
             console.error('Error submitting quiz:', error);
             alert(error.message || 'Gagal menyelesaikan kuis. Coba lagi.');
         });
+    };
+
+    if (window.Swal && typeof window.Swal.fire === 'function') {
+        window.Swal.fire({
+            icon: 'warning',
+            title: 'Selesaikan Kuis?',
+            text: 'Apakah Anda yakin ingin menyelesaikan kuis?',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Selesaikan',
+            cancelButtonText: 'Batal',
+            buttonsStyling: false,
+            customClass: {
+                container: 'font-inter',
+                confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-6 rounded-lg transition-colors',
+                cancelButton: 'bg-white border border-gray-300 text-gray-700 font-medium py-2 px-6 rounded-lg transition-colors'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                submitQuizRequest();
+            }
+        });
+
+        return;
+    }
+
+    if (confirm('Apakah Anda yakin ingin menyelesaikan kuis?')) {
+        submitQuizRequest();
     }
 }
 
