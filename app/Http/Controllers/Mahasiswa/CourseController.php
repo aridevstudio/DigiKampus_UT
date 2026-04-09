@@ -1082,7 +1082,7 @@ class CourseController extends Controller
                 ->where('id_user', $user->id)
                 ->where('message', $message)
                 ->where('created_at', '>=', now()->subSeconds(15))
-                ->latest('id')
+                ->latest((new CourseDiscussion())->getKeyName())
                 ->first();
 
             if (!$discussion) {
@@ -1114,7 +1114,7 @@ class CourseController extends Controller
                         'course_id' => (int) $courseId,
                         'mahasiswa_id' => (int) $user->id,
                         'dosen_id' => (int) $course->id_dosen,
-                        'discussion_id' => (int) $discussion->id,
+                        'discussion_id' => (int) $discussion->getKey(),
                         'error' => $notificationException->getMessage(),
                     ]);
                 }

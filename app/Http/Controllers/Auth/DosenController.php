@@ -837,7 +837,7 @@ class DosenController extends Controller
                 ->where('id_user', $dosen->id)
                 ->where('message', $message)
                 ->where('created_at', '>=', now()->subSeconds(15))
-                ->latest('id')
+                ->latest((new CourseDiscussion())->getKeyName())
                 ->first();
 
             if (!$discussion) {
@@ -869,7 +869,7 @@ class DosenController extends Controller
                 Log::warning('Notifikasi balasan diskusi kursus ke mahasiswa gagal dikirim.', [
                     'course_id' => (int) $course->id_course,
                     'dosen_id' => (int) $dosen->id,
-                    'discussion_id' => (int) $discussion->id,
+                    'discussion_id' => (int) $discussion->getKey(),
                     'error' => $notificationException->getMessage(),
                 ]);
             }
