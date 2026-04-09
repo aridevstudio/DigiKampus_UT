@@ -688,19 +688,26 @@
         initProtectedVideoPlayer();
     });
 
-    const discussionEndpoint = '{{ route('mahasiswa.course-discussions.index', ['courseId' => $course->id_course], false) }}';
-    const discussionStoreEndpoint = '{{ route('mahasiswa.course-discussions.store', ['courseId' => $course->id_course], false) }}';
+    @php
+        $discussionEndpoint = route('mahasiswa.course-discussions.index', ['courseId' => $course->id_course], false);
+        $discussionStoreEndpoint = route('mahasiswa.course-discussions.store', ['courseId' => $course->id_course], false);
+        $discussionUser = auth('mahasiswa')->user();
+        $discussionCurrentUser = [
+            'name' => $discussionUser?->name ?? 'Mahasiswa',
+            'role' => 'Mahasiswa',
+            'avatar' => $discussionUser?->profile?->foto_profile
+                ? asset('storage/' . $discussionUser->profile->foto_profile)
+                : 'https://ui-avatars.com/api/?name=' . urlencode($discussionUser?->name ?? 'Mahasiswa') . '&background=0D9488&color=fff',
+        ];
+    @endphp
+
+    const discussionEndpoint = @json($discussionEndpoint);
+    const discussionStoreEndpoint = @json($discussionStoreEndpoint);
     let discussionPoller = null;
     let discussionComments = [];
     let discussionPendingComments = [];
     let discussionTempSeed = 0;
-    const discussionCurrentUser = @json([
-        'name' => auth('mahasiswa')->user()?->name ?? 'Mahasiswa',
-        'role' => 'Mahasiswa',
-        'avatar' => auth('mahasiswa')->user()?->profile?->foto_profile
-            ? asset('storage/' . auth('mahasiswa')->user()->profile->foto_profile)
-            : 'https://ui-avatars.com/api/?name=' . urlencode(auth('mahasiswa')->user()?->name ?? 'Mahasiswa') . '&background=0D9488&color=fff',
-    ]);
+    const discussionCurrentUser = @json($discussionCurrentUser);
 
     function escapeHtml(value) {
         return String(value ?? '')
