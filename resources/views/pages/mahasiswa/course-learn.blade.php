@@ -356,6 +356,19 @@
                                 <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $currentMaterial['quiz_id'] ?? $currentMaterial['id']]) }}" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Mulai Kuis</a>
                             </div>
                         </div>
+                    @elseif($currentMaterial['type'] == 'tugas')
+                         <div class="absolute inset-0 flex items-center justify-center bg-gray-800 p-6">
+                            <div class="max-w-md text-center">
+                                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
+                                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-semibold text-white">Tugas Akhir Modul</h3>
+                                <p class="mt-2 text-sm text-gray-300">Materi ini berupa penugasan. Buka detail tugas untuk melihat instruksi lengkap dan upload jawaban.</p>
+                                <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $currentMaterial['id']]) }}" class="mt-4 inline-block rounded-lg bg-orange-500 px-6 py-2 font-medium text-white transition hover:bg-orange-600">Buka Detail Tugas</a>
+                            </div>
+                        </div>
                     @else
                          <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
                             <p>Tipe konten tidak didukung</p>

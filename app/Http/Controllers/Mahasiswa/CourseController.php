@@ -315,6 +315,16 @@ class CourseController extends Controller
                 'quiz_id' => $materialType === 'kuis' ? ($moduleQuiz?->id_quiz) : null,
             ];
 
+            if ($materialType === 'kuis' && empty($modules[$moduleNum]['quiz'])) {
+                $modules[$moduleNum]['quiz'] = [
+                    'id' => $material->id_material,
+                    'title' => $materialTitle ?: 'Kuis Akhir Modul',
+                    'duration' => max(5, (int) ($material->durasi ?? 30)),
+                    'is_pretest' => (bool) ($material->is_pretest ?? false),
+                    'passing_score' => 70,
+                ];
+            }
+
             if ($materialType === 'tugas' && $modules[$moduleNum]['assignment'] === null) {
                 $modules[$moduleNum]['assignment'] = [
                     'id' => $material->id_material,
@@ -566,6 +576,15 @@ class CourseController extends Controller
 
         $course = Course::findOrFail($courseId);
         $quizModel = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        if ((int) $quizId !== (int) $quizModel->id_quiz) {
+            return redirect()->route('mahasiswa.course-quiz', [
+                'courseId' => $courseId,
+                'quizId' => (int) $quizModel->id_quiz,
+                'q' => (int) request('q', 1),
+            ]);
+        }
+
+        $resolvedQuizId = (int) $quizModel->id_quiz;
         $orderedQuestions = $this->getQuizQuestionsInDisplayOrder($quizModel);
 
         if ($orderedQuestions->isEmpty()) {
@@ -573,14 +592,14 @@ class CourseController extends Controller
                 ->with('error', 'Kuis ini belum memiliki soal.');
         }
 
-        $sessionKey = $this->getQuizStartedAtSessionKey((int) $quizId);
+        $sessionKey = $this->getQuizStartedAtSessionKey($resolvedQuizId);
         if (!session()->has($sessionKey)) {
             session([$sessionKey => now()->toIso8601String()]);
         }
 
         $currentQuestion = max(1, min((int) request('q', 1), $orderedQuestions->count()));
-        $userAnswers = $this->getQuizSessionAnswers((int) $quizId);
-        $flaggedQuestions = $this->getQuizSessionFlags((int) $quizId);
+        $userAnswers = $this->getQuizSessionAnswers($resolvedQuizId);
+        $flaggedQuestions = $this->getQuizSessionFlags($resolvedQuizId);
 
         return view('pages.mahasiswa.course-quiz', [
             'course' => $course,
@@ -611,6 +630,7 @@ class CourseController extends Controller
         }
 
         $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $resolvedQuizId = (int) $quiz->id_quiz;
         $orderedQuestions = $this->getQuizQuestionsInDisplayOrder($quiz);
         $questionNumber = (int) $request->input('question');
         $answer = (string) $request->input('answer');
@@ -622,7 +642,7 @@ class CourseController extends Controller
             ], 422);
         }
 
-        $sessionKey = $this->getQuizAnswerSessionKey((int) $quizId);
+        $sessionKey = $this->getQuizAnswerSessionKey($resolvedQuizId);
         $answers = session($sessionKey, []);
         $answers[$questionNumber] = $answer;
         session([$sessionKey => $answers]);
@@ -647,6 +667,7 @@ class CourseController extends Controller
         }
 
         $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $resolvedQuizId = (int) $quiz->id_quiz;
         $questionNumber = (int) $request->input('question');
         $totalQuestions = $this->getQuizQuestionsInDisplayOrder($quiz)->count();
 
@@ -657,7 +678,7 @@ class CourseController extends Controller
             ], 422);
         }
 
-        $sessionKey = $this->getQuizFlagSessionKey((int) $quizId);
+        $sessionKey = $this->getQuizFlagSessionKey($resolvedQuizId);
         $flagged = session($sessionKey, []);
         
         if (in_array($questionNumber, $flagged)) {
@@ -682,10 +703,13 @@ class CourseController extends Controller
      */
     public function resetQuiz(Request $request, $courseId, $quizId)
     {
-        session()->forget($this->getQuizAnswerSessionKey((int) $quizId));
-        session()->forget($this->getQuizFlagSessionKey((int) $quizId));
-        session()->forget($this->getQuizStartedAtSessionKey((int) $quizId));
-        session()->forget($this->getQuizQuestionOrderSessionKey((int) $quizId));
+        $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $resolvedQuizId = (int) $quiz->id_quiz;
+
+        session()->forget($this->getQuizAnswerSessionKey($resolvedQuizId));
+        session()->forget($this->getQuizFlagSessionKey($resolvedQuizId));
+        session()->forget($this->getQuizStartedAtSessionKey($resolvedQuizId));
+        session()->forget($this->getQuizQuestionOrderSessionKey($resolvedQuizId));
         
         return response()->json(['success' => true]);
     }
@@ -705,8 +729,9 @@ class CourseController extends Controller
         }
 
         $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $resolvedQuizId = (int) $quiz->id_quiz;
         $orderedQuestions = $this->getQuizQuestionsInDisplayOrder($quiz);
-        $sessionAnswers = $this->getQuizSessionAnswers((int) $quizId);
+        $sessionAnswers = $this->getQuizSessionAnswers($resolvedQuizId);
 
         if ($orderedQuestions->isEmpty()) {
             return response()->json([
@@ -722,7 +747,7 @@ class CourseController extends Controller
             ], 422);
         }
 
-        $startedAt = session($this->getQuizStartedAtSessionKey((int) $quizId), now()->toIso8601String());
+        $startedAt = session($this->getQuizStartedAtSessionKey($resolvedQuizId), now()->toIso8601String());
         $finishedAt = now();
         $attempt = null;
 
@@ -773,12 +798,12 @@ class CourseController extends Controller
         if ($enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->where('id_course', $courseId)->first()) {
             $enrollment->recalculateProgress($user->id);
         }
-        $this->clearQuizSession((int) $quizId);
+        $this->clearQuizSession($resolvedQuizId);
 
         return response()->json([
             'success' => true,
             'message' => 'Kuis berhasil diselesaikan.',
-            'redirect_url' => route('mahasiswa.quiz-result', ['courseId' => $courseId, 'quizId' => $quizId]),
+            'redirect_url' => route('mahasiswa.quiz-result', ['courseId' => $courseId, 'quizId' => $resolvedQuizId]),
             'attempt_id' => $attempt?->id_attempt,
         ]);
     }
@@ -791,10 +816,11 @@ class CourseController extends Controller
         $user = Auth::guard('mahasiswa')->user();
         $course = Course::findOrFail($courseId);
         $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
-        $attempt = $this->getLatestCompletedQuizAttempt((int) $quizId, $user->id);
+        $resolvedQuizId = (int) $quiz->id_quiz;
+        $attempt = $this->getLatestCompletedQuizAttempt($resolvedQuizId, $user->id);
 
         if (!$attempt) {
-            return redirect()->route('mahasiswa.course-quiz', ['courseId' => $courseId, 'quizId' => $quizId])
+            return redirect()->route('mahasiswa.course-quiz', ['courseId' => $courseId, 'quizId' => $resolvedQuizId])
                 ->with('info', 'Silakan selesaikan kuiz terlebih dahulu.');
         }
 
@@ -824,7 +850,7 @@ class CourseController extends Controller
         return view('pages.mahasiswa.quiz-result', [
             'course' => $course,
             'result' => $result,
-            'quizId' => $quizId,
+            'quizId' => $resolvedQuizId,
         ]);
     }
     
@@ -1331,14 +1357,148 @@ class CourseController extends Controller
 
     private function resolveCourseQuiz(int $courseId, int $quizId): Quiz
     {
-        return Quiz::with([
+        $quiz = Quiz::with([
             'module',
             'questions' => fn ($query) => $query->orderBy('urutan')->orderBy('id_question'),
         ])
             ->where('id_course', $courseId)
             ->where('id_quiz', $quizId)
             ->where('is_active', true)
-            ->firstOrFail();
+            ->first();
+
+        if ($quiz) {
+            return $quiz;
+        }
+
+        $legacyQuizMaterial = CourseMaterial::where('id_course', $courseId)
+            ->where('id_material', $quizId)
+            ->first();
+
+        if (!$legacyQuizMaterial || $this->normalizeMaterialType($legacyQuizMaterial->tipe) !== 'kuis') {
+            abort(404);
+        }
+
+        return $this->provisionQuizFromLegacyMaterial($courseId, $legacyQuizMaterial);
+    }
+
+    private function provisionQuizFromLegacyMaterial(int $courseId, CourseMaterial $legacyQuizMaterial): Quiz
+    {
+        $title = trim((string) ($legacyQuizMaterial->judul_material ?? $legacyQuizMaterial->judul ?? 'Kuis Akhir Modul'));
+
+        $existingQuiz = Quiz::where('id_course', $courseId)
+            ->where('id_module', $legacyQuizMaterial->id_module)
+            ->whereRaw('LOWER(TRIM(judul)) = ?', [strtolower($title)])
+            ->orderByDesc('id_quiz')
+            ->first();
+
+        if ($existingQuiz) {
+            if (!$existingQuiz->is_active) {
+                $existingQuiz->forceFill(['is_active' => true])->save();
+            }
+            if ($existingQuiz->questions()->count() === 0) {
+                $this->seedQuizQuestionsFromLegacyMaterial($existingQuiz, $legacyQuizMaterial);
+            }
+
+            return $existingQuiz->load([
+                'module',
+                'questions' => fn ($query) => $query->orderBy('urutan')->orderBy('id_question'),
+            ]);
+        }
+
+        $nextOrder = (int) Quiz::where('id_course', $courseId)
+            ->where('id_module', $legacyQuizMaterial->id_module)
+            ->max('urutan');
+
+        $quiz = DB::transaction(function () use ($courseId, $legacyQuizMaterial, $title, $nextOrder) {
+            $quiz = Quiz::create([
+                'id_module' => $legacyQuizMaterial->id_module,
+                'id_course' => $courseId,
+                'judul' => $title,
+                'deskripsi' => 'Kuis dibuat otomatis dari materi kuis lama.',
+                'durasi_menit' => max(5, (int) ($legacyQuizMaterial->durasi ?? 30)),
+                'is_pretest' => (bool) ($legacyQuizMaterial->is_pretest ?? false),
+                'is_active' => true,
+                'passing_score' => 70,
+                'acak_soal' => false,
+                'tampilkan_nilai' => true,
+                'urutan' => $nextOrder + 1,
+            ]);
+
+            $this->seedQuizQuestionsFromLegacyMaterial($quiz, $legacyQuizMaterial);
+
+            return $quiz;
+        });
+
+        return $quiz->load([
+            'module',
+            'questions' => fn ($query) => $query->orderBy('urutan')->orderBy('id_question'),
+        ]);
+    }
+
+    private function seedQuizQuestionsFromLegacyMaterial(Quiz $quiz, CourseMaterial $legacyQuizMaterial): void
+    {
+        $legacyQuestions = $this->extractLegacyQuizQuestions($legacyQuizMaterial->konten);
+        if (empty($legacyQuestions)) {
+            return;
+        }
+
+        foreach ($legacyQuestions as $index => $legacyQuestion) {
+            $questionText = trim((string) ($legacyQuestion['pertanyaan'] ?? $legacyQuestion['question'] ?? ''));
+            if ($questionText === '') {
+                continue;
+            }
+
+            $options = $legacyQuestion['opsi'] ?? $legacyQuestion['options'] ?? [];
+            $options = is_array($options) ? array_values($options) : [];
+            if (empty($options)) {
+                continue;
+            }
+
+            $type = trim((string) ($legacyQuestion['tipe'] ?? $legacyQuestion['type'] ?? 'pilihan_ganda'));
+            $questionType = in_array($type, ['benar_salah', 'pilihan_ganda'], true)
+                ? $type
+                : 'pilihan_ganda';
+
+            $correctAnswer = $legacyQuestion['jawaban_benar']
+                ?? $legacyQuestion['correctAnswer']
+                ?? $legacyQuestion['kunci']
+                ?? null;
+
+            QuizQuestion::create([
+                'id_quiz' => $quiz->id_quiz,
+                'pertanyaan' => $questionText,
+                'tipe' => $questionType,
+                'opsi' => $options,
+                'jawaban_benar' => is_scalar($correctAnswer) ? (string) $correctAnswer : null,
+                'bobot' => max(1, (int) ($legacyQuestion['bobot'] ?? 10)),
+                'penjelasan' => trim((string) ($legacyQuestion['penjelasan'] ?? $legacyQuestion['explanation'] ?? '')),
+                'urutan' => $index + 1,
+            ]);
+        }
+    }
+
+    private function extractLegacyQuizQuestions(?string $content): array
+    {
+        if (!$content) {
+            return [];
+        }
+
+        $decoded = json_decode($content, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        if (array_is_list($decoded)) {
+            return $decoded;
+        }
+
+        foreach (['questions', 'soal', 'items'] as $key) {
+            if (isset($decoded[$key]) && is_array($decoded[$key])) {
+                return array_values($decoded[$key]);
+            }
+        }
+
+        return [];
     }
 
     private function buildQuizViewData(Quiz $quiz, $orderedQuestions): array
@@ -1579,7 +1739,7 @@ class CourseController extends Controller
         return match ($type) {
             'video' => 'video',
             'kuis', 'quiz' => 'kuis',
-            'tugas' => 'tugas',
+            'tugas', 'assignment', 'tugas_akhir' => 'tugas',
             'bacaan', 'text' => 'bacaan',
             default => 'bacaan',
         };
