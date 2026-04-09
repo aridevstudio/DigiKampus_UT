@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Models\CourseModule;
 use App\Models\DosenNotification;
 use App\Models\CourseRating;
 use App\Models\CourseDiscussion;
@@ -12,6 +13,10 @@ use App\Models\CourseInstructorNote;
 use App\Models\CourseMaterial;
 use App\Models\Assignment;
 use App\Models\Notification;
+use App\Models\Quiz;
+use App\Models\QuizAnswer;
+use App\Models\QuizAttempt;
+use App\Models\QuizQuestion;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -237,7 +242,27 @@ class CourseController extends Controller
             return redirect()->route('mahasiswa.course-detail', $id)
                 ->with('error', 'Kursus berbayar ini masih menunggu konfirmasi pembayaran dari admin.');
         }
-        
+
+        $courseModules = CourseModule::where('id_course', $courseId)
+            ->orderBy('urutan')
+            ->get()
+            ->keyBy('id_module');
+
+        $courseQuizzes = Quiz::with('module')
+            ->where('id_course', $courseId)
+            ->where('is_active', true)
+            ->orderBy('urutan')
+            ->get()
+            ->groupBy('id_module');
+
+        $completedQuizAttempts = QuizAttempt::where('id_mahasiswa', $user->id)
+            ->where('status', 'selesai')
+            ->whereIn('id_quiz', $courseQuizzes->flatten(1)->pluck('id_quiz'))
+            ->orderByDesc('waktu_selesai')
+            ->orderByDesc('id_attempt')
+            ->get()
+            ->groupBy('id_quiz');
+
         // Get materials grouped by module
         $materials = $course->materials()->orderBy('urutan')->get();
         
@@ -245,7 +270,11 @@ class CourseController extends Controller
         $modules = [];
         foreach ($materials as $material) {
             $moduleNum = $material->id_module ?? $material->modul ?? 1;
-            $moduleTopic = trim((string) ($material->topik ?? 'Materi'));
+            $moduleEntity = $courseModules->get($moduleNum);
+            $moduleQuiz = $courseQuizzes->get($moduleNum)?->first(fn (Quiz $quiz) => !$quiz->is_pretest)
+                ?? $courseQuizzes->get($moduleNum)?->first();
+            $moduleQuizAttempt = $moduleQuiz ? $completedQuizAttempts->get($moduleQuiz->id_quiz)?->first() : null;
+            $moduleTopic = trim((string) ($moduleEntity?->judul_module ?? $material->topik ?? 'Materi'));
             $moduleTopic = preg_replace('/^modul\s+\d+\s*:\s*/i', '', $moduleTopic) ?: 'Materi';
             if (!isset($modules[$moduleNum])) {
                 $modules[$moduleNum] = [
@@ -253,7 +282,15 @@ class CourseController extends Controller
                     'materials' => [],
                     'completed' => 0,
                     'total' => 0,
-                    'quiz' => null,
+                    'quiz' => $moduleQuiz ? [
+                        'id' => $moduleQuiz->id_quiz,
+                        'title' => $moduleQuiz->judul ?: 'Kuis Akhir Modul',
+                        'duration' => $moduleQuiz->durasi_menit,
+                        'is_pretest' => (bool) $moduleQuiz->is_pretest,
+                        'passing_score' => $moduleQuiz->passing_score,
+                    ] : null,
+                    'quiz_completed' => $moduleQuizAttempt !== null,
+                    'feedback_available' => $moduleQuizAttempt !== null,
                     'assignment' => null,
                 ];
             }
@@ -275,15 +312,8 @@ class CourseController extends Controller
                 'duration' => $material->durasi ?? '10 menit',
                 'is_completed' => $isCompleted,
                 'video_url' => $material->video_url,
+                'quiz_id' => $materialType === 'kuis' ? ($moduleQuiz?->id_quiz) : null,
             ];
-
-            if ($materialType === 'kuis' && $modules[$moduleNum]['quiz'] === null) {
-                $modules[$moduleNum]['quiz'] = [
-                    'id' => $material->id_material,
-                    'title' => $materialTitle,
-                    'duration' => $material->durasi,
-                ];
-            }
 
             if ($materialType === 'tugas' && $modules[$moduleNum]['assignment'] === null) {
                 $modules[$moduleNum]['assignment'] = [
@@ -303,15 +333,10 @@ class CourseController extends Controller
             ksort($modules, SORT_NUMERIC);
         }
 
-        // Get completion status from session
-        $completedQuizzes = session('completed_quizzes', []);
         $completedAssignments = session('completed_assignments', []);
-        
-        // Add quiz and assignment completion status to each module
+
         foreach ($modules as $moduleNum => &$module) {
-            $quizKey = $courseId . '_' . $moduleNum;
             $assignmentKey = $courseId . '_' . $moduleNum;
-            $module['quiz_completed'] = in_array($quizKey, $completedQuizzes);
             $module['assignment_completed'] = in_array($assignmentKey, $completedAssignments);
         }
         unset($module); // Break reference
@@ -525,11 +550,10 @@ class CourseController extends Controller
     {
         $user = Auth::guard('mahasiswa')->user();
         
-        // Check if enrolled
         $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
             ->where('id_course', $courseId)
             ->first();
-            
+
         if (!$enrollment) {
             return redirect()->route('mahasiswa.course-detail', $courseId)
                 ->with('error', 'Anda belum terdaftar di kursus ini.');
@@ -539,81 +563,35 @@ class CourseController extends Controller
             return redirect()->route('mahasiswa.course-detail', $courseId)
                 ->with('error', 'Webinar atau kursus ini masih menunggu konfirmasi pembayaran dari admin.');
         }
-        
-        // Get course info
-        $course = \App\Models\Course::findOrFail($courseId);
-        
-        // For now, generate dummy quiz data
-        // In real implementation, this would come from a Quiz model
-        $quiz = [
-            'id' => $quizId,
-            'title' => 'Kuis Akhir Modul',
-            'course_name' => $course->nama_course,
-            'module_name' => 'Modul ' . $quizId . ': Materi Pembelajaran',
-            'total_questions' => 10,
-            'duration' => 30,
-            'passing_score' => 70,
-            'can_go_back' => false,
-            'current_question' => request('q', 1),
-        ];
-        
-        // Dummy questions
-        $questions = [
-            1 => [
-                'text' => 'Dalam sistem operasi, apa yang dimaksud dengan dan mengapa hal ini penting context switching dalam manajemen proses?',
-                'type' => 'Pilihan Ganda',
-                'options' => [
-                    'A' => 'Proses mengganti data dalam memori utama dengan data dari storage sekunder',
-                    'B' => 'Proses menyimpan state dari proses yang sedang berjalan dan memuat state proses lain untuk dieksekusi',
-                    'C' => 'Proses komunikasi antara dua proses yang berbeda melalui shared memory',
-                    'D' => 'Proses mengubah prioritas eksekusi proses berdasarkan algoritma scheduling',
-                ],
-            ],
-            2 => [
-                'text' => 'Apa perbedaan utama antara proses dan thread?',
-                'type' => 'Pilihan Ganda',
-                'options' => [
-                    'A' => 'Thread memiliki address space sendiri, proses tidak',
-                    'B' => 'Proses memiliki address space sendiri, thread berbagi dengan parent',
-                    'C' => 'Thread tidak bisa berkomunikasi dengan proses lain',
-                    'D' => 'Tidak ada perbedaan fundamental',
-                ],
-            ],
-            3 => [
-                'text' => 'Apa yang dimaksud dengan deadlock dalam sistem operasi?',
-                'type' => 'Pilihan Ganda',
-                'options' => [
-                    'A' => 'Kondisi dimana CPU tidak memiliki proses untuk dieksekusi',
-                    'B' => 'Kondisi dimana dua atau lebih proses saling menunggu resource yang dipegang proses lain',
-                    'C' => 'Kondisi dimana proses berjalan terlalu lambat',
-                    'D' => 'Kondisi dimana memory tidak mencukupi',
-                ],
-            ],
-        ];
-        
-        // Generate remaining dummy questions
-        for ($i = 4; $i <= 10; $i++) {
-            $questions[$i] = [
-                'text' => 'Soal nomor ' . $i . ' tentang sistem operasi dan manajemen proses...',
-                'type' => 'Pilihan Ganda',
-                'options' => [
-                    'A' => 'Opsi jawaban A',
-                    'B' => 'Opsi jawaban B',
-                    'C' => 'Opsi jawaban C',
-                    'D' => 'Opsi jawaban D',
-                ],
-            ];
+
+        $course = Course::findOrFail($courseId);
+        $quizModel = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $orderedQuestions = $this->getQuizQuestionsInDisplayOrder($quizModel);
+
+        if ($orderedQuestions->isEmpty()) {
+            return redirect()->route('mahasiswa.course-learn', $courseId)
+                ->with('error', 'Kuis ini belum memiliki soal.');
         }
-        
-        // Simulated user answers progress
-        $userAnswers = session('quiz_' . $quizId . '_answers', []);
-        $flaggedQuestions = session('quiz_' . $quizId . '_flagged', []);
-        
+
+        $sessionKey = $this->getQuizStartedAtSessionKey((int) $quizId);
+        if (!session()->has($sessionKey)) {
+            session([$sessionKey => now()->toIso8601String()]);
+        }
+
+        $currentQuestion = max(1, min((int) request('q', 1), $orderedQuestions->count()));
+        $userAnswers = $this->getQuizSessionAnswers((int) $quizId);
+        $flaggedQuestions = $this->getQuizSessionFlags((int) $quizId);
+
         return view('pages.mahasiswa.course-quiz', [
             'course' => $course,
-            'quiz' => $quiz,
-            'questions' => $questions,
-            'currentQuestion' => (int) $quiz['current_question'],
+            'quiz' => $this->buildQuizViewData($quizModel, $orderedQuestions),
+            'questions' => $orderedQuestions
+                ->values()
+                ->mapWithKeys(fn (QuizQuestion $question, int $index) => [
+                    $index + 1 => $this->buildQuizQuestionViewData($question),
+                ])
+                ->all(),
+            'currentQuestion' => $currentQuestion,
             'userAnswers' => $userAnswers,
             'flaggedQuestions' => $flaggedQuestions,
         ]);
@@ -624,17 +602,31 @@ class CourseController extends Controller
      */
     public function saveQuizAnswer(Request $request, $courseId, $quizId)
     {
-        $questionNumber = $request->input('question');
-        $answer = $request->input('answer');
-        
-        // Get existing answers from session
-        $sessionKey = 'quiz_' . $quizId . '_answers';
+        $user = Auth::guard('mahasiswa')->user();
+        if (!$this->isEnrolledInCourse($user->id, (int) $courseId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda belum terdaftar di kursus ini.',
+            ], 403);
+        }
+
+        $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $orderedQuestions = $this->getQuizQuestionsInDisplayOrder($quiz);
+        $questionNumber = (int) $request->input('question');
+        $answer = (string) $request->input('answer');
+
+        if ($questionNumber < 1 || $questionNumber > $orderedQuestions->count()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor soal tidak valid.',
+            ], 422);
+        }
+
+        $sessionKey = $this->getQuizAnswerSessionKey((int) $quizId);
         $answers = session($sessionKey, []);
-        
-        // Save the answer
         $answers[$questionNumber] = $answer;
         session([$sessionKey => $answers]);
-        
+
         return response()->json([
             'success' => true,
             'answeredCount' => count($answers),
@@ -646,13 +638,28 @@ class CourseController extends Controller
      */
     public function toggleQuizFlag(Request $request, $courseId, $quizId)
     {
-        $questionNumber = $request->input('question');
-        
-        // Get existing flagged questions from session
-        $sessionKey = 'quiz_' . $quizId . '_flagged';
+        $user = Auth::guard('mahasiswa')->user();
+        if (!$this->isEnrolledInCourse($user->id, (int) $courseId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda belum terdaftar di kursus ini.',
+            ], 403);
+        }
+
+        $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $questionNumber = (int) $request->input('question');
+        $totalQuestions = $this->getQuizQuestionsInDisplayOrder($quiz)->count();
+
+        if ($questionNumber < 1 || $questionNumber > $totalQuestions) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor soal tidak valid.',
+            ], 422);
+        }
+
+        $sessionKey = $this->getQuizFlagSessionKey((int) $quizId);
         $flagged = session($sessionKey, []);
         
-        // Toggle flag
         if (in_array($questionNumber, $flagged)) {
             $flagged = array_values(array_diff($flagged, [$questionNumber]));
             $isFlagged = false;
@@ -675,10 +682,105 @@ class CourseController extends Controller
      */
     public function resetQuiz(Request $request, $courseId, $quizId)
     {
-        session()->forget('quiz_' . $quizId . '_answers');
-        session()->forget('quiz_' . $quizId . '_flagged');
+        session()->forget($this->getQuizAnswerSessionKey((int) $quizId));
+        session()->forget($this->getQuizFlagSessionKey((int) $quizId));
+        session()->forget($this->getQuizStartedAtSessionKey((int) $quizId));
+        session()->forget($this->getQuizQuestionOrderSessionKey((int) $quizId));
         
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Finalize quiz attempt and persist real score.
+     */
+    public function submitQuiz(Request $request, $courseId, $quizId)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+
+        if (!$this->isEnrolledInCourse($user->id, (int) $courseId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda belum terdaftar di kursus ini.',
+            ], 403);
+        }
+
+        $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $orderedQuestions = $this->getQuizQuestionsInDisplayOrder($quiz);
+        $sessionAnswers = $this->getQuizSessionAnswers((int) $quizId);
+
+        if ($orderedQuestions->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kuis ini belum memiliki soal.',
+            ], 422);
+        }
+
+        if (empty($sessionAnswers)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jawaban kuiz masih kosong.',
+            ], 422);
+        }
+
+        $startedAt = session($this->getQuizStartedAtSessionKey((int) $quizId), now()->toIso8601String());
+        $finishedAt = now();
+        $attempt = null;
+
+        DB::transaction(function () use ($quiz, $orderedQuestions, $sessionAnswers, $user, $startedAt, $finishedAt, &$attempt) {
+            $attempt = QuizAttempt::create([
+                'id_quiz' => $quiz->id_quiz,
+                'id_mahasiswa' => $user->id,
+                'skor' => 0,
+                'total_poin' => 0,
+                'persentase' => 0,
+                'status' => 'selesai',
+                'waktu_mulai' => $startedAt,
+                'waktu_selesai' => $finishedAt,
+            ]);
+
+            $earnedPoints = 0;
+            $totalPoints = 0;
+
+            foreach ($orderedQuestions->values() as $index => $question) {
+                $questionNumber = $index + 1;
+                $selectedAnswer = array_key_exists($questionNumber, $sessionAnswers)
+                    ? (string) $sessionAnswers[$questionNumber]
+                    : null;
+
+                $isCorrect = $this->isQuizAnswerCorrect($selectedAnswer, $question);
+                $questionPoints = max(1, (int) ($question->bobot ?? 0));
+                $earnedForQuestion = $isCorrect ? $questionPoints : 0;
+                $earnedPoints += $earnedForQuestion;
+                $totalPoints += $questionPoints;
+
+                QuizAnswer::create([
+                    'id_attempt' => $attempt->id_attempt,
+                    'id_question' => $question->id_question,
+                    'jawaban' => $selectedAnswer,
+                    'is_correct' => $isCorrect,
+                    'poin_diperoleh' => $earnedForQuestion,
+                ]);
+            }
+
+            $attempt->update([
+                'skor' => $earnedPoints,
+                'total_poin' => $totalPoints,
+                'persentase' => $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0,
+            ]);
+        });
+
+        $this->markQuizMaterialsAsCompleted((int) $courseId, (int) ($quiz->id_module ?? 0), $user->id);
+        if ($enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->where('id_course', $courseId)->first()) {
+            $enrollment->recalculateProgress($user->id);
+        }
+        $this->clearQuizSession((int) $quizId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kuis berhasil diselesaikan.',
+            'redirect_url' => route('mahasiswa.quiz-result', ['courseId' => $courseId, 'quizId' => $quizId]),
+            'attempt_id' => $attempt?->id_attempt,
+        ]);
     }
     
     /**
@@ -686,34 +788,39 @@ class CourseController extends Controller
      */
     public function quizResult($courseId, $quizId)
     {
-        $course = \App\Models\Course::findOrFail($courseId);
-        
-        // Dummy result data
-        $result = [
-            'quiz_id' => $quizId,
-            'quiz_title' => 'Kuis Akhir Modul',
-            'module_name' => 'Modul ' . $quizId . ': Manajemen Proses',
-            'score' => 80,
-            'total_score' => 100,
-            'passing_score' => 70,
-            'is_passed' => true,
-            'correct_answers' => 8,
-            'total_questions' => 10,
-            'time_taken' => '15 Menit',
-        ];
-        
-        // Clear quiz answer session data
-        session()->forget('quiz_' . $quizId . '_answers');
-        session()->forget('quiz_' . $quizId . '_flagged');
-        
-        // Mark quiz as completed in session
-        $completedQuizzes = session('completed_quizzes', []);
-        $key = $courseId . '_' . $quizId;
-        if (!in_array($key, $completedQuizzes)) {
-            $completedQuizzes[] = $key;
-            session(['completed_quizzes' => $completedQuizzes]);
+        $user = Auth::guard('mahasiswa')->user();
+        $course = Course::findOrFail($courseId);
+        $quiz = $this->resolveCourseQuiz((int) $courseId, (int) $quizId);
+        $attempt = $this->getLatestCompletedQuizAttempt((int) $quizId, $user->id);
+
+        if (!$attempt) {
+            return redirect()->route('mahasiswa.course-quiz', ['courseId' => $courseId, 'quizId' => $quizId])
+                ->with('info', 'Silakan selesaikan kuiz terlebih dahulu.');
         }
-        
+
+        $attempt->loadMissing('answers');
+        $score = (int) round((float) $attempt->persentase);
+        $durationText = $attempt->waktu_mulai && $attempt->waktu_selesai
+            ? $attempt->waktu_mulai->diffForHumans($attempt->waktu_selesai, true, true, 2)
+            : null;
+
+        $result = [
+            'quiz_id' => $quiz->id_quiz,
+            'quiz_title' => $quiz->judul ?: 'Kuis Akhir Modul',
+            'module_id' => (int) ($quiz->id_module ?? 0),
+            'module_name' => $quiz->module?->judul_module ?: ('Modul ' . $quiz->id_module),
+            'score' => $score,
+            'total_score' => 100,
+            'passing_score' => (int) ($quiz->passing_score ?? 0),
+            'is_passed' => $score >= (int) ($quiz->passing_score ?? 0),
+            'correct_answers' => $attempt->answers->where('is_correct', true)->count(),
+            'total_questions' => $attempt->answers->count(),
+            'time_taken' => $durationText,
+            'earned_points' => (int) $attempt->skor,
+            'max_points' => (int) $attempt->total_poin,
+            'submitted_at' => $attempt->waktu_selesai,
+        ];
+
         return view('pages.mahasiswa.quiz-result', [
             'course' => $course,
             'result' => $result,
@@ -850,44 +957,75 @@ class CourseController extends Controller
      */
     public function moduleFeedback($courseId, $moduleId)
     {
-        $course = \App\Models\Course::findOrFail($courseId);
-
-        $hasAssignment = CourseMaterial::where('id_course', $courseId)
+        $user = Auth::guard('mahasiswa')->user();
+        $course = Course::findOrFail($courseId);
+        $module = CourseModule::where('id_course', $courseId)
             ->where('id_module', $moduleId)
-            ->get()
-            ->contains(fn ($material) => $this->normalizeMaterialType($material->tipe) === 'tugas');
+            ->firstOrFail();
 
-        $gradeBreakdown = [
-            ['name' => 'Kuis', 'weight' => $hasAssignment ? 40 : 100, 'score' => 80, 'max_score' => 100],
-        ];
-        if ($hasAssignment) {
-            $gradeBreakdown[] = ['name' => 'Tugas Akhir', 'weight' => 60, 'score' => 88, 'max_score' => 100];
+        $quiz = Quiz::where('id_course', $courseId)
+            ->where('id_module', $moduleId)
+            ->where('is_active', true)
+            ->orderBy('is_pretest')
+            ->orderBy('urutan')
+            ->first();
+
+        if (!$quiz) {
+            return redirect()->route('mahasiswa.course-learn', $courseId)
+                ->with('info', 'Modul ini tidak memiliki kuiz.');
         }
-        
-        // Dummy feedback data
+
+        $attempt = $this->getLatestCompletedQuizAttempt((int) $quiz->id_quiz, $user->id);
+        if (!$attempt) {
+            return redirect()->route('mahasiswa.course-quiz', ['courseId' => $courseId, 'quizId' => $quiz->id_quiz])
+                ->with('info', 'Silakan kerjakan kuiz terlebih dahulu.');
+        }
+
+        $attempt->loadMissing(['answers.question', 'quiz']);
+        $score = (int) round((float) $attempt->persentase);
+        $correctCount = $attempt->answers->where('is_correct', true)->count();
+        $questionReviews = $attempt->answers
+            ->sortBy(fn (QuizAnswer $answer) => $answer->question?->urutan ?? 0)
+            ->values()
+            ->map(function (QuizAnswer $answer, int $index) {
+                $question = $answer->question;
+                $options = $question ? array_values((array) ($question->opsi ?? [])) : [];
+                $selectedMeta = $this->buildQuizAnswerDisplayMeta($answer->jawaban, $options);
+                $correctMeta = $this->buildQuizAnswerDisplayMeta($question?->jawaban_benar, $options);
+
+                return [
+                    'number' => $index + 1,
+                    'question' => $question?->pertanyaan ?? 'Soal tidak ditemukan.',
+                    'type' => $this->formatQuizQuestionType($question?->tipe),
+                    'selected_label' => $selectedMeta['label'],
+                    'selected_text' => $selectedMeta['text'],
+                    'correct_label' => $correctMeta['label'],
+                    'correct_text' => $correctMeta['text'],
+                    'is_correct' => (bool) $answer->is_correct,
+                    'points' => (int) $answer->poin_diperoleh,
+                    'max_points' => (int) ($question?->bobot ?? 0),
+                    'explanation' => trim((string) ($question?->penjelasan ?? '')),
+                ];
+            })
+            ->all();
+
         $feedback = [
-            'module_id' => $moduleId,
-            'module_name' => 'Modul ' . $moduleId . ' - Database Design',
-            'instructor' => [
-                'name' => 'Dr. Ahmad Wijaya, M.Kom',
-                'avatar' => null,
-            ],
-            'total_score' => 85,
+            'module_name' => $module->judul_module ?: ('Modul ' . $moduleId),
+            'quiz_title' => $quiz->judul ?: 'Kuis Akhir Modul',
+            'quiz_id' => (int) $quiz->id_quiz,
+            'score' => $score,
             'max_score' => 100,
-            'is_passed' => true,
-            'has_assignment' => $hasAssignment,
-            'grade_breakdown' => $gradeBreakdown,
-            'instructor_feedback' => [
-                'date' => now()->subDays(5),
-                'text' => 'Pemahaman Anda terhadap konsep database design sudah sangat baik. Khususnya dalam menerapkan normalisasi dan ERD. Namun, perlu ditingkatkan pada bagian analisis studi kasus dan implementasi query optimization. Untuk kedepannya, saya sarankan untuk lebih banyak berlatih dengan kasus nyata dan memahami best practices dalam database performance tuning.',
-                'tags' => [
-                    ['text' => 'Konsep Dasar Kuat', 'type' => 'positive'],
-                    ['text' => 'Perlu Latihan Query', 'type' => 'warning'],
-                ],
-            ],
-            'personal_notes' => 'Modul ini cukup menantang terutama di bagian normalisasi database. Perlu lebih banyak latihan untuk memahami konsep 3NF dan BCNF. Akan fokus belajar query optimization untuk modul selanjutnya.',
+            'is_passed' => $score >= (int) ($quiz->passing_score ?? 0),
+            'passing_score' => (int) ($quiz->passing_score ?? 0),
+            'correct_answers' => $correctCount,
+            'total_questions' => count($questionReviews),
+            'earned_points' => (int) $attempt->skor,
+            'max_points' => (int) $attempt->total_poin,
+            'submitted_at' => $attempt->waktu_selesai,
+            'summary' => $this->buildQuizPerformanceSummary($score, $correctCount, count($questionReviews)),
+            'question_reviews' => $questionReviews,
         ];
-        
+
         return view('pages.mahasiswa.module-feedback', [
             'course' => $course,
             'feedback' => $feedback,
@@ -1189,6 +1327,251 @@ class CourseController extends Controller
         }
         
         return back()->with('success', 'Terima kasih! Ulasan Anda telah tersimpan.');
+    }
+
+    private function resolveCourseQuiz(int $courseId, int $quizId): Quiz
+    {
+        return Quiz::with([
+            'module',
+            'questions' => fn ($query) => $query->orderBy('urutan')->orderBy('id_question'),
+        ])
+            ->where('id_course', $courseId)
+            ->where('id_quiz', $quizId)
+            ->where('is_active', true)
+            ->firstOrFail();
+    }
+
+    private function buildQuizViewData(Quiz $quiz, $orderedQuestions): array
+    {
+        return [
+            'id' => $quiz->id_quiz,
+            'title' => $quiz->judul ?: 'Kuis Akhir Modul',
+            'course_name' => $quiz->course?->nama_course ?? '',
+            'module_name' => $quiz->module?->judul_module ?: ('Modul ' . $quiz->id_module),
+            'total_questions' => $orderedQuestions->count(),
+            'duration' => (int) ($quiz->durasi_menit ?? 0),
+            'passing_score' => (int) ($quiz->passing_score ?? 0),
+            'can_go_back' => false,
+            'is_pretest' => (bool) $quiz->is_pretest,
+        ];
+    }
+
+    private function buildQuizQuestionViewData(QuizQuestion $question): array
+    {
+        return [
+            'id' => $question->id_question,
+            'text' => $question->pertanyaan,
+            'type' => $this->formatQuizQuestionType($question->tipe),
+            'options' => array_values((array) ($question->opsi ?? [])),
+        ];
+    }
+
+    private function getQuizQuestionsInDisplayOrder(Quiz $quiz)
+    {
+        $questions = $quiz->questions->values();
+        if (!$quiz->acak_soal || $questions->count() <= 1) {
+            return $questions;
+        }
+
+        $sessionKey = $this->getQuizQuestionOrderSessionKey((int) $quiz->id_quiz);
+        $storedOrder = array_map('intval', session($sessionKey, []));
+        $questionIds = $questions->pluck('id_question')->map(fn ($id) => (int) $id)->all();
+        $hasSameQuestions = count($storedOrder) === count($questionIds)
+            && empty(array_diff($storedOrder, $questionIds))
+            && empty(array_diff($questionIds, $storedOrder));
+
+        if (!$hasSameQuestions) {
+            $storedOrder = $questionIds;
+            shuffle($storedOrder);
+            session([$sessionKey => $storedOrder]);
+        }
+
+        return collect($storedOrder)
+            ->map(fn (int $questionId) => $questions->firstWhere('id_question', $questionId))
+            ->filter()
+            ->values();
+    }
+
+    private function getLatestCompletedQuizAttempt(int $quizId, int $mahasiswaId): ?QuizAttempt
+    {
+        return QuizAttempt::with(['answers.question', 'quiz.module'])
+            ->where('id_quiz', $quizId)
+            ->where('id_mahasiswa', $mahasiswaId)
+            ->where('status', 'selesai')
+            ->orderByDesc('waktu_selesai')
+            ->orderByDesc('id_attempt')
+            ->first();
+    }
+
+    private function getQuizAnswerSessionKey(int $quizId): string
+    {
+        return 'quiz_' . $quizId . '_answers';
+    }
+
+    private function getQuizFlagSessionKey(int $quizId): string
+    {
+        return 'quiz_' . $quizId . '_flagged';
+    }
+
+    private function getQuizStartedAtSessionKey(int $quizId): string
+    {
+        return 'quiz_' . $quizId . '_started_at';
+    }
+
+    private function getQuizQuestionOrderSessionKey(int $quizId): string
+    {
+        return 'quiz_' . $quizId . '_question_order';
+    }
+
+    private function getQuizSessionAnswers(int $quizId): array
+    {
+        return session($this->getQuizAnswerSessionKey($quizId), []);
+    }
+
+    private function getQuizSessionFlags(int $quizId): array
+    {
+        return session($this->getQuizFlagSessionKey($quizId), []);
+    }
+
+    private function clearQuizSession(int $quizId): void
+    {
+        session()->forget($this->getQuizAnswerSessionKey($quizId));
+        session()->forget($this->getQuizFlagSessionKey($quizId));
+        session()->forget($this->getQuizStartedAtSessionKey($quizId));
+        session()->forget($this->getQuizQuestionOrderSessionKey($quizId));
+    }
+
+    private function isQuizAnswerCorrect(?string $selectedAnswer, QuizQuestion $question): bool
+    {
+        if ($selectedAnswer === null || $selectedAnswer === '') {
+            return false;
+        }
+
+        $normalizedSelected = $this->normalizeQuizComparableValue($selectedAnswer);
+        $options = array_values((array) ($question->opsi ?? []));
+        $comparables = [$question->jawaban_benar];
+
+        if (is_numeric($question->jawaban_benar)) {
+            $correctIndex = (int) $question->jawaban_benar;
+            $comparables[] = (string) $correctIndex;
+            $comparables[] = $this->quizOptionLabelFromIndex($correctIndex);
+            if (array_key_exists($correctIndex, $options)) {
+                $comparables[] = $options[$correctIndex];
+            }
+        } elseif (is_string($question->jawaban_benar) && strlen(trim($question->jawaban_benar)) === 1 && ctype_alpha(trim($question->jawaban_benar))) {
+            $correctIndex = ord(strtoupper(trim($question->jawaban_benar))) - 65;
+            $comparables[] = (string) $correctIndex;
+            if (array_key_exists($correctIndex, $options)) {
+                $comparables[] = $options[$correctIndex];
+            }
+        }
+
+        foreach ($comparables as $candidate) {
+            if ($normalizedSelected === $this->normalizeQuizComparableValue($candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeQuizComparableValue(mixed $value): string
+    {
+        return mb_strtolower(trim((string) $value));
+    }
+
+    private function formatQuizQuestionType(?string $type): string
+    {
+        return match ($type) {
+            'benar_salah' => 'Benar / Salah',
+            'pilihan_ganda' => 'Pilihan Ganda',
+            default => 'Soal',
+        };
+    }
+
+    private function quizOptionLabelFromIndex(?int $index): ?string
+    {
+        if ($index === null || $index < 0 || $index > 25) {
+            return null;
+        }
+
+        return chr(65 + $index);
+    }
+
+    private function buildQuizAnswerDisplayMeta(mixed $value, array $options): array
+    {
+        if ($value === null || $value === '') {
+            return ['label' => '-', 'text' => 'Tidak dijawab'];
+        }
+
+        if (is_numeric($value)) {
+            $index = (int) $value;
+            return [
+                'label' => $this->quizOptionLabelFromIndex($index) ?? (string) $value,
+                'text' => $options[$index] ?? (string) $value,
+            ];
+        }
+
+        $textValue = trim((string) $value);
+        $matchedIndex = collect($options)->search(fn ($option) => trim((string) $option) === $textValue);
+        if ($matchedIndex !== false) {
+            return [
+                'label' => $this->quizOptionLabelFromIndex((int) $matchedIndex) ?? (string) $matchedIndex,
+                'text' => $options[$matchedIndex],
+            ];
+        }
+
+        if (strlen($textValue) === 1 && ctype_alpha($textValue)) {
+            $index = ord(strtoupper($textValue)) - 65;
+            return [
+                'label' => strtoupper($textValue),
+                'text' => $options[$index] ?? strtoupper($textValue),
+            ];
+        }
+
+        return ['label' => '-', 'text' => $textValue];
+    }
+
+    private function buildQuizPerformanceSummary(int $score, int $correctAnswers, int $totalQuestions): string
+    {
+        if ($totalQuestions <= 0) {
+            return 'Belum ada jawaban yang dapat dievaluasi.';
+        }
+
+        if ($score >= 85) {
+            return "Hasil Anda sangat baik. Anda menjawab {$correctAnswers} dari {$totalQuestions} soal dengan benar dan sudah memahami materi kuiz dengan kuat.";
+        }
+
+        if ($score >= 70) {
+            return "Hasil Anda sudah memenuhi batas lulus. Anda menjawab {$correctAnswers} dari {$totalQuestions} soal dengan benar, namun masih ada beberapa bagian yang perlu ditinjau ulang.";
+        }
+
+        return "Hasil Anda belum mencapai nilai lulus. Anda menjawab {$correctAnswers} dari {$totalQuestions} soal dengan benar. Tinjau ulang penjelasan pada soal yang salah sebelum mencoba lagi.";
+    }
+
+    private function markQuizMaterialsAsCompleted(int $courseId, int $moduleId, int $mahasiswaId): void
+    {
+        if ($moduleId <= 0) {
+            return;
+        }
+
+        $quizMaterials = CourseMaterial::where('id_course', $courseId)
+            ->where('id_module', $moduleId)
+            ->get()
+            ->filter(fn (CourseMaterial $material) => $this->normalizeMaterialType($material->tipe) === 'kuis');
+
+        foreach ($quizMaterials as $material) {
+            \App\Models\MaterialProgress::updateOrCreate(
+                [
+                    'id_mahasiswa' => $mahasiswaId,
+                    'id_material' => $material->id_material,
+                ],
+                [
+                    'is_completed' => true,
+                    'completed_at' => now(),
+                ]
+            );
+        }
     }
 
     private function normalizeMaterialType(?string $type): string

@@ -73,15 +73,16 @@
             <p style="color: #374151; margin-bottom: 24px; line-height: 1.6;">{{ $question['text'] }}</p>
             
             <div style="display: flex; flex-direction: column; gap: 12px;" id="options-container">
-                @foreach($question['options'] as $key => $option)
-                <label style="cursor: pointer;" onclick="selectOption(this, '{{ $key }}')">
-                    <input type="radio" name="answer" value="{{ $key }}" style="display: none;" {{ isset($userAnswers[$currentQuestion]) && $userAnswers[$currentQuestion] == $key ? 'checked' : '' }}>
-                    <div class="option-box" id="option-{{ $key }}" style="padding: 16px; border-radius: 12px; border: 2px solid #e5e7eb; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s; background: white;">
+                @foreach($question['options'] as $optionIndex => $option)
+                @php $optionKey = (string) $optionIndex; @endphp
+                <label style="cursor: pointer;" onclick="selectOption(this, '{{ $optionKey }}')">
+                    <input type="radio" name="answer" value="{{ $optionKey }}" style="display: none;" {{ isset($userAnswers[$currentQuestion]) && (string) $userAnswers[$currentQuestion] === $optionKey ? 'checked' : '' }}>
+                    <div class="option-box" id="option-{{ $optionKey }}" style="padding: 16px; border-radius: 12px; border: 2px solid #e5e7eb; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s; background: white;">
                         <div class="option-radio" style="width: 20px; height: 20px; border: 2px solid #d1d5db; border-radius: 50%; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center;">
                             <div class="option-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; display: none;"></div>
                         </div>
                         <div>
-                            <span style="font-weight: 600; color: #374151;">{{ $key }}.</span>
+                            <span style="font-weight: 600; color: #374151;">{{ chr(65 + $optionIndex) }}.</span>
                             <span style="color: #4b5563;">{{ $option }}</span>
                         </div>
                     </div>
@@ -296,7 +297,26 @@ function toggleFlag() {
 
 function confirmSubmit() {
     if (confirm('Apakah Anda yakin ingin menyelesaikan kuis?')) {
-        window.location.href = '{{ route('mahasiswa.quiz-result', ['courseId' => $course->id_course, 'quizId' => $quiz['id']]) }}';
+        fetch('{{ route('mahasiswa.quiz-submit', ['courseId' => $course->id_course, 'quizId' => $quiz['id']]) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok || !data.success) {
+                throw new Error(data.message || 'Gagal menyelesaikan kuis.');
+            }
+
+            window.location.href = data.redirect_url;
+        })
+        .catch(error => {
+            console.error('Error submitting quiz:', error);
+            alert(error.message || 'Gagal menyelesaikan kuis. Coba lagi.');
+        });
     }
 }
 

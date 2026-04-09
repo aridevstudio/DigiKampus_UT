@@ -59,6 +59,7 @@ Route::prefix('mahasiswa')
         Route::post('/course/{courseId}/quiz/{quizId}/answer', [CourseController::class, 'saveQuizAnswer'])->name('mahasiswa.quiz-answer');
         Route::post('/course/{courseId}/quiz/{quizId}/flag', [CourseController::class, 'toggleQuizFlag'])->name('mahasiswa.quiz-flag');
         Route::post('/course/{courseId}/quiz/{quizId}/reset', [CourseController::class, 'resetQuiz'])->name('mahasiswa.quiz-reset');
+        Route::post('/course/{courseId}/quiz/{quizId}/submit', [CourseController::class, 'submitQuiz'])->name('mahasiswa.quiz-submit');
         Route::get('/course/{courseId}/quiz/{quizId}/result', [CourseController::class, 'quizResult'])->name('mahasiswa.quiz-result');
         Route::get('/course/{courseId}/assignment/{assignmentId}', [CourseController::class, 'assignmentDetail'])->name('mahasiswa.assignment-detail');
         Route::get('/course/{courseId}/assignment/{assignmentId}/submit', [CourseController::class, 'assignmentSubmission'])->name('mahasiswa.assignment-submission');

@@ -235,19 +235,9 @@
                         </a>
                         @endif
                         
-                        {{-- Feedback & Nilai Link - Module complete without requiring assignment (assignment is optional) --}}
-                        @php
-                            $completedMaterials = collect($module['materials'])->where('is_completed', true)->count();
-                            $totalMaterials = count($module['materials']);
-                            $materialsComplete = $totalMaterials > 0 && $completedMaterials == $totalMaterials;
-                            $hasQuiz = !empty($module['quiz']);
-                            $hasAssignment = !empty($module['assignment']);
-                            $quizComplete = !$hasQuiz || ($module['quiz_completed'] ?? false);
-                            $assignmentComplete = true; // assignment optional
-                            $isModuleComplete = $materialsComplete && $quizComplete && $assignmentComplete;
-                        @endphp
-                        @if($isModuleComplete)
-                        <a href="{{ route('mahasiswa.module-feedback', ['courseId' => $course->id_course, 'moduleId' => $moduleIndex]) }}" 
+                        {{-- Feedback & Nilai Link - hanya untuk kuiz yang sudah benar-benar dikerjakan --}}
+                        @if(($module['feedback_available'] ?? false) && !empty($module['quiz']))
+                        <a href="{{ route('mahasiswa.module-feedback', ['courseId' => $course->id_course, 'moduleId' => $moduleIndex]) }}"
                            class="flex items-center gap-3 p-3 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition bg-indigo-50/50 dark:bg-indigo-500/5 border-t border-indigo-200 dark:border-indigo-700/30">
                             <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0">
                                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,8 +245,8 @@
                                 </svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-indigo-700 dark:text-indigo-400">Feedback & Nilai</p>
-                                <p class="text-xs text-indigo-600 dark:text-indigo-500">Lihat hasil evaluasi</p>
+                                <p class="text-sm font-medium text-indigo-700 dark:text-indigo-400">Feedback & Nilai Kuiz</p>
+                                <p class="text-xs text-indigo-600 dark:text-indigo-500">Lihat hasil kuiz Anda</p>
                             </div>
                             <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -363,7 +353,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                 </svg>
                                 <p>Ini adalah materi Kuis</p>
-                                <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $currentMaterial['id']]) }}" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Mulai Kuis</a>
+                                <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $currentMaterial['quiz_id'] ?? $currentMaterial['id']]) }}" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Mulai Kuis</a>
                             </div>
                         </div>
                     @else
@@ -492,7 +482,7 @@
                             @endif
                         </div>
                         <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $modules[$currentModuleIndex]['quiz']['id']]) }}" class="flex-shrink-0 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-xl transition shadow-sm">
-                            Mulai Pre-test Sekarang
+                            Buka Kuis Sekarang
                         </a>
                     </div>
                 </div>
