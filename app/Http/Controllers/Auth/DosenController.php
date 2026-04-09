@@ -830,28 +830,49 @@ class DosenController extends Controller
                 'message' => 'required|string|max:2000',
             ]);
 
-            $discussion = CourseDiscussion::create([
-                'id_course' => $course->id_course,
-                'id_user' => $dosen->id,
-                'message' => trim($validated['message']),
-            ]);
+            $message = trim($validated['message']);
+
+            $discussion = CourseDiscussion::query()
+                ->where('id_course', $course->id_course)
+                ->where('id_user', $dosen->id)
+                ->where('message', $message)
+                ->where('created_at', '>=', now()->subSeconds(15))
+                ->latest('id')
+                ->first();
+
+            if (!$discussion) {
+                $discussion = CourseDiscussion::create([
+                    'id_course' => $course->id_course,
+                    'id_user' => $dosen->id,
+                    'message' => $message,
+                ]);
+            }
 
             $discussion->load(['user.profile']);
 
-            Enrollment::query()
-                ->where('id_course', $course->id_course)
-                ->accessible()
-                ->pluck('id_mahasiswa')
-                ->each(function ($mahasiswaId) use ($course, $dosen) {
-                    Notification::notifyMahasiswa(
-                        (int) $mahasiswaId,
-                        'Balasan dosen di diskusi kursus',
-                        'Dosen membalas diskusi pada kursus ' . $course->nama_course . '.',
-                        'kursus_pembelajaran',
-                        'discussion',
-                        '#2563EB'
-                    );
-                });
+            try {
+                Enrollment::query()
+                    ->where('id_course', $course->id_course)
+                    ->accessible()
+                    ->pluck('id_mahasiswa')
+                    ->each(function ($mahasiswaId) use ($course, $dosen) {
+                        Notification::notifyMahasiswa(
+                            (int) $mahasiswaId,
+                            'Balasan dosen di diskusi kursus',
+                            'Dosen membalas diskusi pada kursus ' . $course->nama_course . '.',
+                            'kursus_pembelajaran',
+                            'discussion',
+                            '#2563EB'
+                        );
+                    });
+            } catch (\Throwable $notificationException) {
+                Log::warning('Notifikasi balasan diskusi kursus ke mahasiswa gagal dikirim.', [
+                    'course_id' => (int) $course->id_course,
+                    'dosen_id' => (int) $dosen->id,
+                    'discussion_id' => (int) $discussion->id,
+                    'error' => $notificationException->getMessage(),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,

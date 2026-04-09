@@ -1075,11 +1075,23 @@ class CourseController extends Controller
                 'message' => 'required|string|max:2000',
             ]);
 
-            $discussion = CourseDiscussion::create([
-                'id_course' => $courseId,
-                'id_user' => $user->id,
-                'message' => trim($validated['message']),
-            ]);
+            $message = trim($validated['message']);
+
+            $discussion = CourseDiscussion::query()
+                ->where('id_course', $courseId)
+                ->where('id_user', $user->id)
+                ->where('message', $message)
+                ->where('created_at', '>=', now()->subSeconds(15))
+                ->latest('id')
+                ->first();
+
+            if (!$discussion) {
+                $discussion = CourseDiscussion::create([
+                    'id_course' => $courseId,
+                    'id_user' => $user->id,
+                    'message' => $message,
+                ]);
+            }
 
             $discussion->load(['user.profile']);
 
@@ -1088,14 +1100,24 @@ class CourseController extends Controller
                 ->find($courseId);
 
             if ($course && (int) $course->id_dosen !== (int) $user->id) {
-                DosenNotification::notifyDosen(
-                    (int) $course->id_dosen,
-                    'Pertanyaan baru di diskusi kursus',
-                    $user->name . ' mengirim pesan baru di kursus ' . $course->nama_course . '.',
-                    'discussion',
-                    'discussion',
-                    route('dosen.kursus.detail', $course->id_course, false)
-                );
+                try {
+                    DosenNotification::notifyDosen(
+                        (int) $course->id_dosen,
+                        'Pertanyaan baru di diskusi kursus',
+                        $user->name . ' mengirim pesan baru di kursus ' . $course->nama_course . '.',
+                        'discussion',
+                        'discussion',
+                        route('dosen.kursus.detail', $course->id_course, false)
+                    );
+                } catch (\Throwable $notificationException) {
+                    Log::warning('Notifikasi diskusi kursus ke dosen gagal dikirim.', [
+                        'course_id' => (int) $courseId,
+                        'mahasiswa_id' => (int) $user->id,
+                        'dosen_id' => (int) $course->id_dosen,
+                        'discussion_id' => (int) $discussion->id,
+                        'error' => $notificationException->getMessage(),
+                    ]);
+                }
             }
 
             return response()->json([
