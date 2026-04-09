@@ -688,9 +688,19 @@
         initProtectedVideoPlayer();
     });
 
-    const discussionEndpoint = '{{ route('mahasiswa.course-discussions.index', ['courseId' => $course->id_course]) }}';
-    const discussionStoreEndpoint = '{{ route('mahasiswa.course-discussions.store', ['courseId' => $course->id_course]) }}';
+    const discussionEndpoint = '{{ route('mahasiswa.course-discussions.index', ['courseId' => $course->id_course], false) }}';
+    const discussionStoreEndpoint = '{{ route('mahasiswa.course-discussions.store', ['courseId' => $course->id_course], false) }}';
     let discussionPoller = null;
+    let discussionComments = [];
+    let discussionPendingComments = [];
+    let discussionTempSeed = 0;
+    const discussionCurrentUser = @json([
+        'name' => auth('mahasiswa')->user()?->name ?? 'Mahasiswa',
+        'role' => 'Mahasiswa',
+        'avatar' => auth('mahasiswa')->user()?->profile?->foto_profile
+            ? asset('storage/' . auth('mahasiswa')->user()->profile->foto_profile)
+            : 'https://ui-avatars.com/api/?name=' . urlencode(auth('mahasiswa')->user()?->name ?? 'Mahasiswa') . '&background=0D9488&color=fff',
+    ]);
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -701,9 +711,15 @@
             .replaceAll("'", '&#039;');
     }
 
-    function renderDiscussionComments(comments) {
+    function getDiscussionRenderableItems() {
+        return [...discussionComments, ...discussionPendingComments];
+    }
+
+    function renderDiscussionComments() {
         const container = document.getElementById('diskusi-container');
         if (!container) return;
+
+        const comments = getDiscussionRenderableItems();
 
         if (!Array.isArray(comments) || comments.length === 0) {
             container.innerHTML = `
@@ -722,7 +738,7 @@
         }
 
         container.innerHTML = comments.map((comment) => `
-            <div class="flex gap-3">
+            <div class="flex gap-3" data-discussion-id="${escapeHtml(comment.id ?? comment.temp_id ?? '')}">
                 <img src="${escapeHtml(comment.avatar)}" alt="${escapeHtml(comment.name)}" class="h-8 w-8 flex-shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-700">
                 <div class="flex-1">
                     <div class="mb-1 flex items-baseline justify-between">
@@ -732,8 +748,16 @@
                         </div>
                         <span class="text-xs text-gray-400 dark:text-gray-500">${escapeHtml(comment.time ?? '')}</span>
                     </div>
-                    <div class="rounded-r-xl rounded-bl-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700/50 dark:bg-gray-800/60">
+                    <div class="rounded-r-xl rounded-bl-xl border ${comment.local_status === 'failed' ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10' : 'border-gray-100 bg-gray-50 dark:border-gray-700/50 dark:bg-gray-800/60'} p-3">
                         <p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">${escapeHtml(comment.text)}</p>
+                        ${comment.local_status ? `
+                            <div class="mt-2 flex items-center justify-between gap-3 text-[11px]">
+                                <span class="${comment.local_status === 'failed' ? 'text-red-500 dark:text-red-300' : 'text-amber-500 dark:text-amber-300'}">
+                                    ${comment.local_status === 'failed' ? escapeHtml(comment.error_message || 'Gagal dikirim') : 'Mengirim...'}
+                                </span>
+                                ${comment.local_status === 'failed' ? `<button type="button" onclick="retryCourseDiscussion('${escapeHtml(comment.temp_id)}')" class="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200">Coba lagi</button>` : ''}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -752,7 +776,80 @@
         if (!response.ok || !data.success) {
             throw new Error(data.message || 'Gagal memuat diskusi.');
         }
-        renderDiscussionComments(data.data || []);
+        discussionComments = Array.isArray(data.data) ? data.data : [];
+        renderDiscussionComments();
+    }
+
+    function createPendingDiscussionComment(message) {
+        discussionTempSeed += 1;
+
+        return {
+            temp_id: `discussion-temp-${Date.now()}-${discussionTempSeed}`,
+            name: discussionCurrentUser.name,
+            role: discussionCurrentUser.role,
+            text: message,
+            time: 'Baru saja',
+            avatar: discussionCurrentUser.avatar,
+            local_status: 'sending',
+        };
+    }
+
+    function upsertPendingDiscussionComment(comment) {
+        const existingIndex = discussionPendingComments.findIndex((item) => item.temp_id === comment.temp_id);
+
+        if (existingIndex >= 0) {
+            discussionPendingComments[existingIndex] = comment;
+        } else {
+            discussionPendingComments.push(comment);
+        }
+
+        renderDiscussionComments();
+    }
+
+    function removePendingDiscussionComment(tempId) {
+        discussionPendingComments = discussionPendingComments.filter((item) => item.temp_id !== tempId);
+        renderDiscussionComments();
+    }
+
+    async function submitCourseDiscussion(message, pendingComment) {
+        const response = await fetch(discussionStoreEndpoint, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+            body: (() => {
+                const formData = new FormData();
+                formData.append('message', message);
+                return formData;
+            })(),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Gagal mengirim diskusi.');
+        }
+
+        removePendingDiscussionComment(pendingComment.temp_id);
+        discussionComments = [...discussionComments, data.data];
+        renderDiscussionComments();
+    }
+
+    async function retryCourseDiscussion(tempId) {
+        const pendingComment = discussionPendingComments.find((item) => item.temp_id === tempId);
+        if (!pendingComment) return;
+
+        pendingComment.local_status = 'sending';
+        pendingComment.error_message = null;
+        upsertPendingDiscussionComment(pendingComment);
+
+        try {
+            await submitCourseDiscussion(pendingComment.text, pendingComment);
+        } catch (error) {
+            pendingComment.local_status = 'failed';
+            pendingComment.error_message = error.message || 'Gagal dikirim';
+            upsertPendingDiscussionComment(pendingComment);
+        }
     }
 
     async function sendCourseDiscussion() {
@@ -764,32 +861,17 @@
         if (!message) return;
 
         button.disabled = true;
+        const pendingComment = createPendingDiscussionComment(message);
+        discussionPendingComments.push(pendingComment);
+        renderDiscussionComments();
+        input.value = '';
 
         try {
-            const formData = new FormData();
-            formData.append('message', message);
-
-            const response = await fetch(discussionStoreEndpoint, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                },
-                body: formData,
-            });
-            const data = await response.json();
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Gagal mengirim diskusi.');
-            }
-
-            input.value = '';
-            await fetchCourseDiscussion();
+            await submitCourseDiscussion(message, pendingComment);
         } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Diskusi gagal dikirim',
-                text: error.message || 'Terjadi kesalahan saat mengirim pesan diskusi.',
-            });
+            pendingComment.local_status = 'failed';
+            pendingComment.error_message = error.message || 'Terjadi kesalahan saat mengirim pesan diskusi.';
+            upsertPendingDiscussionComment(pendingComment);
         } finally {
             button.disabled = false;
         }

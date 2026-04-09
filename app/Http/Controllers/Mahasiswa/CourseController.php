@@ -5,16 +5,18 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Models\DosenNotification;
 use App\Models\CourseRating;
 use App\Models\CourseDiscussion;
 use App\Models\CourseInstructorNote;
 use App\Models\CourseMaterial;
 use App\Models\Assignment;
-use App\Models\DosenNotification;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -1017,16 +1019,37 @@ class CourseController extends Controller
             ], 403);
         }
 
-        $messages = CourseDiscussion::with(['user.profile'])
-            ->where('id_course', $courseId)
-            ->orderBy('created_at', 'asc')
-            ->get()
-            ->map(fn (CourseDiscussion $comment) => $this->formatDiscussionComment($comment));
+        if (!Schema::hasTable('course_discussions')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+                'message' => 'Fitur diskusi belum aktif di server ini.',
+            ]);
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $messages,
-        ]);
+        try {
+            $messages = CourseDiscussion::with(['user.profile'])
+                ->where('id_course', $courseId)
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->map(fn (CourseDiscussion $comment) => $this->formatDiscussionComment($comment));
+
+            return response()->json([
+                'success' => true,
+                'data' => $messages,
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Gagal memuat diskusi kursus mahasiswa.', [
+                'course_id' => (int) $courseId,
+                'mahasiswa_id' => (int) $user->id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Diskusi kursus sedang bermasalah. Silakan coba lagi.',
+            ], 500);
+        }
     }
 
     public function sendDiscussion(Request $request, $courseId)
@@ -1040,22 +1063,60 @@ class CourseController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'message' => 'required|string|max:2000',
-        ]);
+        if (!Schema::hasTable('course_discussions')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fitur diskusi belum aktif di server ini.',
+            ], 503);
+        }
 
-        $discussion = CourseDiscussion::create([
-            'id_course' => $courseId,
-            'id_user' => $user->id,
-            'message' => trim($validated['message']),
-        ]);
+        try {
+            $validated = $request->validate([
+                'message' => 'required|string|max:2000',
+            ]);
 
-        $discussion->load(['user.profile']);
+            $discussion = CourseDiscussion::create([
+                'id_course' => $courseId,
+                'id_user' => $user->id,
+                'message' => trim($validated['message']),
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $this->formatDiscussionComment($discussion),
-        ]);
+            $discussion->load(['user.profile']);
+
+            $course = Course::query()
+                ->select(['id_course', 'id_dosen', 'nama_course'])
+                ->find($courseId);
+
+            if ($course && (int) $course->id_dosen !== (int) $user->id) {
+                DosenNotification::notifyDosen(
+                    (int) $course->id_dosen,
+                    'Pertanyaan baru di diskusi kursus',
+                    $user->name . ' mengirim pesan baru di kursus ' . $course->nama_course . '.',
+                    'discussion',
+                    'discussion',
+                    route('dosen.kursus.detail', $course->id_course, false)
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->formatDiscussionComment($discussion),
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Gagal mengirim diskusi kursus mahasiswa.', [
+                'course_id' => (int) $courseId,
+                'mahasiswa_id' => (int) $user->id,
+                'payload' => [
+                    'message_length' => strlen((string) $request->input('message')),
+                ],
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Diskusi gagal dikirim. Server sedang bermasalah.',
+            ], 500);
+        }
     }
 
     /**

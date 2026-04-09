@@ -1,7 +1,7 @@
 @if (session('status') || session('success') || session('error') || session('alert') || session('info') || $errors->any())
 <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
-        const tailwindButtonClass = 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors';
+        const alertButtonClass = 'app-swal-confirm';
 
         @if (session('status') || session('success'))
             Swal.fire({
@@ -14,7 +14,10 @@
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
-                    confirmButton: tailwindButtonClass
+                    popup: 'app-swal-popup',
+                    title: 'app-swal-title',
+                    htmlContainer: 'app-swal-html',
+                    confirmButton: alertButtonClass
                 }
             });
         @elseif (session('error'))
@@ -28,7 +31,10 @@
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
-                    confirmButton: tailwindButtonClass
+                    popup: 'app-swal-popup',
+                    title: 'app-swal-title',
+                    htmlContainer: 'app-swal-html',
+                    confirmButton: alertButtonClass
                 }
             });
         @elseif (session('alert'))
@@ -42,7 +48,10 @@
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
-                    confirmButton: tailwindButtonClass
+                    popup: 'app-swal-popup',
+                    title: 'app-swal-title',
+                    htmlContainer: 'app-swal-html',
+                    confirmButton: alertButtonClass
                 }
             });
         @elseif (session('info'))
@@ -56,7 +65,10 @@
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
-                    confirmButton: tailwindButtonClass
+                    popup: 'app-swal-popup',
+                    title: 'app-swal-title',
+                    htmlContainer: 'app-swal-html',
+                    confirmButton: alertButtonClass
                 }
             });
         @elseif ($errors->any())
@@ -76,7 +88,10 @@
                 buttonsStyling: false,
                 customClass: { 
                     container: 'font-inter',
-                    confirmButton: tailwindButtonClass
+                    popup: 'app-swal-popup',
+                    title: 'app-swal-title',
+                    htmlContainer: 'app-swal-html',
+                    confirmButton: alertButtonClass
                 }
             });
         @endif

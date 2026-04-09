@@ -7,6 +7,7 @@ use App\Models\Agenda;
 use App\Models\AdminNotification;
 use App\Models\BootcampMentor;
 use App\Models\Course;
+use App\Models\CourseDiscussion;
 use App\Models\CourseInstructorNote;
 use App\Models\DosenNotification;
 use App\Models\Enrollment;
@@ -18,7 +19,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -750,6 +753,127 @@ class DosenController extends Controller
         ]);
     }
 
+    public function getCourseDiscussions(Request $request, $id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $course = Course::query()
+            ->where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus tidak ditemukan.',
+            ], 404);
+        }
+
+        if (!Schema::hasTable('course_discussions')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+                'message' => 'Fitur diskusi belum aktif di server ini.',
+            ]);
+        }
+
+        try {
+            $messages = CourseDiscussion::with(['user.profile'])
+                ->where('id_course', $course->id_course)
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->map(fn (CourseDiscussion $comment) => $this->formatCourseDiscussionComment($comment));
+
+            return response()->json([
+                'success' => true,
+                'data' => $messages,
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Gagal memuat diskusi kursus dosen.', [
+                'course_id' => (int) $course->id_course,
+                'dosen_id' => (int) $dosen->id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Diskusi kursus sedang bermasalah. Silakan coba lagi.',
+            ], 500);
+        }
+    }
+
+    public function sendCourseDiscussion(Request $request, $id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $course = Course::query()
+            ->where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus tidak ditemukan.',
+            ], 404);
+        }
+
+        if (!Schema::hasTable('course_discussions')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fitur diskusi belum aktif di server ini.',
+            ], 503);
+        }
+
+        try {
+            $validated = $request->validate([
+                'message' => 'required|string|max:2000',
+            ]);
+
+            $discussion = CourseDiscussion::create([
+                'id_course' => $course->id_course,
+                'id_user' => $dosen->id,
+                'message' => trim($validated['message']),
+            ]);
+
+            $discussion->load(['user.profile']);
+
+            Enrollment::query()
+                ->where('id_course', $course->id_course)
+                ->accessible()
+                ->pluck('id_mahasiswa')
+                ->each(function ($mahasiswaId) use ($course, $dosen) {
+                    Notification::notifyMahasiswa(
+                        (int) $mahasiswaId,
+                        'Balasan dosen di diskusi kursus',
+                        'Dosen membalas diskusi pada kursus ' . $course->nama_course . '.',
+                        'kursus_pembelajaran',
+                        'discussion',
+                        '#2563EB'
+                    );
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->formatCourseDiscussionComment($discussion),
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Gagal mengirim diskusi kursus dosen.', [
+                'course_id' => (int) $course->id_course,
+                'dosen_id' => (int) $dosen->id,
+                'payload' => [
+                    'message_length' => strlen((string) $request->input('message')),
+                ],
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Balasan diskusi gagal dikirim. Server sedang bermasalah.',
+            ], 500);
+        }
+    }
+
     public function storeCourseNote(Request $request, $id)
     {
         $dosen = Auth::guard('dosen')->user();
@@ -798,6 +922,23 @@ class DosenController extends Controller
         $note->delete();
 
         return back()->with('success', 'Catatan dosen berhasil dihapus.');
+    }
+
+    private function formatCourseDiscussionComment(CourseDiscussion $comment): array
+    {
+        $avatar = $comment->user?->profile?->foto_profile
+            ? asset('storage/' . $comment->user->profile->foto_profile)
+            : 'https://ui-avatars.com/api/?name=' . urlencode($comment->user?->name ?? 'Pengguna') . '&background=2563EB&color=fff';
+
+        return [
+            'id' => $comment->id_course_discussion,
+            'name' => $comment->user?->name ?? 'Pengguna',
+            'role' => $comment->user?->role === 'dosen' ? 'Pengajar' : 'Mahasiswa',
+            'text' => $comment->message,
+            'time' => optional($comment->created_at)->diffForHumans(),
+            'avatar' => $avatar,
+            'created_at' => optional($comment->created_at)->toISOString(),
+        ];
     }
 
     /**
@@ -2574,4 +2715,3 @@ class DosenController extends Controller
         };
     }
 }
-
