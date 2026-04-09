@@ -317,6 +317,9 @@
             right: 1rem;
             bottom: 1rem;
             z-index: 60;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
         }
 
         .mhs-cs-panel {
@@ -324,6 +327,47 @@
             border-radius: 1rem;
             border: 1px solid rgba(148, 163, 184, 0.25);
             box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+        }
+
+        .mhs-cs-launcher {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .mhs-cs-dismiss {
+            position: absolute;
+            top: -0.4rem;
+            left: -0.4rem;
+            display: inline-flex;
+            height: 1.6rem;
+            width: 1.6rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(255, 255, 255, 0.96);
+            color: #475569;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .mhs-cs-dismiss:hover {
+            transform: scale(1.05);
+            background: #ffffff;
+            color: #0f172a;
+        }
+
+        .dark .mhs-cs-dismiss {
+            border-color: rgba(100, 116, 139, 0.5);
+            background: rgba(31, 41, 55, 0.96);
+            color: #cbd5e1;
+        }
+
+        .dark .mhs-cs-dismiss:hover {
+            background: rgba(17, 24, 39, 0.98);
+            color: #f8fafc;
         }
 
         @media (max-width: 640px) {
@@ -396,12 +440,20 @@
             </a>
         </div>
 
-        <button id="mhs-cs-trigger" type="button" onclick="toggleMahasiswaCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            Chat CS
-        </button>
+        <div class="mhs-cs-launcher">
+            <button type="button" class="mhs-cs-dismiss" onclick="dismissMahasiswaCsWidget(event)" aria-label="Tutup Chat CS" title="Tutup Chat CS">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <button id="mhs-cs-trigger" type="button" onclick="toggleMahasiswaCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Chat CS
+            </button>
+        </div>
     </div>
     @endunless
 
@@ -409,6 +461,7 @@
     
     <script>
         const MHS_DESKTOP_SIDEBAR_KEY = 'mhs-desktop-sidebar-state';
+        const MHS_CS_WIDGET_DISMISSED_KEY = 'mhs-cs-widget-dismissed';
 
         function syncMahasiswaDesktopSidebar() {
             const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -669,11 +722,13 @@
                 syncMahasiswaDesktopSidebar();
                 ensureResponsiveMahasiswaTables();
                 initMahasiswaFileSizeGuards();
+                syncMahasiswaCsLauncherVisibility();
             });
         } else {
             syncMahasiswaDesktopSidebar();
             ensureResponsiveMahasiswaTables();
             initMahasiswaFileSizeGuards();
+            syncMahasiswaCsLauncherVisibility();
         }
 
         window.addEventListener('resize', () => {
@@ -684,7 +739,9 @@
 
         function toggleMahasiswaCsWidget(forceOpen = null) {
             const panel = document.getElementById('mhs-cs-panel');
+            const widget = document.getElementById('mhs-cs-widget');
             if (!panel) return;
+            if (widget && widget.classList.contains('hidden')) return;
 
             const shouldOpen = forceOpen === null ? panel.classList.contains('hidden') : forceOpen;
             if (shouldOpen) {
@@ -692,6 +749,27 @@
             } else {
                 panel.classList.add('hidden');
             }
+        }
+
+        function syncMahasiswaCsLauncherVisibility() {
+            const widget = document.getElementById('mhs-cs-widget');
+            if (!widget) return;
+
+            const isDismissed = sessionStorage.getItem(MHS_CS_WIDGET_DISMISSED_KEY) === '1';
+            widget.classList.toggle('hidden', isDismissed);
+
+            if (isDismissed) {
+                const panel = document.getElementById('mhs-cs-panel');
+                if (panel) {
+                    panel.classList.add('hidden');
+                }
+            }
+        }
+
+        function dismissMahasiswaCsWidget(event) {
+            event?.stopPropagation();
+            sessionStorage.setItem(MHS_CS_WIDGET_DISMISSED_KEY, '1');
+            syncMahasiswaCsLauncherVisibility();
         }
 
         function appendMahasiswaCsMessage(message, type = 'user') {

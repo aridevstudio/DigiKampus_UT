@@ -198,6 +198,9 @@
             right: 1rem;
             bottom: 1rem;
             z-index: 60;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
         }
 
         .dosen-cs-panel {
@@ -205,6 +208,47 @@
             border-radius: 1rem;
             border: 1px solid rgba(148, 163, 184, 0.25);
             box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+        }
+
+        .dosen-cs-launcher {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .dosen-cs-dismiss {
+            position: absolute;
+            top: -0.4rem;
+            left: -0.4rem;
+            display: inline-flex;
+            height: 1.6rem;
+            width: 1.6rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(255, 255, 255, 0.96);
+            color: #475569;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dosen-cs-dismiss:hover {
+            transform: scale(1.05);
+            background: #ffffff;
+            color: #0f172a;
+        }
+
+        .dark .dosen-cs-dismiss {
+            border-color: rgba(100, 116, 139, 0.5);
+            background: rgba(31, 41, 55, 0.96);
+            color: #cbd5e1;
+        }
+
+        .dark .dosen-cs-dismiss:hover {
+            background: rgba(17, 24, 39, 0.98);
+            color: #f8fafc;
         }
 
         @media (max-width: 640px) {
@@ -464,18 +508,27 @@
             </form>
         </div>
 
-        <button id="dosen-cs-trigger" type="button" onclick="toggleDosenCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-            Chat CS
-        </button>
+        <div class="dosen-cs-launcher">
+            <button type="button" class="dosen-cs-dismiss" onclick="dismissDosenCsWidget(event)" aria-label="Tutup Chat CS" title="Tutup Chat CS">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <button id="dosen-cs-trigger" type="button" onclick="toggleDosenCsWidget()" class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                Chat CS
+            </button>
+        </div>
     </div>
 
     @vite('resources/js/app.js')
     
     <script>
         const DOSEN_DESKTOP_SIDEBAR_KEY = 'dosen-desktop-sidebar-state';
+        const DOSEN_CS_WIDGET_DISMISSED_KEY = 'dosen-cs-widget-dismissed';
 
         function syncDosenDesktopSidebar() {
             const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -752,10 +805,12 @@
             document.addEventListener('DOMContentLoaded', () => {
                 ensureResponsiveDosenTables();
                 initDosenFileSizeGuards();
+                syncDosenCsLauncherVisibility();
             });
         } else {
             ensureResponsiveDosenTables();
             initDosenFileSizeGuards();
+            syncDosenCsLauncherVisibility();
         }
 
         window.addEventListener('resize', () => {
@@ -949,7 +1004,9 @@
 
         function toggleDosenCsWidget(forceOpen = null) {
             const panel = document.getElementById('dosen-cs-panel');
+            const widget = document.getElementById('dosen-cs-widget');
             if (!panel) return;
+            if (widget && widget.classList.contains('hidden')) return;
 
             const shouldOpen = forceOpen === null ? panel.classList.contains('hidden') : forceOpen;
             if (shouldOpen) {
@@ -957,6 +1014,27 @@
             } else {
                 panel.classList.add('hidden');
             }
+        }
+
+        function syncDosenCsLauncherVisibility() {
+            const widget = document.getElementById('dosen-cs-widget');
+            if (!widget) return;
+
+            const isDismissed = sessionStorage.getItem(DOSEN_CS_WIDGET_DISMISSED_KEY) === '1';
+            widget.classList.toggle('hidden', isDismissed);
+
+            if (isDismissed) {
+                const panel = document.getElementById('dosen-cs-panel');
+                if (panel) {
+                    panel.classList.add('hidden');
+                }
+            }
+        }
+
+        function dismissDosenCsWidget(event) {
+            event?.stopPropagation();
+            sessionStorage.setItem(DOSEN_CS_WIDGET_DISMISSED_KEY, '1');
+            syncDosenCsLauncherVisibility();
         }
 
         function appendDosenCsMessage(message, type = 'user') {
