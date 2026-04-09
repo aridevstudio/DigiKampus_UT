@@ -2,6 +2,14 @@
 @php
     $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop';
     $defaultSelectedPayment = $paymentMethods[0]['id'] ?? 'bca_va';
+    $paymentMethodIcons = [
+        'bca_va' => asset('assets/payment-methods/bca-va.svg'),
+        'bni_va' => asset('assets/payment-methods/bni-va.svg'),
+        'bri_va' => asset('assets/payment-methods/bri-va.svg'),
+        'echannel' => asset('assets/payment-methods/mandiri-bill.svg'),
+        'gopay' => asset('assets/payment-methods/gopay.svg'),
+        'qris' => asset('assets/payment-methods/qris.svg'),
+    ];
 
     $voucherCatalog = $vouchers->mapWithKeys(function ($voucher) {
         $normalizedCode = strtoupper(trim((string) $voucher->code));
@@ -177,6 +185,7 @@
                         $methodType = $method['type'] ?? 'Secure Checkout';
                         $methodIcon = $method['icon'] ?? 'MT';
                         $methodAccent = $method['accent'] ?? 'from-sky-600 to-blue-500';
+                        $methodIconAsset = $paymentMethodIcons[$methodId] ?? null;
                     @endphp
                     <label class="group block cursor-pointer">
                         <input
@@ -187,9 +196,15 @@
                             {{ $loop->first ? 'checked' : '' }}>
                         <div class="rounded-2xl border border-gray-200 bg-white p-4 transition peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-[0_0_0_3px_rgba(59,130,246,0.12)] hover:border-blue-300 dark:border-gray-700 dark:bg-[#111827] dark:peer-checked:bg-blue-500/10">
                             <div class="flex items-start gap-3">
+                                @if($methodIconAsset)
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-white">
+                                    <img src="{{ $methodIconAsset }}" alt="{{ $methodName }}" class="h-full w-full object-cover">
+                                </div>
+                                @else
                                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br {{ $methodAccent }} text-sm font-bold text-white shadow-sm">
                                     {{ $methodIcon }}
                                 </div>
+                                @endif
                                 <div class="min-w-0">
                                     <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $methodName }}</p>
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $methodType }}</p>
