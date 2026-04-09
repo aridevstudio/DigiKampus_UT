@@ -330,25 +330,26 @@
         }
 
         .mhs-cs-launcher {
+            position: relative;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
         }
 
         .mhs-cs-dismiss {
-            position: relative;
-            z-index: 2;
-            flex-shrink: 0;
+            position: absolute;
+            top: -0.55rem;
+            left: -0.55rem;
+            z-index: 80;
             display: inline-flex;
-            height: 1.6rem;
-            width: 1.6rem;
+            height: 2rem;
+            width: 2rem;
             align-items: center;
             justify-content: center;
             border-radius: 9999px;
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            background: rgba(255, 255, 255, 0.96);
-            color: #475569;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+            border: 1px solid rgba(148, 163, 184, 0.42);
+            background: rgba(255, 255, 255, 0.98);
+            color: #334155;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
             transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
         }
 
@@ -440,7 +441,7 @@
         </div>
 
         <div class="mhs-cs-launcher">
-            <button type="button" class="mhs-cs-dismiss" onclick="const widget=this.closest('#mhs-cs-widget'); const panel=document.getElementById('mhs-cs-panel'); if(panel){panel.classList.add('hidden');} if(widget){widget.classList.add('hidden');} return false;" aria-label="Tutup Chat CS" title="Tutup Chat CS">
+            <button id="mhs-cs-dismiss" type="button" class="mhs-cs-dismiss" aria-label="Tutup Chat CS" title="Tutup Chat CS">
                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -757,9 +758,15 @@
             }
 
             if (widget) {
-                widget.classList.add('hidden');
+                widget.style.display = 'none';
             }
         }
+
+        document.getElementById('mhs-cs-dismiss')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dismissMahasiswaCsWidget(event);
+        });
 
         function appendMahasiswaCsMessage(message, type = 'user') {
             const container = document.getElementById('mhs-cs-messages');
