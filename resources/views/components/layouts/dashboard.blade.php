@@ -377,6 +377,19 @@
             }
         }
 
+        /* Ensure SweetAlert confirm button stays visible without hover */
+        .swal2-popup .swal2-actions .swal2-confirm {
+            background-color: #3b82f6 !important;
+            border: 1px solid #3b82f6 !important;
+            color: #ffffff !important;
+        }
+
+        .swal2-popup .swal2-actions .swal2-confirm:hover,
+        .swal2-popup .swal2-actions .swal2-confirm:active {
+            background-color: #2563eb !important;
+            border-color: #2563eb !important;
+        }
+
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#111827]">

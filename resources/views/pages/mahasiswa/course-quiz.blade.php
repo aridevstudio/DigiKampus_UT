@@ -185,6 +185,9 @@
 <script>
 // Track if current question is answered
 let isCurrentQuestionAnswered = {{ isset($userAnswers[$currentQuestion]) ? 'true' : 'false' }};
+const quizAnswerEndpoint = @json(route('mahasiswa.quiz-answer', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false));
+const quizFlagEndpoint = @json(route('mahasiswa.quiz-flag', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false));
+const quizSubmitEndpoint = @json(route('mahasiswa.quiz-submit', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false));
 
 function selectOption(label, key) {
     // Mark as answered
@@ -213,7 +216,7 @@ function selectOption(label, key) {
     }
     
     // Save answer via AJAX
-    fetch('{{ route('mahasiswa.quiz-answer', ['courseId' => $course->id_course, 'quizId' => $quiz['id']]) }}', {
+    fetch(quizAnswerEndpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -245,7 +248,7 @@ function selectOption(label, key) {
 }
 
 function toggleFlag() {
-    fetch('{{ route('mahasiswa.quiz-flag', ['courseId' => $course->id_course, 'quizId' => $quiz['id']]) }}', {
+    fetch(quizFlagEndpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -297,7 +300,7 @@ function toggleFlag() {
 
 function confirmSubmit() {
     if (confirm('Apakah Anda yakin ingin menyelesaikan kuis?')) {
-        fetch('{{ route('mahasiswa.quiz-submit', ['courseId' => $course->id_course, 'quizId' => $quiz['id']]) }}', {
+        fetch(quizSubmitEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
