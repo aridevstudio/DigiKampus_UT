@@ -211,16 +211,12 @@
         }
 
         .dosen-cs-launcher {
-            position: relative;
             display: inline-flex;
             align-items: center;
-            justify-content: flex-end;
+            gap: 0.5rem;
         }
 
         .dosen-cs-dismiss {
-            position: absolute;
-            top: -0.4rem;
-            left: -0.4rem;
             display: inline-flex;
             height: 1.6rem;
             width: 1.6rem;
@@ -528,7 +524,6 @@
     
     <script>
         const DOSEN_DESKTOP_SIDEBAR_KEY = 'dosen-desktop-sidebar-state';
-        const DOSEN_CS_WIDGET_DISMISSED_KEY = 'dosen-cs-widget-dismissed';
 
         function syncDosenDesktopSidebar() {
             const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -805,12 +800,10 @@
             document.addEventListener('DOMContentLoaded', () => {
                 ensureResponsiveDosenTables();
                 initDosenFileSizeGuards();
-                syncDosenCsLauncherVisibility();
             });
         } else {
             ensureResponsiveDosenTables();
             initDosenFileSizeGuards();
-            syncDosenCsLauncherVisibility();
         }
 
         window.addEventListener('resize', () => {
@@ -1016,25 +1009,18 @@
             }
         }
 
-        function syncDosenCsLauncherVisibility() {
-            const widget = document.getElementById('dosen-cs-widget');
-            if (!widget) return;
-
-            const isDismissed = sessionStorage.getItem(DOSEN_CS_WIDGET_DISMISSED_KEY) === '1';
-            widget.classList.toggle('hidden', isDismissed);
-
-            if (isDismissed) {
-                const panel = document.getElementById('dosen-cs-panel');
-                if (panel) {
-                    panel.classList.add('hidden');
-                }
-            }
-        }
-
         function dismissDosenCsWidget(event) {
             event?.stopPropagation();
-            sessionStorage.setItem(DOSEN_CS_WIDGET_DISMISSED_KEY, '1');
-            syncDosenCsLauncherVisibility();
+            const widget = document.getElementById('dosen-cs-widget');
+            const panel = document.getElementById('dosen-cs-panel');
+
+            if (panel) {
+                panel.classList.add('hidden');
+            }
+
+            if (widget) {
+                widget.classList.add('hidden');
+            }
         }
 
         function appendDosenCsMessage(message, type = 'user') {

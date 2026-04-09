@@ -330,16 +330,12 @@
         }
 
         .mhs-cs-launcher {
-            position: relative;
             display: inline-flex;
             align-items: center;
-            justify-content: flex-end;
+            gap: 0.5rem;
         }
 
         .mhs-cs-dismiss {
-            position: absolute;
-            top: -0.4rem;
-            left: -0.4rem;
             display: inline-flex;
             height: 1.6rem;
             width: 1.6rem;
@@ -461,7 +457,6 @@
     
     <script>
         const MHS_DESKTOP_SIDEBAR_KEY = 'mhs-desktop-sidebar-state';
-        const MHS_CS_WIDGET_DISMISSED_KEY = 'mhs-cs-widget-dismissed';
 
         function syncMahasiswaDesktopSidebar() {
             const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -722,13 +717,11 @@
                 syncMahasiswaDesktopSidebar();
                 ensureResponsiveMahasiswaTables();
                 initMahasiswaFileSizeGuards();
-                syncMahasiswaCsLauncherVisibility();
             });
         } else {
             syncMahasiswaDesktopSidebar();
             ensureResponsiveMahasiswaTables();
             initMahasiswaFileSizeGuards();
-            syncMahasiswaCsLauncherVisibility();
         }
 
         window.addEventListener('resize', () => {
@@ -751,25 +744,18 @@
             }
         }
 
-        function syncMahasiswaCsLauncherVisibility() {
-            const widget = document.getElementById('mhs-cs-widget');
-            if (!widget) return;
-
-            const isDismissed = sessionStorage.getItem(MHS_CS_WIDGET_DISMISSED_KEY) === '1';
-            widget.classList.toggle('hidden', isDismissed);
-
-            if (isDismissed) {
-                const panel = document.getElementById('mhs-cs-panel');
-                if (panel) {
-                    panel.classList.add('hidden');
-                }
-            }
-        }
-
         function dismissMahasiswaCsWidget(event) {
             event?.stopPropagation();
-            sessionStorage.setItem(MHS_CS_WIDGET_DISMISSED_KEY, '1');
-            syncMahasiswaCsLauncherVisibility();
+            const widget = document.getElementById('mhs-cs-widget');
+            const panel = document.getElementById('mhs-cs-panel');
+
+            if (panel) {
+                panel.classList.add('hidden');
+            }
+
+            if (widget) {
+                widget.classList.add('hidden');
+            }
         }
 
         function appendMahasiswaCsMessage(message, type = 'user') {
