@@ -96,6 +96,13 @@
     </div>
 </div>
 
+@php
+    $submitAssignmentEndpoint = route('mahasiswa.submit-assignment', [
+        'courseId' => $course->id_course,
+        'assignmentId' => $assignment['id'],
+    ], false);
+@endphp
+
 @push('scripts')
 <script>
 function handleFileSelect(input) {
@@ -152,7 +159,7 @@ async function submitAssignment() {
         formData.append('file', fileInput.files[0]);
         formData.append('catatan', notesTextarea.value.trim());
 
-        const response = await fetch('{{ route('mahasiswa.submit-assignment', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}', {
+        const response = await fetch(@json($submitAssignmentEndpoint), {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
