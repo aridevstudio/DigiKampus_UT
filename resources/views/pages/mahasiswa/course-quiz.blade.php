@@ -182,12 +182,18 @@
     </div>
 </div>
 
+@php
+    $quizAnswerEndpoint = route('mahasiswa.quiz-answer', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false);
+    $quizFlagEndpoint = route('mahasiswa.quiz-flag', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false);
+    $quizSubmitEndpoint = route('mahasiswa.quiz-submit', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false);
+@endphp
+
 <script>
 // Track if current question is answered
 let isCurrentQuestionAnswered = {{ isset($userAnswers[$currentQuestion]) ? 'true' : 'false' }};
-const quizAnswerEndpoint = @json(route('mahasiswa.quiz-answer', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false));
-const quizFlagEndpoint = @json(route('mahasiswa.quiz-flag', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false));
-const quizSubmitEndpoint = @json(route('mahasiswa.quiz-submit', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false));
+const quizAnswerEndpoint = @json($quizAnswerEndpoint);
+const quizFlagEndpoint = @json($quizFlagEndpoint);
+const quizSubmitEndpoint = @json($quizSubmitEndpoint);
 
 function selectOption(label, key) {
     // Mark as answered
