@@ -747,6 +747,26 @@ class CourseController extends Controller
             ], 422);
         }
 
+        $totalQuestions = $orderedQuestions->count();
+        $unansweredCount = 0;
+        for ($questionNumber = 1; $questionNumber <= $totalQuestions; $questionNumber++) {
+            $hasAnswer = array_key_exists($questionNumber, $sessionAnswers)
+                && $sessionAnswers[$questionNumber] !== null
+                && $sessionAnswers[$questionNumber] !== '';
+
+            if (!$hasAnswer) {
+                $unansweredCount++;
+            }
+        }
+
+        if ($unansweredCount > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => "Masih ada {$unansweredCount} soal yang belum dijawab. Selesaikan semua soal sebelum submit.",
+                'unanswered_count' => $unansweredCount,
+            ], 422);
+        }
+
         $startedAt = session($this->getQuizStartedAtSessionKey($resolvedQuizId), now()->toIso8601String());
         $finishedAt = now();
         $attempt = null;

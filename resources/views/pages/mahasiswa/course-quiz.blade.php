@@ -186,11 +186,15 @@
     $quizAnswerEndpoint = route('mahasiswa.quiz-answer', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false);
     $quizFlagEndpoint = route('mahasiswa.quiz-flag', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false);
     $quizSubmitEndpoint = route('mahasiswa.quiz-submit', ['courseId' => $course->id_course, 'quizId' => $quiz['id']], false);
+    $answeredQuestionNumbers = array_map('intval', array_keys($userAnswers ?? []));
 @endphp
 
 <script>
 // Track if current question is answered
 let isCurrentQuestionAnswered = {{ isset($userAnswers[$currentQuestion]) ? 'true' : 'false' }};
+const currentQuestionNumber = {{ (int) $currentQuestion }};
+const totalQuestions = {{ (int) $quiz['total_questions'] }};
+const answeredQuestions = new Set(@json($answeredQuestionNumbers));
 const quizAnswerEndpoint = @json($quizAnswerEndpoint);
 const quizFlagEndpoint = @json($quizFlagEndpoint);
 const quizSubmitEndpoint = @json($quizSubmitEndpoint);
@@ -239,6 +243,7 @@ function selectOption(label, key) {
     })
     .then(data => {
         if (data.success) {
+            answeredQuestions.add(currentQuestionNumber);
             // Update progress indicator for current question
             const progressItem = document.querySelector('[data-question="{{ $currentQuestion }}"]');
             if (progressItem) {
@@ -305,6 +310,27 @@ function toggleFlag() {
 }
 
 function confirmSubmit() {
+    const unansweredCount = totalQuestions - answeredQuestions.size;
+    if (unansweredCount > 0) {
+        const message = `Masih ada ${unansweredCount} soal yang belum dijawab. Selesaikan semua soal sebelum submit.`;
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                icon: 'warning',
+                title: 'Soal belum lengkap',
+                text: message,
+                confirmButtonText: 'Oke',
+                buttonsStyling: false,
+                customClass: {
+                    container: 'font-inter',
+                    confirmButton: 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors'
+                }
+            });
+        } else {
+            alert(message);
+        }
+        return;
+    }
+
     const submitQuizRequest = () => {
         fetch(quizSubmitEndpoint, {
             method: 'POST',
