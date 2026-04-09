@@ -336,6 +336,9 @@
         }
 
         .mhs-cs-dismiss {
+            position: relative;
+            z-index: 2;
+            flex-shrink: 0;
             display: inline-flex;
             height: 1.6rem;
             width: 1.6rem;
@@ -437,7 +440,7 @@
         </div>
 
         <div class="mhs-cs-launcher">
-            <button type="button" class="mhs-cs-dismiss" onclick="dismissMahasiswaCsWidget(event)" aria-label="Tutup Chat CS" title="Tutup Chat CS">
+            <button type="button" class="mhs-cs-dismiss" onclick="const widget=this.closest('#mhs-cs-widget'); const panel=document.getElementById('mhs-cs-panel'); if(panel){panel.classList.add('hidden');} if(widget){widget.classList.add('hidden');} return false;" aria-label="Tutup Chat CS" title="Tutup Chat CS">
                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
