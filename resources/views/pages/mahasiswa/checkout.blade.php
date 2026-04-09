@@ -197,8 +197,8 @@
                         <div class="rounded-2xl border border-gray-200 bg-white p-4 transition peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-[0_0_0_3px_rgba(59,130,246,0.12)] hover:border-blue-300 dark:border-gray-700 dark:bg-[#111827] dark:peer-checked:bg-blue-500/10">
                             <div class="flex items-start gap-3">
                                 @if($methodIconAsset)
-                                <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-white">
-                                    <img src="{{ $methodIconAsset }}" alt="{{ $methodName }}" class="h-full w-full object-cover">
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white p-1.5 shadow-sm dark:border-gray-700 dark:bg-white">
+                                    <img src="{{ $methodIconAsset }}" alt="{{ $methodName }}" class="h-full w-full object-contain">
                                 </div>
                                 @else
                                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br {{ $methodAccent }} text-sm font-bold text-white shadow-sm">
