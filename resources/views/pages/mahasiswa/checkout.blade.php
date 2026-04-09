@@ -171,21 +171,28 @@
                 <h3 class="mb-3 font-medium text-gray-800 dark:text-gray-100">Metode Pembayaran</h3>
                 <div class="grid gap-3 sm:grid-cols-2">
                     @foreach($paymentMethods as $method)
+                    @php
+                        $methodId = $method['id'] ?? 'midtrans';
+                        $methodName = $method['name'] ?? 'Midtrans Payment Gateway';
+                        $methodType = $method['type'] ?? 'Secure Checkout';
+                        $methodIcon = $method['icon'] ?? 'MT';
+                        $methodAccent = $method['accent'] ?? 'from-sky-600 to-blue-500';
+                    @endphp
                     <label class="group block cursor-pointer">
                         <input
                             type="radio"
                             name="payment"
-                            value="{{ $method['id'] }}"
+                            value="{{ $methodId }}"
                             class="peer sr-only"
                             {{ $loop->first ? 'checked' : '' }}>
                         <div class="rounded-2xl border border-gray-200 bg-white p-4 transition peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-[0_0_0_3px_rgba(59,130,246,0.12)] hover:border-blue-300 dark:border-gray-700 dark:bg-[#111827] dark:peer-checked:bg-blue-500/10">
                             <div class="flex items-start gap-3">
-                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br {{ $method['accent'] }} text-sm font-bold text-white shadow-sm">
-                                    {{ $method['icon'] }}
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br {{ $methodAccent }} text-sm font-bold text-white shadow-sm">
+                                    {{ $methodIcon }}
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $method['name'] }}</p>
-                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $method['type'] }}</p>
+                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $methodName }}</p>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $methodType }}</p>
                                 </div>
                             </div>
                         </div>
