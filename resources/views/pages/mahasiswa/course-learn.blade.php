@@ -798,7 +798,18 @@
             time: 'Baru saja',
             avatar: discussionCurrentUser.avatar,
             local_status: 'sending',
+            request_in_flight: false,
         };
+    }
+
+    function upsertDiscussionComment(comment) {
+        const existingIndex = discussionComments.findIndex((item) => item.id === comment.id);
+
+        if (existingIndex >= 0) {
+            discussionComments[existingIndex] = comment;
+        } else {
+            discussionComments.push(comment);
+        }
     }
 
     function upsertPendingDiscussionComment(comment) {
@@ -819,6 +830,12 @@
     }
 
     async function submitCourseDiscussion(message, pendingComment) {
+        if (!pendingComment || pendingComment.request_in_flight) {
+            return;
+        }
+
+        pendingComment.request_in_flight = true;
+
         const response = await fetch(discussionStoreEndpoint, {
             method: 'POST',
             headers: {
@@ -838,13 +855,13 @@
         }
 
         removePendingDiscussionComment(pendingComment.temp_id);
-        discussionComments = [...discussionComments, data.data];
+        upsertDiscussionComment(data.data);
         renderDiscussionComments();
     }
 
     async function retryCourseDiscussion(tempId) {
         const pendingComment = discussionPendingComments.find((item) => item.temp_id === tempId);
-        if (!pendingComment) return;
+        if (!pendingComment || pendingComment.request_in_flight || pendingComment.local_status === 'sending') return;
 
         pendingComment.local_status = 'sending';
         pendingComment.error_message = null;
@@ -856,6 +873,8 @@
             pendingComment.local_status = 'failed';
             pendingComment.error_message = error.message || 'Gagal dikirim';
             upsertPendingDiscussionComment(pendingComment);
+        } finally {
+            pendingComment.request_in_flight = false;
         }
     }
 
@@ -880,6 +899,7 @@
             pendingComment.error_message = error.message || 'Terjadi kesalahan saat mengirim pesan diskusi.';
             upsertPendingDiscussionComment(pendingComment);
         } finally {
+            pendingComment.request_in_flight = false;
             button.disabled = false;
         }
     }

@@ -393,7 +393,18 @@
                 time: 'Baru saja',
                 avatar: dosenDiscussionCurrentUser.avatar,
                 local_status: 'sending',
+                request_in_flight: false,
             };
+        }
+
+        function upsertDosenDiscussionComment(comment) {
+            const existingIndex = dosenDiscussionComments.findIndex((item) => item.id === comment.id);
+
+            if (existingIndex >= 0) {
+                dosenDiscussionComments[existingIndex] = comment;
+            } else {
+                dosenDiscussionComments.push(comment);
+            }
         }
 
         function upsertDosenPendingDiscussionComment(comment) {
@@ -414,6 +425,12 @@
         }
 
         async function submitDosenCourseDiscussion(message, pendingComment) {
+            if (!pendingComment || pendingComment.request_in_flight) {
+                return;
+            }
+
+            pendingComment.request_in_flight = true;
+
             const response = await fetch(dosenDiscussionStoreEndpoint, {
                 method: 'POST',
                 headers: {
@@ -433,7 +450,7 @@
             }
 
             removeDosenPendingDiscussionComment(pendingComment.temp_id);
-            dosenDiscussionComments = [...dosenDiscussionComments, data.data];
+            upsertDosenDiscussionComment(data.data);
             renderDosenDiscussionComments();
         }
 
@@ -458,13 +475,14 @@
                 pendingComment.error_message = error.message || 'Balasan diskusi gagal dikirim.';
                 upsertDosenPendingDiscussionComment(pendingComment);
             } finally {
+                pendingComment.request_in_flight = false;
                 button.disabled = false;
             }
         }
 
         async function retryDosenCourseDiscussion(tempId) {
             const pendingComment = dosenDiscussionPendingComments.find((item) => item.temp_id === tempId);
-            if (!pendingComment) return;
+            if (!pendingComment || pendingComment.request_in_flight || pendingComment.local_status === 'sending') return;
 
             pendingComment.local_status = 'sending';
             pendingComment.error_message = null;
@@ -476,6 +494,8 @@
                 pendingComment.local_status = 'failed';
                 pendingComment.error_message = error.message || 'Balasan diskusi gagal dikirim.';
                 upsertDosenPendingDiscussionComment(pendingComment);
+            } finally {
+                pendingComment.request_in_flight = false;
             }
         }
 
