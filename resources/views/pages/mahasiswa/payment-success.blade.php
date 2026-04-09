@@ -103,10 +103,18 @@
             <a href="{{ route('mahasiswa.courses') }}" class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
                 Mulai Belajar Sekarang
             </a>
-            @elseif($paymentTransaction->snap_redirect_url)
-            <a href="{{ $paymentTransaction->snap_redirect_url }}" target="_blank" rel="noopener noreferrer" class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
+            @elseif($paymentTransaction->snap_token)
+            <button
+                type="button"
+                data-midtrans-snap-trigger
+                data-snap-token="{{ $paymentTransaction->snap_token }}"
+                data-finish-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+                data-pending-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+                data-error-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+                data-fallback-url="{{ $paymentTransaction->snap_redirect_url }}"
+                class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
                 Lanjutkan Bayar
-            </a>
+            </button>
             @endif
             <a href="{{ route('mahasiswa.transaction-detail', ['id' => $paymentTransaction->id_payment_transaction]) }}" class="flex-1 rounded-xl border border-gray-300 py-3 text-center font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700/50">
                 Detail Transaksi
@@ -132,5 +140,9 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+@include('pages.mahasiswa.partials.midtrans-snap-handler')
+@endpush
 
 </x-layouts.dashboard>

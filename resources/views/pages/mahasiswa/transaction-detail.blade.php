@@ -94,12 +94,24 @@
     </div>
 </div>
 
-@if($isPending && $paymentTransaction->snap_redirect_url)
+@if($isPending && $paymentTransaction->snap_token)
 <div class="flex justify-end">
-    <a href="{{ $paymentTransaction->snap_redirect_url }}" target="_blank" rel="noopener noreferrer" class="rounded-xl bg-blue-500 px-6 py-3 font-medium text-white transition hover:bg-blue-600">
+    <button
+        type="button"
+        data-midtrans-snap-trigger
+        data-snap-token="{{ $paymentTransaction->snap_token }}"
+        data-finish-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+        data-pending-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+        data-error-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+        data-fallback-url="{{ $paymentTransaction->snap_redirect_url }}"
+        class="rounded-xl bg-blue-500 px-6 py-3 font-medium text-white transition hover:bg-blue-600">
         Lanjutkan Bayar
-    </a>
+    </button>
 </div>
 @endif
+
+@push('scripts')
+@include('pages.mahasiswa.partials.midtrans-snap-handler')
+@endpush
 
 </x-layouts.dashboard>

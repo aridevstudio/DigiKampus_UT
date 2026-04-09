@@ -1,6 +1,7 @@
 <x-layouts.dashboard :active="'get-courses'">
 @php
     $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop';
+    $defaultSelectedPayment = $paymentMethods[0]['id'] ?? 'bca_va';
 
     $voucherCatalog = $vouchers->mapWithKeys(function ($voucher) {
         $normalizedCode = strtoupper(trim((string) $voucher->code));
@@ -168,28 +169,43 @@
             @if($cartItems->count() > 0)
             <div class="mb-6">
                 <h3 class="mb-3 font-medium text-gray-800 dark:text-gray-100">Metode Pembayaran</h3>
-                <div class="space-y-2">
-                    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-blue-500 bg-blue-50 p-3 dark:bg-blue-500/10">
-                        <input type="radio" name="payment" value="midtrans" checked class="h-4 w-4 text-blue-500">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-600">
-                            <span class="text-[10px] font-bold text-white">MT</span>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @foreach($paymentMethods as $method)
+                    <label class="group block cursor-pointer">
+                        <input
+                            type="radio"
+                            name="payment"
+                            value="{{ $method['id'] }}"
+                            class="peer sr-only"
+                            {{ $loop->first ? 'checked' : '' }}>
+                        <div class="rounded-2xl border border-gray-200 bg-white p-4 transition peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-[0_0_0_3px_rgba(59,130,246,0.12)] hover:border-blue-300 dark:border-gray-700 dark:bg-[#111827] dark:peer-checked:bg-blue-500/10">
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br {{ $method['accent'] }} text-sm font-bold text-white shadow-sm">
+                                    {{ $method['icon'] }}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $method['name'] }}</p>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $method['type'] }}</p>
+                                </div>
+                            </div>
                         </div>
-                        <span class="text-sm font-medium text-gray-800 dark:text-gray-100">Midtrans Payment Gateway</span>
                     </label>
+                    @endforeach
                 </div>
-                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Pilih bank atau e-wallet nanti di halaman Midtrans.</p>
+                <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Metode yang Anda pilih akan langsung dibuka di popup Midtrans pada tab ini.</p>
             </div>
 
             <form id="payment-form" action="{{ route('mahasiswa.payment') }}" method="GET">
-                <input type="hidden" name="payment" id="selected-payment" value="midtrans">
+                <input type="hidden" name="payment" id="selected-payment" value="{{ $defaultSelectedPayment }}">
                 <input type="hidden" name="voucher" id="selected-voucher" value="">
                 <button type="submit" class="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-3 font-medium text-white transition hover:bg-blue-600">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
-                    Bayar Sekarang
+                    <span id="checkout-pay-label">Bayar Sekarang</span>
                 </button>
             </form>
+            <div id="payment-feedback" class="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"></div>
 
             <div class="mb-4 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <svg class="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -223,6 +239,7 @@
 </div>
 
 @push('scripts')
+@include('pages.mahasiswa.partials.midtrans-snap-handler')
 <script>
     const checkoutMoney = {
         subtotal: {{ (int) $subtotal }},
@@ -231,6 +248,54 @@
 
     const voucherCatalog = @json($voucherCatalog);
     let activeVoucher = null;
+
+    function setPaymentFeedback(message = '', type = 'info') {
+        const feedback = document.getElementById('payment-feedback');
+        if (!feedback) return;
+
+        feedback.classList.remove(
+            'hidden',
+            'border-amber-200',
+            'bg-amber-50',
+            'text-amber-700',
+            'dark:border-amber-500/30',
+            'dark:bg-amber-500/10',
+            'dark:text-amber-300',
+            'border-red-200',
+            'bg-red-50',
+            'text-red-700',
+            'dark:border-red-500/30',
+            'dark:bg-red-500/10',
+            'dark:text-red-300'
+        );
+
+        if (!message) {
+            feedback.classList.add('hidden');
+            feedback.textContent = '';
+            return;
+        }
+
+        if (type === 'error') {
+            feedback.classList.add('border-red-200', 'bg-red-50', 'text-red-700', 'dark:border-red-500/30', 'dark:bg-red-500/10', 'dark:text-red-300');
+        } else {
+            feedback.classList.add('border-amber-200', 'bg-amber-50', 'text-amber-700', 'dark:border-amber-500/30', 'dark:bg-amber-500/10', 'dark:text-amber-300');
+        }
+
+        feedback.textContent = message;
+        feedback.classList.remove('hidden');
+    }
+
+    function setCheckoutSubmitting(isSubmitting) {
+        const button = document.querySelector('#payment-form button[type="submit"]');
+        const label = document.getElementById('checkout-pay-label');
+
+        if (!button || !label) return;
+
+        button.disabled = isSubmitting;
+        button.classList.toggle('opacity-70', isSubmitting);
+        button.classList.toggle('cursor-not-allowed', isSubmitting);
+        label.textContent = isSubmitting ? 'Menyiapkan Pembayaran...' : 'Bayar Sekarang';
+    }
 
     function formatRupiah(value) {
         return 'Rp ' + Number(value || 0).toLocaleString('id-ID');
@@ -305,6 +370,7 @@
     document.querySelectorAll('input[name="payment"]').forEach((radio) => {
         radio.addEventListener('change', function () {
             document.getElementById('selected-payment').value = this.value;
+            setPaymentFeedback('');
         });
     });
 
@@ -339,6 +405,57 @@
     });
 
     refreshCheckoutSummary();
+
+    document.getElementById('payment-form')?.addEventListener('submit', async function (event) {
+        if (!window.snap || typeof window.openMahasiswaMidtransSnap !== 'function') {
+            return;
+        }
+
+        event.preventDefault();
+        setPaymentFeedback('');
+        setCheckoutSubmitting(true);
+
+        try {
+            const url = new URL(this.action, window.location.origin);
+            const formData = new FormData(this);
+            formData.forEach((value, key) => {
+                if (value !== null && `${value}` !== '') {
+                    url.searchParams.set(key, value);
+                }
+            });
+
+            const response = await fetch(url.toString(), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            const payload = await response.json();
+            if (!response.ok || !payload.success || !payload.snapToken) {
+                throw new Error(payload.message || 'Gagal membuat transaksi pembayaran.');
+            }
+
+            setCheckoutSubmitting(false);
+
+            window.openMahasiswaMidtransSnap({
+                snapToken: payload.snapToken,
+                finishUrl: payload.finishUrl,
+                pendingUrl: payload.pendingUrl,
+                errorUrl: payload.errorUrl,
+                closeUrl: payload.closeUrl,
+                fallbackUrl: payload.redirectUrl,
+                onClose: () => {
+                    setPaymentFeedback('Transaksi sudah dibuat. Anda bisa melanjutkan pembayaran dari halaman status transaksi.', 'info');
+                    window.location.href = payload.closeUrl || payload.detailUrl || payload.finishUrl;
+                },
+            });
+        } catch (error) {
+            setCheckoutSubmitting(false);
+            setPaymentFeedback(error.message || 'Gagal membuka pembayaran Midtrans.', 'error');
+        }
+    });
 </script>
 @endpush
 

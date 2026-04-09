@@ -92,9 +92,17 @@
 
         <div class="flex flex-col gap-3 sm:flex-row">
             @if($isPending)
-            <a href="{{ $snapRedirectUrl }}" target="_blank" rel="noopener noreferrer" class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
+            <button
+                type="button"
+                data-midtrans-snap-trigger
+                data-snap-token="{{ $snapToken }}"
+                data-finish-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+                data-pending-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+                data-error-url="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}"
+                data-fallback-url="{{ $snapRedirectUrl }}"
+                class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
                 Lanjutkan Bayar di Midtrans
-            </a>
+            </button>
             @endif
             <a href="{{ route('mahasiswa.payment-success', ['order_id' => $paymentTransaction->order_id]) }}" class="flex-1 rounded-xl border border-gray-300 py-3 text-center font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700/50">
                 Cek Status Transaksi
@@ -136,5 +144,9 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+@include('pages.mahasiswa.partials.midtrans-snap-handler')
+@endpush
 
 </x-layouts.dashboard>

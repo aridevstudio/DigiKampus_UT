@@ -42,9 +42,7 @@ class CheckoutController extends Controller
             'serviceFee' => $serviceFee,
             'total' => $total,
             'vouchers' => $vouchers,
-            'paymentMethods' => [
-                ['id' => 'midtrans', 'name' => 'Midtrans', 'icon' => 'midtrans'],
-            ],
+            'paymentMethods' => $this->checkoutPaymentMethods(),
         ]);
     }
 
@@ -100,7 +98,15 @@ class CheckoutController extends Controller
     public function payment(Request $request)
     {
         $user = Auth::guard('mahasiswa')->user();
-        $preferredPaymentMethod = trim((string) $request->query('payment', 'midtrans'));
+        $preferredPaymentMethod = trim((string) $request->query('payment', $this->checkoutPaymentMethods()[0]['id']));
+        $paymentMethods = collect($this->checkoutPaymentMethods());
+        $selectedPayment = $paymentMethods->firstWhere('id', $preferredPaymentMethod) ?? $paymentMethods->first();
+
+        if (!$selectedPayment) {
+            return redirect()->route('mahasiswa.checkout')->with('error', 'Metode pembayaran tidak tersedia.');
+        }
+
+        $preferredPaymentMethod = (string) $selectedPayment['id'];
 
         $cartItems = $this->getCartItems($user->id);
         if ($cartItems->isEmpty()) {
@@ -189,23 +195,41 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'orderId' => $transaction->order_id,
+                    'snapToken' => $transaction->snap_token,
+                    'redirectUrl' => $transaction->snap_redirect_url,
+                    'finishUrl' => route('mahasiswa.payment-success', ['order_id' => $transaction->order_id]),
+                    'pendingUrl' => route('mahasiswa.payment-success', ['order_id' => $transaction->order_id]),
+                    'errorUrl' => route('mahasiswa.payment-success', ['order_id' => $transaction->order_id]),
+                    'closeUrl' => route('mahasiswa.payment-success', ['order_id' => $transaction->order_id]),
+                    'detailUrl' => route('mahasiswa.transaction-detail', ['id' => $transaction->id_payment_transaction]),
+                    'paymentMethod' => $selectedPayment,
+                ]);
+            }
+
             return view('pages.mahasiswa.payment', [
                 'cartItems' => $cartItems,
                 'subtotal' => $subtotal,
                 'serviceFee' => $serviceFee,
                 'discountAmount' => $discountAmount,
                 'total' => $grossAmount,
-                'selectedPayment' => [
-                    'id' => 'midtrans',
-                    'name' => 'Midtrans Payment Gateway',
-                    'type' => 'Secure Checkout',
-                    'color' => 'bg-sky-600',
-                ],
+                'selectedPayment' => $selectedPayment,
                 'paymentTransaction' => $transaction->fresh(['items.course', 'voucher']),
                 'snapRedirectUrl' => $midtransResponse['redirect_url'] ?? null,
+                'snapToken' => $midtransResponse['token'] ?? null,
             ]);
         } catch (\Throwable $e) {
             report($e);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal membuat transaksi pembayaran Midtrans. Periksa konfigurasi env dan coba lagi.',
+                ], 500);
+            }
 
             return redirect()->route('mahasiswa.checkout')
                 ->with('error', 'Gagal membuat transaksi pembayaran Midtrans. Periksa konfigurasi env dan coba lagi.');
@@ -448,7 +472,7 @@ class CheckoutController extends Controller
             ];
         }
 
-        return [
+        $payload = [
             'transaction_details' => [
                 'order_id' => $transaction->order_id,
                 'gross_amount' => (int) round((float) $transaction->gross_amount),
@@ -465,6 +489,13 @@ class CheckoutController extends Controller
                 'error' => route('mahasiswa.payment-success', ['order_id' => $transaction->order_id]),
             ],
         ];
+
+        $enabledPayments = $this->resolveMidtransEnabledPayments((string) $transaction->preferred_payment_method);
+        if (!empty($enabledPayments)) {
+            $payload['enabled_payments'] = $enabledPayments;
+        }
+
+        return $payload;
     }
 
     private function syncTransactionStatus(PaymentTransaction $transaction, array $payload): void
@@ -551,5 +582,66 @@ class CheckoutController extends Controller
         );
 
         return hash_equals($expected, $signature);
+    }
+
+    private function checkoutPaymentMethods(): array
+    {
+        return [
+            [
+                'id' => 'bca_va',
+                'name' => 'BCA Virtual Account',
+                'type' => 'ATM / m-BCA / KlikBCA',
+                'icon' => 'BCA',
+                'accent' => 'from-blue-600 to-sky-500',
+            ],
+            [
+                'id' => 'bni_va',
+                'name' => 'BNI Virtual Account',
+                'type' => 'ATM / BNI Mobile',
+                'icon' => 'BNI',
+                'accent' => 'from-emerald-600 to-teal-500',
+            ],
+            [
+                'id' => 'bri_va',
+                'name' => 'BRI Virtual Account',
+                'type' => 'ATM / BRImo',
+                'icon' => 'BRI',
+                'accent' => 'from-cyan-600 to-blue-500',
+            ],
+            [
+                'id' => 'echannel',
+                'name' => 'Mandiri Bill',
+                'type' => 'Livin / ATM Mandiri',
+                'icon' => 'MD',
+                'accent' => 'from-yellow-500 to-amber-400',
+            ],
+            [
+                'id' => 'gopay',
+                'name' => 'GoPay',
+                'type' => 'E-wallet',
+                'icon' => 'GP',
+                'accent' => 'from-sky-500 to-cyan-400',
+            ],
+            [
+                'id' => 'qris',
+                'name' => 'QRIS',
+                'type' => 'Scan semua e-wallet',
+                'icon' => 'QR',
+                'accent' => 'from-slate-700 to-slate-500',
+            ],
+        ];
+    }
+
+    private function resolveMidtransEnabledPayments(string $preferredPaymentMethod): array
+    {
+        return match ($preferredPaymentMethod) {
+            'bca_va' => ['bca_va'],
+            'bni_va' => ['bni_va'],
+            'bri_va' => ['bri_va'],
+            'echannel' => ['echannel'],
+            'gopay' => ['gopay'],
+            'qris' => ['qris'],
+            default => [],
+        };
     }
 }
