@@ -258,72 +258,6 @@
             }
         }
 
-        .app-swal-popup {
-            border-radius: 1rem;
-        }
-
-        .app-swal-title {
-            color: #111827;
-        }
-
-        .app-swal-html {
-            color: #4B5563;
-        }
-
-        .app-swal-confirm,
-        .app-swal-cancel,
-        .app-swal-deny {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.75rem;
-            padding: 0.625rem 1.5rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            line-height: 1.25rem;
-            transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
-        }
-
-        .app-swal-confirm {
-            background: #3B82F6;
-            border: 1px solid #3B82F6;
-            color: #FFFFFF;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .app-swal-confirm:hover {
-            background: #2563EB;
-            border-color: #2563EB;
-        }
-
-        .app-swal-cancel {
-            background: #FFFFFF;
-            border: 1px solid #E5E7EB;
-            color: #374151;
-        }
-
-        .app-swal-cancel:hover {
-            background: #F9FAFB;
-            border-color: #D1D5DB;
-        }
-
-        .app-swal-deny {
-            background: #FFFFFF;
-            border: 1px solid #FECACA;
-            color: #DC2626;
-        }
-
-        .app-swal-deny:hover {
-            background: #FEF2F2;
-            border-color: #FCA5A5;
-        }
-
-        .app-swal-confirm:focus,
-        .app-swal-cancel:focus,
-        .app-swal-deny:focus {
-            outline: none;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
-        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#111827]">
@@ -697,15 +631,10 @@
                     confirmButtonText: options.confirmButtonText || 'Oke',
                     cancelButtonText: options.cancelButtonText || 'Batal',
                     denyButtonText: options.denyButtonText || 'Tidak',
-                    buttonsStyling: false,
+                    buttonsStyling: !isToast,
                     customClass: {
                         container: 'font-inter',
-                        popup: isToast ? '' : 'app-swal-popup',
-                        title: isToast ? '' : 'app-swal-title',
-                        htmlContainer: isToast ? '' : 'app-swal-html',
-                        confirmButton: isToast ? '' : 'app-swal-confirm',
-                        cancelButton: isToast ? '' : 'app-swal-cancel',
-                        denyButton: isToast ? '' : 'app-swal-deny'
+                        confirmButton: isToast ? '' : 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors'
                     }
                 });
             }
@@ -730,11 +659,11 @@
                     buttonsStyling: false,
                     customClass: {
                         container: 'font-inter',
-                        popup: 'app-swal-popup',
-                        title: 'app-swal-title',
-                        htmlContainer: 'app-swal-html',
-                        confirmButton: 'app-swal-confirm',
-                        cancelButton: 'app-swal-cancel'
+                        popup: 'rounded-2xl',
+                        title: 'text-gray-900',
+                        htmlContainer: 'text-gray-600',
+                        confirmButton: 'inline-flex items-center justify-center rounded-xl bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30',
+                        cancelButton: 'mr-3 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
                     }
                 });
             }
