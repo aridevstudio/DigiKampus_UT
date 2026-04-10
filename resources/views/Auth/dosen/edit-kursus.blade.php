@@ -7,7 +7,9 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1">Perbarui informasi dan struktur materi kursus Anda</p>
     </div>
 
-    @php($isDraftCourse = strtolower((string) ($course->status ?? '')) === 'draft')
+    @php
+        $isDraftCourse = strtolower((string) ($course->status ?? '')) === 'draft';
+    @endphp
 
     @if(($course->kategori ?? '') === 'webinar' && ($course->approval_status ?? '') === 'pending')
     <div class="mb-6 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-900/10 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
@@ -263,7 +265,9 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            @php($modulePrimaryMaterial = $module->materials->first())
+                            @php
+                                $modulePrimaryMaterial = $module->materials->first();
+                            @endphp
                             <button
                                 @if($isDraftCourse && $modulePrimaryMaterial)
                                     onclick="redirectToTypedContentEditor('{{ $modulePrimaryMaterial->tipe }}', {{ $module->id_module }}, {{ $modulePrimaryMaterial->id_material }})"

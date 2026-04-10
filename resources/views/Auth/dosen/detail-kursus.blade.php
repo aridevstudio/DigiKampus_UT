@@ -288,15 +288,20 @@
 
     @push('scripts')
     <script>
+        @php
+            $dosenUser = auth('dosen')->user();
+            $dosenAvatar = $dosenUser?->profile?->foto_profile
+                ? asset('storage/' . $dosenUser->profile->foto_profile)
+                : 'https://ui-avatars.com/api/?name=' . urlencode($dosenUser?->name ?? 'Pengajar') . '&background=2563EB&color=fff';
+            $dosenDiscussionCurrentUserJson = json_encode([
+                'name' => $dosenUser?->name ?? 'Pengajar',
+                'role' => 'Pengajar',
+                'avatar' => $dosenAvatar,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        @endphp
         const dosenDiscussionEndpoint = '{{ route('dosen.course-discussions.index', ['id' => $detail['id_course']], false) }}';
         const dosenDiscussionStoreEndpoint = '{{ route('dosen.course-discussions.store', ['id' => $detail['id_course']], false) }}';
-        const dosenDiscussionCurrentUser = @json([
-            'name' => auth('dosen')->user()?->name ?? 'Pengajar',
-            'role' => 'Pengajar',
-            'avatar' => auth('dosen')->user()?->profile?->foto_profile
-                ? asset('storage/' . auth('dosen')->user()->profile->foto_profile)
-                : 'https://ui-avatars.com/api/?name=' . urlencode(auth('dosen')->user()?->name ?? 'Pengajar') . '&background=2563EB&color=fff',
-        ]);
+        const dosenDiscussionCurrentUser = {!! $dosenDiscussionCurrentUserJson !!};
         let dosenDiscussionComments = [];
         let dosenDiscussionPendingComments = [];
         let dosenDiscussionTempSeed = 0;
