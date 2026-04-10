@@ -154,21 +154,23 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap gap-2 lg:max-w-[560px]">
-                            <template x-for="course in courses" :key="course.id">
-                                <button
-                                    type="button"
-                                    @click="setCourse(course.id)"
-                                    class="min-w-[150px] flex-1 rounded-2xl border px-3 py-3 text-left transition"
-                                    :class="selectedCourse === course.id
-                                        ? 'border-blue-400 bg-blue-50 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10'
-                                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 dark:border-gray-700 dark:bg-gray-900/40'"
+                        <div class="w-full max-w-[460px]">
+                            <label class="block rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                                <span class="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Pilih Course</span>
+                                <select
+                                    x-model="selectedCourse"
+                                    @change="setCourse($event.target.value)"
+                                    class="w-full border-0 bg-transparent p-0 text-sm font-semibold text-slate-900 focus:ring-0 dark:text-white"
                                 >
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em]" :class="selectedCourse === course.id ? 'text-blue-600 dark:text-blue-300' : 'text-slate-400'" x-text="course.code"></p>
-                                    <p class="mt-2 line-clamp-2 text-sm font-semibold text-slate-900 dark:text-white" x-text="course.name"></p>
-                                    <p class="mt-2 text-xs text-slate-500 dark:text-gray-400" x-text="`${course.pending_reviews} butuh review`"></p>
-                                </button>
-                            </template>
+                                    <option value="">-- Pilih course yang akan direview --</option>
+                                    <template x-for="course in courses" :key="`select-${course.id}`">
+                                        <option :value="course.id" x-text="`${course.code} - ${course.name}`"></option>
+                                    </template>
+                                </select>
+                            </label>
+                            <p class="mt-2 text-xs text-slate-500 dark:text-gray-400">
+                                Pilih dulu satu course, lalu workspace review akan otomatis menyesuaikan.
+                            </p>
                         </div>
                     </div>
 
@@ -385,6 +387,140 @@
                         <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Ubah kata kunci pencarian atau pilih status lain untuk menampilkan data.</p>
                     </div>
                 </div>
+
+                <div class="max-w-[460px] rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Mahasiswa Terpilih</p>
+                            <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white" x-text="selectedRow ? selectedRow.student : 'Belum ada mahasiswa dipilih'"></h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-gray-400" x-text="selectedRow ? `${selectedRow.nomor_induk} / ${selectedRow.cohort}` : 'Klik salah satu baris mahasiswa untuk fokus review.'"></p>
+                        </div>
+                        <span x-show="selectedRow" class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" :class="selectedRow ? statusTone[selectedRow.status] : 'hidden'" x-text="selectedRow ? selectedRow.status : ''"></span>
+                    </div>
+
+                    <template x-if="!selectedRow">
+                        <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center dark:border-gray-700 dark:bg-gray-900/40">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Belum ada mahasiswa dipilih</p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Pilih satu mahasiswa di tabel review untuk melihat detail skor dan catatan evaluasi.</p>
+                        </div>
+                    </template>
+
+                    <template x-if="selectedRow">
+                        <div class="mt-5">
+                            <div class="grid gap-3">
+                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pretest</p>
+                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(selectedRow.pretest)"></p>
+                                </div>
+                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Modul</p>
+                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(selectedRow.assignment)"></p>
+                                </div>
+                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
+                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? selectedRow.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
+                                </div>
+                                <div class="rounded-2xl bg-blue-600 px-4 py-3 text-white shadow-lg shadow-blue-600/20">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">Nilai Akhir</p>
+                                    <p class="mt-2 text-2xl font-bold" x-text="finalScore(selectedRow)"></p>
+                                    <p class="mt-1 text-xs font-semibold text-blue-100" x-text="`Grade ${gradeBand(selectedRow).label}`"></p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/40">
+                                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Review</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-gray-300" x-text="selectedRow.note"></p>
+                            </div>
+
+                            <div class="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-900/40">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Input Manual</p>
+                                        <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Masukkan nilai langsung</p>
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Ketik nilai 0 sampai 100, lalu simpan ke preview tabel.</p>
+                                    </div>
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-gray-700 dark:text-gray-300">
+                                        Frontend Draft
+                                    </span>
+                                </div>
+
+                                <div class="mt-4 grid gap-3">
+                                    <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80">
+                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pretest</span>
+                                        <input
+                                            x-model="scoreForm.pretest"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 dark:text-white"
+                                            placeholder="0 - 100"
+                                        >
+                                    </label>
+                                    <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80">
+                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Modul</span>
+                                        <input
+                                            x-model="scoreForm.assignment"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 dark:text-white"
+                                            placeholder="0 - 100"
+                                        >
+                                    </label>
+                                    <label
+                                        class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80"
+                                        :class="!activeCourse.has_final_assignment ? 'opacity-60' : ''"
+                                    >
+                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</span>
+                                        <input
+                                            x-model="scoreForm.final_assignment"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            :disabled="!activeCourse.has_final_assignment"
+                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 disabled:cursor-not-allowed disabled:text-slate-400 dark:text-white dark:disabled:text-gray-500"
+                                            :placeholder="activeCourse.has_final_assignment ? '0 - 100' : 'Tidak dipakai'"
+                                        >
+                                    </label>
+                                </div>
+
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        @click="saveManualScores()"
+                                        class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                                    >
+                                        Simpan Nilai Manual
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="resetManualScores()"
+                                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
+                                    >
+                                        Reset Input
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    @click="markReviewComplete(selectedRow)"
+                                    class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition"
+                                    :class="selectedRow && isReviewActionable(selectedRow)
+                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                        : 'border border-slate-200 text-slate-400 dark:border-gray-700 dark:text-gray-500'"
+                                    :disabled="!selectedRow || !isReviewActionable(selectedRow)"
+                                >
+                                    <span x-text="selectedRow && isReviewActionable(selectedRow) ? 'Selesai Review Mahasiswa Ini' : 'Mahasiswa Sudah Lengkap'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <aside class="space-y-6 xl:sticky xl:top-24 xl:self-start">
@@ -526,139 +662,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Mahasiswa Terpilih</p>
-                            <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white" x-text="selectedRow ? selectedRow.student : 'Belum ada mahasiswa dipilih'"></h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-gray-400" x-text="selectedRow ? `${selectedRow.nomor_induk} / ${selectedRow.cohort}` : 'Klik salah satu baris mahasiswa untuk fokus review.'"></p>
-                        </div>
-                        <span x-show="selectedRow" class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" :class="selectedRow ? statusTone[selectedRow.status] : 'hidden'" x-text="selectedRow ? selectedRow.status : ''"></span>
-                    </div>
-
-                    <template x-if="!selectedRow">
-                        <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center dark:border-gray-700 dark:bg-gray-900/40">
-                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Belum ada mahasiswa dipilih</p>
-                            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Pilih satu mahasiswa di tabel review untuk melihat detail skor dan catatan evaluasi.</p>
-                        </div>
-                    </template>
-
-                    <template x-if="selectedRow">
-                        <div class="mt-5">
-                            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pretest</p>
-                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(selectedRow.pretest)"></p>
-                                </div>
-                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Modul</p>
-                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(selectedRow.assignment)"></p>
-                                </div>
-                                <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-900/40">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</p>
-                                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white" x-text="displayScore(activeCourse.has_final_assignment ? selectedRow.final_assignment : null, activeCourse.has_final_assignment ? '-' : 'N/A')"></p>
-                                </div>
-                                <div class="rounded-2xl bg-blue-600 px-4 py-3 text-white shadow-lg shadow-blue-600/20">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">Nilai Akhir</p>
-                                    <p class="mt-2 text-2xl font-bold" x-text="finalScore(selectedRow)"></p>
-                                    <p class="mt-1 text-xs font-semibold text-blue-100" x-text="`Grade ${gradeBand(selectedRow).label}`"></p>
-                                </div>
-                            </div>
-
-                            <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/40">
-                                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Review</p>
-                                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-gray-300" x-text="selectedRow.note"></p>
-                            </div>
-
-                            <div class="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-900/40">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div>
-                                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Input Manual</p>
-                                        <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Masukkan nilai langsung</p>
-                                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Ketik nilai 0 sampai 100, lalu simpan ke preview tabel.</p>
-                                    </div>
-                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-gray-700 dark:text-gray-300">
-                                        Frontend Draft
-                                    </span>
-                                </div>
-
-                                <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                                    <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80">
-                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pretest</span>
-                                        <input
-                                            x-model="scoreForm.pretest"
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            step="1"
-                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 dark:text-white"
-                                            placeholder="0 - 100"
-                                        >
-                                    </label>
-                                    <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80">
-                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Modul</span>
-                                        <input
-                                            x-model="scoreForm.assignment"
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            step="1"
-                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 dark:text-white"
-                                            placeholder="0 - 100"
-                                        >
-                                    </label>
-                                    <label
-                                        class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/80"
-                                        :class="!activeCourse.has_final_assignment ? 'opacity-60' : ''"
-                                    >
-                                        <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tugas Akhir</span>
-                                        <input
-                                            x-model="scoreForm.final_assignment"
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            step="1"
-                                            :disabled="!activeCourse.has_final_assignment"
-                                            class="mt-2 w-full border-0 bg-transparent p-0 text-lg font-semibold text-slate-900 focus:ring-0 disabled:cursor-not-allowed disabled:text-slate-400 dark:text-white dark:disabled:text-gray-500"
-                                            :placeholder="activeCourse.has_final_assignment ? '0 - 100' : 'Tidak dipakai'"
-                                        >
-                                    </label>
-                                </div>
-
-                                <div class="mt-4 flex flex-wrap gap-2">
-                                    <button
-                                        type="button"
-                                        @click="saveManualScores()"
-                                        class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                                    >
-                                        Simpan Nilai Manual
-                                    </button>
-                                    <button
-                                        type="button"
-                                        @click="resetManualScores()"
-                                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-200 dark:hover:text-white"
-                                    >
-                                        Reset Input
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="mt-4 flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    @click="markReviewComplete(selectedRow)"
-                                    class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition"
-                                    :class="selectedRow && isReviewActionable(selectedRow)
-                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                        : 'border border-slate-200 text-slate-400 dark:border-gray-700 dark:text-gray-500'"
-                                    :disabled="!selectedRow || !isReviewActionable(selectedRow)"
-                                >
-                                    <span x-text="selectedRow && isReviewActionable(selectedRow) ? 'Selesai Review Mahasiswa Ini' : 'Mahasiswa Sudah Lengkap'"></span>
-                                </button>
-                            </div>
-                        </div>
-                    </template>
-                </div>
             </aside>
         </section>
 
@@ -673,12 +676,12 @@
                     statusTone: config.statusTone || {},
                     gradeBands: config.gradeBands || [],
                     api: config.api || {},
-                    selectedCourse: (config.courses || [])[0]?.id ?? null,
+                    selectedCourse: null,
                     search: '',
                     statusFilter: 'all',
-                    activeCourse: (config.courses || [])[0] ?? {
+                    activeCourse: {
                         id: null,
-                        name: 'Belum ada course',
+                        name: 'Pilih course terlebih dahulu',
                         code: '-',
                         period: '-',
                         students: 0,
@@ -732,24 +735,23 @@
                     },
 
                     setCourse(courseId) {
-                        this.selectedCourse = courseId;
+                        this.selectedCourse = courseId === '' ? null : courseId;
                         this.syncDerivedState();
                     },
 
                     syncDerivedState() {
-                        if (!this.selectedCourse && this.courses.length > 0) {
-                            this.selectedCourse = this.courses[0].id;
-                        }
-
                         this.courses.forEach((course) => {
                             course.pending_reviews = this.rows.filter((row) => String(row.course_id) === String(course.id) && row.status !== 'Lengkap').length;
                         });
 
-                        this.activeCourse = this.courses.find((course) => String(course.id) === String(this.selectedCourse))
-                            ?? this.courses[0]
+                        const selectedCourse = this.selectedCourse
+                            ? this.courses.find((course) => String(course.id) === String(this.selectedCourse))
+                            : null;
+
+                        this.activeCourse = selectedCourse
                             ?? {
                                 id: null,
-                                name: 'Belum ada course',
+                                name: 'Pilih course terlebih dahulu',
                                 code: '-',
                                 period: '-',
                                 students: 0,
@@ -758,7 +760,9 @@
                                 pending_reviews: 0,
                                 is_published: false,
                             };
-                        const courseRows = this.rows.filter((row) => String(row.course_id) === String(this.selectedCourse));
+                        const courseRows = selectedCourse
+                            ? this.rows.filter((row) => String(row.course_id) === String(this.selectedCourse))
+                            : [];
 
                         this.filteredRows = courseRows.filter((row) => {
                             const query = this.search.trim().toLowerCase();
@@ -863,7 +867,7 @@
                         ];
 
                         this.weightValidation = this.getWeightValidation();
-                        this.canPublish = this.activeWeightTotal === 100 && this.coursePendingCount === 0 && readyCount > 0;
+                        this.canPublish = !!selectedCourse && this.activeWeightTotal === 100 && this.coursePendingCount === 0 && readyCount > 0;
                         if (this.publishedCourses[this.selectedCourse] && !this.canPublish) {
                             this.publishedCourses[this.selectedCourse] = false;
                         }
