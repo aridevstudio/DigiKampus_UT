@@ -69,7 +69,14 @@
     {{-- Course Cards Grid --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         @forelse($coursesData ?? [] as $course)
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden hover-lift">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden hover-lift cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+            role="link"
+            tabindex="0"
+            data-course-url="{{ route('dosen.kursus.detail', $course['id']) }}"
+            onclick="if (event.target.closest('a,button,input,select,textarea,label,[data-stop-card-click]')) return; window.location.href = this.dataset.courseUrl;"
+            onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a,button,input,select,textarea,label,[data-stop-card-click]')) { event.preventDefault(); window.location.href = this.dataset.courseUrl; }"
+        >
             {{-- Thumbnail with Module Video Previews --}}
             <div class="relative h-40 bg-gradient-to-br from-blue-500 to-blue-600 overflow-hidden">
                 @php
