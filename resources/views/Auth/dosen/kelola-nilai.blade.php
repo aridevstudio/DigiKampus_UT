@@ -1,104 +1,7 @@
 @php
-    $gradeCourses = [
-        [
-            'id' => 'course-ui-ux',
-            'name' => 'UI/UX Design Sprint',
-            'code' => 'DSN-UIX-24',
-            'period' => 'Semester Genap 2025/2026',
-            'students' => 28,
-            'weights' => ['pretest' => 20, 'assignment' => 35, 'final' => 45],
-            'has_final_assignment' => true,
-            'pending_reviews' => 9,
-        ],
-        [
-            'id' => 'course-elektro',
-            'name' => 'Elektronika Dasar',
-            'code' => 'DSN-ELK-11',
-            'period' => 'Semester Genap 2025/2026',
-            'students' => 34,
-            'weights' => ['pretest' => 25, 'assignment' => 40, 'final' => 35],
-            'has_final_assignment' => true,
-            'pending_reviews' => 6,
-        ],
-        [
-            'id' => 'course-webinar',
-            'name' => 'Webinar AI Product Thinking',
-            'code' => 'WEB-AI-08',
-            'period' => 'Batch Maret 2026',
-            'students' => 120,
-            'weights' => ['pretest' => 30, 'assignment' => 70, 'final' => 0],
-            'has_final_assignment' => false,
-            'pending_reviews' => 2,
-        ],
-    ];
-
-    $gradeRows = [
-        [
-            'student' => 'Nabila Putri',
-            'nomor_induk' => '20240149',
-            'course_id' => 'course-ui-ux',
-            'course' => 'UI/UX Design Sprint',
-            'cohort' => 'Kelas A',
-            'status' => 'Perlu Review',
-            'pretest' => 82,
-            'assignment' => 76,
-            'final_assignment' => null,
-            'last_update' => '10 menit lalu',
-            'note' => 'Tugas akhir sudah masuk, belum diberi skor dosen.',
-        ],
-        [
-            'student' => 'Gilang Pratama',
-            'nomor_induk' => '20240122',
-            'course_id' => 'course-ui-ux',
-            'course' => 'UI/UX Design Sprint',
-            'cohort' => 'Kelas A',
-            'status' => 'Lengkap',
-            'pretest' => 88,
-            'assignment' => 84,
-            'final_assignment' => 90,
-            'last_update' => '1 jam lalu',
-            'note' => 'Komponen nilai lengkap, siap publish nilai akhir.',
-        ],
-        [
-            'student' => 'Salsa Maharani',
-            'nomor_induk' => '20240177',
-            'course_id' => 'course-elektro',
-            'course' => 'Elektronika Dasar',
-            'cohort' => 'Kelas B',
-            'status' => 'Revisi Tugas',
-            'pretest' => 74,
-            'assignment' => 61,
-            'final_assignment' => 72,
-            'last_update' => '3 jam lalu',
-            'note' => 'Mahasiswa sudah kirim revisi, cek ulang rubrik tugas.',
-        ],
-        [
-            'student' => 'Ryan Champilin DDS',
-            'nomor_induk' => '20240145',
-            'course_id' => 'course-elektro',
-            'course' => 'Elektronika Dasar',
-            'cohort' => 'Kelas B',
-            'status' => 'Lengkap',
-            'pretest' => 91,
-            'assignment' => 87,
-            'final_assignment' => 89,
-            'last_update' => 'Kemarin',
-            'note' => 'Nilai stabil, bisa masuk shortlist mahasiswa unggulan.',
-        ],
-        [
-            'student' => 'Jayde Abbott',
-            'nomor_induk' => '20240133',
-            'course_id' => 'course-webinar',
-            'course' => 'Webinar AI Product Thinking',
-            'cohort' => 'Batch 2',
-            'status' => 'Lengkap',
-            'pretest' => 79,
-            'assignment' => 92,
-            'final_assignment' => null,
-            'last_update' => 'Hari ini',
-            'note' => 'Webinar tanpa tugas akhir, nilai final diambil dari dua komponen.',
-        ],
-    ];
+    $gradeCourses = $gradeCourses ?? [];
+    $gradeRows = $gradeRows ?? [];
+    $gradeApi = $gradeApi ?? [];
 
     $statusTone = [
         'Perlu Review' => 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20',
@@ -121,6 +24,7 @@
             rows: @js($gradeRows),
             statusTone: @js($statusTone),
             gradeBands: @js($gradeBands),
+            api: @js($gradeApi),
         })"
         x-init="init()"
         class="space-y-6"
@@ -721,14 +625,25 @@
         <script>
             function gradeManager(config) {
                 return {
-                    courses: config.courses,
-                    rows: config.rows,
-                    statusTone: config.statusTone,
-                    gradeBands: config.gradeBands,
-                    selectedCourse: config.courses[0]?.id ?? null,
+                    courses: config.courses || [],
+                    rows: config.rows || [],
+                    statusTone: config.statusTone || {},
+                    gradeBands: config.gradeBands || [],
+                    api: config.api || {},
+                    selectedCourse: (config.courses || [])[0]?.id ?? null,
                     search: '',
                     statusFilter: 'all',
-                    activeCourse: config.courses[0] ?? { weights: { pretest: 0, assignment: 0, final: 0 }, has_final_assignment: false },
+                    activeCourse: (config.courses || [])[0] ?? {
+                        id: null,
+                        name: 'Belum ada course',
+                        code: '-',
+                        period: '-',
+                        students: 0,
+                        weights: { pretest: 0, assignment: 0, final: 0 },
+                        has_final_assignment: false,
+                        pending_reviews: 0,
+                        is_published: false,
+                    },
                     selectedStudentKey: null,
                     selectedRow: null,
                     filteredRows: [],
@@ -765,7 +680,7 @@
 
                     init() {
                         this.publishedCourses = this.courses.reduce((acc, course) => {
-                            acc[course.id] = false;
+                            acc[course.id] = !!course.is_published;
                             return acc;
                         }, {});
                         this.$watch('search', () => this.syncDerivedState());
@@ -779,18 +694,34 @@
                     },
 
                     syncDerivedState() {
+                        if (!this.selectedCourse && this.courses.length > 0) {
+                            this.selectedCourse = this.courses[0].id;
+                        }
+
                         this.courses.forEach((course) => {
-                            course.pending_reviews = this.rows.filter((row) => row.course_id === course.id && row.status !== 'Lengkap').length;
+                            course.pending_reviews = this.rows.filter((row) => String(row.course_id) === String(course.id) && row.status !== 'Lengkap').length;
                         });
 
-                        this.activeCourse = this.courses.find((course) => course.id === this.selectedCourse) ?? this.courses[0];
-                        const courseRows = this.rows.filter((row) => row.course_id === this.selectedCourse);
+                        this.activeCourse = this.courses.find((course) => String(course.id) === String(this.selectedCourse))
+                            ?? this.courses[0]
+                            ?? {
+                                id: null,
+                                name: 'Belum ada course',
+                                code: '-',
+                                period: '-',
+                                students: 0,
+                                weights: { pretest: 0, assignment: 0, final: 0 },
+                                has_final_assignment: false,
+                                pending_reviews: 0,
+                                is_published: false,
+                            };
+                        const courseRows = this.rows.filter((row) => String(row.course_id) === String(this.selectedCourse));
 
                         this.filteredRows = courseRows.filter((row) => {
                             const query = this.search.trim().toLowerCase();
                             const matchesSearch = !query
-                                || row.student.toLowerCase().includes(query)
-                                || row.nomor_induk.toLowerCase().includes(query);
+                                || String(row.student ?? '').toLowerCase().includes(query)
+                                || String(row.nomor_induk ?? '').toLowerCase().includes(query);
 
                             const matchesStatus = this.statusFilter === 'all' || row.status === this.statusFilter;
 
@@ -901,7 +832,7 @@
                                     ? 'Siap Publish ke Mahasiswa'
                                     : 'Draft Nilai Semester',
                             helper: this.isPublished
-                                ? 'Halaman preview ini sudah menandai nilai sebagai published. Sinkronisasi backend masih belum diaktifkan.'
+                                ? 'Nilai untuk course ini sudah dipublish dari backend.'
                                 : this.canPublish
                                     ? 'Semua checklist utama terpenuhi. Draft bisa dipublish dari halaman ini.'
                                     : 'Masih ada item yang harus dibenahi sebelum nilai dikirim ke mahasiswa.',
@@ -932,10 +863,10 @@
                                     done: readyCount > 0,
                                 },
                                 {
-                                    label: 'Status publish frontend',
+                                    label: 'Status publish backend',
                                     helper: this.isPublished
-                                        ? 'Halaman ini sudah menandai nilai sebagai published.'
-                                        : 'Belum dipublish ke preview mahasiswa.',
+                                        ? 'Data publish sudah tersimpan di backend.'
+                                        : 'Belum dipublish ke mahasiswa.',
                                     done: this.isPublished,
                                 },
                             ],
@@ -946,6 +877,52 @@
                         this.selectedStudentKey = nextSelected ? this.getRowKey(nextSelected) : null;
                         this.selectedRow = nextSelected;
                         this.hydrateScoreForm(nextSelected);
+                    },
+
+                    buildApiUrl(template, replacements) {
+                        if (!template) return '';
+
+                        let url = template;
+                        Object.entries(replacements || {}).forEach(([key, value]) => {
+                            url = url.replace(`__${key.toUpperCase()}__`, encodeURIComponent(String(value ?? '')));
+                        });
+
+                        return url;
+                    },
+
+                    async postJson(url, payload = {}) {
+                        if (!url) {
+                            return { success: false, message: 'URL backend tidak ditemukan.' };
+                        }
+
+                        try {
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || '',
+                                },
+                                body: JSON.stringify(payload),
+                            });
+
+                            const data = await response.json().catch(() => ({}));
+                            if (!response.ok || !data?.success) {
+                                return {
+                                    success: false,
+                                    message: data?.message || 'Terjadi kesalahan pada server.',
+                                    errors: data?.errors || null,
+                                };
+                            }
+
+                            return data;
+                        } catch (error) {
+                            return {
+                                success: false,
+                                message: 'Gagal terhubung ke server.',
+                            };
+                        }
                     },
 
                     getActiveWeightTotal() {
@@ -1055,7 +1032,7 @@
                     },
 
                     getRowKey(row) {
-                        return `${row.nomor_induk}-${row.course_id}`;
+                        return `${row.student_id || row.nomor_induk}-${row.course_id}`;
                     },
 
                     selectStudent(row) {
@@ -1096,8 +1073,9 @@
                         }
 
                         const target = this.rows.find((item) => this.getRowKey(item) === this.getRowKey(this.selectedRow));
+                        const studentId = target?.student_id ?? this.selectedRow?.student_id;
 
-                        if (!target) {
+                        if (!target || !studentId || !this.selectedCourse) {
                             return this.notify(
                                 'Data mahasiswa tidak ditemukan di workspace nilai.',
                                 'error',
@@ -1119,14 +1097,36 @@
                             );
                         }
 
+                        const saveUrl = this.buildApiUrl(this.api.score, {
+                            course: this.selectedCourse,
+                            student: studentId,
+                        });
+
+                        const saveResponse = await this.postJson(saveUrl, {
+                            pretest_score: parsedPretest,
+                            assignment_score: parsedAssignment,
+                            final_assignment_score: this.activeCourse.has_final_assignment ? parsedFinal : null,
+                            status: 'lengkap',
+                        });
+
+                        if (!saveResponse.success) {
+                            return this.notify(
+                                saveResponse.message || 'Gagal menyimpan nilai ke backend.',
+                                'error',
+                                'Simpan Gagal'
+                            );
+                        }
+
+                        const backendRow = saveResponse.data || {};
                         target.pretest = parsedPretest;
                         target.assignment = parsedAssignment;
                         target.final_assignment = this.activeCourse.has_final_assignment ? parsedFinal : null;
-                        target.last_update = 'Baru saja';
-                        target.note = this.activeCourse.has_final_assignment
-                            ? 'Nilai manual dosen sudah disimpan. Komponen nilai siap direview atau langsung dipublish jika lengkap.'
-                            : 'Nilai manual dosen sudah disimpan untuk webinar. Komponen aktif siap dipublish jika checklist terpenuhi.';
-                        target.status = 'Lengkap';
+                        target.last_update = backendRow.last_update || 'Baru saja';
+                        target.note = backendRow.note
+                            || (this.activeCourse.has_final_assignment
+                                ? 'Nilai manual dosen sudah disimpan. Komponen nilai siap direview atau langsung dipublish jika lengkap.'
+                                : 'Nilai manual dosen sudah disimpan untuk webinar. Komponen aktif siap dipublish jika checklist terpenuhi.');
+                        target.status = backendRow.status || 'Lengkap';
 
                         this.syncDerivedState();
 
@@ -1182,7 +1182,41 @@
                             return;
                         }
 
+                        if (!this.selectedCourse || !row.student_id) {
+                            return this.notify(
+                                'Identitas mahasiswa atau course belum valid.',
+                                'error',
+                                'Review Gagal'
+                            );
+                        }
+
+                        const reviewUrl = this.buildApiUrl(this.api.review, {
+                            course: this.selectedCourse,
+                            student: row.student_id,
+                        });
+                        const reviewResponse = await this.postJson(reviewUrl, {
+                            pretest_score: Number.isFinite(row.pretest) ? row.pretest : null,
+                            assignment_score: Number.isFinite(row.assignment) ? row.assignment : null,
+                            final_assignment_score: Number.isFinite(row.final_assignment) ? row.final_assignment : null,
+                        });
+
+                        if (!reviewResponse.success) {
+                            return this.notify(
+                                reviewResponse.message || 'Gagal menandai review selesai.',
+                                'error',
+                                'Review Gagal'
+                            );
+                        }
+
                         const updatedRow = this.completeRowData(row);
+                        if (updatedRow && reviewResponse.data) {
+                            updatedRow.pretest = reviewResponse.data.pretest;
+                            updatedRow.assignment = reviewResponse.data.assignment;
+                            updatedRow.final_assignment = reviewResponse.data.final_assignment;
+                            updatedRow.status = reviewResponse.data.status || 'Lengkap';
+                            updatedRow.last_update = reviewResponse.data.last_update || 'Baru saja';
+                            updatedRow.note = reviewResponse.data.note || updatedRow.note;
+                        }
                         this.syncDerivedState();
 
                         if (updatedRow) {
@@ -1222,9 +1256,42 @@
                         return Promise.resolve();
                     },
 
-                    saveDraft() {
+                    async saveDraft() {
+                        if (!this.selectedCourse) {
+                            return this.notify('Pilih course terlebih dahulu.', 'warning', 'Course Belum Dipilih');
+                        }
+
+                        const draftUrl = this.buildApiUrl(this.api.draft, {
+                            course: this.selectedCourse,
+                        });
+                        const draftResponse = await this.postJson(draftUrl, {
+                            weights: this.activeCourse.weights,
+                            has_final_assignment: this.activeCourse.has_final_assignment,
+                        });
+
+                        if (!draftResponse.success) {
+                            return this.notify(
+                                draftResponse.message || 'Gagal menyimpan draft ke backend.',
+                                'error',
+                                'Draft Gagal Disimpan'
+                            );
+                        }
+
+                        if (draftResponse.data?.weights) {
+                            this.activeCourse.weights = {
+                                pretest: Number(draftResponse.data.weights.pretest || 0),
+                                assignment: Number(draftResponse.data.weights.assignment || 0),
+                                final: Number(draftResponse.data.weights.final || 0),
+                            };
+                        }
+                        if (typeof draftResponse.data?.has_final_assignment === 'boolean') {
+                            this.activeCourse.has_final_assignment = draftResponse.data.has_final_assignment;
+                        }
+
+                        this.syncDerivedState();
+
                         return this.notify(
-                            `Draft nilai untuk ${this.activeCourse.name} disimpan di frontend preview.`,
+                            `Draft nilai untuk ${this.activeCourse.name} berhasil disimpan ke backend.`,
                             'success',
                             'Draft Tersimpan',
                             { toast: true }
@@ -1241,6 +1308,10 @@
                     },
 
                     async publishGrades(options = {}) {
+                        if (!this.selectedCourse) {
+                            return this.notify('Pilih course terlebih dahulu.', 'warning', 'Course Belum Dipilih');
+                        }
+
                         if (!this.canPublish) {
                             return this.notify(
                                 'Selesaikan dulu checklist publish: total bobot 100 persen, tidak ada pending review, dan minimal satu mahasiswa sudah lengkap.',
@@ -1273,13 +1344,26 @@
                             }
                         }
 
+                        const publishUrl = this.buildApiUrl(this.api.publish, {
+                            course: this.selectedCourse,
+                        });
+                        const publishResponse = await this.postJson(publishUrl, {});
+
+                        if (!publishResponse.success) {
+                            return this.notify(
+                                publishResponse.message || 'Gagal publish nilai ke backend.',
+                                'error',
+                                'Publish Gagal'
+                            );
+                        }
+
                         this.publishedCourses[this.selectedCourse] = true;
                         this.syncDerivedState();
 
                         return this.notify(
                             options.auto
                                 ? `Semua review untuk ${this.activeCourse.name} sudah lengkap, jadi draft langsung ditandai published di frontend preview.`
-                                : `Draft nilai ${this.activeCourse.name} ditandai siap publish. Sinkronisasi backend masih menunggu implementasi docs.`,
+                                : `Draft nilai ${this.activeCourse.name} berhasil dipublish.`,
                             'success',
                             options.auto ? 'Auto Publish Selesai' : 'Nilai Siap Publish'
                         );

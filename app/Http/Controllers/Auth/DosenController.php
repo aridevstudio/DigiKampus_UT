@@ -8,11 +8,15 @@ use App\Models\AdminNotification;
 use App\Models\BootcampMentor;
 use App\Models\Course;
 use App\Models\CourseDiscussion;
+use App\Models\CourseGradeRecord;
+use App\Models\CourseGradeSetting;
 use App\Models\CourseInstructorNote;
+use App\Models\CourseMaterial;
 use App\Models\DosenNotification;
 use App\Models\Enrollment;
 use App\Models\Message;
 use App\Models\Notification;
+use App\Models\QuizAttempt;
 use App\Models\User;
 use App\Services\DeviceSessionLimitService;
 use Illuminate\Http\Request;
@@ -2655,6 +2659,409 @@ class DosenController extends Controller
         ]);
     }
 
+    public function showKelolaNilai()
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $courses = Course::query()
+            ->where('id_dosen', $dosen->id)
+            ->withCount('enrollments')
+            ->orderByDesc('created_at')
+            ->get([
+                'id_course',
+                'kode_course',
+                'nama_course',
+                'kategori',
+                'tanggal_webinar',
+                'created_at',
+            ]);
+
+        $courseIds = $courses->pluck('id_course')->map(fn ($id) => (int) $id)->values();
+
+        $gradeSettings = CourseGradeSetting::query()
+            ->whereIn('id_course', $courseIds)
+            ->get()
+            ->keyBy('id_course');
+
+        $coursesWithFinalAssignments = CourseMaterial::query()
+            ->whereIn('id_course', $courseIds)
+            ->where('tipe', 'tugas')
+            ->distinct()
+            ->pluck('id_course')
+            ->map(fn ($id) => (int) $id)
+            ->flip();
+
+        $enrollments = Enrollment::query()
+            ->whereIn('id_course', $courseIds)
+            ->with(['mahasiswa.profile'])
+            ->orderByDesc('updated_at')
+            ->get();
+
+        $recordMap = CourseGradeRecord::query()
+            ->whereIn('id_course', $courseIds)
+            ->get()
+            ->keyBy(fn (CourseGradeRecord $record) => $record->id_course . ':' . $record->id_mahasiswa);
+
+        $attemptMetrics = $this->buildQuizAttemptMetrics($courseIds->all());
+
+        $rowsByCourse = [];
+        $gradeRows = [];
+
+        foreach ($enrollments as $enrollment) {
+            $courseId = (int) $enrollment->id_course;
+            $mahasiswaId = (int) $enrollment->id_mahasiswa;
+            $rowKey = $courseId . ':' . $mahasiswaId;
+
+            /** @var CourseGradeRecord|null $record */
+            $record = $recordMap->get($rowKey);
+            /** @var CourseGradeSetting|null $setting */
+            $setting = $gradeSettings->get($courseId);
+            $hasFinalAssignment = $setting
+                ? (bool) $setting->has_final_assignment
+                : $coursesWithFinalAssignments->has($courseId);
+
+            $pretestScore = $record?->pretest_score;
+            if ($pretestScore === null && isset($attemptMetrics[$rowKey]['pretest'])) {
+                $pretestScore = $attemptMetrics[$rowKey]['pretest'];
+            }
+
+            $assignmentScore = $record?->assignment_score;
+            if ($assignmentScore === null && isset($attemptMetrics[$rowKey]['assignment'])) {
+                $assignmentScore = $attemptMetrics[$rowKey]['assignment'];
+            }
+
+            $finalAssignmentScore = $record?->final_assignment_score;
+
+            $statusSlug = $record?->status
+                ?: $this->inferGradeStatusSlug(
+                    $pretestScore,
+                    $assignmentScore,
+                    $finalAssignmentScore,
+                    $hasFinalAssignment
+                );
+
+            $statusLabel = $this->gradeStatusLabel($statusSlug);
+            $rowsByCourse[$courseId][] = $statusSlug;
+
+            $gradeRows[] = [
+                'student_id' => $mahasiswaId,
+                'student' => $enrollment->mahasiswa?->name ?? 'Mahasiswa',
+                'nomor_induk' => (string) ($enrollment->mahasiswa?->profile?->nomor_induk ?? '-'),
+                'course_id' => (string) $courseId,
+                'course' => $courses->firstWhere('id_course', $courseId)?->nama_course ?? '-',
+                'cohort' => 'Kelas Umum',
+                'status' => $statusLabel,
+                'pretest' => $pretestScore !== null ? round((float) $pretestScore, 2) : null,
+                'assignment' => $assignmentScore !== null ? round((float) $assignmentScore, 2) : null,
+                'final_assignment' => $finalAssignmentScore !== null ? round((float) $finalAssignmentScore, 2) : null,
+                'last_update' => ($record?->last_update_at ?? $record?->updated_at ?? $enrollment->updated_at)?->diffForHumans() ?? '-',
+                'note' => $record?->note
+                    ?: ($statusSlug === 'lengkap'
+                        ? 'Komponen nilai lengkap, siap publish.'
+                        : 'Masih ada komponen nilai yang perlu dilengkapi.'),
+            ];
+        }
+
+        $gradeCourses = $courses->map(function (Course $course) use ($gradeSettings, $coursesWithFinalAssignments, $rowsByCourse) {
+            /** @var CourseGradeSetting|null $setting */
+            $setting = $gradeSettings->get((int) $course->id_course);
+            $hasFinalAssignment = $setting
+                ? (bool) $setting->has_final_assignment
+                : $coursesWithFinalAssignments->has((int) $course->id_course);
+
+            $defaultWeights = $hasFinalAssignment
+                ? ['pretest' => 20, 'assignment' => 35, 'final' => 45]
+                : ['pretest' => 30, 'assignment' => 70, 'final' => 0];
+
+            $weights = [
+                'pretest' => (int) ($setting?->pretest_weight ?? $defaultWeights['pretest']),
+                'assignment' => (int) ($setting?->assignment_weight ?? $defaultWeights['assignment']),
+                'final' => (int) ($setting?->final_weight ?? $defaultWeights['final']),
+            ];
+
+            $pendingReviews = collect($rowsByCourse[(int) $course->id_course] ?? [])
+                ->filter(fn ($status) => $status !== 'lengkap')
+                ->count();
+
+            return [
+                'id' => (string) $course->id_course,
+                'name' => $course->nama_course,
+                'code' => $course->kode_course ?: ('COURSE-' . $course->id_course),
+                'period' => $this->gradeCoursePeriodLabel($course),
+                'students' => (int) $course->enrollments_count,
+                'weights' => $weights,
+                'has_final_assignment' => $hasFinalAssignment,
+                'pending_reviews' => $pendingReviews,
+                'is_published' => (bool) ($setting?->is_published ?? false),
+            ];
+        })->values()->all();
+
+        $gradeApi = [
+            'draft' => url('/dosen/kelola-nilai/course/__COURSE__/draft'),
+            'publish' => url('/dosen/kelola-nilai/course/__COURSE__/publish'),
+            'score' => url('/dosen/kelola-nilai/course/__COURSE__/students/__STUDENT__/score'),
+            'review' => url('/dosen/kelola-nilai/course/__COURSE__/students/__STUDENT__/review'),
+        ];
+
+        return view('Auth.dosen.kelola-nilai', [
+            'gradeCourses' => $gradeCourses,
+            'gradeRows' => $gradeRows,
+            'gradeApi' => $gradeApi,
+        ]);
+    }
+
+    public function saveGradeDraft(Request $request, int $courseId)
+    {
+        $course = $this->findDosenCourse($courseId);
+        if (!$course) {
+            return response()->json(['success' => false, 'message' => 'Kursus tidak ditemukan.'], 404);
+        }
+
+        $validated = $request->validate([
+            'weights.pretest' => 'required|integer|min:0|max:100',
+            'weights.assignment' => 'required|integer|min:0|max:100',
+            'weights.final' => 'nullable|integer|min:0|max:100',
+            'has_final_assignment' => 'required|boolean',
+        ]);
+
+        $hasFinalAssignment = (bool) $validated['has_final_assignment'];
+        $pretestWeight = (int) data_get($validated, 'weights.pretest', 0);
+        $assignmentWeight = (int) data_get($validated, 'weights.assignment', 0);
+        $finalWeight = $hasFinalAssignment
+            ? (int) data_get($validated, 'weights.final', 0)
+            : 0;
+
+        $setting = CourseGradeSetting::query()->updateOrCreate(
+            ['id_course' => $course->id_course],
+            [
+                'pretest_weight' => $pretestWeight,
+                'assignment_weight' => $assignmentWeight,
+                'final_weight' => $finalWeight,
+                'has_final_assignment' => $hasFinalAssignment,
+                'draft_saved_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Draft nilai berhasil disimpan ke backend.',
+            'data' => [
+                'weights' => [
+                    'pretest' => (int) $setting->pretest_weight,
+                    'assignment' => (int) $setting->assignment_weight,
+                    'final' => (int) $setting->final_weight,
+                ],
+                'has_final_assignment' => (bool) $setting->has_final_assignment,
+                'active_weight_total' => $hasFinalAssignment
+                    ? ((int) $setting->pretest_weight + (int) $setting->assignment_weight + (int) $setting->final_weight)
+                    : ((int) $setting->pretest_weight + (int) $setting->assignment_weight),
+            ],
+        ]);
+    }
+
+    public function saveStudentGradeScore(Request $request, int $courseId, int $studentId)
+    {
+        $course = $this->findDosenCourse($courseId);
+        if (!$course) {
+            return response()->json(['success' => false, 'message' => 'Kursus tidak ditemukan.'], 404);
+        }
+
+        $enrollment = Enrollment::query()
+            ->where('id_course', $course->id_course)
+            ->where('id_mahasiswa', $studentId)
+            ->first();
+
+        if (!$enrollment) {
+            return response()->json(['success' => false, 'message' => 'Mahasiswa tidak terdaftar pada kursus ini.'], 422);
+        }
+
+        $validated = $request->validate([
+            'pretest_score' => 'required|numeric|min:0|max:100',
+            'assignment_score' => 'required|numeric|min:0|max:100',
+            'final_assignment_score' => 'nullable|numeric|min:0|max:100',
+            'status' => ['nullable', Rule::in(['perlu_review', 'lengkap', 'revisi_tugas'])],
+            'note' => 'nullable|string|max:2000',
+        ]);
+
+        $setting = $this->resolveCourseGradeSetting($course);
+        $hasFinalAssignment = (bool) $setting->has_final_assignment;
+
+        $finalAssignmentScore = $hasFinalAssignment
+            ? data_get($validated, 'final_assignment_score')
+            : null;
+
+        if ($hasFinalAssignment && $finalAssignmentScore === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nilai tugas akhir wajib diisi untuk kursus ini.',
+            ], 422);
+        }
+
+        $status = data_get($validated, 'status');
+        if (!$status) {
+            $status = $this->inferGradeStatusSlug(
+                (float) $validated['pretest_score'],
+                (float) $validated['assignment_score'],
+                $finalAssignmentScore !== null ? (float) $finalAssignmentScore : null,
+                $hasFinalAssignment
+            );
+        }
+
+        $record = CourseGradeRecord::query()->updateOrCreate(
+            [
+                'id_course' => $course->id_course,
+                'id_mahasiswa' => $studentId,
+            ],
+            [
+                'pretest_score' => (float) $validated['pretest_score'],
+                'assignment_score' => (float) $validated['assignment_score'],
+                'final_assignment_score' => $finalAssignmentScore !== null ? (float) $finalAssignmentScore : null,
+                'status' => $status,
+                'note' => data_get($validated, 'note'),
+                'last_update_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Nilai mahasiswa berhasil disimpan.',
+            'data' => [
+                'student_id' => $studentId,
+                'status' => $this->gradeStatusLabel($record->status),
+                'pretest' => $record->pretest_score !== null ? (float) $record->pretest_score : null,
+                'assignment' => $record->assignment_score !== null ? (float) $record->assignment_score : null,
+                'final_assignment' => $record->final_assignment_score !== null ? (float) $record->final_assignment_score : null,
+                'note' => $record->note,
+                'last_update' => optional($record->last_update_at)->diffForHumans() ?? 'Baru saja',
+            ],
+        ]);
+    }
+
+    public function completeStudentGradeReview(Request $request, int $courseId, int $studentId)
+    {
+        $course = $this->findDosenCourse($courseId);
+        if (!$course) {
+            return response()->json(['success' => false, 'message' => 'Kursus tidak ditemukan.'], 404);
+        }
+
+        $enrollment = Enrollment::query()
+            ->where('id_course', $course->id_course)
+            ->where('id_mahasiswa', $studentId)
+            ->first();
+
+        if (!$enrollment) {
+            return response()->json(['success' => false, 'message' => 'Mahasiswa tidak terdaftar pada kursus ini.'], 422);
+        }
+
+        $validated = $request->validate([
+            'pretest_score' => 'nullable|numeric|min:0|max:100',
+            'assignment_score' => 'nullable|numeric|min:0|max:100',
+            'final_assignment_score' => 'nullable|numeric|min:0|max:100',
+            'note' => 'nullable|string|max:2000',
+        ]);
+
+        $setting = $this->resolveCourseGradeSetting($course);
+        $hasFinalAssignment = (bool) $setting->has_final_assignment;
+
+        $record = CourseGradeRecord::query()->firstOrNew([
+            'id_course' => $course->id_course,
+            'id_mahasiswa' => $studentId,
+        ]);
+
+        $pretestScore = data_get($validated, 'pretest_score', $record->pretest_score);
+        $assignmentScore = data_get($validated, 'assignment_score', $record->assignment_score);
+        $finalAssignmentScore = $hasFinalAssignment
+            ? data_get($validated, 'final_assignment_score', $record->final_assignment_score)
+            : null;
+
+        if ($hasFinalAssignment && $finalAssignmentScore === null && $pretestScore !== null && $assignmentScore !== null) {
+            $finalAssignmentScore = round((((float) $pretestScore) + ((float) $assignmentScore)) / 2, 2);
+        }
+
+        $record->fill([
+            'pretest_score' => $pretestScore,
+            'assignment_score' => $assignmentScore,
+            'final_assignment_score' => $finalAssignmentScore,
+            'status' => 'lengkap',
+            'note' => data_get($validated, 'note')
+                ?: ($hasFinalAssignment
+                    ? 'Review dosen selesai. Komponen nilai lengkap dan siap publish.'
+                    : 'Review dosen selesai. Nilai webinar lengkap dan siap publish.'),
+            'last_update_at' => now(),
+            'reviewed_at' => now(),
+        ]);
+        $record->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review mahasiswa ditandai selesai.',
+            'data' => [
+                'student_id' => $studentId,
+                'status' => $this->gradeStatusLabel('lengkap'),
+                'pretest' => $record->pretest_score !== null ? (float) $record->pretest_score : null,
+                'assignment' => $record->assignment_score !== null ? (float) $record->assignment_score : null,
+                'final_assignment' => $record->final_assignment_score !== null ? (float) $record->final_assignment_score : null,
+                'note' => $record->note,
+                'last_update' => optional($record->last_update_at)->diffForHumans() ?? 'Baru saja',
+            ],
+        ]);
+    }
+
+    public function publishGradeDraft(Request $request, int $courseId)
+    {
+        $course = $this->findDosenCourse($courseId);
+        if (!$course) {
+            return response()->json(['success' => false, 'message' => 'Kursus tidak ditemukan.'], 404);
+        }
+
+        $setting = $this->resolveCourseGradeSetting($course);
+        $hasFinalAssignment = (bool) $setting->has_final_assignment;
+        $activeWeightTotal = $hasFinalAssignment
+            ? ((int) $setting->pretest_weight + (int) $setting->assignment_weight + (int) $setting->final_weight)
+            : ((int) $setting->pretest_weight + (int) $setting->assignment_weight);
+
+        if ($activeWeightTotal !== 100) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Total bobot aktif harus tepat 100% sebelum publish.',
+            ], 422);
+        }
+
+        $records = CourseGradeRecord::query()
+            ->where('id_course', $course->id_course)
+            ->get();
+
+        if ($records->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Belum ada data nilai mahasiswa yang tersimpan.',
+            ], 422);
+        }
+
+        $pendingCount = $records->where('status', '!=', 'lengkap')->count();
+        if ($pendingCount > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => "Masih ada {$pendingCount} mahasiswa yang belum selesai direview.",
+            ], 422);
+        }
+
+        $setting->update([
+            'is_published' => true,
+            'published_at' => now(),
+            'draft_saved_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Draft nilai berhasil dipublish.',
+            'data' => [
+                'is_published' => true,
+                'published_at' => optional($setting->published_at)->toISOString(),
+            ],
+        ]);
+    }
+
     private function getAvailableStudentIds(int $dosenId): Collection
     {
         $conversationStudentIds = Message::where(function ($query) use ($dosenId) {
@@ -2787,5 +3194,134 @@ class DosenController extends Controller
             'deadline' => 'Office Hour',
             default => 'Live Review',
         };
+    }
+
+    private function findDosenCourse(int $courseId): ?Course
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        return Course::query()
+            ->where('id_course', $courseId)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+    }
+
+    private function resolveCourseGradeSetting(Course $course): CourseGradeSetting
+    {
+        $hasFinalAssignment = CourseMaterial::query()
+            ->where('id_course', $course->id_course)
+            ->where('tipe', 'tugas')
+            ->exists();
+
+        return CourseGradeSetting::query()->firstOrCreate(
+            ['id_course' => $course->id_course],
+            [
+                'pretest_weight' => $hasFinalAssignment ? 20 : 30,
+                'assignment_weight' => $hasFinalAssignment ? 35 : 70,
+                'final_weight' => $hasFinalAssignment ? 45 : 0,
+                'has_final_assignment' => $hasFinalAssignment,
+                'is_published' => false,
+            ]
+        );
+    }
+
+    private function buildQuizAttemptMetrics(array $courseIds): array
+    {
+        if (empty($courseIds)) {
+            return [];
+        }
+
+        $attempts = QuizAttempt::query()
+            ->where('status', 'selesai')
+            ->whereHas('quiz', function ($query) use ($courseIds) {
+                $query->whereIn('id_course', $courseIds)->where('is_active', true);
+            })
+            ->with(['quiz:id_quiz,id_course,is_pretest'])
+            ->get();
+
+        $metrics = [];
+        foreach ($attempts as $attempt) {
+            if (!$attempt->quiz) {
+                continue;
+            }
+
+            $courseId = (int) $attempt->quiz->id_course;
+            $studentId = (int) $attempt->id_mahasiswa;
+            $key = $courseId . ':' . $studentId;
+
+            if (!isset($metrics[$key])) {
+                $metrics[$key] = [
+                    'pretest_scores' => [],
+                    'assignment_scores' => [],
+                ];
+            }
+
+            $score = $attempt->persentase !== null
+                ? (float) $attempt->persentase
+                : ($attempt->total_poin > 0 ? (((float) $attempt->skor / (float) $attempt->total_poin) * 100) : null);
+
+            if ($score === null) {
+                continue;
+            }
+
+            if ((bool) $attempt->quiz->is_pretest) {
+                $metrics[$key]['pretest_scores'][] = $score;
+            } else {
+                $metrics[$key]['assignment_scores'][] = $score;
+            }
+        }
+
+        $result = [];
+        foreach ($metrics as $key => $bucket) {
+            $pretest = count($bucket['pretest_scores']) > 0
+                ? round(array_sum($bucket['pretest_scores']) / count($bucket['pretest_scores']), 2)
+                : null;
+            $assignment = count($bucket['assignment_scores']) > 0
+                ? round(array_sum($bucket['assignment_scores']) / count($bucket['assignment_scores']), 2)
+                : null;
+
+            $result[$key] = [
+                'pretest' => $pretest,
+                'assignment' => $assignment,
+            ];
+        }
+
+        return $result;
+    }
+
+    private function inferGradeStatusSlug(
+        float|int|null $pretestScore,
+        float|int|null $assignmentScore,
+        float|int|null $finalAssignmentScore,
+        bool $hasFinalAssignment
+    ): string {
+        $isComplete = $pretestScore !== null
+            && $assignmentScore !== null
+            && (!$hasFinalAssignment || $finalAssignmentScore !== null);
+
+        return $isComplete ? 'lengkap' : 'perlu_review';
+    }
+
+    private function gradeStatusLabel(string $statusSlug): string
+    {
+        return match ($statusSlug) {
+            'lengkap' => 'Lengkap',
+            'revisi_tugas' => 'Revisi Tugas',
+            default => 'Perlu Review',
+        };
+    }
+
+    private function gradeCoursePeriodLabel(Course $course): string
+    {
+        if ($course->kategori === 'webinar') {
+            if ($course->tanggal_webinar instanceof Carbon) {
+                return 'Batch ' . $course->tanggal_webinar->translatedFormat('F Y');
+            }
+
+            return 'Batch Webinar';
+        }
+
+        $year = $course->created_at?->format('Y') ?? now()->format('Y');
+        return 'Periode ' . $year;
     }
 }

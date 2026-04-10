@@ -119,7 +119,11 @@ Route::prefix('dosen')
         Route::get('/progres-mahasiswa', [DosenController::class, 'showProgresMahasiswa'])->name('dosen.progres');
         Route::get('/bootcamp', [DosenController::class, 'showBootcamp'])->name('dosen.bootcamp');
         Route::post('/bootcamp/sessions', [DosenController::class, 'storeBootcampSession'])->name('dosen.bootcamp.sessions.store');
-        Route::view('/kelola-nilai', 'Auth.dosen.kelola-nilai')->name('dosen.nilai');
+        Route::get('/kelola-nilai', [DosenController::class, 'showKelolaNilai'])->name('dosen.nilai');
+        Route::post('/kelola-nilai/course/{courseId}/draft', [DosenController::class, 'saveGradeDraft'])->name('dosen.nilai.draft');
+        Route::post('/kelola-nilai/course/{courseId}/publish', [DosenController::class, 'publishGradeDraft'])->name('dosen.nilai.publish');
+        Route::post('/kelola-nilai/course/{courseId}/students/{studentId}/score', [DosenController::class, 'saveStudentGradeScore'])->name('dosen.nilai.score');
+        Route::post('/kelola-nilai/course/{courseId}/students/{studentId}/review', [DosenController::class, 'completeStudentGradeReview'])->name('dosen.nilai.review');
         
         // ----------------------------------------------------------------------
         // Komunikasi
