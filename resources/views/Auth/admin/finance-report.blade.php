@@ -5,6 +5,16 @@
             ? 'text-emerald-600 dark:text-emerald-400'
             : 'text-rose-600 dark:text-rose-400';
         $momPrefix = $momPercent > 0 ? '+' : '';
+        $financePayload = $financeChartPayload ?? [
+            'monthlyRevenue' => [],
+            'monthlyLabels' => [],
+            'channels' => [
+                'kursus' => 0,
+                'webinar' => 0,
+                'tiket' => 0,
+            ],
+            'topProducts' => [],
+        ];
     @endphp
 
     <div class="mb-4 sm:mb-6 lg:mb-8">
@@ -110,7 +120,7 @@
         let financeCompositionChart = null;
         let financeChannelBarChart = null;
 
-        const financeData = @json($financeChartPayload ?? ['monthlyRevenue' => [], 'monthlyLabels' => [], 'channels' => ['kursus' => 0, 'webinar' => 0, 'tiket' => 0], 'topProducts' => []]);
+        const financeData = @json($financePayload);
 
         function formatRupiah(value) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
