@@ -10,8 +10,8 @@
         </div>
 
         <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Kelola Video Pembelajaran</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">Tambahkan video materi ke dalam kursus Anda.</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ request('material_id') ? 'Edit Video Pembelajaran' : 'Kelola Video Pembelajaran' }}</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">{{ request('material_id') ? 'Perbarui video materi pada modul yang dipilih.' : 'Tambahkan video materi ke dalam kursus Anda.' }}</p>
         </div>
 
         <form @submit.prevent="saveVideo" class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="{ isLoading: false }" @submit="isLoading = true">
@@ -104,7 +104,7 @@
                     <button type="submit" :disabled="isSubmitting || !selectedCourseId" class="w-full px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition flex items-center justify-center gap-2">
                         <svg x-show="!isSubmitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                         <svg x-show="isSubmitting" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span x-text="isSubmitting ? 'Menyimpan...' : 'Simpan Materi Video'"></span>
+                        <span x-text="isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan Video' : 'Simpan Materi Video')"></span>
                     </button>
                     <button type="button" onclick="history.back()" class="w-full mt-3 px-5 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl transition">
                         Batal
@@ -124,6 +124,9 @@
                 selectedCourseId: @json((string) request('course_id', '')),
                 lockedCourseId: @json((string) request('course_id', '')),
                 courseLocked: false,
+                editMaterialId: @json((string) request('material_id', '')),
+                moduleId: @json((string) request('module_id', '')),
+                isEditMode: @json(request()->filled('edit_mode') || request()->filled('material_id')),
                 form: {
                     judul_modul: @json(request('modul_judul', '')),
                     video_url: @json(request('modul_video_url', '')),
@@ -133,7 +136,7 @@
                 },
 
                 init() {
-                    this.fetchCourses();
+                    this.fetchCourses().then(() => this.loadExistingMaterial());
                 },
 
                 async fetchCourses() {
@@ -176,6 +179,33 @@
                     this.courseLocked = true;
                 },
 
+                async loadExistingMaterial() {
+                    if (!this.isEditMode || !this.selectedCourseId || !this.editMaterialId) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/dosen/kursus/${this.selectedCourseId}/material/${this.editMaterialId}`, {
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            return;
+                        }
+
+                        const data = await response.json();
+                        this.form.judul_modul = data?.judul_material || this.form.judul_modul;
+                        this.form.video_url = data?.video_url || '';
+                        this.form.durasi = data?.durasi ?? this.form.durasi;
+                        this.form.konten = data?.konten_display || data?.konten || '';
+                    } catch (error) {
+                        console.error('Error loading existing material:', error);
+                    }
+                },
+
                 getEmbedUrl(url) {
                     if (!url) return null;
                     // Simple YouTube regex for demo
@@ -195,29 +225,49 @@
 
                     this.isSubmitting = true;
                     try {
-                        const response = await fetch(`/dosen/api/courses/${this.selectedCourseId}/modules`, {
-                            method: 'POST',
+                        const payload = {
+                            ...this.form,
+                        };
+
+                        if (this.moduleId) {
+                            payload.id_module = this.moduleId;
+                        }
+
+                        const endpoint = this.isEditMode
+                            ? `/dosen/api/courses/${this.selectedCourseId}/materials/${this.editMaterialId}`
+                            : `/dosen/api/courses/${this.selectedCourseId}/modules`;
+                        const method = this.isEditMode ? 'PUT' : 'POST';
+
+                        const response = await fetch(endpoint, {
+                            method,
                             credentials: 'same-origin',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             },
-                            body: JSON.stringify(this.form)
+                            body: JSON.stringify(payload)
                         });
                         
                         const data = await response.json();
                         
-                        if (data.success) {
+                        if (response.ok && data.success) {
+                            if (this.isEditMode) {
+                                alert('Video berhasil diperbarui!');
+                                window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
+                                return;
+                            }
+
                             alert('Video berhasil ditambahkan!');
                             // Reset form
                             this.form.judul_modul = '';
                             this.form.video_url = '';
                             this.form.durasi = '';
                             this.form.konten = '';
-                        } else {
-                            alert('Gagal menyimpan: ' + data.message);
                         }
+
+                        const firstError = data?.errors ? Object.values(data.errors).flat()?.[0] : null;
+                        alert('Gagal menyimpan: ' + (firstError || data?.message || 'Terjadi kesalahan.'));
                     } catch (error) {
                         alert('Terjadi kesalahan saat menyimpan.');
                     } finally {

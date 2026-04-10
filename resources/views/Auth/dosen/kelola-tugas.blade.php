@@ -10,8 +10,8 @@
         </div>
 
         <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Kelola Tugas</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">Buat tugas dan atur pengumpulan untuk mahasiswa</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ request('material_id') ? 'Edit Tugas' : 'Kelola Tugas' }}</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">{{ request('material_id') ? 'Perbarui konten tugas akhir pada modul yang dipilih.' : 'Buat tugas dan atur pengumpulan untuk mahasiswa' }}</p>
         </div>
 
         <form @submit.prevent="saveTugas" x-data="{ isLoading: false }" @submit="isLoading = true">
@@ -120,7 +120,7 @@
                         <div class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
                             <button type="submit" :disabled="isSubmitting || !selectedCourseId" class="w-full px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition flex items-center justify-center gap-2">
                                 <svg x-show="!isSubmitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                <span x-text="isSubmitting ? 'Menyimpan...' : 'Publikasikan Tugas'"></span>
+                                <span x-text="isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan Tugas' : 'Publikasikan Tugas')"></span>
                             </button>
                             <button type="button" onclick="history.back()" class="w-full mt-3 px-5 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl transition">
                                 Batal
@@ -142,6 +142,9 @@
                 selectedCourseId: @json((string) request('course_id', '')),
                 lockedCourseId: @json((string) request('course_id', '')),
                 courseLocked: false,
+                editMaterialId: @json((string) request('material_id', '')),
+                moduleId: @json((string) request('module_id', '')),
+                isEditMode: @json(request()->filled('edit_mode') || request()->filled('material_id')),
                 form: {
                     judul_modul: @json(request('modul_judul', '')),
                     tipe: 'tugas',
@@ -160,7 +163,7 @@
                 },
 
                 init() {
-                    this.fetchCourses();
+                    this.fetchCourses().then(() => this.loadExistingMaterial());
                 },
 
                 async fetchCourses() {
@@ -202,6 +205,57 @@
                     this.courses = [matchedCourse];
                     this.courseLocked = true;
                 },
+
+                parseAssignmentPayload(rawContent) {
+                    if (!rawContent) {
+                        return null;
+                    }
+
+                    try {
+                        const decoded = JSON.parse(rawContent);
+                        return (decoded && typeof decoded === 'object') ? decoded : null;
+                    } catch (error) {
+                        return null;
+                    }
+                },
+
+                async loadExistingMaterial() {
+                    if (!this.isEditMode || !this.selectedCourseId || !this.editMaterialId) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/dosen/kursus/${this.selectedCourseId}/material/${this.editMaterialId}`, {
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            return;
+                        }
+
+                        const data = await response.json();
+                        this.form.judul_modul = data?.judul_material || this.form.judul_modul;
+                        this.form.durasi = data?.durasi ?? this.form.durasi;
+
+                        const payload = this.parseAssignmentPayload(data?.konten || '');
+                        if (payload) {
+                            this.assignmentData.deskripsi = payload.deskripsi || '';
+                            this.assignmentData.instruksi = payload.instruksi || '';
+                            this.assignmentData.deadline = payload.deadline || '';
+                            this.assignmentData.format = payload.format || 'pdf';
+                            this.assignmentData.allowLinks = Boolean(payload.allowLinks);
+                            this.assignmentData.is_tugas = true;
+                            return;
+                        }
+
+                        this.assignmentData.deskripsi = data?.konten_display || data?.konten || '';
+                    } catch (error) {
+                        console.error('Error loading existing assignment:', error);
+                    }
+                },
                 
                 formatDate(dateStr) {
                     if (!dateStr) return '';
@@ -220,30 +274,49 @@
                     }
 
                     // Serialize assignment data into 'konten'
-                    this.form.konten = JSON.stringify(this.assignmentData);
+                    const payload = {
+                        ...this.form,
+                        konten: JSON.stringify(this.assignmentData)
+                    };
+
+                    if (this.moduleId) {
+                        payload.id_module = this.moduleId;
+                    }
 
                     this.isSubmitting = true;
                     try {
-                        const response = await fetch(`/dosen/api/courses/${this.selectedCourseId}/modules`, {
-                            method: 'POST',
+                        const endpoint = this.isEditMode
+                            ? `/dosen/api/courses/${this.selectedCourseId}/materials/${this.editMaterialId}`
+                            : `/dosen/api/courses/${this.selectedCourseId}/modules`;
+                        const method = this.isEditMode ? 'PUT' : 'POST';
+
+                        const response = await fetch(endpoint, {
+                            method,
                             credentials: 'same-origin',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             },
-                            body: JSON.stringify(this.form)
+                            body: JSON.stringify(payload)
                         });
                         
                         const data = await response.json();
-                        if (data.success) {
+                        if (response.ok && data.success) {
+                            if (this.isEditMode) {
+                                alert('Tugas berhasil diperbarui!');
+                                window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
+                                return;
+                            }
+
                             alert('Tugas berhasil dibuat!');
                             // Reset
                             this.form.judul_modul = '';
                             this.assignmentData.deskripsi = '';
                             this.assignmentData.instruksi = '';
                         } else {
-                            alert('Gagal: ' + data.message);
+                            const firstError = data?.errors ? Object.values(data.errors).flat()?.[0] : null;
+                            alert('Gagal: ' + (firstError || data?.message || 'Terjadi kesalahan.'));
                         }
                     } catch (error) {
                         alert('Terjadi kesalahan.');

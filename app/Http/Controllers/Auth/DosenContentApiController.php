@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -488,12 +489,20 @@ class DosenContentApiController extends Controller
             ], 404);
         }
 
+        if (!$this->isCourseContentEditable($course)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus sudah dipublish. Perubahan modul hanya bisa saat status draft.',
+            ], 422);
+        }
+
         $validator = Validator::make($request->all(), [
             'judul_modul' => 'required|string|max:255',
             'tipe' => 'nullable|in:video,bacaan,kuis,tugas,text,quiz',
             'konten' => 'nullable|string',
             'video_url' => 'nullable|url',
             'durasi' => 'nullable|integer|min:1',
+            'id_module' => 'nullable|integer|exists:course_modules,id_module',
             'lampiran_file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,zip,rar,jpg,jpeg,png,webp,txt',
             'sumber_referensi' => 'nullable|array',
             'sumber_referensi.*' => 'nullable|url|max:2048',
@@ -508,6 +517,7 @@ class DosenContentApiController extends Controller
         }
 
         $validated = $validator->validated();
+        $moduleId = isset($validated['id_module']) ? (int) $validated['id_module'] : null;
 
         $normalizedType = $this->normalizeModuleType($validated['tipe'] ?? null, $validated['konten'] ?? null);
         $lampiranPath = null;
@@ -525,16 +535,30 @@ class DosenContentApiController extends Controller
                 ->all();
         }
 
-        $moduleOrder = (int) (CourseModule::where('id_course', $courseId)->max('urutan') ?? 0) + 1;
+        $courseModule = null;
+        if ($moduleId) {
+            $courseModule = CourseModule::query()
+                ->where('id_module', $moduleId)
+                ->where('id_course', $courseId)
+                ->first();
 
-        // Each publish from typed content page creates a dedicated module,
-        // so course structure and new content stay in sync.
-        $courseModule = CourseModule::create([
-            'id_course' => $courseId,
-            'judul_module' => $validated['judul_modul'],
-            'deskripsi' => $this->moduleDescriptionByType($normalizedType),
-            'urutan' => $moduleOrder,
-        ]);
+            if (!$courseModule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Modul tidak ditemukan untuk kursus ini.',
+                ], 422);
+            }
+        } else {
+            $moduleOrder = (int) (CourseModule::where('id_course', $courseId)->max('urutan') ?? 0) + 1;
+
+            // Typed-content page default behavior: create dedicated module.
+            $courseModule = CourseModule::create([
+                'id_course' => $courseId,
+                'judul_module' => $validated['judul_modul'],
+                'deskripsi' => $this->moduleDescriptionByType($normalizedType),
+                'urutan' => $moduleOrder,
+            ]);
+        }
 
         $urutan = (int) (CourseMaterial::where('id_module', $courseModule->id_module)->max('urutan') ?? 0) + 1;
 
@@ -563,6 +587,153 @@ class DosenContentApiController extends Controller
                 'sumber_referensi' => $module->sumber_referensi ?? [],
             ],
         ], 201);
+    }
+
+    public function updateMaterial(Request $request, int $courseId, int $materialId): JsonResponse
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        if (!$dosen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $course = Course::query()
+            ->where('id_course', $courseId)
+            ->where('id_dosen', $dosen->id)
+            ->first();
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus tidak ditemukan.',
+            ], 404);
+        }
+
+        if (!$this->isCourseContentEditable($course)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus sudah dipublish. Perubahan modul hanya bisa saat status draft.',
+            ], 422);
+        }
+
+        $material = CourseMaterial::query()
+            ->where('id_material', $materialId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$material) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Materi tidak ditemukan.',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'judul_modul' => 'required|string|max:255',
+            'tipe' => 'nullable|in:video,bacaan,kuis,tugas,text,quiz',
+            'konten' => 'nullable|string',
+            'video_url' => 'nullable|url',
+            'durasi' => 'nullable|integer|min:0',
+            'id_module' => 'nullable|integer|exists:course_modules,id_module',
+            'lampiran_file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,zip,rar,jpg,jpeg,png,webp,txt',
+            'sumber_referensi' => 'nullable|array',
+            'sumber_referensi.*' => 'nullable|url|max:2048',
+            'remove_lampiran' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+        $normalizedType = $this->normalizeModuleType($validated['tipe'] ?? null, $validated['konten'] ?? null);
+        $targetModuleId = isset($validated['id_module']) ? (int) $validated['id_module'] : (int) $material->id_module;
+
+        $targetModule = CourseModule::query()
+            ->where('id_module', $targetModuleId)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$targetModule) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Modul tujuan tidak ditemukan.',
+            ], 422);
+        }
+
+        $lampiranPath = $material->lampiran_path;
+        $sumberReferensi = $material->sumber_referensi ?? [];
+        $shouldRemoveLampiran = filter_var($request->input('remove_lampiran'), FILTER_VALIDATE_BOOLEAN);
+
+        if ($normalizedType === 'bacaan') {
+            $sumberReferensi = collect($validated['sumber_referensi'] ?? [])
+                ->map(static fn ($url) => trim((string) $url))
+                ->filter(static fn ($url) => $url !== '')
+                ->values()
+                ->all();
+
+            if ($request->hasFile('lampiran_file')) {
+                if ($lampiranPath) {
+                    Storage::disk('public')->delete($lampiranPath);
+                }
+                $lampiranPath = $request->file('lampiran_file')->store('bacaan-lampiran', 'public');
+            } elseif ($shouldRemoveLampiran && $lampiranPath) {
+                Storage::disk('public')->delete($lampiranPath);
+                $lampiranPath = null;
+            }
+        } else {
+            if ($lampiranPath) {
+                Storage::disk('public')->delete($lampiranPath);
+            }
+            $lampiranPath = null;
+            $sumberReferensi = [];
+        }
+
+        $oldMaterialTitle = (string) $material->judul_material;
+        $newTitle = (string) $validated['judul_modul'];
+
+        $material->update([
+            'id_module' => $targetModule->id_module,
+            'judul_material' => $newTitle,
+            'tipe' => $normalizedType,
+            'konten' => $validated['konten'] ?? null,
+            'video_url' => $validated['video_url'] ?? null,
+            'durasi' => $validated['durasi'] ?? 0,
+            'lampiran_path' => $lampiranPath,
+            'sumber_referensi' => $sumberReferensi,
+        ]);
+
+        $moduleMaterialCount = CourseMaterial::query()
+            ->where('id_module', $targetModule->id_module)
+            ->count();
+        $shouldSyncModuleTitle = $moduleMaterialCount <= 1 || (string) $targetModule->judul_module === $oldMaterialTitle;
+
+        if ($shouldSyncModuleTitle) {
+            $targetModule->update([
+                'judul_module' => $newTitle,
+                'deskripsi' => $this->moduleDescriptionByType($normalizedType),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Materi berhasil diperbarui.',
+            'data' => [
+                'id' => $material->id_material,
+                'id_module' => $material->id_module,
+                'judul' => $material->judul_material,
+                'tipe' => $material->tipe,
+                'lampiran_url' => $material->lampiran_path ? asset('storage/' . $material->lampiran_path) : null,
+                'sumber_referensi' => $material->sumber_referensi ?? [],
+            ],
+        ]);
     }
 
     private function moduleDescriptionByType(string $type): string
@@ -602,6 +773,11 @@ class DosenContentApiController extends Controller
         $decoded = json_decode($content, true);
 
         return is_array($decoded) && !empty($decoded['is_tugas']);
+    }
+
+    private function isCourseContentEditable(Course $course): bool
+    {
+        return strtolower((string) ($course->status ?? '')) === 'draft';
     }
 
     private function formatScheduleTime(?string $time): ?string

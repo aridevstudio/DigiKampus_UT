@@ -1041,6 +1041,9 @@ class DosenController extends Controller
             'is_structured_content' => $displayMeta['is_structured'],
             'structured_hint' => $displayMeta['hint'],
             'video_url' => $material->video_url,
+            'lampiran_path' => $material->lampiran_path,
+            'lampiran_url' => $material->lampiran_path ? asset('storage/' . $material->lampiran_path) : null,
+            'sumber_referensi' => $material->sumber_referensi ?? [],
             'urutan' => $material->urutan,
             'durasi' => $material->durasi,
         ]);
@@ -1193,6 +1196,10 @@ class DosenController extends Controller
             return back()->with('error', 'Kursus tidak ditemukan');
         }
 
+        if (!$this->canEditCourseContent($course)) {
+            return back()->with('error', $this->coursePublishedLockMessage());
+        }
+
         $request->validate([
             'judul_module' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -1222,10 +1229,15 @@ class DosenController extends Controller
             ->whereHas('course', function($q) use ($dosen) {
                 $q->where('id_dosen', $dosen->id);
             })
+            ->with('course')
             ->first();
 
         if (!$module) {
             return back()->with('error', 'Modul tidak ditemukan');
+        }
+
+        if (!$this->canEditCourseContent($module->course)) {
+            return back()->with('error', $this->coursePublishedLockMessage());
         }
 
         $request->validate([
@@ -1253,10 +1265,15 @@ class DosenController extends Controller
             ->whereHas('course', function($q) use ($dosen) {
                 $q->where('id_dosen', $dosen->id);
             })
+            ->with('course')
             ->first();
 
         if (!$module) {
             return back()->with('error', 'Modul tidak ditemukan');
+        }
+
+        if (!$this->canEditCourseContent($module->course)) {
+            return back()->with('error', $this->coursePublishedLockMessage());
         }
 
         $module->delete();
@@ -1278,6 +1295,10 @@ class DosenController extends Controller
 
         if (!$course) {
             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if (!$this->canEditCourseContent($course)) {
+            return response()->json(['error' => $this->coursePublishedLockMessage()], 422);
         }
 
         $order = $request->input('order');
@@ -1308,6 +1329,10 @@ class DosenController extends Controller
 
         if (!$course) {
             return back()->with('error', 'Kursus tidak ditemukan');
+        }
+
+        if (!$this->canEditCourseContent($course)) {
+            return back()->with('error', $this->coursePublishedLockMessage());
         }
 
         $request->validate([
@@ -1361,10 +1386,15 @@ class DosenController extends Controller
             ->whereHas('course', function($q) use ($dosen, $courseId) {
                 $q->where('id_dosen', $dosen->id)->where('id_course', $courseId);
             })
+            ->with('course')
             ->first();
 
         if (!$material) {
             return back()->with('error', 'Material tidak ditemukan');
+        }
+
+        if (!$this->canEditCourseContent($material->course)) {
+            return back()->with('error', $this->coursePublishedLockMessage());
         }
 
         $request->validate([
@@ -1402,6 +1432,10 @@ class DosenController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        if (!$this->canEditCourseContent($course)) {
+            return response()->json(['error' => $this->coursePublishedLockMessage()], 422);
+        }
+
         $order = $request->input('order');
         
         if (!is_array($order)) {
@@ -1428,15 +1462,34 @@ class DosenController extends Controller
             ->whereHas('course', function($q) use ($dosen, $courseId) {
                 $q->where('id_dosen', $dosen->id)->where('id_course', $courseId);
             })
+            ->with('course')
             ->first();
 
         if (!$material) {
             return back()->with('error', 'Material tidak ditemukan');
         }
 
+        if (!$this->canEditCourseContent($material->course)) {
+            return back()->with('error', $this->coursePublishedLockMessage());
+        }
+
         $material->delete();
 
         return back()->with('success', 'Material berhasil dihapus');
+    }
+
+    private function canEditCourseContent(?Course $course): bool
+    {
+        if (!$course) {
+            return false;
+        }
+
+        return strtolower((string) ($course->status ?? '')) === 'draft';
+    }
+
+    private function coursePublishedLockMessage(): string
+    {
+        return 'Kursus sudah dipublish. Perubahan modul hanya bisa saat status draft.';
     }
 
     /**

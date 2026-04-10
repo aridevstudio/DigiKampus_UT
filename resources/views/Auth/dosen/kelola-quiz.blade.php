@@ -3,8 +3,8 @@
         {{-- Header with Filters --}}
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Input Kuis</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-1">Buat dan kelola soal kuis untuk modul pembelajaran</p>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ request('material_id') ? 'Edit Kuis' : 'Input Kuis' }}</h1>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">{{ request('material_id') ? 'Perbarui soal kuis sesuai draft modul.' : 'Buat dan kelola soal kuis untuk modul pembelajaran' }}</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
@@ -184,7 +184,7 @@
                 <button type="submit" :disabled="isSubmitting || !selectedCourseId" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition flex items-center gap-2">
                     <svg x-show="!isSubmitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     <svg x-show="isSubmitting" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span x-text="isSubmitting ? 'Menyimpan...' : 'Publikasikan Kuis'"></span>
+                    <span x-text="isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan Kuis' : 'Publikasikan Kuis')"></span>
                 </button>
             </div>
         </form>
@@ -284,6 +284,9 @@
                 selectedCourseId: @json((string) request('course_id', '')),
                 lockedCourseId: @json((string) request('course_id', '')),
                 courseLocked: false,
+                editMaterialId: @json((string) request('material_id', '')),
+                moduleId: @json((string) request('module_id', '')),
+                isEditMode: @json(request()->filled('edit_mode') || request()->filled('material_id')),
                 form: {
                     judul_modul: @json(request('modul_judul', '')),
                     durasi: @json(request('modul_durasi', 15)),
@@ -317,7 +320,7 @@
                 toast: { show: false, message: '', type: 'success' },
 
                 init() {
-                    this.fetchCourses();
+                    this.fetchCourses().then(() => this.loadExistingMaterial());
                     this.stripSeedQueryParams();
                 },
 
@@ -387,6 +390,73 @@
                     this.selectedCourseId = lockedId;
                     this.courses = [matchedCourse];
                     this.courseLocked = true;
+                },
+
+                normalizeLoadedQuestion(question) {
+                    if (!question || typeof question !== 'object') {
+                        return null;
+                    }
+
+                    const normalized = {
+                        id: question.id ?? Date.now() + Math.floor(Math.random() * 1000),
+                        type: question.type || 'pilihan_ganda',
+                        pertanyaan: question.pertanyaan || '',
+                        options: Array.isArray(question.options) ? question.options : ['', '', '', ''],
+                        correctAnswer: question.correctAnswer ?? 0,
+                        bobot: Number(question.bobot ?? 10),
+                        penjelasan: question.penjelasan || ''
+                    };
+
+                    if (normalized.type === 'benar_salah' && (!Array.isArray(normalized.options) || normalized.options.length < 2)) {
+                        normalized.options = ['Benar', 'Salah'];
+                    }
+
+                    return normalized;
+                },
+
+                async loadExistingMaterial() {
+                    if (!this.isEditMode || !this.selectedCourseId || !this.editMaterialId) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/dosen/kursus/${this.selectedCourseId}/material/${this.editMaterialId}`, {
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            return;
+                        }
+
+                        const data = await response.json();
+                        this.form.judul_modul = data?.judul_material || this.form.judul_modul;
+                        this.form.durasi = data?.durasi ?? this.form.durasi;
+
+                        const rawContent = data?.konten || '';
+                        let parsedContent = [];
+                        if (rawContent) {
+                            try {
+                                const decoded = JSON.parse(rawContent);
+                                parsedContent = Array.isArray(decoded) ? decoded : (Array.isArray(decoded?.questions) ? decoded.questions : []);
+                            } catch (error) {
+                                parsedContent = [];
+                            }
+                        }
+
+                        this.questions = parsedContent
+                            .map((item) => this.normalizeLoadedQuestion(item))
+                            .filter((item) => item !== null);
+
+                        if (!this.questions.length) {
+                            this.previewIndex = 0;
+                            this.selectedAnswer = null;
+                        }
+                    } catch (error) {
+                        console.error('Error loading existing quiz:', error);
+                    }
                 },
 
                 formatTime(seconds) {
@@ -491,11 +561,13 @@
                     }
 
                     const confirmResult = await showAppConfirm(
-                        'Kuis akan dipublikasikan ke kursus terpilih. Pastikan semua soal dan bobot nilainya sudah benar.',
-                        'Publikasikan kuis?',
+                        this.isEditMode
+                            ? 'Perubahan kuis akan mengganti soal lama pada modul ini.'
+                            : 'Kuis akan dipublikasikan ke kursus terpilih. Pastikan semua soal dan bobot nilainya sudah benar.',
+                        this.isEditMode ? 'Simpan perubahan kuis?' : 'Publikasikan kuis?',
                         {
                             icon: 'warning',
-                            confirmButtonText: 'Ya, publikasikan',
+                            confirmButtonText: this.isEditMode ? 'Ya, simpan' : 'Ya, publikasikan',
                             cancelButtonText: 'Cek lagi'
                         }
                     );
@@ -505,27 +577,44 @@
                     }
 
                     // Serialize questions to JSON string for storage in 'konten'
-                    this.form.konten = JSON.stringify(this.questions);
+                    const payload = {
+                        ...this.form,
+                        konten: JSON.stringify(this.questions)
+                    };
+
+                    if (this.moduleId) {
+                        payload.id_module = this.moduleId;
+                    }
 
                     this.isSubmitting = true;
                     try {
-                        const response = await fetch(`/dosen/api/courses/${this.selectedCourseId}/modules`, {
-                            method: 'POST',
+                        const endpoint = this.isEditMode
+                            ? `/dosen/api/courses/${this.selectedCourseId}/materials/${this.editMaterialId}`
+                            : `/dosen/api/courses/${this.selectedCourseId}/modules`;
+                        const method = this.isEditMode ? 'PUT' : 'POST';
+
+                        const response = await fetch(endpoint, {
+                            method,
                             credentials: 'same-origin',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             },
-                            body: JSON.stringify(this.form)
+                            body: JSON.stringify(payload)
                         });
                         
                         const data = await response.json();
 
                         if (response.ok && data.success) {
-                            this.showToast('Kursus berhasil diperbarui. Modul + kuis baru sudah ditambahkan.', 'success');
+                            const successMessage = this.isEditMode
+                                ? 'Kuis berhasil diperbarui.'
+                                : 'Kursus berhasil diperbarui. Modul + kuis baru sudah ditambahkan.';
+                            this.showToast(successMessage, 'success');
                             setTimeout(() => {
-                                window.location.href = `/dosen/kursus/${this.selectedCourseId}/modul`;
+                                window.location.href = this.isEditMode
+                                    ? `/dosen/kursus/${this.selectedCourseId}/edit`
+                                    : `/dosen/kursus/${this.selectedCourseId}/modul`;
                             }, 900);
                             return;
                         }

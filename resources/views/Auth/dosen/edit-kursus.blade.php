@@ -7,6 +7,8 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1">Perbarui informasi dan struktur materi kursus Anda</p>
     </div>
 
+    @php($isDraftCourse = strtolower((string) ($course->status ?? '')) === 'draft')
+
     @if(($course->kategori ?? '') === 'webinar' && ($course->approval_status ?? '') === 'pending')
     <div class="mb-6 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-900/10 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
         Webinar ini sedang menunggu persetujuan admin. Jika Anda menyimpan perubahan saat status tetap aktif, webinar akan tetap diajukan untuk review.
@@ -17,6 +19,12 @@
         @if(!empty($course->approval_notes))
             Catatan: {{ $course->approval_notes }}
         @endif
+    </div>
+    @endif
+
+    @if(!$isDraftCourse)
+    <div class="mb-6 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+        Kursus sudah dipublish. Perubahan modul/materi hanya bisa dilakukan saat status kursus masih Draft.
     </div>
     @endif
 
@@ -255,10 +263,27 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="openEditModuleModal({{ $module->id_module }}, '{{ $module->judul_module }}', '{{ $module->deskripsi }}')" class="p-2 text-gray-400 hover:text-blue-500 transition">
+                            @php($modulePrimaryMaterial = $module->materials->first())
+                            <button
+                                @if($isDraftCourse && $modulePrimaryMaterial)
+                                    onclick="redirectToTypedContentEditor('{{ $modulePrimaryMaterial->tipe }}', {{ $module->id_module }}, {{ $modulePrimaryMaterial->id_material }})"
+                                @else
+                                    type="button" disabled
+                                @endif
+                                class="p-2 text-gray-400 {{ $isDraftCourse && $modulePrimaryMaterial ? 'hover:text-blue-500 transition' : 'opacity-40 cursor-not-allowed' }}"
+                                title="{{ !$isDraftCourse ? 'Kursus sudah publish' : (!$modulePrimaryMaterial ? 'Belum ada materi untuk diedit' : 'Edit konten') }}"
+                            >
                                 <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                             </button>
-                            <button onclick="confirmDeleteModule({{ $module->id_module }})" class="p-2 text-gray-400 hover:text-red-500 transition">
+                            <button
+                                @if($isDraftCourse)
+                                    onclick="confirmDeleteModule({{ $module->id_module }})"
+                                @else
+                                    type="button" disabled
+                                @endif
+                                class="p-2 text-gray-400 {{ $isDraftCourse ? 'hover:text-red-500 transition' : 'opacity-40 cursor-not-allowed' }}"
+                                title="{{ $isDraftCourse ? 'Hapus modul' : 'Kursus sudah publish' }}"
+                            >
                                 <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                         </div>
@@ -270,6 +295,9 @@
                             @if($module->materials->count() === 0)
                                 <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-4">
                                     <h4 class="font-semibold text-blue-700 dark:text-blue-300 mb-3 text-base">Tambah Konten Awal</h4>
+                                    @if(!$isDraftCourse)
+                                        <p class="text-xs text-amber-600 dark:text-amber-300 mb-3">Kursus sudah dipublish, tambah konten dinonaktifkan.</p>
+                                    @endif
                                     <form action="{{ route('dosen.material.store', $course->id_course) }}" method="POST" class="initial-content-form" x-data="{ isLoading: false }" @submit="isLoading = true">
                                         @csrf
                                         <input type="hidden" name="id_module" value="{{ $module->id_module }}">
@@ -303,7 +331,7 @@
                                                 <input type="number" name="durasi" min="0" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                             </div>
                                         </div>
-                                        <button type="submit" class="initial-submit-btn w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition shadow shadow-blue-500/20">Setup Video</button>
+                                        <button type="submit" {{ !$isDraftCourse ? 'disabled' : '' }} class="initial-submit-btn w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition shadow shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed">Setup Video</button>
                                     </form>
                                 </div>
                             @endif
@@ -359,10 +387,26 @@
 
                                 {{-- Actions --}}
                                 <div class="flex items-center opacity-0 group-hover/material:opacity-100 transition-opacity">
-                                    <button onclick="openEditMaterialModal({{ $material->id_material }})" class="p-1.5 text-gray-400 hover:text-blue-500">
+                                    <button
+                                        @if($isDraftCourse)
+                                            onclick="redirectToTypedContentEditor('{{ $material->tipe }}', {{ $module->id_module }}, {{ $material->id_material }})"
+                                        @else
+                                            type="button" disabled
+                                        @endif
+                                        class="p-1.5 text-gray-400 {{ $isDraftCourse ? 'hover:text-blue-500' : 'opacity-40 cursor-not-allowed' }}"
+                                        title="{{ $isDraftCourse ? 'Edit materi' : 'Kursus sudah publish' }}"
+                                    >
                                         <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                     </button>
-                                    <button onclick="confirmDeleteMaterial({{ $material->id_material }})" class="p-1.5 text-gray-400 hover:text-red-500">
+                                    <button
+                                        @if($isDraftCourse)
+                                            onclick="confirmDeleteMaterial({{ $material->id_material }})"
+                                        @else
+                                            type="button" disabled
+                                        @endif
+                                        class="p-1.5 text-gray-400 {{ $isDraftCourse ? 'hover:text-red-500' : 'opacity-40 cursor-not-allowed' }}"
+                                        title="{{ $isDraftCourse ? 'Hapus materi' : 'Kursus sudah publish' }}"
+                                    >
                                         <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
                                 </div>
@@ -371,11 +415,11 @@
                         </div>
 
                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <button onclick="openAddMaterialModal({{ $module->id_module }})" class="w-full flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 bg-white dark:bg-gray-800 transition">
+                            <button onclick="openAddMaterialModal({{ $module->id_module }})" {{ !$isDraftCourse ? 'disabled' : '' }} class="w-full flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 bg-white dark:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed">
                                 <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                                 Tambah Konten
                             </button>
-                            <button onclick="openAddFinalTaskModal({{ $module->id_module }})" class="w-full flex items-center justify-center gap-2 text-sm text-purple-700 dark:text-purple-300 font-medium px-4 py-2.5 border border-purple-200 dark:border-purple-600/40 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition">
+                            <button onclick="openAddFinalTaskModal({{ $module->id_module }})" {{ !$isDraftCourse ? 'disabled' : '' }} class="w-full flex items-center justify-center gap-2 text-sm text-purple-700 dark:text-purple-300 font-medium px-4 py-2.5 border border-purple-200 dark:border-purple-600/40 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition disabled:opacity-40 disabled:cursor-not-allowed">
                                 <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M8 4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" /></svg>
                                 Tambah Tugas Akhir (Opsional)
                             </button>
@@ -395,7 +439,7 @@
                 @endforelse
             </div>
 
-            <button onclick="openAddModuleModal()" class="w-full mt-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 text-base transition shadow-lg shadow-blue-500/30">
+            <button onclick="openAddModuleModal()" {{ !$isDraftCourse ? 'disabled' : '' }} class="w-full mt-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 text-base transition shadow-lg shadow-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed">
                 <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -622,12 +666,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script>
         const courseId = {{ $course->id_course }};
+        const courseIsDraft = @json($isDraftCourse);
         const typedContentRoutes = {
             video: @json(route('dosen.kelola-video')),
             bacaan: @json(route('dosen.kelola-bacaan')),
             kuis: @json(route('dosen.kelola-quiz')),
             tugas: @json(route('dosen.kelola-tugas')),
         };
+
+        function showDraftOnlyLockMessage() {
+            alert('Kursus sudah dipublish. Perubahan modul hanya bisa saat status draft.');
+        }
 
         function normalizeMaterialType(type) {
             const value = (type || '').toLowerCase();
@@ -835,6 +884,11 @@
         }
 
         function redirectToTypedContentSetup(form, rawType) {
+            if (!courseIsDraft) {
+                showDraftOnlyLockMessage();
+                return false;
+            }
+
             const selectedType = normalizeMaterialType(rawType);
             const targetRoute = typedContentRoutes[selectedType];
 
@@ -858,16 +912,41 @@
             const konten = form.querySelector('textarea[name="konten"]')?.value?.trim();
             const durasi = form.querySelector('input[name="durasi"]')?.value;
             const videoUrl = form.querySelector('input[name="video_url"]')?.value?.trim();
+            const moduleId = form.querySelector('input[name="id_module"]')?.value;
 
             if (konten) params.set('modul_konten', konten);
             if (durasi !== undefined && durasi !== null && durasi !== '') {
                 params.set('modul_durasi', durasi);
             }
             if (videoUrl) params.set('modul_video_url', videoUrl);
+            if (moduleId) params.set('module_id', moduleId);
 
             const query = params.toString();
             window.location.href = query ? `${targetRoute}?${query}` : targetRoute;
             return false;
+        }
+
+        function redirectToTypedContentEditor(rawType, moduleId, materialId) {
+            if (!courseIsDraft) {
+                showDraftOnlyLockMessage();
+                return;
+            }
+
+            const selectedType = normalizeMaterialType(rawType);
+            const targetRoute = typedContentRoutes[selectedType];
+
+            if (!targetRoute || !materialId) {
+                alert('Materi belum tersedia untuk diedit.');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.set('course_id', String(courseId));
+            params.set('material_id', String(materialId));
+            if (moduleId) params.set('module_id', String(moduleId));
+            params.set('edit_mode', '1');
+
+            window.location.href = `${targetRoute}?${params.toString()}`;
         }
 
         function handleAddMaterialSubmit(event) {
@@ -885,7 +964,7 @@
 
         // Initialize Sortable for Modules
         var modulesList = document.getElementById('modulesList');
-        if(modulesList) {
+        if(modulesList && courseIsDraft) {
             Sortable.create(modulesList, {
                 handle: '.module-handle',
                 animation: 150,
@@ -909,38 +988,44 @@
         }
 
         // Initialize Sortable for Materials (within each module)
-        document.querySelectorAll('.materials-list').forEach(function(list) {
-            Sortable.create(list, {
-                group: 'materials', // Allow dragging between modules if needed (optional)
-                handle: '.material-handle',
-                animation: 150,
-                ghostClass: 'bg-blue-50',
-                onEnd: function (evt) {
-                    var moduleId = evt.to.getAttribute('data-module-id');
-                    var order = [];
-                    evt.to.querySelectorAll('[data-material-id]').forEach(function(item) {
-                        order.push(item.getAttribute('data-material-id'));
-                    });
+        if (courseIsDraft) {
+            document.querySelectorAll('.materials-list').forEach(function(list) {
+                Sortable.create(list, {
+                    group: 'materials', // Allow dragging between modules if needed (optional)
+                    handle: '.material-handle',
+                    animation: 150,
+                    ghostClass: 'bg-blue-50',
+                    onEnd: function (evt) {
+                        var moduleId = evt.to.getAttribute('data-module-id');
+                        var order = [];
+                        evt.to.querySelectorAll('[data-material-id]').forEach(function(item) {
+                            order.push(item.getAttribute('data-material-id'));
+                        });
 
-                    // TODO: Handle move between modules if 'group' is enabled.
-                    // For now assuming reorder within module. 
-                    // If we support moving between modules, we need an endpoint that accepts module_id too.
-                    // Using existing reorder endpoint which just updates urutan.
-                    
-                    fetch(`{{ route('dosen.material.reorder', $course->id_course) }}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({ order: order }) // Should probably send module_id too?
-                    });
-                },
+                        // TODO: Handle move between modules if 'group' is enabled.
+                        // For now assuming reorder within module.
+                        // If we support moving between modules, we need an endpoint that accepts module_id too.
+                        // Using existing reorder endpoint which just updates urutan.
+
+                        fetch(`{{ route('dosen.material.reorder', $course->id_course) }}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ order: order }) // Should probably send module_id too?
+                        });
+                    },
+                });
             });
-        });
+        }
 
         // Module Modal Functions
         function openAddModuleModal() {
+            if (!courseIsDraft) {
+                showDraftOnlyLockMessage();
+                return;
+            }
             document.getElementById('addModuleModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -962,6 +1047,10 @@
         }
 
         function confirmDeleteModule(id) {
+            if (!courseIsDraft) {
+                showDraftOnlyLockMessage();
+                return;
+            }
             document.getElementById('deleteModuleForm').action = `/dosen/kursus/${courseId}/module/${id}`;
             document.getElementById('deleteModuleModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
@@ -973,6 +1062,10 @@
 
         // Material Modal Functions
         function openAddMaterialModal(moduleId, preferredType = 'video') {
+            if (!courseIsDraft) {
+                showDraftOnlyLockMessage();
+                return;
+            }
             const form = document.getElementById('addMaterialForm');
             if (form) {
                 form.reset();
@@ -996,6 +1089,10 @@
         }
 
         function openEditMaterialModal(id) {
+            if (!courseIsDraft) {
+                showDraftOnlyLockMessage();
+                return;
+            }
             fetch(`/dosen/kursus/${courseId}/material/${id}`)
                 .then(res => res.json())
                 .then(data => {
@@ -1039,6 +1136,10 @@
         });
 
         function confirmDeleteMaterial(id) {
+            if (!courseIsDraft) {
+                showDraftOnlyLockMessage();
+                return;
+            }
             document.getElementById('deleteMaterialForm').action = `/dosen/kursus/${courseId}/material/${id}`;
             document.getElementById('deleteMaterialModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';

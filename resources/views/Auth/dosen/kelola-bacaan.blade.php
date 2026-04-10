@@ -10,8 +10,8 @@
         </div>
 
         <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Kelola Bacaan</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">Buat dan kelola materi bacaan untuk modul pembelajaran</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ request('material_id') ? 'Edit Bacaan' : 'Kelola Bacaan' }}</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">{{ request('material_id') ? 'Perbarui materi bacaan pada modul yang dipilih.' : 'Buat dan kelola materi bacaan untuk modul pembelajaran' }}</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -175,7 +175,7 @@
             <button type="button" @click="saveBacaan()" :disabled="isSubmitting || !selectedCourseId" class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition flex items-center gap-2">
                 <svg x-show="!isSubmitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 <svg x-show="isSubmitting" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span x-text="isSubmitting ? 'Menyimpan...' : 'Publikasikan Bacaan'"></span>
+                <span x-text="isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan Bacaan' : 'Publikasikan Bacaan')"></span>
             </button>
         </div>
     </div>
@@ -190,6 +190,9 @@
                 selectedCourseId: @json((string) request('course_id', '')),
                 lockedCourseId: @json((string) request('course_id', '')),
                 courseLocked: false,
+                editMaterialId: @json((string) request('material_id', '')),
+                moduleId: @json((string) request('module_id', '')),
+                isEditMode: @json(request()->filled('edit_mode') || request()->filled('material_id')),
                 form: {
                     judul_modul: @json(request('modul_judul', '')),
                     konten: @json(request('modul_konten', '')),
@@ -199,10 +202,11 @@
                 },
                 lampiranFile: null,
                 lampiranFileName: '',
+                existingLampiranUrl: '',
 
                 init() {
                     this.ensureReferenceField();
-                    this.fetchCourses();
+                    this.fetchCourses().then(() => this.loadExistingMaterial());
                 },
 
                 ensureReferenceField() {
@@ -240,6 +244,7 @@
                 clearLampiran() {
                     this.lampiranFile = null;
                     this.lampiranFileName = '';
+                    this.existingLampiranUrl = '';
                     if (this.$refs.lampiranInput) {
                         this.$refs.lampiranInput.value = '';
                     }
@@ -304,6 +309,41 @@
                     this.courseLocked = true;
                 },
 
+                async loadExistingMaterial() {
+                    if (!this.isEditMode || !this.selectedCourseId || !this.editMaterialId) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/dosen/kursus/${this.selectedCourseId}/material/${this.editMaterialId}`, {
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            return;
+                        }
+
+                        const data = await response.json();
+                        this.form.judul_modul = data?.judul_material || this.form.judul_modul;
+                        this.form.konten = data?.konten || '';
+                        this.form.durasi = data?.durasi ?? this.form.durasi;
+
+                        const references = Array.isArray(data?.sumber_referensi) ? data.sumber_referensi : [];
+                        this.form.sumber_referensi = references.length ? references : [''];
+
+                        this.existingLampiranUrl = data?.lampiran_url || '';
+                        if (this.existingLampiranUrl) {
+                            const pathParts = String(this.existingLampiranUrl).split('/');
+                            this.lampiranFileName = pathParts[pathParts.length - 1] || 'Lampiran tersimpan';
+                        }
+                    } catch (error) {
+                        console.error('Error loading existing material:', error);
+                    }
+                },
+
                 async saveBacaan() {
                     if (!this.selectedCourseId) {
                         alert('Mohon pilih kursus terlebih dahulu.');
@@ -321,6 +361,9 @@
                         formData.append('tipe', this.form.tipe);
                         formData.append('konten', this.form.konten ?? '');
                         formData.append('durasi', this.form.durasi ?? 10);
+                        if (this.moduleId) {
+                            formData.append('id_module', this.moduleId);
+                        }
 
                         this.normalizedReferences().forEach((url) => {
                             formData.append('sumber_referensi[]', url);
@@ -328,10 +371,20 @@
 
                         if (this.lampiranFile) {
                             formData.append('lampiran_file', this.lampiranFile);
+                        } else if (this.isEditMode && !this.existingLampiranUrl) {
+                            formData.append('remove_lampiran', '1');
                         }
 
-                        const response = await fetch(`/dosen/api/courses/${this.selectedCourseId}/modules`, {
-                            method: 'POST',
+                        const endpoint = this.isEditMode
+                            ? `/dosen/api/courses/${this.selectedCourseId}/materials/${this.editMaterialId}`
+                            : `/dosen/api/courses/${this.selectedCourseId}/modules`;
+                        const method = this.isEditMode ? 'POST' : 'POST';
+                        if (this.isEditMode) {
+                            formData.append('_method', 'PUT');
+                        }
+
+                        const response = await fetch(endpoint, {
+                            method,
                             credentials: 'same-origin',
                             headers: {
                                 'Accept': 'application/json',
@@ -343,6 +396,12 @@
                         const data = await response.json();
                         
                         if (response.ok && data.success) {
+                            if (this.isEditMode) {
+                                alert('Materi Bacaan berhasil diperbarui!');
+                                window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
+                                return;
+                            }
+
                             alert('Materi Bacaan berhasil ditambahkan!');
                             // Reset form
                             this.form.judul_modul = '';
