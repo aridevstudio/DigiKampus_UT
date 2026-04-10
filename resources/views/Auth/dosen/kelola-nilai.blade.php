@@ -17,6 +17,15 @@
     ];
 @endphp
 
+@push('styles')
+    <style>
+        .grade-manager-shell :is(button, input, select, textarea):focus-visible {
+            outline: 2px solid rgb(59 130 246 / 0.75);
+            outline-offset: 1px;
+        }
+    </style>
+@endpush
+
 <x-layouts.dosen title="Mengelola Nilai" active="nilai">
     <div
         x-data="gradeManager({
@@ -27,7 +36,7 @@
             api: @js($gradeApi),
         })"
         x-init="init()"
-        class="space-y-6"
+        class="grade-manager-shell space-y-7 pb-6"
     >
         @if(request('source') === 'bootcamp')
             <div class="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200">
@@ -44,7 +53,7 @@
                     </span>
                     <h1 class="mt-4 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">Mengelola Nilai Mahasiswa</h1>
                     <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-gray-300 sm:text-base">
-                        Flow halaman ini saya rapikan jadi satu workspace: pilih course, kunci komposisi nilai, review mahasiswa yang bermasalah, lalu publish saat draft sudah siap.
+                        Workflow penilaian diringkas dalam satu halaman: pilih course aktif, validasi komposisi bobot, review mahasiswa pending, lalu publish ketika checklist selesai.
                     </p>
 
                     <div class="mt-5 grid gap-3 sm:grid-cols-3">
@@ -62,6 +71,25 @@
                             <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Langkah 3</p>
                             <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Review dan Publish</p>
                             <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-gray-400">Cek mahasiswa pending, simpan draft, lalu publish ketika semua siap.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div class="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/60">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Mahasiswa Aktif</p>
+                            <p class="mt-2 text-xl font-bold text-slate-900 dark:text-white" x-text="activeCourse.students"></p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/60">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Baris Ditampilkan</p>
+                            <p class="mt-2 text-xl font-bold text-slate-900 dark:text-white" x-text="filteredRows.length"></p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/60">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Pending Review</p>
+                            <p class="mt-2 text-xl font-bold text-amber-600 dark:text-amber-300" x-text="coursePendingCount"></p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/60">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Bobot Aktif</p>
+                            <p class="mt-2 text-xl font-bold" :class="activeWeightTotal === 100 ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'" x-text="`${activeWeightTotal}%`"></p>
                         </div>
                     </div>
                 </div>
@@ -126,12 +154,12 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-2 sm:grid-cols-3 lg:w-[430px]">
+                        <div class="flex flex-wrap gap-2 lg:max-w-[560px]">
                             <template x-for="course in courses" :key="course.id">
                                 <button
                                     type="button"
                                     @click="setCourse(course.id)"
-                                    class="rounded-2xl border px-3 py-3 text-left transition"
+                                    class="min-w-[150px] flex-1 rounded-2xl border px-3 py-3 text-left transition"
                                     :class="selectedCourse === course.id
                                         ? 'border-blue-400 bg-blue-50 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10'
                                         : 'border-slate-200 bg-slate-50 hover:border-slate-300 dark:border-gray-700 dark:bg-gray-900/40'"
@@ -204,7 +232,7 @@
                         </div>
                     </div>
 
-                    <div class="mt-5 hidden overflow-x-auto xl:block">
+                    <div x-show="filteredRows.length > 0" class="mt-5 hidden overflow-x-auto xl:block">
                         <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-gray-700">
                             <thead class="bg-slate-50 dark:bg-gray-900/40">
                                 <tr>
@@ -282,7 +310,7 @@
                         </table>
                     </div>
 
-                    <div class="mt-5 grid gap-4 xl:hidden">
+                    <div x-show="filteredRows.length > 0" class="mt-5 grid gap-4 xl:hidden">
                         <template x-for="row in filteredRows" :key="`${getRowKey(row)}-mobile`">
                             <article
                                 class="rounded-3xl border p-4 transition"
@@ -347,6 +375,14 @@
                                 </div>
                             </article>
                         </template>
+                    </div>
+
+                    <div
+                        x-show="filteredRows.length === 0"
+                        class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center dark:border-gray-700 dark:bg-gray-900/40"
+                    >
+                        <p class="text-sm font-semibold text-slate-900 dark:text-white">Tidak ada data mahasiswa pada filter ini</p>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Ubah kata kunci pencarian atau pilih status lain untuk menampilkan data.</p>
                     </div>
                 </div>
             </div>
@@ -499,6 +535,13 @@
                         </div>
                         <span x-show="selectedRow" class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" :class="selectedRow ? statusTone[selectedRow.status] : 'hidden'" x-text="selectedRow ? selectedRow.status : ''"></span>
                     </div>
+
+                    <template x-if="!selectedRow">
+                        <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center dark:border-gray-700 dark:bg-gray-900/40">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Belum ada mahasiswa dipilih</p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Pilih satu mahasiswa di tabel review untuk melihat detail skor dan catatan evaluasi.</p>
+                        </div>
+                    </template>
 
                     <template x-if="selectedRow">
                         <div class="mt-5">
