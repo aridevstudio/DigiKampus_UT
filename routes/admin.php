@@ -151,7 +151,8 @@ Route::prefix('admin')
         Route::delete('/messages/{messageId}', [AdminController::class, 'deleteChatMessage'])->name('admin.messages.delete');
         Route::post('/messages/conversation/{conversationId}/purge-role', [AdminController::class, 'purgeChatByRole'])->name('admin.messages.purgeRole');
         Route::delete('/messages/conversations/{conversationId}', [AdminController::class, 'deleteChatConversation'])->name('admin.messages.conversation.delete');
-        Route::view('/finance-report', 'Auth.admin.finance-report')->name('admin.finance-report');
+        Route::get('/finance-report', [AdminController::class, 'showFinanceReport'])->name('admin.finance-report');
+        Route::get('/finance-report/export', [AdminController::class, 'exportFinanceReportExcel'])->name('admin.finance-report.export');
 
         Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('admin.pengumuman.store');
         Route::get('/pengumuman/{id}', [AdminController::class, 'getPengumuman'])->name('admin.pengumuman.get');

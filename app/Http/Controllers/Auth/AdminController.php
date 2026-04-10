@@ -14,6 +14,7 @@ use App\Models\DosenNotification;
 use App\Models\Jurusan;
 use App\Models\Message;
 use App\Models\Notification;
+use App\Models\PaymentTransactionItem;
 use App\Models\Profile;
 use App\Models\SupportTicket;
 use App\Models\User;
@@ -3845,6 +3846,261 @@ class AdminController extends Controller
             'statusFilter' => $statusFilter,
             'search' => $search,
         ]);
+    }
+
+    public function showFinanceReport()
+    {
+        $financeReportData = $this->buildFinanceReportData();
+
+        return view('Auth.admin.finance-report', [
+            'financeReportData' => $financeReportData,
+            'financeSummary' => $financeReportData['summary'],
+            'financeChartPayload' => $financeReportData['chartPayload'],
+            'financeTopProducts' => $financeReportData['topProducts'],
+        ]);
+    }
+
+    public function exportFinanceReportExcel()
+    {
+        $financeReportData = $this->buildFinanceReportData();
+        $summary = $financeReportData['summary'];
+        $topProducts = $financeReportData['topProducts'];
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $summarySheet = $spreadsheet->getActiveSheet();
+        $summarySheet->setTitle('Ringkasan');
+
+        $summarySheet->fromArray([
+            ['Finance Report', '', '', ''],
+            ['Periode', $summary['periodLabel'], '', ''],
+            ['Dibuat Pada', $summary['generatedAt'], '', ''],
+            ['', '', '', ''],
+            ['Metrik', 'Nilai', 'Metrik', 'Nilai'],
+            ['Total Revenue', (float) $summary['totalRevenue'], 'Kursus', (float) $summary['channels']['kursus']],
+            ['Growth vs Bulan Lalu', $summary['momPercent'] . '%', 'Webinar', (float) $summary['channels']['webinar']],
+            ['', '', 'Tiket', (float) $summary['channels']['tiket']],
+        ], null, 'A1');
+
+        $summarySheet->getStyle('A1:D1')->getFont()->setBold(true)->setSize(13);
+        $summarySheet->getStyle('A5:D5')->getFont()->setBold(true);
+        $summarySheet->getStyle('B6:B7')->getNumberFormat()->setFormatCode('#,##0');
+        $summarySheet->getStyle('D6:D8')->getNumberFormat()->setFormatCode('#,##0');
+        foreach (range('A', 'D') as $column) {
+            $summarySheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $trendSheet = $spreadsheet->createSheet();
+        $trendSheet->setTitle('Trend 6 Bulan');
+        $trendSheet->setCellValue('A1', 'Bulan');
+        $trendSheet->setCellValue('B1', 'Revenue');
+        $trendSheet->getStyle('A1:B1')->getFont()->setBold(true);
+
+        foreach ($financeReportData['monthlySeries'] as $index => $series) {
+            $row = $index + 2;
+            $trendSheet->setCellValue("A{$row}", $series['label']);
+            $trendSheet->setCellValue("B{$row}", (float) $series['revenue']);
+        }
+        $trendSheet->getStyle('B2:B1000')->getNumberFormat()->setFormatCode('#,##0');
+        foreach (range('A', 'B') as $column) {
+            $trendSheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $productSheet = $spreadsheet->createSheet();
+        $productSheet->setTitle('Top Produk');
+        $productSheet->fromArray([
+            ['Produk', 'Kategori', 'Transaksi', 'Revenue'],
+        ], null, 'A1');
+        $productSheet->getStyle('A1:D1')->getFont()->setBold(true);
+
+        foreach ($topProducts as $index => $product) {
+            $row = $index + 2;
+            $productSheet->setCellValue("A{$row}", $product['name']);
+            $productSheet->setCellValue("B{$row}", $product['type']);
+            $productSheet->setCellValue("C{$row}", (int) $product['tx']);
+            $productSheet->setCellValue("D{$row}", (float) $product['revenue']);
+        }
+
+        $productSheet->getStyle('C2:C1000')->getNumberFormat()->setFormatCode('#,##0');
+        $productSheet->getStyle('D2:D1000')->getNumberFormat()->setFormatCode('#,##0');
+        foreach (range('A', 'D') as $column) {
+            $productSheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = 'Finance_Report_' . now()->format('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function buildFinanceReportData(): array
+    {
+        $now = now();
+        $startMonth = $now->copy()->startOfMonth()->subMonths(5);
+        $endMonth = $now->copy()->endOfMonth();
+
+        $monthlyRows = $this->baseFinanceItemQuery($startMonth, $endMonth)
+            ->selectRaw("DATE_FORMAT(COALESCE(pt.paid_at, pt.updated_at, pt.created_at), '%Y-%m') as month_key")
+            ->selectRaw('SUM(payment_transaction_items.price) as total_revenue')
+            ->groupBy('month_key')
+            ->orderBy('month_key')
+            ->pluck('total_revenue', 'month_key');
+
+        $channelRows = $this->baseFinanceItemQuery($startMonth, $endMonth)
+            ->selectRaw("LOWER(COALESCE(NULLIF(c.kategori, ''), 'kursus')) as kategori")
+            ->selectRaw('SUM(payment_transaction_items.price) as total_revenue')
+            ->groupBy('kategori')
+            ->get();
+
+        $channelTotals = [
+            'kursus' => 0.0,
+            'webinar' => 0.0,
+            'tiket' => 0.0,
+        ];
+
+        foreach ($channelRows as $row) {
+            $kategori = $this->normalizeFinanceCategory($row->kategori ?? null);
+            $channelTotals[$kategori] += (float) $row->total_revenue;
+        }
+
+        $monthlyLabels = [];
+        $monthlyRevenue = [];
+        $monthlySeries = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $monthDate = $now->copy()->startOfMonth()->subMonths($i);
+            $monthKey = $monthDate->format('Y-m');
+            $label = $this->financeShortMonthLabel($monthDate);
+            $revenue = (float) ($monthlyRows[$monthKey] ?? 0);
+
+            $monthlyLabels[] = $label;
+            $monthlyRevenue[] = (int) round($revenue);
+            $monthlySeries[] = [
+                'key' => $monthKey,
+                'label' => $label,
+                'revenue' => (int) round($revenue),
+            ];
+        }
+
+        $topProducts = $this->baseFinanceItemQuery($startMonth, $endMonth)
+            ->selectRaw('payment_transaction_items.id_course')
+            ->selectRaw('MAX(payment_transaction_items.course_name) as course_name')
+            ->selectRaw("LOWER(COALESCE(NULLIF(c.kategori, ''), 'kursus')) as kategori")
+            ->selectRaw('COUNT(payment_transaction_items.id_payment_transaction_item) as transaksi')
+            ->selectRaw('SUM(payment_transaction_items.price) as revenue')
+            ->groupBy('payment_transaction_items.id_course', 'kategori')
+            ->orderByDesc('revenue')
+            ->limit(10)
+            ->get()
+            ->map(function ($row) {
+                $kategori = $this->normalizeFinanceCategory($row->kategori ?? null);
+                return [
+                    'id_course' => (int) $row->id_course,
+                    'name' => (string) $row->course_name,
+                    'category' => $kategori,
+                    'type' => $this->financeCategoryLabel($kategori),
+                    'tx' => (int) $row->transaksi,
+                    'revenue' => (int) round((float) $row->revenue),
+                ];
+            })
+            ->values()
+            ->all();
+
+        $currentMonthRevenue = (float) ($monthlyRows[$now->format('Y-m')] ?? 0);
+        $previousMonthRevenue = (float) ($monthlyRows[$now->copy()->subMonth()->format('Y-m')] ?? 0);
+        $momPercent = $previousMonthRevenue > 0
+            ? (($currentMonthRevenue - $previousMonthRevenue) / $previousMonthRevenue) * 100
+            : ($currentMonthRevenue > 0 ? 100.0 : 0.0);
+
+        $totalRevenue = $channelTotals['kursus'] + $channelTotals['webinar'] + $channelTotals['tiket'];
+
+        return [
+            'summary' => [
+                'totalRevenue' => (int) round($totalRevenue),
+                'channels' => [
+                    'kursus' => (int) round($channelTotals['kursus']),
+                    'webinar' => (int) round($channelTotals['webinar']),
+                    'tiket' => (int) round($channelTotals['tiket']),
+                ],
+                'momPercent' => round($momPercent, 1),
+                'periodLabel' => $this->financeShortMonthLabel($startMonth) . ' - ' . $this->financeShortMonthLabel($endMonth),
+                'generatedAt' => now()->format('d M Y H:i'),
+            ],
+            'chartPayload' => [
+                'monthlyRevenue' => $monthlyRevenue,
+                'monthlyLabels' => $monthlyLabels,
+                'channels' => [
+                    'kursus' => (int) round($channelTotals['kursus']),
+                    'webinar' => (int) round($channelTotals['webinar']),
+                    'tiket' => (int) round($channelTotals['tiket']),
+                ],
+                'topProducts' => array_map(function (array $product) {
+                    return [
+                        'name' => $product['name'],
+                        'type' => $product['type'],
+                        'tx' => $product['tx'],
+                        'revenue' => $product['revenue'],
+                    ];
+                }, $topProducts),
+            ],
+            'topProducts' => $topProducts,
+            'monthlySeries' => $monthlySeries,
+        ];
+    }
+
+    private function baseFinanceItemQuery($startDate, $endDate)
+    {
+        return PaymentTransactionItem::query()
+            ->join('payment_transactions as pt', 'payment_transaction_items.id_payment_transaction', '=', 'pt.id_payment_transaction')
+            ->join('courses as c', 'payment_transaction_items.id_course', '=', 'c.id_course')
+            ->whereIn('pt.transaction_status', ['settlement', 'capture'])
+            ->where(function ($query) {
+                $query->whereNull('pt.fraud_status')
+                    ->orWhere('pt.fraud_status', '!=', 'challenge');
+            })
+            ->whereBetween(DB::raw('COALESCE(pt.paid_at, pt.updated_at, pt.created_at)'), [$startDate, $endDate]);
+    }
+
+    private function normalizeFinanceCategory(?string $category): string
+    {
+        $normalized = strtolower(trim((string) $category));
+        return match ($normalized) {
+            'webinar' => 'webinar',
+            'tiket', 'ticket' => 'tiket',
+            default => 'kursus',
+        };
+    }
+
+    private function financeCategoryLabel(string $category): string
+    {
+        return match ($category) {
+            'webinar' => 'Webinar',
+            'tiket' => 'Tiket',
+            default => 'Kursus',
+        };
+    }
+
+    private function financeShortMonthLabel($date): string
+    {
+        $months = [
+            1 => 'Jan',
+            2 => 'Feb',
+            3 => 'Mar',
+            4 => 'Apr',
+            5 => 'Mei',
+            6 => 'Jun',
+            7 => 'Jul',
+            8 => 'Agu',
+            9 => 'Sep',
+            10 => 'Okt',
+            11 => 'Nov',
+            12 => 'Des',
+        ];
+
+        $monthNumber = (int) $date->format('n');
+        return $months[$monthNumber] ?? $date->format('M');
     }
 
     /**

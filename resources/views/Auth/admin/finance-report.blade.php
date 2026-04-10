@@ -1,7 +1,15 @@
 <x-layouts.admin title="Finance Report" active="finance-report">
+    @php
+        $momPercent = (float) ($financeSummary['momPercent'] ?? 0);
+        $momClass = $momPercent >= 0
+            ? 'text-emerald-600 dark:text-emerald-400'
+            : 'text-rose-600 dark:text-rose-400';
+        $momPrefix = $momPercent > 0 ? '+' : '';
+    @endphp
+
     <div class="mb-4 sm:mb-6 lg:mb-8">
         <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">Finance Report</h1>
-        <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400">Ringkasan pendapatan platform dari kursus, webinar, dan tiket (frontend demo).</p>
+        <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400">Ringkasan pendapatan platform dari kursus, webinar, dan tiket berbasis transaksi pembayaran berhasil.</p>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-4 sm:mb-6 lg:mb-8">
@@ -9,18 +17,18 @@
             <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                     <h2 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">Finance Report</h2>
-                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Data pendapatan gabungan ditampilkan sebagai simulasi frontend.</p>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Data live dari transaksi dengan status settlement/capture.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <button id="financeExportBtn" type="button" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium transition">
+                    <a href="{{ route('admin.finance-report.export') }}" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
                         </svg>
                         Export Excel
-                    </button>
-                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">Bulan Ini</span>
-                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">Q1 2026</span>
-                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">Data Demo</span>
+                    </a>
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">6 Bulan Terakhir</span>
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ $financeSummary['periodLabel'] ?? '-' }}</span>
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">Live Data</span>
                 </div>
             </div>
         </div>
@@ -29,22 +37,22 @@
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div class="rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-700/20 p-3 sm:p-4">
                     <p class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Revenue</p>
-                    <p id="finance-total-revenue" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp 0</p>
-                    <p class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">+12.5% vs bulan lalu</p>
+                    <p id="finance-total-revenue" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp {{ number_format($financeSummary['totalRevenue'] ?? 0, 0, ',', '.') }}</p>
+                    <p class="text-[11px] {{ $momClass }} mt-1">{{ $momPrefix }}{{ number_format($momPercent, 1, ',', '.') }}% vs bulan lalu</p>
                 </div>
                 <div class="rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-700/20 p-3 sm:p-4">
                     <p class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kursus</p>
-                    <p id="finance-rev-course" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp 0</p>
+                    <p id="finance-rev-course" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp {{ number_format($financeSummary['channels']['kursus'] ?? 0, 0, ',', '.') }}</p>
                     <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Kontribusi utama</p>
                 </div>
                 <div class="rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-700/20 p-3 sm:p-4">
                     <p class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Webinar</p>
-                    <p id="finance-rev-webinar" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp 0</p>
+                    <p id="finance-rev-webinar" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp {{ number_format($financeSummary['channels']['webinar'] ?? 0, 0, ',', '.') }}</p>
                     <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Live event income</p>
                 </div>
                 <div class="rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-700/20 p-3 sm:p-4">
                     <p class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tiket Event</p>
-                    <p id="finance-rev-ticket" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp 0</p>
+                    <p id="finance-rev-ticket" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp {{ number_format($financeSummary['channels']['tiket'] ?? 0, 0, ',', '.') }}</p>
                     <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Seminar/workshop</p>
                 </div>
             </div>
@@ -102,18 +110,7 @@
         let financeCompositionChart = null;
         let financeChannelBarChart = null;
 
-        const financeData = {
-            monthlyRevenue: [72500000, 81200000, 79800000, 90500000, 101500000, 112300000],
-            monthlyLabels: ['Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar'],
-            channels: { kursus: 67400000, webinar: 27800000, tiket: 17100000 },
-            topProducts: [
-                { name: 'Kursus Data Analyst Pro', type: 'Kursus', tx: 142, revenue: 35500000 },
-                { name: 'Webinar AI for Campus', type: 'Webinar', tx: 224, revenue: 21400000 },
-                { name: 'Tiket Seminar EduTech 2026', type: 'Tiket', tx: 87, revenue: 17100000 },
-                { name: 'Kursus UI/UX Dasar', type: 'Kursus', tx: 96, revenue: 18200000 },
-                { name: 'Webinar Product Management', type: 'Webinar', tx: 73, revenue: 6400000 },
-            ]
-        };
+        const financeData = @json($financeChartPayload ?? ['monthlyRevenue' => [], 'monthlyLabels' => [], 'channels' => ['kursus' => 0, 'webinar' => 0, 'tiket' => 0], 'topProducts' => []]);
 
         function formatRupiah(value) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
@@ -127,6 +124,17 @@
             document.getElementById('finance-rev-ticket').textContent = formatRupiah(financeData.channels.tiket);
 
             const body = document.getElementById('finance-top-products-body');
+            if (!financeData.topProducts || financeData.topProducts.length === 0) {
+                body.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                            Belum ada transaksi sukses pada periode ini.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
             body.innerHTML = financeData.topProducts.map((item) => `
                 <tr class="hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-colors">
                     <td class="px-4 py-3"><p class="font-medium text-gray-800 dark:text-white">${item.name}</p></td>
@@ -139,35 +147,6 @@
                     <td class="px-4 py-3 font-semibold text-gray-800 dark:text-white">${formatRupiah(item.revenue)}</td>
                 </tr>
             `).join('');
-        }
-
-        function exportFinanceToExcel() {
-            const total = financeData.channels.kursus + financeData.channels.webinar + financeData.channels.tiket;
-            const rows = financeData.topProducts.map((item) => `<tr><td>${item.name}</td><td>${item.type}</td><td>${item.tx}</td><td>${item.revenue}</td></tr>`).join('');
-            const html = `
-                <html><head><meta charset="UTF-8"></head><body>
-                <table border="1">
-                    <tr><th colspan="2">Finance Summary</th></tr>
-                    <tr><td>Total Revenue</td><td>${total}</td></tr>
-                    <tr><td>Revenue Kursus</td><td>${financeData.channels.kursus}</td></tr>
-                    <tr><td>Revenue Webinar</td><td>${financeData.channels.webinar}</td></tr>
-                    <tr><td>Revenue Tiket</td><td>${financeData.channels.tiket}</td></tr>
-                </table><br/>
-                <table border="1">
-                    <tr><th>Produk</th><th>Kategori</th><th>Transaksi</th><th>Revenue</th></tr>
-                    ${rows}
-                </table>
-                </body></html>
-            `;
-            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `finance-report-${new Date().toISOString().slice(0, 10)}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
         }
 
         function getFinanceRevenueConfig() {
@@ -210,7 +189,6 @@
 
         initFinanceSummary();
         renderCharts();
-        document.getElementById('financeExportBtn')?.addEventListener('click', exportFinanceToExcel);
 
         let resizeTimer;
         window.addEventListener('resize', function() {
