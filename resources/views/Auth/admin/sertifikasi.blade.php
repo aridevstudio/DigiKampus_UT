@@ -10,28 +10,53 @@
         data-certificate-store-url='{{ route('admin.sertifikasi.certificates.store', [], false) }}'
         data-certificate-update-url='{{ route('admin.sertifikasi.certificates.update', ['id' => ':id'], false) }}'
         data-certificate-delete-url='{{ route('admin.sertifikasi.certificates.delete', ['id' => ':id'], false) }}'
-        class="space-y-6"
+        class="space-y-7"
     >
-        <div class="flex flex-wrap items-end justify-between gap-3">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Sertifikat Otomatis</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola blangko, atur posisi teks, edit data sertifikat otomatis, dan export PDF hasil sertifikat.</p>
+        <section class="relative overflow-hidden rounded-3xl border border-orange-100/70 bg-gradient-to-br from-orange-50 via-white to-sky-50 p-5 shadow-sm dark:border-gray-700 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 sm:p-6">
+            <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-orange-200/40 blur-2xl dark:bg-orange-500/20"></div>
+            <div class="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-sky-200/50 blur-2xl dark:bg-sky-500/20"></div>
+
+            <div class="relative flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-700 ring-1 ring-orange-200 dark:bg-gray-900/60 dark:text-orange-300 dark:ring-orange-900/50">
+                        Dashboard Sertifikasi
+                    </p>
+                    <h1 class="mt-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Sertifikat Otomatis</h1>
+                    <p class="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+                        Kelola blangko, atur posisi teks, edit data peserta, dan ekspor sertifikat PDF dari satu workspace.
+                    </p>
+                </div>
+                <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                    <button id="btnOpenCreateCert" type="button" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-700 text-white text-sm font-semibold transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Tambah Sertif Otomatis
+                    </button>
+                    <button id="btnExportCurrentPdf" type="button" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M4 17a2 2 0 002 2h12a2 2 0 002-2M4 7a2 2 0 012-2h8l6 6v6a2 2 0 01-2 2"/></svg>
+                        PDF Hasil Sertif
+                    </button>
+                </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <button id="btnOpenCreateCert" type="button" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Tambah Sertif Otomatis
-                </button>
-                <button id="btnExportCurrentPdf" type="button" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M4 17a2 2 0 002 2h12a2 2 0 002-2M4 7a2 2 0 012-2h8l6 6v6a2 2 0 01-2 2"/></svg>
-                    PDF Hasil Sertif
-                </button>
+
+            <div class="relative mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Blangko</p>
+                    <p id="statTemplateCount" class="mt-1 text-xl font-bold text-gray-900 dark:text-white">0</p>
+                </div>
+                <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Sertifikat</p>
+                    <p id="statCertificateCount" class="mt-1 text-xl font-bold text-gray-900 dark:text-white">0</p>
+                </div>
+                <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Hasil Filter</p>
+                    <p id="statFilteredCount" class="mt-1 text-xl font-bold text-gray-900 dark:text-white">0</p>
+                </div>
             </div>
-        </div>
+        </section>
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <div class="xl:col-span-2 space-y-6">
-                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl p-4 sm:p-5">
+                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl p-4 shadow-sm sm:p-5">
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Preview Sertifikat</h2>
                         <span id="previewMeta" class="text-xs text-gray-500 dark:text-gray-400"></span>
@@ -67,10 +92,13 @@
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl p-4 sm:p-5">
+                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl p-4 shadow-sm sm:p-5">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Daftar Sertif Otomatis</h2>
-                        <input id="searchCertInput" type="text" placeholder="Cari nomor, nama, atau program..." class="w-full sm:w-72 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                        <div class="relative w-full sm:w-72">
+                            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 110-15 7.5 7.5 0 010 15z"/></svg>
+                            <input id="searchCertInput" type="text" placeholder="Cari nomor, nama, atau program..." class="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto responsive-table">
@@ -91,7 +119,7 @@
             </div>
 
             <div class="space-y-6">
-                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl p-4 sm:p-5">
+                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl p-4 shadow-sm sm:p-5">
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tambah Blangko</h2>
                         <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black text-white text-xs font-semibold cursor-pointer transition">
@@ -105,7 +133,7 @@
                     <div id="templateList" class="space-y-2"></div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl p-4 sm:p-5">
+                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl p-4 shadow-sm sm:p-5">
                     <div class="flex items-start justify-between gap-3 mb-4">
                         <div>
                             <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Posisi Teks Otomatis</h2>
@@ -192,7 +220,7 @@
                             <input id="selectedTemplateName" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm">
                         </div>
 
-                        <button id="btnSaveTemplateSettings" type="button" class="w-full px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition">
+                        <button id="btnSaveTemplateSettings" type="button" class="w-full px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-700 text-white text-sm font-semibold transition">
                             Simpan Pengaturan Blangko
                         </button>
                     </div>
@@ -204,7 +232,7 @@
     <div id="certificateModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" id="certificateModalOverlay"></div>
         <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
+            <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl">
                 <button id="btnCloseCertModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
@@ -395,6 +423,11 @@
             const inputProgram = document.getElementById('inputProgram');
             const inputTemplateId = document.getElementById('inputTemplateId');
             const btnExportCurrentPdf = document.getElementById('btnExportCurrentPdf');
+            const statTemplateCount = document.getElementById('statTemplateCount');
+            const statCertificateCount = document.getElementById('statCertificateCount');
+            const statFilteredCount = document.getElementById('statFilteredCount');
+
+            let filteredCertificateCount = certificates.length;
 
             function normalizeAppUrl(url) {
                 if (!url) {
@@ -548,6 +581,20 @@
                 inputTemplateId.innerHTML = templates.map((template) => `<option value="${template.id}">${template.name}</option>`).join('');
             }
 
+            function updateSummaryStats(filteredCount = filteredCertificateCount) {
+                if (statTemplateCount) {
+                    statTemplateCount.textContent = String(templates.length);
+                }
+
+                if (statCertificateCount) {
+                    statCertificateCount.textContent = String(certificates.length);
+                }
+
+                if (statFilteredCount) {
+                    statFilteredCount.textContent = String(filteredCount);
+                }
+            }
+
             function renderTemplateList() {
                 templateList.innerHTML = templates.map((template) => {
                     const isActive = String(template.id) === String(selectedTemplateId);
@@ -555,17 +602,17 @@
                         ? `background-image:url('${normalizeAppUrl(template.image)}');background-size:cover;background-position:center;`
                         : `background:${template.gradient};`;
                     const deleteButton = templates.length > 1
-                        ? `<button type="button" data-delete-template-id="${template.id}" class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition">Hapus</button>`
+                        ? `<button type="button" data-delete-template-id="${template.id}" class="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-200 transition">Hapus</button>`
                         : '';
 
                     return `
-                        <div data-template-id="${template.id}" class="w-full text-left p-2 rounded-lg border cursor-pointer ${isActive ? 'border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900/30' : 'border-gray-200 dark:border-gray-600'} hover:border-blue-400 transition">
-                            <div class="h-20 rounded-md" style="${backgroundStyle}"></div>
+                        <div data-template-id="${template.id}" class="w-full text-left p-2.5 rounded-xl border cursor-pointer ${isActive ? 'border-orange-400 ring-2 ring-orange-100 dark:ring-orange-900/30' : 'border-gray-200 dark:border-gray-600'} hover:border-orange-300 transition">
+                            <div class="h-20 rounded-lg" style="${backgroundStyle}"></div>
                             <div class="mt-2 flex items-center justify-between gap-2">
                                 <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">${template.name}</span>
                                 <div class="flex items-center gap-1">
                                     ${deleteButton}
-                                    <span class="text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}">${isActive ? 'Dipakai' : 'Pilih'}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}">${isActive ? 'Dipakai' : 'Pilih'}</span>
                                 </div>
                             </div>
                         </div>
@@ -575,6 +622,8 @@
                 if (!templates.length) {
                     templateList.innerHTML = '<div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 px-4 py-6 text-center text-xs text-gray-500">Belum ada blangko. Upload blangko terlebih dahulu.</div>';
                 }
+
+                updateSummaryStats();
             }
 
             function renderCertificateTable() {
@@ -585,17 +634,17 @@
                 });
 
                 certificateTableBody.innerHTML = filtered.map((certificate) => `
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <tr class="hover:bg-orange-50/40 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-4 py-3 text-sm font-mono text-gray-700 dark:text-gray-200">${certificate.nomor}</td>
                         <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">${certificate.nama}</td>
                         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${certificate.program}</td>
                         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${formatDateIndonesia(certificate.tanggal)}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-center gap-1">
-                                <button type="button" data-action="preview" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-indigo-100 text-indigo-700 hover:bg-indigo-200">Preview</button>
-                                <button type="button" data-action="edit" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200">Edit</button>
+                                <button type="button" data-action="preview" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200">Preview</button>
+                                <button type="button" data-action="edit" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-sky-100 text-sky-700 hover:bg-sky-200">Edit</button>
                                 <button type="button" data-action="pdf" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200">PDF</button>
-                                <button type="button" data-action="delete" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-red-100 text-red-700 hover:bg-red-200">Hapus</button>
+                                <button type="button" data-action="delete" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-rose-100 text-rose-700 hover:bg-rose-200">Hapus</button>
                             </div>
                         </td>
                     </tr>
@@ -608,6 +657,9 @@
                         </tr>
                     `;
                 }
+
+                filteredCertificateCount = filtered.length;
+                updateSummaryStats(filteredCertificateCount);
             }
 
             function renderPreview() {
