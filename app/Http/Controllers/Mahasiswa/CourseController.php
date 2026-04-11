@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\AutomaticCertificate;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
 use App\Models\CourseModule;
@@ -24,6 +25,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
@@ -100,12 +102,18 @@ class CourseController extends Controller
         $isEnrolled = false;
         $enrollment = null;
         $isFavorited = false;
+        $issuedCertificate = null;
         
         if ($user) {
             $enrollment = $course->enrollments()
                 ->where('id_mahasiswa', $user->id)
                 ->first();
             $isEnrolled = $enrollment !== null;
+
+            if ($isEnrolled && $enrollment) {
+                $this->notifyCertificateReadyIfEligible($user, $course, $enrollment, (int) round((float) ($enrollment->progress ?? 0)));
+                $issuedCertificate = $this->resolveIssuedCertificateForMahasiswa($user->name ?? '', $course->nama_course ?? '');
+            }
             
             $isFavorited = \App\Models\Favorite::where('id_mahasiswa', $user->id)
                 ->where('id_course', $course->id_course)
@@ -117,6 +125,7 @@ class CourseController extends Controller
             'isEnrolled' => $isEnrolled,
             'enrollment' => $enrollment,
             'isFavorited' => $isFavorited,
+            'issuedCertificate' => $issuedCertificate,
         ]);
     }
 
@@ -404,6 +413,9 @@ class CourseController extends Controller
             'progress' => $progressPercent,
             'status' => $nextStatus,
         ]);
+
+        $this->notifyCertificateReadyIfEligible($user, $course, $enrollment, $progressPercent);
+        $issuedCertificate = $this->resolveIssuedCertificateForMahasiswa($user->name ?? '', $course->nama_course ?? '');
         
         return view('pages.mahasiswa.course-learn', [
             'course' => $course,
@@ -414,6 +426,7 @@ class CourseController extends Controller
             'progressPercent' => $progressPercent,
             'completedMaterials' => $completedMaterials,
             'totalMaterials' => $totalMaterials,
+            'issuedCertificate' => $issuedCertificate,
             'dosenNotes' => $course->instructorNotes->map(function (CourseInstructorNote $note) {
                 return [
                     'id' => $note->id_course_instructor_note,
@@ -1899,6 +1912,66 @@ class CourseController extends Controller
             'time' => optional($comment->created_at)->diffForHumans(),
             'avatar' => $avatar,
             'created_at' => optional($comment->created_at)->toISOString(),
+        ];
+    }
+
+    private function notifyCertificateReadyIfEligible($mahasiswa, Course $course, $enrollment, int $progressPercent): void
+    {
+        if (!($course->sertifikat ?? false)) {
+            return;
+        }
+
+        $isCompleted = (($enrollment->status ?? null) === 'selesai') || $progressPercent >= 100;
+        if (!$isCompleted) {
+            return;
+        }
+
+        $courseName = trim((string) ($course->nama_course ?? 'Kursus'));
+        $alreadyNotified = Notification::query()
+            ->where('id_mahasiswa', $mahasiswa->id)
+            ->where('tipe', 'pencapaian')
+            ->where('icon', 'certificate')
+            ->where('judul', 'Sertifikat Kursus Tersedia')
+            ->where('konten', 'like', '%' . $courseName . '%')
+            ->exists();
+
+        if ($alreadyNotified) {
+            return;
+        }
+
+        Notification::notifyMahasiswa(
+            $mahasiswa->id,
+            'Sertifikat Kursus Tersedia',
+            'Sertifikat untuk kursus "' . $courseName . '" sudah tersedia. Buka halaman kursus dan klik Download Sertifikat.',
+            'pencapaian',
+            'certificate',
+            '#10B981'
+        );
+    }
+
+    private function resolveIssuedCertificateForMahasiswa(string $mahasiswaName, string $courseName): ?array
+    {
+        $normalizedName = Str::lower(trim($mahasiswaName));
+        $normalizedCourse = Str::lower(trim($courseName));
+
+        if ($normalizedName === '' || $normalizedCourse === '') {
+            return null;
+        }
+
+        $certificate = AutomaticCertificate::query()
+            ->whereRaw('LOWER(TRIM(nama_peserta)) = ?', [$normalizedName])
+            ->whereRaw('LOWER(TRIM(nama_program)) = ?', [$normalizedCourse])
+            ->orderByDesc('tanggal_terbit')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$certificate) {
+            return null;
+        }
+
+        return [
+            'number' => $certificate->nomor_sertifikat,
+            'issued_date' => optional($certificate->tanggal_terbit)->format('d F Y'),
         ];
     }
 }
