@@ -37,7 +37,7 @@
                         <span id="previewMeta" class="text-xs text-gray-500 dark:text-gray-400"></span>
                     </div>
 
-                    <div id="certificateCanvas" class="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner bg-white">
+                    <div id="certificateCanvas" class="relative w-full aspect-[297/210] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner bg-white">
                         <div id="certificateBgLayer" class="absolute inset-0"></div>
                         <div id="certificateOverlayTint" class="absolute inset-0 bg-white/15"></div>
                         <div id="certificateFrameOuter" class="absolute inset-3 sm:inset-4 rounded-lg border-4 border-amber-300/90"></div>
@@ -701,19 +701,47 @@
                 const canvasNode = document.getElementById('certificateCanvas');
 
                 try {
+                    const scale = Math.min(Math.max(window.devicePixelRatio || 1, 2), 4);
                     const canvas = await html2canvas(canvasNode, {
-                        scale: 2,
+                        scale,
                         useCORS: true,
+                        allowTaint: false,
                         backgroundColor: '#ffffff',
+                        logging: false,
+                        imageTimeout: 15000,
                     });
 
                     const imgData = canvas.toDataURL('image/png');
-                    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+                    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4', compress: true });
                     const pageWidth = pdf.internal.pageSize.getWidth();
                     const pageHeight = pdf.internal.pageSize.getHeight();
+                    const pageRatio = pageWidth / pageHeight;
+                    const canvasRatio = canvas.width / canvas.height;
 
-                    pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
-                    pdf.save(`${certificate.nomor}.pdf`);
+                    let renderWidth = pageWidth;
+                    let renderHeight = pageHeight;
+                    let offsetX = 0;
+                    let offsetY = 0;
+
+                    // Fit image to page without stretching when browser rounding causes small ratio drift.
+                    if (canvasRatio > pageRatio) {
+                        renderHeight = pageWidth / canvasRatio;
+                        offsetY = (pageHeight - renderHeight) / 2;
+                    } else if (canvasRatio < pageRatio) {
+                        renderWidth = pageHeight * canvasRatio;
+                        offsetX = (pageWidth - renderWidth) / 2;
+                    }
+
+                    pdf.setFillColor(255, 255, 255);
+                    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+                    pdf.addImage(imgData, 'PNG', offsetX, offsetY, renderWidth, renderHeight, undefined, 'FAST');
+
+                    const safeFileName = String(certificate.nomor || 'sertifikat')
+                        .replace(/[^a-zA-Z0-9-_]+/g, '-')
+                        .replace(/-+/g, '-')
+                        .replace(/^-|-$/g, '');
+
+                    pdf.save(`${safeFileName || 'sertifikat'}.pdf`);
                 } catch (error) {
                     console.error(error);
                     showErrorAlert('Gagal membuat PDF. Coba ulangi lagi.');
