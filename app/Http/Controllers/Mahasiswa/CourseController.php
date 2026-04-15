@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\AutomaticCertificate;
 use App\Models\AssignmentSubmission;
+use App\Models\CertificateTemplate;
 use App\Models\Course;
 use App\Models\CourseModule;
 use App\Models\DosenNotification;
@@ -1959,6 +1960,7 @@ class CourseController extends Controller
         }
 
         $certificate = AutomaticCertificate::query()
+            ->with('template')
             ->whereRaw('LOWER(TRIM(nama_peserta)) = ?', [$normalizedName])
             ->whereRaw('LOWER(TRIM(nama_program)) = ?', [$normalizedCourse])
             ->orderByDesc('tanggal_terbit')
@@ -1970,8 +1972,117 @@ class CourseController extends Controller
         }
 
         return [
+            'id' => $certificate->id,
             'number' => $certificate->nomor_sertifikat,
             'issued_date' => optional($certificate->tanggal_terbit)->format('d F Y'),
+            'issued_date_iso' => optional($certificate->tanggal_terbit)->format('Y-m-d'),
+            'participant_name' => $certificate->nama_peserta,
+            'program_name' => $certificate->nama_program,
+            'template' => $this->buildCertificateTemplatePayload($certificate->template),
+        ];
+    }
+
+    private function buildCertificateTemplatePayload(?CertificateTemplate $template): array
+    {
+        $settings = $this->resolveCertificateTemplateSettings($template);
+        $imageUrl = null;
+        $kind = 'gradient';
+        $gradient = 'linear-gradient(145deg, #ffffff 0%, #f8fafc 55%, #eef2ff 100%)';
+
+        if ($template) {
+            if ($template->background_type === 'image'
+                && filled($template->background_image_path)
+                && Storage::disk('public')->exists($template->background_image_path)
+            ) {
+                $kind = 'image';
+                $imageUrl = asset('storage/' . ltrim((string) $template->background_image_path, '/'));
+            } elseif ($template->background_type === 'gradient' && filled($template->background_gradient)) {
+                $gradient = (string) $template->background_gradient;
+            }
+        }
+
+        return [
+            'name' => $template?->name ?? 'Template Sertifikat',
+            'kind' => $kind,
+            'image' => $imageUrl,
+            'gradient' => $gradient,
+            'settings' => [
+                'nomor' => [
+                    'x' => (float) $settings['nomor_x'],
+                    'y' => (float) $settings['nomor_y'],
+                    'size' => (int) $settings['nomor_size'],
+                ],
+                'nama' => [
+                    'x' => (float) $settings['nama_x'],
+                    'y' => (float) $settings['nama_y'],
+                    'size' => (int) $settings['nama_size'],
+                ],
+                'program' => [
+                    'x' => (float) $settings['program_x'],
+                    'y' => (float) $settings['program_y'],
+                    'size' => (int) $settings['program_size'],
+                ],
+                'tanggal' => [
+                    'x' => (float) $settings['tanggal_x'],
+                    'y' => (float) $settings['tanggal_y'],
+                    'size' => (int) $settings['tanggal_size'],
+                ],
+            ],
+        ];
+    }
+
+    private function resolveCertificateTemplateSettings(?CertificateTemplate $template): array
+    {
+        $defaults = $this->defaultCertificateTemplateSettings();
+
+        if (!$template) {
+            return $defaults;
+        }
+
+        $settings = [
+            'nomor_x' => (float) ($template->nomor_x ?? $defaults['nomor_x']),
+            'nomor_y' => (float) ($template->nomor_y ?? $defaults['nomor_y']),
+            'nomor_size' => (int) ($template->nomor_size ?? $defaults['nomor_size']),
+            'nama_x' => (float) ($template->nama_x ?? $defaults['nama_x']),
+            'nama_y' => (float) ($template->nama_y ?? $defaults['nama_y']),
+            'nama_size' => (int) ($template->nama_size ?? $defaults['nama_size']),
+            'program_x' => (float) ($template->program_x ?? $defaults['program_x']),
+            'program_y' => (float) ($template->program_y ?? $defaults['program_y']),
+            'program_size' => (int) ($template->program_size ?? $defaults['program_size']),
+            'tanggal_x' => (float) ($template->tanggal_x ?? $defaults['tanggal_x']),
+            'tanggal_y' => (float) ($template->tanggal_y ?? $defaults['tanggal_y']),
+            'tanggal_size' => (int) ($template->tanggal_size ?? $defaults['tanggal_size']),
+        ];
+
+        $hasInvalidCoordinate = collect([
+            $settings['nomor_x'],
+            $settings['nomor_y'],
+            $settings['nama_x'],
+            $settings['nama_y'],
+            $settings['program_x'],
+            $settings['program_y'],
+            $settings['tanggal_x'],
+            $settings['tanggal_y'],
+        ])->contains(fn ($value) => $value <= 0);
+
+        return $hasInvalidCoordinate ? $defaults : $settings;
+    }
+
+    private function defaultCertificateTemplateSettings(): array
+    {
+        return [
+            'nomor_x' => 50.00,
+            'nomor_y' => 24.00,
+            'nomor_size' => 26,
+            'nama_x' => 50.00,
+            'nama_y' => 43.00,
+            'nama_size' => 42,
+            'program_x' => 50.00,
+            'program_y' => 58.00,
+            'program_size' => 18,
+            'tanggal_x' => 50.00,
+            'tanggal_y' => 72.00,
+            'tanggal_size' => 14,
         ];
     }
 }

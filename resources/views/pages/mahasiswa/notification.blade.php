@@ -1,19 +1,7 @@
 <x-layouts.dashboard :active="'notification'">
 
 @php
-    // Transform notifications for Alpine.js
-    $notifData = $notifications->map(function ($notif) {
-        return [
-            'id' => $notif->id_notification,
-            'judul' => $notif->judul,
-            'konten' => $notif->konten,
-            'tipe' => $notif->tipe,
-            'icon' => $notif->icon,
-            'icon_color' => $notif->icon_color,
-            'is_read' => $notif->is_read,
-            'waktu_relatif' => $notif->created_at->diffForHumans(),
-        ];
-    })->values()->toArray();
+    $notifData = collect($notificationPayload ?? [])->values()->toArray();
 @endphp
 
 <div x-data="{
@@ -38,11 +26,23 @@
 
             notif.is_read = true;
             this.unreadCount = Math.max(0, this.unreadCount - 1);
+            return true;
         } catch (error) {
             const fallbackForm = document.getElementById(`notif-read-form-${notif.id}`);
             if (fallbackForm) {
                 fallbackForm.submit();
             }
+
+            return false;
+        }
+    },
+
+    async openNotificationAction(notif) {
+        const marked = await this.markAsRead(notif);
+        if (notif.action_url) {
+            window.location.href = notif.action_url;
+        } else if (marked === false) {
+            return;
         }
     },
 
@@ -60,13 +60,40 @@
         });
     },
 
-    getIconBg(color) {
-        const map = { blue: 'bg-blue-100 dark:bg-blue-500/20', green: 'bg-green-100 dark:bg-green-500/20', yellow: 'bg-yellow-100 dark:bg-yellow-500/20', rose: 'bg-rose-100 dark:bg-rose-500/20', purple: 'bg-purple-100 dark:bg-purple-500/20', red: 'bg-red-100 dark:bg-red-500/20', orange: 'bg-orange-100 dark:bg-orange-500/20' };
-        return map[color] || 'bg-gray-100 dark:bg-gray-500/20';
+    withAlpha(color, alpha = 0.14) {
+        if (!color || typeof color !== 'string') {
+            return 'rgba(59, 130, 246, ' + alpha + ')';
+        }
+
+        const hex = color.replace('#', '').trim();
+        if (![3, 6].includes(hex.length)) {
+            return 'rgba(59, 130, 246, ' + alpha + ')';
+        }
+
+        const normalized = hex.length === 3
+            ? hex.split('').map(char => char + char).join('')
+            : hex;
+
+        const int = parseInt(normalized, 16);
+        if (Number.isNaN(int)) {
+            return 'rgba(59, 130, 246, ' + alpha + ')';
+        }
+
+        const r = (int >> 16) & 255;
+        const g = (int >> 8) & 255;
+        const b = int & 255;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     },
-    getIconText(color) {
-        const map = { blue: 'text-blue-500', green: 'text-green-500', yellow: 'text-yellow-500', rose: 'text-rose-500', purple: 'text-purple-500', red: 'text-red-500', orange: 'text-orange-500' };
-        return map[color] || 'text-gray-500';
+
+    getIconStyle(color) {
+        const safeColor = color || '#3B82F6';
+        return `background:${this.withAlpha(safeColor, 0.14)}; color:${safeColor};`;
+    },
+
+    getActionButtonClass(notif) {
+        return notif.action_variant === 'certificate'
+            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            : 'bg-blue-600 hover:bg-blue-700 text-white';
     }
 }" class="space-y-6">
 
@@ -131,35 +158,35 @@
             <template x-if="filteredNotifications.length > 0">
                 <div class="space-y-3">
                     <template x-for="(notif, index) in filteredNotifications" :key="notif.id">
-                        <div class="bg-white dark:bg-[#1f2937] rounded-xl p-4 border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition animate-fade-in-up group"
+                        <div class="bg-white dark:bg-[#1f2937] rounded-2xl p-4 border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition animate-fade-in-up group"
                              @click="markAsRead(notif)"
                              :class="{ 'border-l-4 border-l-blue-500 cursor-pointer': !notif.is_read }"
                              :style="'animation-delay: ' + (index * 50) + 'ms'">
                             <div class="flex items-start gap-4">
                                 {{-- Icon --}}
                                 <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                                     :class="getIconBg(notif.icon_color)">
+                                     :style="getIconStyle(notif.icon_color)">
                                     {{-- Book icon --}}
                                     <template x-if="notif.tipe === 'kursus_pembelajaran'">
-                                        <svg class="w-5 h-5" :class="getIconText(notif.icon_color)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
                                         </svg>
                                     </template>
                                     {{-- Bell icon --}}
                                     <template x-if="notif.tipe === 'jadwal_ujian'">
-                                        <svg class="w-5 h-5" :class="getIconText(notif.icon_color)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                                         </svg>
                                     </template>
                                     {{-- Trophy icon --}}
                                     <template x-if="notif.tipe === 'pencapaian'">
-                                        <svg class="w-5 h-5" :class="getIconText(notif.icon_color)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
                                         </svg>
                                     </template>
                                     {{-- Default info icon --}}
                                     <template x-if="!['kursus_pembelajaran','jadwal_ujian','pencapaian'].includes(notif.tipe)">
-                                        <svg class="w-5 h-5" :class="getIconText(notif.icon_color)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                                         </svg>
                                     </template>
@@ -167,10 +194,30 @@
 
                                 {{-- Content --}}
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="text-sm text-gray-800 dark:text-gray-100" 
+                                    <div class="flex flex-wrap items-start gap-2">
+                                        <h3 class="text-sm text-gray-800 dark:text-gray-100" 
                                         :class="notif.is_read ? 'font-medium' : 'font-bold'"
                                         x-text="notif.judul"></h3>
+                                        <template x-if="notif.action_variant === 'certificate'">
+                                            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-800">
+                                                Sertifikat Siap
+                                            </span>
+                                        </template>
+                                    </div>
                                     <p class="text-gray-500 dark:text-gray-400 text-sm mt-1" x-text="notif.konten"></p>
+                                    <template x-if="notif.action_url">
+                                        <div class="mt-3">
+                                            <button type="button"
+                                                    @click.stop="openNotificationAction(notif)"
+                                                    class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition"
+                                                    :class="getActionButtonClass(notif)">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v10m0 0l-4-4m4 4l4-4M5 19h14" />
+                                                </svg>
+                                                <span x-text="notif.action_label || 'Buka'"></span>
+                                            </button>
+                                        </div>
+                                    </template>
                                     <p class="text-gray-400 dark:text-gray-500 text-xs mt-2" x-text="notif.waktu_relatif"></p>
                                 </div>
 

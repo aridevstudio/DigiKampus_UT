@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Models\News;
 use App\Models\Agenda;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -82,6 +84,11 @@ class DashboardController extends Controller
             ->orderBy('tanggal', 'asc')
             ->get();
 
+        $dashboardNotifications = Notification::where('id_mahasiswa', $user->id)
+            ->orderByDesc('created_at')
+            ->take(8)
+            ->get();
+
         return view('pages.mahasiswa.dashboard', [
             'totalProgress' => $totalProgress,
             'kursusAktif' => $kursusAktif,
@@ -92,6 +99,10 @@ class DashboardController extends Controller
             'enrolledCourses' => $enrolledCourses,
             'news' => $news,
             'agenda' => $agenda,
+            'dashboardNotifications' => $dashboardNotifications
+                ->map(fn (Notification $notification) => $this->mapNotificationForMahasiswa($notification, $user->id))
+                ->values(),
+            'dashboardNotificationUnreadCount' => $dashboardNotifications->where('is_read', false)->count(),
         ]);
     }
 
@@ -138,7 +149,7 @@ class DashboardController extends Controller
     {
         $user = Auth::guard('mahasiswa')->user();
         
-        $notifications = \App\Models\Notification::where('id_mahasiswa', $user->id)
+        $notifications = Notification::where('id_mahasiswa', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -146,6 +157,9 @@ class DashboardController extends Controller
         
         return view('pages.mahasiswa.notification', [
             'notifications' => $notifications,
+            'notificationPayload' => $notifications
+                ->map(fn (Notification $notification) => $this->mapNotificationForMahasiswa($notification, $user->id))
+                ->values(),
             'unreadCount' => $unreadCount,
         ]);
     }
@@ -183,11 +197,81 @@ class DashboardController extends Controller
     {
         $user = Auth::guard('mahasiswa')->user();
         
-        \App\Models\Notification::where('id_mahasiswa', $user->id)
+        Notification::where('id_mahasiswa', $user->id)
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
         return redirect()->route('mahasiswa.notification')->with('success', 'Semua notifikasi ditandai sudah dibaca');
+    }
+
+    private function mapNotificationForMahasiswa(Notification $notification, int $mahasiswaId): array
+    {
+        $action = $this->resolveNotificationAction($notification, $mahasiswaId);
+
+        return [
+            'id' => $notification->id_notification,
+            'judul' => $notification->judul,
+            'konten' => $notification->konten,
+            'tipe' => $notification->tipe,
+            'icon' => $notification->icon,
+            'icon_color' => $notification->icon_color,
+            'is_read' => $notification->is_read,
+            'waktu_relatif' => $notification->created_at->diffForHumans(),
+            'action_url' => $action['url'] ?? null,
+            'action_label' => $action['label'] ?? null,
+            'action_variant' => $action['variant'] ?? null,
+            'course_name' => $action['course_name'] ?? null,
+        ];
+    }
+
+    private function resolveNotificationAction(Notification $notification, int $mahasiswaId): array
+    {
+        if (trim((string) $notification->judul) !== 'Sertifikat Kursus Tersedia') {
+            return [];
+        }
+
+        $courseName = $this->extractCourseNameFromNotification($notification->konten);
+        if (!$courseName) {
+            return [];
+        }
+
+        $normalizedCourseName = Str::lower(trim($courseName));
+
+        $enrollment = Enrollment::query()
+            ->where('id_mahasiswa', $mahasiswaId)
+            ->whereHas('course', function ($query) use ($normalizedCourseName) {
+                $query->whereRaw('LOWER(TRIM(nama_course)) = ?', [$normalizedCourseName]);
+            })
+            ->with('course:id_course,nama_course')
+            ->orderByDesc('updated_at')
+            ->first();
+
+        if (!$enrollment || !$enrollment->course) {
+            return [];
+        }
+
+        return [
+            'url' => route('mahasiswa.course-learn', [
+                'id' => $enrollment->course->id_course,
+                'certificate' => 'download',
+            ]) . '#course-certificate-panel',
+            'label' => 'Download Sertifikat',
+            'variant' => 'certificate',
+            'course_name' => $enrollment->course->nama_course,
+        ];
+    }
+
+    private function extractCourseNameFromNotification(?string $content): ?string
+    {
+        if (!filled($content)) {
+            return null;
+        }
+
+        if (preg_match('/"([^"]+)"/u', $content, $matches)) {
+            return trim((string) ($matches[1] ?? '')) ?: null;
+        }
+
+        return null;
     }
 
     /**

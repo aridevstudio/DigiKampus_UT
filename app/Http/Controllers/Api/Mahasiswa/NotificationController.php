@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\Mahasiswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\Enrollment;
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * @tags Mahasiswa Notifications
@@ -61,7 +63,9 @@ class NotificationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Notifications retrieved successfully',
-            'data' => $notifications->map(function ($notif) {
+            'data' => $notifications->map(function ($notif) use ($user) {
+                $action = $this->resolveNotificationAction($notif, (int) $user->id);
+
                 return [
                     'id_notification' => $notif->id_notification,
                     'judul' => $notif->judul,
@@ -72,6 +76,10 @@ class NotificationController extends Controller
                     'is_read' => $notif->is_read,
                     'waktu_relatif' => $notif->waktu_relatif,
                     'created_at' => $notif->created_at->toDateTimeString(),
+                    'action_url' => $action['url'] ?? null,
+                    'action_label' => $action['label'] ?? null,
+                    'action_variant' => $action['variant'] ?? null,
+                    'course_name' => $action['course_name'] ?? null,
                 ];
             }),
             'meta' => [
@@ -162,5 +170,55 @@ class NotificationController extends Controller
                 'unread_count' => $count
             ]
         ]);
+    }
+
+    private function resolveNotificationAction(Notification $notification, int $mahasiswaId): array
+    {
+        if (trim((string) $notification->judul) !== 'Sertifikat Kursus Tersedia') {
+            return [];
+        }
+
+        $courseName = $this->extractCourseNameFromNotification($notification->konten);
+        if (!$courseName) {
+            return [];
+        }
+
+        $normalizedCourseName = Str::lower(trim($courseName));
+
+        $enrollment = Enrollment::query()
+            ->where('id_mahasiswa', $mahasiswaId)
+            ->whereHas('course', function ($query) use ($normalizedCourseName) {
+                $query->whereRaw('LOWER(TRIM(nama_course)) = ?', [$normalizedCourseName]);
+            })
+            ->with('course:id_course,nama_course')
+            ->orderByDesc('updated_at')
+            ->first();
+
+        if (!$enrollment || !$enrollment->course) {
+            return [];
+        }
+
+        return [
+            'url' => route('mahasiswa.course-learn', [
+                'id' => $enrollment->course->id_course,
+                'certificate' => 'download',
+            ]) . '#course-certificate-panel',
+            'label' => 'Download Sertifikat',
+            'variant' => 'certificate',
+            'course_name' => $enrollment->course->nama_course,
+        ];
+    }
+
+    private function extractCourseNameFromNotification(?string $content): ?string
+    {
+        if (!filled($content)) {
+            return null;
+        }
+
+        if (preg_match('/"([^"]+)"/u', $content, $matches)) {
+            return trim((string) ($matches[1] ?? '')) ?: null;
+        }
+
+        return null;
     }
 }

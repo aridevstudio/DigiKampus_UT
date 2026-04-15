@@ -47,6 +47,8 @@
         && (($enrollment->status ?? null) === 'selesai' || (int) ($progressPercent ?? 0) >= 100);
     $issuedCertificateNumber = $issuedCertificate['number'] ?? null;
     $issuedCertificateDate = $issuedCertificate['issued_date'] ?? now()->format('d F Y');
+    $issuedCertificateTemplate = $issuedCertificate['template'] ?? null;
+    $certificateAutoDownload = request('certificate') === 'download' && $certificateEligible;
 @endphp
 
 {{-- Back Link & Title Row --}}
@@ -445,31 +447,83 @@
 
             {{-- Certificate Ready --}}
             @if($certificateEligible)
-            <div class="rounded-2xl border border-emerald-200 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/20 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Sertifikat Siap Didownload</p>
-                    <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Kursus/webinar selesai. Anda bisa langsung download PDF sertifikat atau cetak.</p>
-                    @if($issuedCertificateNumber)
-                    <p class="text-[11px] text-emerald-700/90 dark:text-emerald-300/90 mt-1">No. Sertifikat: {{ $issuedCertificateNumber }}</p>
-                    @endif
-                </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <button type="button"
-                            onclick="downloadCourseCertificate(@js($course->nama_course), @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'), @js($issuedCertificateDate), @js($issuedCertificateNumber))"
-                            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v10m0 0l-4-4m4 4l4-4M4 19h16" />
-                        </svg>
-                        Download Sertifikat
-                    </button>
-                    <button type="button"
-                            onclick="printCourseCertificate(@js($course->nama_course), @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'), @js($issuedCertificateDate), @js($issuedCertificateNumber))"
-                            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-600/70 text-emerald-700 dark:text-emerald-300 bg-white/60 dark:bg-emerald-900/20 hover:bg-white dark:hover:bg-emerald-900/35 text-sm font-medium transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7m-9 12h6m-7 0h8a2 2 0 002-2v-5H6v5a2 2 0 002 2zM6 14H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2" />
-                        </svg>
-                        Cetak
-                    </button>
+            <div id="course-certificate-panel" class="relative overflow-hidden rounded-[28px] border border-emerald-200/80 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/30 dark:via-gray-900 dark:to-teal-950/20 p-5 sm:p-6">
+                <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-500/20"></div>
+                <div class="absolute -left-10 bottom-0 h-24 w-24 rounded-full bg-teal-200/40 blur-3xl dark:bg-teal-500/10"></div>
+
+                <div class="relative flex flex-col xl:flex-row gap-5 xl:items-center xl:justify-between">
+                    <div class="flex-1 space-y-4">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                Sertifikat Aktif
+                            </span>
+                            @if($certificateAutoDownload)
+                            <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                                Siap Diunduh dari Notifikasi
+                            </span>
+                            @endif
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Sertifikat kursus Anda sudah tersedia</h3>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">File unduhan mengikuti blangko sertifikat yang sudah dipublikasikan admin. Anda bisa download PDF atau cetak langsung dari panel ini.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Nomor Sertifikat</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $issuedCertificateNumber ?: 'Akan dibuat otomatis' }}</p>
+                            </div>
+                            <div class="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Tanggal Terbit</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $issuedCertificateDate }}</p>
+                            </div>
+                            <div class="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Status</p>
+                                <p class="mt-1 text-sm font-semibold text-emerald-700 dark:text-emerald-300">Siap Download</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button type="button"
+                                    onclick="downloadCourseCertificate(@js($course->nama_course), @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'), @js($issuedCertificateDate), @js($issuedCertificateNumber), @js($issuedCertificateTemplate))"
+                                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v10m0 0l-4-4m4 4l4-4M5 19h14" />
+                                </svg>
+                                Download Sertifikat
+                            </button>
+                            <button type="button"
+                                    onclick="printCourseCertificate(@js($course->nama_course), @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'), @js($issuedCertificateDate), @js($issuedCertificateNumber), @js($issuedCertificateTemplate))"
+                                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border border-emerald-300 dark:border-emerald-600/70 text-emerald-700 dark:text-emerald-300 bg-white/70 dark:bg-emerald-900/10 hover:bg-white dark:hover:bg-emerald-900/25 text-sm font-semibold transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V3h12v6m-9 12h6m-8 0h10a2 2 0 002-2v-5H5v5a2 2 0 002 2zM5 14H3a2 2 0 01-2-2v-3a2 2 0 012-2h18a2 2 0 012 2v3a2 2 0 01-2 2h-2" />
+                                </svg>
+                                Cetak Sertifikat
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="xl:w-[320px] xl:flex-shrink-0">
+                        <div class="rounded-[24px] border border-emerald-200/80 dark:border-emerald-700/40 bg-white/90 dark:bg-gray-900/70 p-4 shadow-sm">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Preview Ringkas</p>
+                            <div class="mt-3 rounded-[20px] border border-gray-200 dark:border-gray-700 overflow-hidden bg-white">
+                                <div class="aspect-[1.414/1] p-4 relative"
+                                     style="@if(($issuedCertificateTemplate['kind'] ?? null) === 'image' && !empty($issuedCertificateTemplate['image']))background-image:url('{{ $issuedCertificateTemplate['image'] }}');background-size:cover;background-position:center;@else background:{!! e($issuedCertificateTemplate['gradient'] ?? 'linear-gradient(145deg,#ffffff 0%,#f8fafc 55%,#eef2ff 100%)') !!}; @endif">
+                                    <div class="absolute inset-2 rounded-[16px] border border-white/70"></div>
+                                    <div class="absolute inset-0 px-4 py-5 flex flex-col items-center justify-center text-center">
+                                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Sertifikat</p>
+                                        <p class="mt-2 text-base font-bold text-slate-900 leading-tight">{{ Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa' }}</p>
+                                        <p class="mt-1 text-[11px] text-slate-600 line-clamp-2">{{ $course->nama_course }}</p>
+                                        <div class="mt-3 inline-flex rounded-full bg-slate-900/5 px-3 py-1 text-[10px] font-semibold text-slate-700">
+                                            {{ $issuedCertificateNumber ?: 'Auto Number' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Unduhan PDF akan memakai layout blangko yang sama dengan preview ini.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             @endif
@@ -651,6 +705,7 @@
 <div class="h-20"></div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script>
     function toggleModule(index) {
@@ -1036,6 +1091,52 @@
             .replace(/'/g, '&#039;');
     }
 
+    function normalizeCertificateTemplate(template) {
+        const fallback = {
+            kind: 'gradient',
+            image: null,
+            gradient: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 55%, #eef2ff 100%)',
+            settings: {
+                nomor: { x: 50, y: 24, size: 26 },
+                nama: { x: 50, y: 43, size: 42 },
+                program: { x: 50, y: 58, size: 18 },
+                tanggal: { x: 50, y: 72, size: 14 },
+            },
+        };
+
+        if (!template || typeof template !== 'object') {
+            return fallback;
+        }
+
+        return {
+            kind: template.kind === 'image' && template.image ? 'image' : 'gradient',
+            image: template.image || null,
+            gradient: template.gradient || fallback.gradient,
+            settings: {
+                nomor: {
+                    x: Number(template.settings?.nomor?.x ?? fallback.settings.nomor.x),
+                    y: Number(template.settings?.nomor?.y ?? fallback.settings.nomor.y),
+                    size: Number(template.settings?.nomor?.size ?? fallback.settings.nomor.size),
+                },
+                nama: {
+                    x: Number(template.settings?.nama?.x ?? fallback.settings.nama.x),
+                    y: Number(template.settings?.nama?.y ?? fallback.settings.nama.y),
+                    size: Number(template.settings?.nama?.size ?? fallback.settings.nama.size),
+                },
+                program: {
+                    x: Number(template.settings?.program?.x ?? fallback.settings.program.x),
+                    y: Number(template.settings?.program?.y ?? fallback.settings.program.y),
+                    size: Number(template.settings?.program?.size ?? fallback.settings.program.size),
+                },
+                tanggal: {
+                    x: Number(template.settings?.tanggal?.x ?? fallback.settings.tanggal.x),
+                    y: Number(template.settings?.tanggal?.y ?? fallback.settings.tanggal.y),
+                    size: Number(template.settings?.tanggal?.size ?? fallback.settings.tanggal.size),
+                },
+            },
+        };
+    }
+
     function buildCertificateNumber(certificateNumber) {
         if (certificateNumber && String(certificateNumber).trim() !== '') {
             return String(certificateNumber).trim();
@@ -1046,49 +1147,64 @@
         return `SRT-${year}-${serial}`;
     }
 
-    function buildCertificateHtml(courseTitle, studentName, completedDate, certificateNumber) {
+    function buildCertificateHtml(courseTitle, studentName, completedDate, certificateNumber, template = null) {
+        const tpl = normalizeCertificateTemplate(template);
         const safeCourse = escapeCertificateHtml(courseTitle || 'Kursus');
         const safeStudent = escapeCertificateHtml(studentName || 'Mahasiswa');
         const safeDate = escapeCertificateHtml(completedDate || '');
         const safeNumber = escapeCertificateHtml(certificateNumber || '-');
+        const backgroundStyle = tpl.kind === 'image' && tpl.image
+            ? `background-image:url('${String(tpl.image).replace(/'/g, '%27')}');background-size:cover;background-position:center;`
+            : `background:${tpl.gradient};`;
+        const showFrame = tpl.kind !== 'image';
+        const showLabels = tpl.kind !== 'image';
 
         return `
             <html>
             <head>
                 <title>Sertifikat ${safeCourse}</title>
                 <style>
-                    body { margin:0; font-family: Georgia, 'Times New Roman', serif; background:#eef2ff; }
-                    .page { width:1123px; height:794px; margin:24px auto; background:linear-gradient(145deg,#ffffff 0%,#f8fafc 55%,#eef2ff 100%); border:12px solid #1d4ed8; box-sizing:border-box; position:relative; }
-                    .inner { position:absolute; inset:18px; border:2px solid #93c5fd; padding:56px 72px; text-align:center; }
-                    .title { font-size:44px; font-weight:700; color:#1e3a8a; letter-spacing:1px; margin-top:10px; text-transform:uppercase; }
-                    .subtitle { font-size:18px; color:#475569; margin-top:18px; }
-                    .name { font-size:44px; color:#0f172a; font-weight:700; margin:18px 0 10px; }
-                    .course { font-size:24px; color:#1d4ed8; font-weight:600; margin:8px 0 20px; }
-                    .badge { display:inline-block; font-size:12px; color:#0f172a; background:#e2e8f0; padding:6px 14px; border-radius:999px; margin-top:12px; }
-                    .meta { display:flex; justify-content:space-between; margin-top:48px; color:#334155; font-size:14px; gap:24px; }
-                    .line { border-top:1px solid #94a3b8; width:260px; margin:10px auto 6px; }
+                    body { margin:0; font-family: Inter, system-ui, sans-serif; background:#eef2ff; }
+                    .page { width:1123px; height:794px; margin:24px auto; position:relative; overflow:hidden; box-sizing:border-box; ${backgroundStyle} }
+                    .page::after { content:''; position:absolute; inset:0; background:${tpl.kind === 'image' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.14)'}; }
+                    .frame-outer { position:absolute; inset:18px; border:${showFrame ? '10px solid rgba(29,78,216,0.18)' : '0'}; border-radius:22px; z-index:1; }
+                    .frame-inner { position:absolute; inset:34px; border:${showFrame ? '2px solid rgba(59,130,246,0.28)' : '0'}; border-radius:18px; z-index:1; }
+                    .content { position:absolute; inset:0; z-index:2; color:#0f172a; }
+                    .group { position:absolute; transform:translate(-50%, -50%); text-align:center; }
+                    .group-label { font-size:11px; text-transform:uppercase; letter-spacing:0.22em; color:rgba(71,85,105,0.92); margin-bottom:8px; font-weight:600; }
+                    .group-label.hidden { display:none; }
+                    .group-value { margin:0; line-height:1.08; }
+                    .value-number { font-weight:700; color:#1e293b; }
+                    .value-name { font-family: Georgia, 'Times New Roman', serif; font-weight:700; color:#0f172a; }
+                    .value-program { font-weight:600; color:#1d4ed8; }
+                    .value-date { font-weight:600; color:#334155; }
+                    .footer-line { position:absolute; right:86px; bottom:118px; width:240px; border-top:1px solid rgba(71,85,105,0.42); }
+                    .footer-label { position:absolute; right:88px; bottom:90px; width:236px; text-align:center; font-size:12px; color:#334155; font-weight:500; }
                     @media print { body { background:#fff; } .page { margin:0 auto; } }
                 </style>
             </head>
             <body>
                 <div class="page">
-                    <div class="inner">
-                        <div class="title">Sertifikat Kelulusan</div>
-                        <div class="subtitle">Diberikan kepada</div>
-                        <div class="name">${safeStudent}</div>
-                        <div class="subtitle">atas keberhasilan menyelesaikan</div>
-                        <div class="course">${safeCourse}</div>
-                        <div class="badge">Nomor Sertifikat: ${safeNumber}</div>
-                        <div class="meta">
-                            <div>
-                                <div>Tanggal Terbit</div>
-                                <div><strong>${safeDate}</strong></div>
-                            </div>
-                            <div>
-                                <div class="line"></div>
-                                <div>Pengajar / Platform</div>
-                            </div>
+                    <div class="frame-outer"></div>
+                    <div class="frame-inner"></div>
+                    <div class="content">
+                        <div class="group" style="left:${tpl.settings.nomor.x}%;top:${tpl.settings.nomor.y}%;width:72%;">
+                            <div class="group-label ${showLabels ? '' : 'hidden'}">Nomor Sertifikat</div>
+                            <p class="group-value value-number" style="font-size:${tpl.settings.nomor.size}pt;">${safeNumber}</p>
                         </div>
+                        <div class="group" style="left:${tpl.settings.nama.x}%;top:${tpl.settings.nama.y}%;width:80%;">
+                            <div class="group-label ${showLabels ? '' : 'hidden'}">Nama Peserta</div>
+                            <p class="group-value value-name" style="font-size:${tpl.settings.nama.size}pt;">${safeStudent}</p>
+                        </div>
+                        <div class="group" style="left:${tpl.settings.program.x}%;top:${tpl.settings.program.y}%;width:74%;">
+                            <div class="group-label ${showLabels ? '' : 'hidden'}">Program</div>
+                            <p class="group-value value-program" style="font-size:${tpl.settings.program.size}pt;">${safeCourse}</p>
+                        </div>
+                        <div class="group" style="left:${tpl.settings.tanggal.x}%;top:${tpl.settings.tanggal.y}%;width:60%;">
+                            <div class="group-label ${showLabels ? '' : 'hidden'}">Tanggal Terbit</div>
+                            <p class="group-value value-date" style="font-size:${tpl.settings.tanggal.size}pt;">${safeDate}</p>
+                        </div>
+                        ${showFrame ? '<div class="footer-line"></div><div class="footer-label">Pengajar / Platform</div>' : ''}
                     </div>
                 </div>
             </body>
@@ -1096,14 +1212,14 @@
         `;
     }
 
-    function printCourseCertificate(courseTitle, studentName, completedDate, certificateNumber = null) {
+    function printCourseCertificate(courseTitle, studentName, completedDate, certificateNumber = null, template = null) {
         const safeCourse = String(courseTitle || 'Kursus');
         const certNo = buildCertificateNumber(certificateNumber);
 
         const popup = window.open('', '_blank', 'width=1200,height=800');
         if (!popup) return;
 
-        popup.document.write(buildCertificateHtml(safeCourse, studentName, completedDate, certNo) + `
+        popup.document.write(buildCertificateHtml(safeCourse, studentName, completedDate, certNo, template) + `
             <script>
                 window.onload = function() { window.print(); };
             <\/script>
@@ -1111,70 +1227,67 @@
         popup.document.close();
     }
 
-    function downloadCourseCertificate(courseTitle, studentName, completedDate, certificateNumber = null) {
-        const certNo = buildCertificateNumber(certificateNumber);
+    async function renderCertificateCanvas(html) {
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.left = '-10000px';
+        wrapper.style.top = '0';
+        wrapper.style.width = '1123px';
+        wrapper.style.height = '794px';
+        wrapper.style.zIndex = '-1';
+        wrapper.innerHTML = html;
+        document.body.appendChild(wrapper);
 
-        if (!window.jspdf || !window.jspdf.jsPDF) {
-            printCourseCertificate(courseTitle, studentName, completedDate, certNo);
+        const page = wrapper.querySelector('.page');
+
+        try {
+            const scale = Math.min(Math.max(window.devicePixelRatio || 1, 2), 4);
+            return await html2canvas(page, {
+                scale,
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: '#ffffff',
+                logging: false,
+                imageTimeout: 15000,
+            });
+        } finally {
+            wrapper.remove();
+        }
+    }
+
+    async function downloadCourseCertificate(courseTitle, studentName, completedDate, certificateNumber = null, template = null) {
+        const certNo = buildCertificateNumber(certificateNumber);
+        const html = buildCertificateHtml(courseTitle, studentName, completedDate, certNo, template);
+
+        if (!window.jspdf || !window.jspdf.jsPDF || !window.html2canvas) {
+            printCourseCertificate(courseTitle, studentName, completedDate, certNo, template);
             return;
         }
 
-        const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+        const canvas = await renderCertificateCanvas(html);
+        const imgData = canvas.toDataURL('image/png');
+        const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4', compress: true });
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
-        const centerX = pageWidth / 2;
+        const pageRatio = pageWidth / pageHeight;
+        const canvasRatio = canvas.width / canvas.height;
 
-        doc.setFillColor(248, 250, 252);
+        let renderWidth = pageWidth;
+        let renderHeight = pageHeight;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (canvasRatio > pageRatio) {
+            renderHeight = pageWidth / canvasRatio;
+            offsetY = (pageHeight - renderHeight) / 2;
+        } else if (canvasRatio < pageRatio) {
+            renderWidth = pageHeight * canvasRatio;
+            offsetX = (pageWidth - renderWidth) / 2;
+        }
+
+        doc.setFillColor(255, 255, 255);
         doc.rect(0, 0, pageWidth, pageHeight, 'F');
-
-        doc.setDrawColor(29, 78, 216);
-        doc.setLineWidth(8);
-        doc.rect(24, 24, pageWidth - 48, pageHeight - 48);
-
-        doc.setDrawColor(147, 197, 253);
-        doc.setLineWidth(1.5);
-        doc.rect(38, 38, pageWidth - 76, pageHeight - 76);
-
-        doc.setTextColor(30, 58, 138);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(34);
-        doc.text('SERTIFIKAT KELULUSAN', centerX, 120, { align: 'center' });
-
-        doc.setTextColor(71, 85, 105);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(15);
-        doc.text('Diberikan kepada', centerX, 165, { align: 'center' });
-
-        doc.setTextColor(15, 23, 42);
-        doc.setFont('times', 'bold');
-        doc.setFontSize(36);
-        doc.text(String(studentName || 'Mahasiswa'), centerX, 220, { align: 'center' });
-
-        doc.setTextColor(71, 85, 105);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(14);
-        doc.text('atas keberhasilan menyelesaikan', centerX, 258, { align: 'center' });
-
-        doc.setTextColor(29, 78, 216);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(22);
-        const wrappedCourse = doc.splitTextToSize(String(courseTitle || 'Kursus'), pageWidth - 180);
-        doc.text(wrappedCourse, centerX, 295, { align: 'center' });
-
-        doc.setTextColor(30, 41, 59);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(12);
-        doc.text(`Nomor Sertifikat: ${certNo}`, centerX, 350, { align: 'center' });
-        doc.text(`Tanggal Terbit: ${String(completedDate || '-')}`, centerX, 375, { align: 'center' });
-
-        doc.setDrawColor(148, 163, 184);
-        doc.setLineWidth(1);
-        doc.line(pageWidth - 300, pageHeight - 140, pageWidth - 80, pageHeight - 140);
-
-        doc.setTextColor(51, 65, 85);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(12);
-        doc.text('Pengajar / Platform', pageWidth - 190, pageHeight - 120, { align: 'center' });
+        doc.addImage(imgData, 'PNG', offsetX, offsetY, renderWidth, renderHeight, undefined, 'FAST');
 
         const slug = String(courseTitle || 'sertifikat')
             .toLowerCase()
@@ -1182,6 +1295,28 @@
             .replace(/(^-|-$)/g, '');
         doc.save(`sertifikat-${slug || 'kursus'}-${certNo}.pdf`);
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const shouldAutoDownload = @json($certificateAutoDownload);
+        if (!shouldAutoDownload) {
+            return;
+        }
+
+        const target = document.getElementById('course-certificate-panel');
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        setTimeout(() => {
+            downloadCourseCertificate(
+                @js($course->nama_course),
+                @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'),
+                @js($issuedCertificateDate),
+                @js($issuedCertificateNumber),
+                @js($issuedCertificateTemplate)
+            );
+        }, 450);
+    });
 </script>
 @endpush
 
