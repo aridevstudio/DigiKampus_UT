@@ -2492,8 +2492,16 @@ class AdminController extends Controller
                 ->with('error', 'File CSV kosong atau format header tidak valid.');
         }
 
-        // Normalize header
-        $header = array_map(fn($h) => strtolower(trim($h)), $header);
+        // Normalize header so exported files can be imported again without manual rename
+        $headerMap = [];
+        foreach ($header as $index => $column) {
+            $normalized = \App\Services\ExcelImportService::normalizeHeaderName($column);
+            if ($normalized === '' || $normalized === 'no') {
+                continue;
+            }
+
+            $headerMap[$index] = $normalized;
+        }
 
         $imported = 0;
         $skipped = 0;
@@ -2502,7 +2510,10 @@ class AdminController extends Controller
         while (($row = fgetcsv($handle)) !== false) {
             if (count($row) < 3) { $skipped++; continue; }
 
-            $data = array_combine($header, array_pad($row, count($header), ''));
+            $data = [];
+            foreach ($headerMap as $index => $column) {
+                $data[$column] = trim((string) ($row[$index] ?? ''));
+            }
             $nama = $data['nama'] ?? '';
             $nomor_induk = $data['nomor_induk'] ?? '';
             $email = $data['email'] ?? '';
@@ -2581,7 +2592,15 @@ class AdminController extends Controller
                 ->with('error', 'File CSV kosong atau format header tidak valid.');
         }
 
-        $header = array_map(fn($h) => strtolower(trim($h)), $header);
+        $headerMap = [];
+        foreach ($header as $index => $column) {
+            $normalized = \App\Services\ExcelImportService::normalizeHeaderName($column);
+            if ($normalized === '' || $normalized === 'no') {
+                continue;
+            }
+
+            $headerMap[$index] = $normalized;
+        }
         $imported = 0;
         $skipped = 0;
         $errors = [];
@@ -2589,7 +2608,10 @@ class AdminController extends Controller
         while (($row = fgetcsv($handle)) !== false) {
             if (count($row) < 3) { $skipped++; continue; }
 
-            $data = array_combine($header, array_pad($row, count($header), ''));
+            $data = [];
+            foreach ($headerMap as $index => $column) {
+                $data[$column] = trim((string) ($row[$index] ?? ''));
+            }
             $nama = $data['nama'] ?? '';
             $nomor_induk = $data['nomor_induk'] ?? '';
             $email = $data['email'] ?? '';

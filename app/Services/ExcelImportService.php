@@ -18,6 +18,22 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 class ExcelImportService
 {
     private static ?array $jurusanLookups = null;
+    private static array $headerAliases = [
+        'nomor induk' => 'nomor_induk',
+        'nomorinduk' => 'nomor_induk',
+        'kode jurusan' => 'kode_jurusan',
+        'kodejurusan' => 'kode_jurusan',
+        'id jurusan' => 'id_jurusan',
+        'idjurusan' => 'id_jurusan',
+        'no hp' => 'no_hp',
+        'nohp' => 'no_hp',
+        'no. hp' => 'no_hp',
+        'no telepon' => 'no_hp',
+        'notelepon' => 'no_hp',
+        'no. telepon' => 'no_hp',
+        'nomor telepon' => 'no_hp',
+        'nomortelepon' => 'no_hp',
+    ];
 
     /**
      * Required columns for each type.
@@ -50,9 +66,9 @@ class ExcelImportService
 
         // Parse header (first row)
         $headerRow = array_shift($rows);
-        $headerKeys = array_keys($headerRow);
-        $header = array_map(fn($h) => strtolower(trim((string) ($h ?? ''))), $headerRow);
-        $header = array_values(array_filter($header, fn($h) => !empty($h)));
+        $normalizedHeaderMap = self::normalizeHeaderMap($headerRow);
+        $headerKeys = array_keys($normalizedHeaderMap);
+        $header = array_values($normalizedHeaderMap);
 
         // Validate required columns
         $required = self::$requiredColumns[$type] ?? [];
@@ -190,6 +206,39 @@ class ExcelImportService
         }
 
         return $value;
+    }
+
+    public static function normalizeHeaderName(?string $header): string
+    {
+        $normalized = strtolower(trim((string) ($header ?? '')));
+        $normalized = preg_replace('/\s+/', ' ', $normalized) ?? '';
+
+        if (isset(self::$headerAliases[$normalized])) {
+            return self::$headerAliases[$normalized];
+        }
+
+        $snake = str_replace(['.', '-', '/', '\\'], ' ', $normalized);
+        $snake = preg_replace('/\s+/', '_', $snake) ?? '';
+        $snake = trim($snake, '_');
+
+        return self::$headerAliases[$snake] ?? $snake;
+    }
+
+    private static function normalizeHeaderMap(array $headerRow): array
+    {
+        $normalized = [];
+
+        foreach ($headerRow as $columnLetter => $headerValue) {
+            $headerName = self::normalizeHeaderName((string) $headerValue);
+
+            if ($headerName === '' || $headerName === 'no') {
+                continue;
+            }
+
+            $normalized[$columnLetter] = $headerName;
+        }
+
+        return $normalized;
     }
 
     /**
