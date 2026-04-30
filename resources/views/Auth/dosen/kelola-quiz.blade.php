@@ -609,13 +609,11 @@
                         if (response.ok && data.success) {
                             const successMessage = this.isEditMode
                                 ? 'Kuis berhasil diperbarui.'
-                                : 'Kursus berhasil diperbarui. Modul + kuis baru sudah ditambahkan.';
-                            this.showToast(successMessage, 'success');
-                            setTimeout(() => {
-                                window.location.href = this.isEditMode
-                                    ? `/dosen/kursus/${this.selectedCourseId}/edit`
-                                    : `/dosen/kursus/${this.selectedCourseId}/modul`;
-                            }, 900);
+                                : 'Kuis berhasil ditambahkan ke modul.';
+                            await showAppAlert(successMessage, 'success', 'Berhasil', {
+                                confirmButtonText: 'Kembali ke kursus'
+                            });
+                            window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
                             return;
                         }
 

@@ -263,13 +263,21 @@
                     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
                 },
 
+                async showSuccessAndRedirect(message) {
+                    await showAppAlert(message, 'success', 'Berhasil', {
+                        confirmButtonText: 'Kembali ke kursus'
+                    });
+
+                    window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
+                },
+
                 async saveTugas() {
                     if (!this.selectedCourseId) {
-                        alert('Mohon pilih kursus.');
+                        showAppAlert('Mohon pilih kursus.', 'warning', 'Perhatian');
                         return;
                     }
                     if (!this.form.judul_modul) {
-                        alert('Mohon isi Judul Tugas.');
+                        showAppAlert('Mohon isi judul tugas.', 'warning', 'Perhatian');
                         return;
                     }
 
@@ -303,23 +311,18 @@
                         
                         const data = await response.json();
                         if (response.ok && data.success) {
-                            if (this.isEditMode) {
-                                alert('Tugas berhasil diperbarui!');
-                                window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
-                                return;
-                            }
-
-                            alert('Tugas berhasil dibuat!');
-                            // Reset
-                            this.form.judul_modul = '';
-                            this.assignmentData.deskripsi = '';
-                            this.assignmentData.instruksi = '';
+                            await this.showSuccessAndRedirect(
+                                this.isEditMode
+                                    ? 'Tugas berhasil diperbarui.'
+                                    : 'Tugas berhasil ditambahkan ke modul.'
+                            );
+                            return;
                         } else {
                             const firstError = data?.errors ? Object.values(data.errors).flat()?.[0] : null;
-                            alert('Gagal: ' + (firstError || data?.message || 'Terjadi kesalahan.'));
+                            showAppAlert('Gagal menyimpan: ' + (firstError || data?.message || 'Terjadi kesalahan.'), 'error', 'Gagal menyimpan');
                         }
                     } catch (error) {
-                        alert('Terjadi kesalahan.');
+                        showAppAlert('Terjadi kesalahan saat menyimpan.', 'error', 'Terjadi kesalahan');
                     } finally {
                         this.isSubmitting = false;
                     }

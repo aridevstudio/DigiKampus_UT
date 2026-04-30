@@ -217,6 +217,14 @@
                     return null;
                 },
 
+                async showSuccessAndRedirect(message) {
+                    await showAppAlert(message, 'success', 'Berhasil', {
+                        confirmButtonText: 'Kembali ke kursus'
+                    });
+
+                    window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
+                },
+
                 async saveVideo() {
                     if (!this.selectedCourseId) {
                         alert('Mohon pilih kursus terlebih dahulu.');
@@ -252,24 +260,18 @@
                         const data = await response.json();
                         
                         if (response.ok && data.success) {
-                            if (this.isEditMode) {
-                                alert('Video berhasil diperbarui!');
-                                window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
-                                return;
-                            }
-
-                            alert('Video berhasil ditambahkan!');
-                            // Reset form
-                            this.form.judul_modul = '';
-                            this.form.video_url = '';
-                            this.form.durasi = '';
-                            this.form.konten = '';
+                            await this.showSuccessAndRedirect(
+                                this.isEditMode
+                                    ? 'Video pembelajaran berhasil diperbarui.'
+                                    : 'Video pembelajaran berhasil ditambahkan ke modul.'
+                            );
+                            return;
                         }
 
                         const firstError = data?.errors ? Object.values(data.errors).flat()?.[0] : null;
-                        alert('Gagal menyimpan: ' + (firstError || data?.message || 'Terjadi kesalahan.'));
+                        showAppAlert('Gagal menyimpan: ' + (firstError || data?.message || 'Terjadi kesalahan.'), 'error', 'Gagal menyimpan');
                     } catch (error) {
-                        alert('Terjadi kesalahan saat menyimpan.');
+                        showAppAlert('Terjadi kesalahan saat menyimpan.', 'error', 'Terjadi kesalahan');
                     } finally {
                         this.isSubmitting = false;
                     }

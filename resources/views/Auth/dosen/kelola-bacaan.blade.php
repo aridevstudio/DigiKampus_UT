@@ -269,6 +269,14 @@
                     return 'Terjadi kesalahan saat menyimpan.';
                 },
 
+                async showSuccessAndRedirect(message) {
+                    await showAppAlert(message, 'success', 'Berhasil', {
+                        confirmButtonText: 'Kembali ke kursus'
+                    });
+
+                    window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
+                },
+
                 async fetchCourses() {
                     this.isLoading = true;
                     try {
@@ -396,24 +404,17 @@
                         const data = await response.json();
                         
                         if (response.ok && data.success) {
-                            if (this.isEditMode) {
-                                alert('Materi Bacaan berhasil diperbarui!');
-                                window.location.href = `/dosen/kursus/${this.selectedCourseId}/edit`;
-                                return;
-                            }
-
-                            alert('Materi Bacaan berhasil ditambahkan!');
-                            // Reset form
-                            this.form.judul_modul = '';
-                            this.form.konten = '';
-                            this.form.durasi = 10;
-                            this.form.sumber_referensi = [''];
-                            this.clearLampiran();
+                            await this.showSuccessAndRedirect(
+                                this.isEditMode
+                                    ? 'Materi bacaan berhasil diperbarui.'
+                                    : 'Materi bacaan berhasil ditambahkan ke modul.'
+                            );
+                            return;
                         } else {
-                            alert('Gagal menyimpan: ' + this.extractErrorMessage(data));
+                            showAppAlert('Gagal menyimpan: ' + this.extractErrorMessage(data), 'error', 'Gagal menyimpan');
                         }
                     } catch (error) {
-                        alert('Terjadi kesalahan saat menyimpan.');
+                        showAppAlert('Terjadi kesalahan saat menyimpan.', 'error', 'Terjadi kesalahan');
                     } finally {
                         this.isSubmitting = false;
                     }
