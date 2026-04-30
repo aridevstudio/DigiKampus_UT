@@ -229,6 +229,10 @@ class OtpService
         $user->password = Hash::make($newPassword);
         $user->save();
 
+        if ($user->requires_password_reset) {
+            $user->clearImportedDefaultPasswordState();
+        }
+
         // Delete token (one-time use)
         DB::table('password_reset_tokens')->where('email', $email)->delete();
 

@@ -2528,9 +2528,10 @@ class AdminController extends Controller
                 $user = User::create([
                     'name' => $nama,
                     'email' => $email,
-                    'password' => Hash::make(\Illuminate\Support\Str::random(12)),
+                    'password' => Hash::make($nomor_induk),
                     'role' => 'mahasiswa',
                     'status' => in_array($status, ['aktif', 'nonaktif'], true) ? $status : 'aktif',
+                    'requires_password_reset' => true,
                 ]);
 
                 $user->profile()->create([
@@ -2614,9 +2615,10 @@ class AdminController extends Controller
                 $user = User::create([
                     'name' => $nama,
                     'email' => $email,
-                    'password' => Hash::make(\Illuminate\Support\Str::random(12)),
+                    'password' => Hash::make($nomor_induk),
                     'role' => 'dosen',
                     'status' => in_array($status, ['aktif', 'nonaktif'], true) ? $status : 'aktif',
+                    'requires_password_reset' => true,
                 ]);
 
                 $profile = $user->profile()->create([

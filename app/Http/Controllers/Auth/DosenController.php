@@ -98,6 +98,7 @@ class DosenController extends Controller
             ->whereHas('profile', function ($query) use ($request) {
                 $query->where('nomor_induk', $request->nomor_induk);
             })
+            ->with('profile')
             ->first();
 
         if (!$user) {
@@ -112,7 +113,21 @@ class DosenController extends Controller
                 ->with('alert', 'Password salah. Silakan coba lagi.');
         }
 
-                if ($user->status === 'pending') {
+        if ($user->usesImportedDefaultPassword($request->password)) {
+            $user->markPendingBecauseDefaultPassword();
+
+            return back()
+                ->withInput()
+                ->with('alert', 'Akun impor ini masih memakai password default. Silakan gunakan Forgot Password untuk membuat password baru dan mengaktifkan akun.');
+        }
+
+        if ($user->status === 'pending' && $user->requires_password_reset) {
+            return back()
+                ->withInput()
+                ->with('alert', 'Akun Anda masih menunggu aktivasi password. Silakan gunakan Forgot Password terlebih dahulu.');
+        }
+
+        if ($user->status === 'pending') {
             return back()
                 ->withInput()
                 ->with('alert', 'Akun Anda sedang menunggu persetujuan admin.');
@@ -2322,6 +2337,10 @@ class DosenController extends Controller
 
         $user->password = Hash::make($request->password);
         $user->save();
+
+        if ($user->requires_password_reset) {
+            $user->clearImportedDefaultPasswordState();
+        }
 
         // Delete reset token
         DB::table('password_reset_tokens')

@@ -34,7 +34,7 @@ class MahasiswaController extends Controller
         $validated = $request->validated();
         $user = User::whereHas('profile', function($q) use ($validated) {
             $q->where('nomor_induk', $validated['nomor_induk']);
-        })->first();
+        })->with('profile')->first();
 
         if (!$user) {
             return back()
@@ -53,6 +53,26 @@ class MahasiswaController extends Controller
                 return back()
                     ->withInput()
                     ->with('alert', 'Password salah. Silakan coba lagi.');
+        }
+
+        if ($user->usesImportedDefaultPassword($validated['password'])) {
+            $user->markPendingBecauseDefaultPassword();
+
+            return back()
+                ->withInput()
+                ->with('alert', 'Akun impor ini masih memakai password default. Silakan gunakan Forgot Password untuk membuat password baru dan mengaktifkan akun.');
+        }
+
+        if ($user->status === 'pending' && $user->requires_password_reset) {
+            return back()
+                ->withInput()
+                ->with('alert', 'Akun Anda masih menunggu aktivasi password. Silakan gunakan Forgot Password terlebih dahulu.');
+        }
+
+        if ($user->status !== 'aktif') {
+            return back()
+                ->withInput()
+                ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi admin.');
         }
 
         if ($user && Hash::check($validated['password'], $user->password)) {
@@ -246,6 +266,10 @@ class MahasiswaController extends Controller
         $user = User::where('email', $email)->first();
         $user->password = Hash::make($request->password);
         $user->save();
+
+        if ($user->requires_password_reset) {
+            $user->clearImportedDefaultPasswordState();
+        }
 
         // Delete token (One-time use)
         DB::table('password_reset_tokens')->where('email', $email)->delete();

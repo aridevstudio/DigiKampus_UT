@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
 {
@@ -16,6 +17,7 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
+        'requires_password_reset',
         'is_online',
         'last_activity'
     ];
@@ -28,6 +30,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'requires_password_reset' => 'boolean',
             'is_online' => 'boolean',
             'last_activity' => 'datetime',
         ];
@@ -90,5 +93,40 @@ class User extends Authenticatable
     {
         $this->is_online = false;
         $this->save();
+    }
+
+    public function usesImportedDefaultPassword(?string $plainPassword = null): bool
+    {
+        if (!$this->requires_password_reset) {
+            return false;
+        }
+
+        $nomorInduk = $this->profile?->nomor_induk;
+        if (blank($nomorInduk)) {
+            return false;
+        }
+
+        $candidate = $plainPassword ?? $nomorInduk;
+
+        return (string) $candidate === (string) $nomorInduk
+            && Hash::check((string) $candidate, (string) $this->password);
+    }
+
+    public function markPendingBecauseDefaultPassword(): void
+    {
+        if ($this->status === 'aktif') {
+            $this->forceFill(['status' => 'pending'])->save();
+        }
+    }
+
+    public function clearImportedDefaultPasswordState(): void
+    {
+        $updates = ['requires_password_reset' => false];
+
+        if ($this->status === 'pending') {
+            $updates['status'] = 'aktif';
+        }
+
+        $this->forceFill($updates)->save();
     }
 }

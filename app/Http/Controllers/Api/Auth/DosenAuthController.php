@@ -79,6 +79,7 @@ class DosenAuthController extends Controller
             ->whereHas('profile', function ($query) use ($validated) {
                 $query->where('nomor_induk', $validated['nomor_induk']);
             })
+            ->with('profile')
             ->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
@@ -86,6 +87,24 @@ class DosenAuthController extends Controller
                 'success' => false,
                 'message' => 'Nomor Induk atau password salah.'
             ], 401);
+        }
+
+        if ($user->usesImportedDefaultPassword($validated['password'])) {
+            $user->markPendingBecauseDefaultPassword();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun impor ini masih memakai password default. Silakan gunakan forgot password untuk membuat password baru dan mengaktifkan akun.',
+                'requires_password_reset' => true,
+            ], 403);
+        }
+
+        if ($user->status === 'pending' && $user->requires_password_reset) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda masih menunggu aktivasi password. Silakan gunakan forgot password terlebih dahulu.',
+                'requires_password_reset' => true,
+            ], 403);
         }
 
         if ($user->status !== 'aktif') {

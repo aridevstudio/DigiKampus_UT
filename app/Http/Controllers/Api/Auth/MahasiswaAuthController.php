@@ -54,6 +54,16 @@ class MahasiswaAuthController extends Controller
             ], 401);
         }
 
+        if ($user->usesImportedDefaultPassword($validated['password'])) {
+            $user->markPendingBecauseDefaultPassword();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun impor ini masih memakai password default. Silakan gunakan forgot password untuk membuat password baru dan mengaktifkan akun.',
+                'requires_password_reset' => true,
+            ], 403);
+        }
+
         // Validasi role mahasiswa
         if ($user->role !== 'mahasiswa') {
             return response()->json([
@@ -63,6 +73,14 @@ class MahasiswaAuthController extends Controller
         }
 
         // Validasi status aktif
+        if ($user->status === 'pending' && $user->requires_password_reset) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda masih menunggu aktivasi password. Silakan gunakan forgot password terlebih dahulu.',
+                'requires_password_reset' => true,
+            ], 403);
+        }
+
         if ($user->status !== 'aktif') {
             return response()->json([
                 'success' => false,

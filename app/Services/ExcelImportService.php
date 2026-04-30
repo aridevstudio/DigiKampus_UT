@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Models\AdminNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -286,13 +285,13 @@ class ExcelImportService
                 }
 
                 // Create new user
-                $password = Str::random(12);
                 $user = User::create([
                     'name' => $row['nama'],
                     'email' => $email,
-                    'password' => Hash::make($password),
+                    'password' => Hash::make($identifier),
                     'role' => $type,
                     'status' => self::normalizeImportedStatus($row['status'] ?? null) ?? 'aktif',
+                    'requires_password_reset' => true,
                 ]);
 
                 $jurusanIds = $type === 'dosen'
@@ -608,6 +607,7 @@ class ExcelImportService
         $sheet->setCellValue("A" . ($notesRow + 3), '- Status: aktif atau nonaktif. Jika kosong akan otomatis menjadi aktif');
         $sheet->setCellValue("A" . ($notesRow + 4), '- Duplikat dicek berdasarkan Email dan Nomor Induk, bukan Nama');
         $sheet->setCellValue("A" . ($notesRow + 5), '- Format No HP: 10-15 digit angka');
+        $sheet->setCellValue("A" . ($notesRow + 6), '- Password default akun hasil import = Nomor Induk. User harus gunakan forgot password untuk aktivasi password baru');
 
         $writer = new Xlsx($spreadsheet);
         $filename = "template_import_{$type}.xlsx";
