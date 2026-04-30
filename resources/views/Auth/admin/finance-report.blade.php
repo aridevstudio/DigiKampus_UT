@@ -5,15 +5,25 @@
             ? 'text-emerald-600 dark:text-emerald-400'
             : 'text-rose-600 dark:text-rose-400';
         $momPrefix = $momPercent > 0 ? '+' : '';
+        $compareLabel = $financeSummary['compareLabel'] ?? 'vs bulan lalu';
         $financePayload = $financeChartPayload ?? [
             'monthlyRevenue' => [],
             'monthlyLabels' => [],
+            'chartTitle' => 'Trend Revenue 6 Bulan',
+            'chartSubtitle' => 'Total pendapatan gabungan per bulan.',
             'channels' => [
                 'kursus' => 0,
                 'webinar' => 0,
                 'tiket' => 0,
             ],
             'topProducts' => [],
+        ];
+        $financeFilter = $financeFilter ?? [
+            'year' => null,
+            'month' => null,
+            'availableYears' => [],
+            'availableMonths' => [],
+            'label' => '6 Bulan Terakhir',
         ];
     @endphp
 
@@ -29,16 +39,38 @@
                     <h2 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">Finance Report</h2>
                     <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Data live dari transaksi dengan status settlement/capture.</p>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <a href="{{ route('admin.finance-report.export') }}" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium transition">
+                <div class="flex flex-col items-stretch gap-3 lg:items-end">
+                    <form method="GET" action="{{ route('admin.finance-report') }}" class="grid grid-cols-1 sm:grid-cols-[minmax(0,150px)_minmax(0,150px)_auto_auto] gap-2 w-full lg:w-auto">
+                        <select name="year" class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                            <option value="">Semua Tahun</option>
+                            @foreach(($financeFilter['availableYears'] ?? []) as $year)
+                                <option value="{{ $year }}" {{ (int) ($financeFilter['year'] ?? 0) === (int) $year ? 'selected' : '' }}>{{ $year }}</option>
+                            @endforeach
+                        </select>
+                        <select name="month" class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                            <option value="">Semua Bulan</option>
+                            @foreach(($financeFilter['availableMonths'] ?? []) as $monthValue => $monthLabel)
+                                <option value="{{ $monthValue }}" {{ (int) ($financeFilter['month'] ?? 0) === (int) $monthValue ? 'selected' : '' }}>{{ $monthLabel }}</option>
+                            @endforeach
+                        </select>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-xs sm:text-sm font-medium text-white transition hover:bg-blue-700">
+                            Terapkan
+                        </button>
+                        <a href="{{ route('admin.finance-report') }}" class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs sm:text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800">
+                            Reset
+                        </a>
+                    </form>
+                    <div class="flex flex-wrap items-center gap-2">
+                    <a href="{{ route('admin.finance-report.export', array_filter(['year' => $financeFilter['year'] ?? null, 'month' => $financeFilter['month'] ?? null], fn ($value) => filled($value))) }}" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
                         </svg>
                         Export Excel
                     </a>
-                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">6 Bulan Terakhir</span>
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">{{ $financeFilter['label'] ?? '6 Bulan Terakhir' }}</span>
                     <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ $financeSummary['periodLabel'] ?? '-' }}</span>
                     <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">Live Data</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -48,7 +80,7 @@
                 <div class="rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-700/20 p-3 sm:p-4">
                     <p class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Revenue</p>
                     <p id="finance-total-revenue" class="mt-1 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Rp {{ number_format($financeSummary['totalRevenue'] ?? 0, 0, ',', '.') }}</p>
-                    <p class="text-[11px] {{ $momClass }} mt-1">{{ $momPrefix }}{{ number_format($momPercent, 1, ',', '.') }}% vs bulan lalu</p>
+                    <p class="text-[11px] {{ $momClass }} mt-1">{{ $momPrefix }}{{ number_format($momPercent, 1, ',', '.') }}% {{ $compareLabel }}</p>
                 </div>
                 <div class="rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-700/20 p-3 sm:p-4">
                     <p class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kursus</p>
@@ -69,8 +101,8 @@
 
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
                 <div class="xl:col-span-2 rounded-xl border border-gray-100 dark:border-gray-700/60 p-4">
-                    <h3 class="text-sm sm:text-base font-semibold text-gray-800 dark:text-white">Trend Revenue 6 Bulan</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Total pendapatan gabungan per bulan.</p>
+                    <h3 class="text-sm sm:text-base font-semibold text-gray-800 dark:text-white">{{ $financePayload['chartTitle'] ?? 'Trend Revenue 6 Bulan' }}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $financePayload['chartSubtitle'] ?? 'Total pendapatan gabungan per bulan.' }}</p>
                     <div class="relative mt-3" style="height: clamp(210px, 28vw, 280px);">
                         <canvas id="financeRevenueChart"></canvas>
                     </div>

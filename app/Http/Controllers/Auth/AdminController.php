@@ -14,6 +14,7 @@ use App\Models\DosenNotification;
 use App\Models\Jurusan;
 use App\Models\Message;
 use App\Models\Notification;
+use App\Models\PaymentTransaction;
 use App\Models\PaymentTransactionItem;
 use App\Models\Profile;
 use App\Models\SupportTicket;
@@ -3968,21 +3969,24 @@ class AdminController extends Controller
         ]);
     }
 
-    public function showFinanceReport()
+    public function showFinanceReport(Request $request)
     {
-        $financeReportData = $this->buildFinanceReportData();
+        [$selectedYear, $selectedMonth] = $this->resolveFinanceFilter($request);
+        $financeReportData = $this->buildFinanceReportData($selectedYear, $selectedMonth);
 
         return view('Auth.admin.finance-report', [
             'financeReportData' => $financeReportData,
             'financeSummary' => $financeReportData['summary'],
             'financeChartPayload' => $financeReportData['chartPayload'],
             'financeTopProducts' => $financeReportData['topProducts'],
+            'financeFilter' => $financeReportData['filter'],
         ]);
     }
 
-    public function exportFinanceReportExcel()
+    public function exportFinanceReportExcel(Request $request)
     {
-        $financeReportData = $this->buildFinanceReportData();
+        [$selectedYear, $selectedMonth] = $this->resolveFinanceFilter($request);
+        $financeReportData = $this->buildFinanceReportData($selectedYear, $selectedMonth);
         $summary = $financeReportData['summary'];
         $topProducts = $financeReportData['topProducts'];
 
@@ -4010,7 +4014,7 @@ class AdminController extends Controller
         }
 
         $trendSheet = $spreadsheet->createSheet();
-        $trendSheet->setTitle('Trend 6 Bulan');
+        $trendSheet->setTitle('Trend Revenue');
         $trendSheet->setCellValue('A1', 'Bulan');
         $trendSheet->setCellValue('B1', 'Revenue');
         $trendSheet->getStyle('A1:B1')->getFont()->setBold(true);
@@ -4056,20 +4060,32 @@ class AdminController extends Controller
         ]);
     }
 
-    private function buildFinanceReportData(): array
+    private function buildFinanceReportData(?int $selectedYear = null, ?int $selectedMonth = null): array
     {
         $now = now();
-        $startMonth = $now->copy()->startOfMonth()->subMonths(5);
-        $endMonth = $now->copy()->endOfMonth();
+        $availableYears = $this->getFinanceAvailableYears();
+        $mode = 'rolling';
 
-        $monthlyRows = $this->baseFinanceItemQuery($startMonth, $endMonth)
-            ->selectRaw("DATE_FORMAT(COALESCE(pt.paid_at, pt.updated_at, pt.created_at), '%Y-%m') as month_key")
-            ->selectRaw('SUM(payment_transaction_items.price) as total_revenue')
-            ->groupBy('month_key')
-            ->orderBy('month_key')
-            ->pluck('total_revenue', 'month_key');
+        if ($selectedYear && $selectedMonth) {
+            $mode = 'month';
+            $startDate = \Carbon\Carbon::create($selectedYear, $selectedMonth, 1)->startOfMonth();
+            $endDate = $startDate->copy()->endOfMonth();
+            $previousStartDate = $startDate->copy()->subMonth()->startOfMonth();
+            $previousEndDate = $startDate->copy()->subMonth()->endOfMonth();
+        } elseif ($selectedYear) {
+            $mode = 'year';
+            $startDate = \Carbon\Carbon::create($selectedYear, 1, 1)->startOfYear();
+            $endDate = $startDate->copy()->endOfYear();
+            $previousStartDate = $startDate->copy()->subYear()->startOfYear();
+            $previousEndDate = $startDate->copy()->subYear()->endOfYear();
+        } else {
+            $startDate = $now->copy()->startOfMonth()->subMonths(5);
+            $endDate = $now->copy()->endOfMonth();
+            $previousStartDate = $now->copy()->subMonth()->startOfMonth();
+            $previousEndDate = $now->copy()->subMonth()->endOfMonth();
+        }
 
-        $channelRows = $this->baseFinanceItemQuery($startMonth, $endMonth)
+        $channelRows = $this->baseFinanceItemQuery($startDate, $endDate)
             ->selectRaw("LOWER(COALESCE(NULLIF(c.kategori, ''), 'kursus')) as kategori")
             ->selectRaw('SUM(payment_transaction_items.price) as total_revenue')
             ->groupBy('kategori')
@@ -4086,25 +4102,15 @@ class AdminController extends Controller
             $channelTotals[$kategori] += (float) $row->total_revenue;
         }
 
-        $monthlyLabels = [];
-        $monthlyRevenue = [];
-        $monthlySeries = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $monthDate = $now->copy()->startOfMonth()->subMonths($i);
-            $monthKey = $monthDate->format('Y-m');
-            $label = $this->financeShortMonthLabel($monthDate);
-            $revenue = (float) ($monthlyRows[$monthKey] ?? 0);
+        [$monthlyLabels, $monthlyRevenue, $monthlySeries, $chartTitle, $chartSubtitle] = $this->buildFinanceTrendSeries(
+            $startDate,
+            $endDate,
+            $selectedYear,
+            $selectedMonth,
+            $mode
+        );
 
-            $monthlyLabels[] = $label;
-            $monthlyRevenue[] = (int) round($revenue);
-            $monthlySeries[] = [
-                'key' => $monthKey,
-                'label' => $label,
-                'revenue' => (int) round($revenue),
-            ];
-        }
-
-        $topProducts = $this->baseFinanceItemQuery($startMonth, $endMonth)
+        $topProducts = $this->baseFinanceItemQuery($startDate, $endDate)
             ->selectRaw('payment_transaction_items.id_course')
             ->selectRaw('MAX(payment_transaction_items.course_name) as course_name')
             ->selectRaw("LOWER(COALESCE(NULLIF(c.kategori, ''), 'kursus')) as kategori")
@@ -4128,13 +4134,30 @@ class AdminController extends Controller
             ->values()
             ->all();
 
-        $currentMonthRevenue = (float) ($monthlyRows[$now->format('Y-m')] ?? 0);
-        $previousMonthRevenue = (float) ($monthlyRows[$now->copy()->subMonth()->format('Y-m')] ?? 0);
-        $momPercent = $previousMonthRevenue > 0
-            ? (($currentMonthRevenue - $previousMonthRevenue) / $previousMonthRevenue) * 100
-            : ($currentMonthRevenue > 0 ? 100.0 : 0.0);
-
         $totalRevenue = $channelTotals['kursus'] + $channelTotals['webinar'] + $channelTotals['tiket'];
+        $previousPeriodRevenue = (float) $this->baseFinanceItemQuery($previousStartDate, $previousEndDate)
+            ->sum('payment_transaction_items.price');
+        $comparePercent = $previousPeriodRevenue > 0
+            ? (($totalRevenue - $previousPeriodRevenue) / $previousPeriodRevenue) * 100
+            : ($totalRevenue > 0 ? 100.0 : 0.0);
+
+        $compareLabel = match ($mode) {
+            'month' => 'vs bulan sebelumnya',
+            'year' => 'vs tahun sebelumnya',
+            default => 'vs bulan lalu',
+        };
+
+        $filterLabel = match ($mode) {
+            'month' => $this->financeMonthYearLabel($selectedYear, $selectedMonth),
+            'year' => 'Tahun ' . $selectedYear,
+            default => '6 Bulan Terakhir',
+        };
+
+        $periodLabel = match ($mode) {
+            'month' => $this->financeMonthYearLabel($selectedYear, $selectedMonth),
+            'year' => 'Jan - Des ' . $selectedYear,
+            default => $this->financeShortMonthLabel($startDate) . ' - ' . $this->financeShortMonthLabel($endDate),
+        };
 
         return [
             'summary' => [
@@ -4144,13 +4167,16 @@ class AdminController extends Controller
                     'webinar' => (int) round($channelTotals['webinar']),
                     'tiket' => (int) round($channelTotals['tiket']),
                 ],
-                'momPercent' => round($momPercent, 1),
-                'periodLabel' => $this->financeShortMonthLabel($startMonth) . ' - ' . $this->financeShortMonthLabel($endMonth),
+                'momPercent' => round($comparePercent, 1),
+                'compareLabel' => $compareLabel,
+                'periodLabel' => $periodLabel,
                 'generatedAt' => now()->format('d M Y H:i'),
             ],
             'chartPayload' => [
                 'monthlyRevenue' => $monthlyRevenue,
                 'monthlyLabels' => $monthlyLabels,
+                'chartTitle' => $chartTitle,
+                'chartSubtitle' => $chartSubtitle,
                 'channels' => [
                     'kursus' => (int) round($channelTotals['kursus']),
                     'webinar' => (int) round($channelTotals['webinar']),
@@ -4167,6 +4193,152 @@ class AdminController extends Controller
             ],
             'topProducts' => $topProducts,
             'monthlySeries' => $monthlySeries,
+            'filter' => [
+                'year' => $selectedYear,
+                'month' => $selectedMonth,
+                'availableYears' => $availableYears,
+                'availableMonths' => $this->financeMonthOptions(),
+                'label' => $filterLabel,
+            ],
+        ];
+    }
+
+    private function resolveFinanceFilter(Request $request): array
+    {
+        $year = $request->filled('year') ? (int) $request->input('year') : null;
+        $month = $request->filled('month') ? (int) $request->input('month') : null;
+
+        if ($year !== null && ($year < 2000 || $year > ((int) now()->format('Y') + 2))) {
+            $year = null;
+        }
+
+        if ($month !== null && ($month < 1 || $month > 12)) {
+            $month = null;
+        }
+
+        if ($month && !$year) {
+            $year = (int) now()->format('Y');
+        }
+
+        return [$year, $month];
+    }
+
+    private function getFinanceAvailableYears(): array
+    {
+        $years = PaymentTransaction::query()
+            ->selectRaw('DISTINCT YEAR(COALESCE(paid_at, updated_at, created_at)) as report_year')
+            ->whereNotNull(DB::raw('COALESCE(paid_at, updated_at, created_at)'))
+            ->orderByDesc('report_year')
+            ->pluck('report_year')
+            ->filter()
+            ->map(fn ($year) => (int) $year)
+            ->values()
+            ->all();
+
+        if (empty($years)) {
+            return [(int) now()->format('Y')];
+        }
+
+        return $years;
+    }
+
+    private function buildFinanceTrendSeries($startDate, $endDate, ?int $selectedYear, ?int $selectedMonth, string $mode): array
+    {
+        if ($mode === 'month') {
+            $dailyRows = $this->baseFinanceItemQuery($startDate, $endDate)
+                ->selectRaw("DATE_FORMAT(COALESCE(pt.paid_at, pt.updated_at, pt.created_at), '%Y-%m-%d') as day_key")
+                ->selectRaw('SUM(payment_transaction_items.price) as total_revenue')
+                ->groupBy('day_key')
+                ->orderBy('day_key')
+                ->pluck('total_revenue', 'day_key');
+
+            $labels = [];
+            $revenue = [];
+            $series = [];
+            $cursor = $startDate->copy()->startOfDay();
+
+            while ($cursor->lte($endDate)) {
+                $dayKey = $cursor->format('Y-m-d');
+                $label = $cursor->format('d');
+                $value = (float) ($dailyRows[$dayKey] ?? 0);
+
+                $labels[] = $label;
+                $revenue[] = (int) round($value);
+                $series[] = [
+                    'key' => $dayKey,
+                    'label' => $label,
+                    'revenue' => (int) round($value),
+                ];
+
+                $cursor->addDay();
+            }
+
+            return [
+                $labels,
+                $revenue,
+                $series,
+                'Trend Revenue Harian',
+                'Total pendapatan gabungan per hari pada bulan terpilih.',
+            ];
+        }
+
+        $monthlyRows = $this->baseFinanceItemQuery($startDate, $endDate)
+            ->selectRaw("DATE_FORMAT(COALESCE(pt.paid_at, pt.updated_at, pt.created_at), '%Y-%m') as month_key")
+            ->selectRaw('SUM(payment_transaction_items.price) as total_revenue')
+            ->groupBy('month_key')
+            ->orderBy('month_key')
+            ->pluck('total_revenue', 'month_key');
+
+        $labels = [];
+        $revenue = [];
+        $series = [];
+
+        if ($mode === 'year') {
+            for ($month = 1; $month <= 12; $month++) {
+                $monthDate = \Carbon\Carbon::create($selectedYear, $month, 1)->startOfMonth();
+                $monthKey = $monthDate->format('Y-m');
+                $label = $this->financeShortMonthLabel($monthDate);
+                $value = (float) ($monthlyRows[$monthKey] ?? 0);
+
+                $labels[] = $label;
+                $revenue[] = (int) round($value);
+                $series[] = [
+                    'key' => $monthKey,
+                    'label' => $label,
+                    'revenue' => (int) round($value),
+                ];
+            }
+
+            return [
+                $labels,
+                $revenue,
+                $series,
+                'Trend Revenue ' . $selectedYear,
+                'Total pendapatan gabungan per bulan pada tahun terpilih.',
+            ];
+        }
+
+        for ($i = 5; $i >= 0; $i--) {
+            $monthDate = now()->copy()->startOfMonth()->subMonths($i);
+            $monthKey = $monthDate->format('Y-m');
+            $label = $this->financeShortMonthLabel($monthDate);
+            $value = (float) ($monthlyRows[$monthKey] ?? 0);
+
+            $labels[] = $label;
+            $revenue[] = (int) round($value);
+            $series[] = [
+                'key' => $monthKey,
+                'label' => $label,
+                'revenue' => (int) round($value),
+            ];
+        }
+
+        return [
+            $labels,
+            $revenue,
+            $series,
+            'Trend Revenue 6 Bulan',
+            'Total pendapatan gabungan per bulan.',
         ];
     }
 
@@ -4221,6 +4393,33 @@ class AdminController extends Controller
 
         $monthNumber = (int) $date->format('n');
         return $months[$monthNumber] ?? $date->format('M');
+    }
+
+    private function financeMonthYearLabel(?int $year, ?int $month): string
+    {
+        if (!$year || !$month) {
+            return '-';
+        }
+
+        return $this->financeShortMonthLabel(\Carbon\Carbon::create($year, $month, 1)) . ' ' . $year;
+    }
+
+    private function financeMonthOptions(): array
+    {
+        return [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
     }
 
     /**
