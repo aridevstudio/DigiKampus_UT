@@ -157,6 +157,15 @@ class ExcelImportService
                 }
             }
         } else {
+            $kodeJurusan = trim((string) ($row['kode_jurusan'] ?? ''));
+            if ($kodeJurusan !== '') {
+                $lookups = self::getJurusanLookups();
+                $normalizedCode = strtoupper($kodeJurusan);
+                if (!isset($lookups['byCode'][$normalizedCode])) {
+                    $errors[] = "Baris {$rowNumber}: Kode jurusan tidak ditemukan: {$kodeJurusan}.";
+                }
+            }
+
             $idJurusan = trim((string) ($row['id_jurusan'] ?? ''));
             if ($idJurusan !== '' && !ctype_digit($idJurusan)) {
                 $errors[] = "Baris {$rowNumber}: ID Program Studi harus berupa angka.";
@@ -511,7 +520,7 @@ class ExcelImportService
 
         // Headers
         $headers = $isMahasiswa
-            ? ['Nama', 'Nomor Induk', 'Email', 'ID Jurusan', 'Jurusan', 'No HP', 'Status']
+            ? ['Nama', 'Nomor Induk', 'Email', 'Kode Jurusan', 'No HP', 'Status']
             : ['Nama', 'Nomor Induk', 'Email', 'Kode Jurusan', 'No HP', 'Status'];
 
         foreach ($headers as $col => $header) {
@@ -551,9 +560,9 @@ class ExcelImportService
 
         $sampleData = $isMahasiswa
             ? [
-                ['Budi Santoso', '2024001001', 'budi.santoso@example.com', '1', 'Teknik Informatika', '081234567890', 'aktif'],
-                ['Siti Rahayu', '2024001002', 'siti.rahayu@example.com', '2', 'Sistem Informasi', '081234567891', ''],
-                ['Ahmad Fadli', '2024001003', 'ahmad.fadli@example.com', '', 'Teknik Informatika', '081234567892', 'aktif'],
+                ['Budi Santoso', '2024001001', 'budi.santoso@example.com', $firstCode, '081234567890', 'aktif'],
+                ['Siti Rahayu', '2024001002', 'siti.rahayu@example.com', $secondCode, '081234567891', 'aktif'],
+                ['Ahmad Fadli', '2024001003', 'ahmad.fadli@example.com', $thirdCode, '081234567892', 'aktif'],
             ]
             : [
                 ['Dr. Ahmad Susanto', '198501012010011001', 'ahmad.susanto@example.com', $firstCode, '081234567890', 'aktif'],
@@ -565,7 +574,7 @@ class ExcelImportService
         foreach ($sampleData as $data) {
             foreach ($data as $col => $value) {
                 $cell = chr(65 + $col) . $row;
-                if ($isMahasiswa && in_array($col, [1, 3, 5], true)) {
+                if ($isMahasiswa && in_array($col, [1, 3, 4], true)) {
                     $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_STRING);
                     continue;
                 }
@@ -593,7 +602,7 @@ class ExcelImportService
         $sheet->setCellValue(
             "A" . ($notesRow + 2),
             $isMahasiswa
-                ? '- Kolom ID Jurusan atau Jurusan bisa dipakai. Prioritas baca dari ID Jurusan jika diisi'
+                ? '- Gunakan kolom Kode Jurusan sesuai master prodi yang ada di sistem'
                 : '- Gunakan kolom Kode Jurusan. Bisa isi lebih dari satu kode jurusan, pisahkan dengan koma'
         );
         $sheet->setCellValue("A" . ($notesRow + 3), '- Status: aktif atau nonaktif. Jika kosong akan otomatis menjadi aktif');

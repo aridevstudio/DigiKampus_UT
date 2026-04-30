@@ -2495,7 +2495,6 @@ class AdminController extends Controller
         // Normalize header
         $header = array_map(fn($h) => strtolower(trim($h)), $header);
 
-        $jurusanMap = \App\Models\Jurusan::pluck('id_jurusan', 'nama_jurusan')->toArray();
         $imported = 0;
         $skipped = 0;
         $errors = [];
@@ -2507,8 +2506,9 @@ class AdminController extends Controller
             $nama = $data['nama'] ?? '';
             $nomor_induk = $data['nomor_induk'] ?? '';
             $email = $data['email'] ?? '';
-            $jurusanName = $data['jurusan'] ?? '';
+            $kodeJurusan = $data['kode_jurusan'] ?? ($data['jurusan'] ?? '');
             $noHp = $data['no_hp'] ?? '';
+            $status = strtolower(trim((string) ($data['status'] ?? ''))) ?: 'aktif';
 
             if (empty($nama) || empty($nomor_induk) || empty($email)) {
                 $skipped++;
@@ -2522,14 +2522,7 @@ class AdminController extends Controller
                 continue;
             }
 
-            // Match jurusan by name
-            $idJurusan = null;
-            foreach ($jurusanMap as $name => $id) {
-                if (stripos($name, $jurusanName) !== false || stripos($jurusanName, $name) !== false) {
-                    $idJurusan = $id;
-                    break;
-                }
-            }
+            $idJurusan = $this->resolveJurusanIdsFromCodes($kodeJurusan)[0] ?? null;
 
             try {
                 $user = User::create([
@@ -2537,7 +2530,7 @@ class AdminController extends Controller
                     'email' => $email,
                     'password' => Hash::make(\Illuminate\Support\Str::random(12)),
                     'role' => 'mahasiswa',
-                    'status' => 'aktif',
+                    'status' => in_array($status, ['aktif', 'nonaktif'], true) ? $status : 'aktif',
                 ]);
 
                 $user->profile()->create([
@@ -4335,7 +4328,7 @@ class AdminController extends Controller
 
         // Headers
         $headers = $isMahasiswa
-            ? ['No', 'Nama', 'Nomor Induk', 'Email', 'Program Studi', 'No. Telepon', 'Status']
+            ? ['No', 'Nama', 'Nomor Induk', 'Email', 'Kode Jurusan', 'No. Telepon', 'Status']
             : ['No', 'Nama', 'Nomor Induk', 'Email', 'Kode Jurusan', 'No. Telepon', 'Status'];
 
         foreach ($headers as $col => $header) {
@@ -4379,7 +4372,11 @@ class AdminController extends Controller
 
                 $sheet->setCellValueExplicit('E' . $rowNum, $kodeJurusan, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             } else {
-                $sheet->setCellValue('E' . $rowNum, $user->profile?->jurusan?->nama_jurusan ?? '-');
+                $sheet->setCellValueExplicit(
+                    'E' . $rowNum,
+                    $user->profile?->jurusan?->kode_jurusan ?? '-',
+                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING
+                );
             }
             $sheet->setCellValueExplicit('F' . $rowNum, $user->profile?->no_hp ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('G' . $rowNum, ucfirst($user->status));
