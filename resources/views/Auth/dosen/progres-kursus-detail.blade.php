@@ -169,6 +169,21 @@
                                                             <div>Dikirim: {{ $submission['submitted_at'] ? optional($submission['submitted_at'])->format('d M Y H:i') : '-' }}</div>
                                                             <div>Direview: {{ $submission['reviewed_at'] ? optional($submission['reviewed_at'])->format('d M Y H:i') : 'Belum direview' }}</div>
                                                         </div>
+                                                        <div class="mt-3 flex flex-wrap gap-2">
+                                                            <a href="{{ route('dosen.assignment-submissions.preview', $submission['id']) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-700">
+                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                </svg>
+                                                                {{ $submission['is_final_assignment'] ? 'Lihat Tugas Akhir' : 'Lihat Berkas' }}
+                                                            </a>
+                                                            <a href="{{ route('dosen.assignment-submissions.download', $submission['id']) }}" class="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50 dark:border-sky-500/20 dark:bg-gray-900 dark:text-sky-300 dark:hover:bg-sky-500/10">
+                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v12m0 0l-4-4m4 4l4-4" />
+                                                                </svg>
+                                                                Download
+                                                            </a>
+                                                        </div>
                                                         @if(!empty($submission['student_note']))
                                                             <div class="mt-3 rounded-xl bg-white/80 p-3 text-xs text-gray-700 dark:bg-gray-900/70 dark:text-gray-200">
                                                                 <div class="mb-1 font-semibold text-gray-500 dark:text-gray-400">Catatan mahasiswa</div>

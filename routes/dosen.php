@@ -118,6 +118,8 @@ Route::prefix('dosen')
         // Progres & Monitoring
         // ----------------------------------------------------------------------
         Route::get('/progres-mahasiswa', [DosenController::class, 'showProgresMahasiswa'])->name('dosen.progres');
+        Route::get('/tugas/submission/{submissionId}/preview', [DosenController::class, 'previewAssignmentSubmission'])->name('dosen.assignment-submissions.preview');
+        Route::get('/tugas/submission/{submissionId}/download', [DosenController::class, 'downloadAssignmentSubmission'])->name('dosen.assignment-submissions.download');
         Route::get('/bootcamp', [DosenController::class, 'showBootcamp'])->name('dosen.bootcamp');
         Route::post('/bootcamp/sessions', [DosenController::class, 'storeBootcampSession'])->name('dosen.bootcamp.sessions.store');
         Route::get('/kelola-nilai', [DosenController::class, 'showKelolaNilai'])->name('dosen.nilai');

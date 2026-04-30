@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -2122,12 +2123,14 @@ class DosenController extends Controller
                         'is_completed' => (bool) ($progress?->is_completed),
                         'completed_at' => $progress?->updated_at,
                         'submission' => $submission ? [
+                            'id' => $submission->id_submission,
                             'status' => $submission->status,
                             'submitted_at' => $submission->submitted_at,
                             'reviewed_at' => $submission->reviewed_at,
                             'file_name' => $submission->original_file_name,
                             'student_note' => $submission->catatan_mahasiswa,
                             'instructor_note' => $submission->catatan_dosen,
+                            'is_final_assignment' => $this->isLikelyFinalAssignmentMaterial($submission->material),
                         ] : null,
                     ];
                 });
@@ -2267,6 +2270,40 @@ class DosenController extends Controller
         ]);
     }
 
+    public function previewAssignmentSubmission(int $submissionId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $submission = $this->getAuthorizedAssignmentSubmissionForDosen($submissionId, $dosen);
+
+        if (!$submission) {
+            abort(404);
+        }
+
+        if (!$submission->file_path || !Storage::disk('public')->exists($submission->file_path)) {
+            return back()->with('error', 'Berkas tugas tidak ditemukan di penyimpanan.');
+        }
+
+        return response()->file(Storage::disk('public')->path($submission->file_path));
+    }
+
+    public function downloadAssignmentSubmission(int $submissionId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $submission = $this->getAuthorizedAssignmentSubmissionForDosen($submissionId, $dosen);
+
+        if (!$submission) {
+            abort(404);
+        }
+
+        if (!$submission->file_path || !Storage::disk('public')->exists($submission->file_path)) {
+            return back()->with('error', 'Berkas tugas tidak ditemukan di penyimpanan.');
+        }
+
+        $downloadName = $submission->original_file_name ?: basename($submission->file_path);
+
+        return response()->download(Storage::disk('public')->path($submission->file_path), $downloadName);
+    }
+
     /**
      * Show all student progress (across all courses)
      */
@@ -2351,10 +2388,28 @@ class DosenController extends Controller
                 ];
             });
 
+        $assignmentSubmissions = AssignmentSubmission::query()
+            ->with(['material:id_material,judul_material,tipe,konten'])
+            ->whereIn('id_mahasiswa', $enrollmentIds)
+            ->whereIn('id_course', $courseIds)
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id_submission')
+            ->get()
+            ->groupBy(fn (AssignmentSubmission $submission) => $submission->id_mahasiswa . '_' . $submission->id_course);
+
         // Attach scores to enrollments
-        $enrollments->getCollection()->transform(function ($enrollment) use ($quizScores) {
+        $enrollments->getCollection()->transform(function ($enrollment) use ($quizScores, $assignmentSubmissions) {
             $key = $enrollment->id_mahasiswa . '_' . $enrollment->id_course;
             $enrollment->quiz_score = $quizScores[$key] ?? null;
+            $preferredSubmission = $this->selectPreferredAssignmentSubmission($assignmentSubmissions->get($key, collect()));
+
+            $enrollment->final_assignment_submission = $preferredSubmission ? [
+                'id' => $preferredSubmission->id_submission,
+                'file_name' => $preferredSubmission->original_file_name,
+                'status' => $preferredSubmission->status,
+                'submitted_at' => $preferredSubmission->submitted_at,
+                'is_final_assignment' => $this->isLikelyFinalAssignmentMaterial($preferredSubmission->material),
+            ] : null;
             return $enrollment;
         });
         
@@ -3557,6 +3612,51 @@ class DosenController extends Controller
             'tugas' => 'Tugas',
             default => 'Materi',
         };
+    }
+
+    private function getAuthorizedAssignmentSubmissionForDosen(int $submissionId, User $dosen): ?AssignmentSubmission
+    {
+        return AssignmentSubmission::query()
+            ->with(['material:id_material,judul_material,tipe,konten', 'mahasiswa:id,name,email', 'course:id_course,id_dosen,nama_course'])
+            ->where('id_submission', $submissionId)
+            ->whereHas('course', function ($query) use ($dosen) {
+                $query->where('id_dosen', $dosen->id);
+            })
+            ->first();
+    }
+
+    private function selectPreferredAssignmentSubmission(Collection $submissions): ?AssignmentSubmission
+    {
+        if ($submissions->isEmpty()) {
+            return null;
+        }
+
+        $latestFinalAssignment = $submissions->first(function (AssignmentSubmission $submission) {
+            return $this->isLikelyFinalAssignmentMaterial($submission->material);
+        });
+
+        if ($latestFinalAssignment) {
+            return $latestFinalAssignment;
+        }
+
+        return $submissions->first();
+    }
+
+    private function isLikelyFinalAssignmentMaterial(?CourseMaterial $material): bool
+    {
+        if (!$material) {
+            return false;
+        }
+
+        $title = Str::lower(trim((string) $material->judul_material));
+
+        if ($title !== '' && Str::contains($title, 'tugas akhir')) {
+            return true;
+        }
+
+        $type = $this->normalizeMaterialTypeForDisplay($material->tipe, $material->konten);
+
+        return $type === 'tugas' && Str::contains($title, ['final', 'project akhir', 'ujian akhir']);
     }
 
     private function formatQuizQuestionTypeForProgress(?string $type): string
