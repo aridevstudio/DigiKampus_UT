@@ -35,11 +35,12 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tanggal Daftar</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Progres</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Detail</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                     @forelse($enrollments as $enrollment)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 @if($enrollment['foto'])
@@ -73,10 +74,19 @@
                                 {{ ucfirst($enrollment['status'] ?? 'aktif') }}
                             </span>
                         </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="{{ route('dosen.kursus.progres.detail', ['id' => $course->id_course, 'enrollmentId' => $enrollment['id']]) }}"
+                               class="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-teal-500/20 dark:bg-teal-500/10 dark:text-teal-300">
+                                Lihat Detail
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                             <p>Belum ada mahasiswa yang terdaftar di kursus ini</p>
                         </td>
                     </tr>

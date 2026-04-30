@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Agenda;
 use App\Models\AdminNotification;
+use App\Models\AssignmentSubmission;
 use App\Models\BootcampMentor;
 use App\Models\Course;
 use App\Models\CourseDiscussion;
@@ -12,11 +13,15 @@ use App\Models\CourseGradeRecord;
 use App\Models\CourseGradeSetting;
 use App\Models\CourseInstructorNote;
 use App\Models\CourseMaterial;
+use App\Models\CourseModule;
 use App\Models\DosenNotification;
 use App\Models\Enrollment;
+use App\Models\MaterialProgress;
 use App\Models\Message;
 use App\Models\Notification;
+use App\Models\Quiz;
 use App\Models\QuizAttempt;
+use App\Models\QuizAnswer;
 use App\Models\User;
 use App\Services\DeviceSessionLimitService;
 use Illuminate\Http\Request;
@@ -2012,6 +2017,7 @@ class DosenController extends Controller
             ->map(function($enrollment) {
                 return [
                     'id' => $enrollment->id_enroll,
+                    'mahasiswa_id' => $enrollment->id_mahasiswa,
                     'nama' => $enrollment->mahasiswa?->name ?? 'Unknown',
                     'foto' => $enrollment->mahasiswa?->profile?->foto_profile,
                     'progress' => round($enrollment->progress ?? 0),
@@ -2024,6 +2030,240 @@ class DosenController extends Controller
             'dosen' => $dosen,
             'course' => $course,
             'enrollments' => $enrollments,
+        ]);
+    }
+
+    /**
+     * Show detail progress for a specific student in a course
+     */
+    public function showProgresKursusDetail($id, $enrollmentId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+
+        $course = Course::where('id_course', $id)
+            ->where('id_dosen', $dosen->id)
+            ->with([
+                'modules' => fn ($query) => $query->orderBy('urutan'),
+                'materials' => fn ($query) => $query->orderBy('id_module')->orderBy('urutan'),
+            ])
+            ->first();
+
+        if (!$course) {
+            return redirect()->route('dosen.kursus')->with('error', 'Kursus tidak ditemukan');
+        }
+
+        $enrollment = Enrollment::where('id_enroll', $enrollmentId)
+            ->where('id_course', $course->id_course)
+            ->with(['mahasiswa.profile.jurusan'])
+            ->first();
+
+        if (!$enrollment) {
+            return redirect()->route('dosen.kursus.progres', $course->id_course)
+                ->with('error', 'Data progres mahasiswa tidak ditemukan');
+        }
+
+        $materialIds = $course->materials->pluck('id_material')->filter()->values();
+        $moduleIds = $course->modules->pluck('id_module')->filter()->values();
+
+        $materialProgress = MaterialProgress::where('id_mahasiswa', $enrollment->id_mahasiswa)
+            ->whereIn('id_material', $materialIds)
+            ->get()
+            ->keyBy('id_material');
+
+        $submissions = AssignmentSubmission::where('id_course', $course->id_course)
+            ->where('id_mahasiswa', $enrollment->id_mahasiswa)
+            ->whereIn('id_material', $materialIds)
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id_submission')
+            ->get()
+            ->groupBy('id_material');
+
+        $quizzes = Quiz::with([
+                'module:id_module,judul_module,urutan',
+                'questions' => fn ($query) => $query->orderBy('urutan')->orderBy('id_question'),
+            ])
+            ->where('id_course', $course->id_course)
+            ->where('is_active', true)
+            ->orderBy('urutan')
+            ->orderBy('id_quiz')
+            ->get();
+
+        $quizAttempts = QuizAttempt::with([
+                'quiz.module:id_module,judul_module,urutan',
+                'answers.question' => fn ($query) => $query->orderBy('urutan')->orderBy('id_question'),
+            ])
+            ->where('id_mahasiswa', $enrollment->id_mahasiswa)
+            ->whereIn('id_quiz', $quizzes->pluck('id_quiz'))
+            ->where('status', 'selesai')
+            ->orderByDesc('waktu_selesai')
+            ->orderByDesc('id_attempt')
+            ->get();
+
+        $attemptsByQuiz = $quizAttempts->groupBy('id_quiz');
+        $latestAttemptByQuiz = $attemptsByQuiz->map(fn (Collection $attempts) => $attempts->first());
+        $bestAttemptByQuiz = $attemptsByQuiz->map(fn (Collection $attempts) => $attempts->sortByDesc('persentase')->first());
+
+        $moduleSummaries = $course->modules->map(function (CourseModule $module) use ($course, $materialProgress, $submissions, $quizzes, $latestAttemptByQuiz) {
+            $materials = $course->materials
+                ->where('id_module', $module->id_module)
+                ->sortBy('urutan')
+                ->values()
+                ->map(function (CourseMaterial $material) use ($materialProgress, $submissions) {
+                    $progress = $materialProgress->get($material->id_material);
+                    $submission = optional($submissions->get($material->id_material))->first();
+                    $type = $this->normalizeMaterialTypeForDisplay($material->tipe, $material->konten);
+
+                    return [
+                        'id' => $material->id_material,
+                        'title' => $material->judul_material ?: 'Materi',
+                        'type' => $type,
+                        'type_label' => $this->formatProgressMaterialType($type),
+                        'duration' => $material->durasi,
+                        'is_completed' => (bool) ($progress?->is_completed),
+                        'completed_at' => $progress?->updated_at,
+                        'submission' => $submission ? [
+                            'status' => $submission->status,
+                            'submitted_at' => $submission->submitted_at,
+                            'reviewed_at' => $submission->reviewed_at,
+                            'file_name' => $submission->original_file_name,
+                            'student_note' => $submission->catatan_mahasiswa,
+                            'instructor_note' => $submission->catatan_dosen,
+                        ] : null,
+                    ];
+                });
+
+            $moduleQuizzes = $quizzes
+                ->where('id_module', $module->id_module)
+                ->values()
+                ->map(function (Quiz $quiz) use ($latestAttemptByQuiz) {
+                    $latestAttempt = $latestAttemptByQuiz->get($quiz->id_quiz);
+
+                    return [
+                        'id' => $quiz->id_quiz,
+                        'title' => $quiz->judul ?: 'Kuiz Modul',
+                        'passing_score' => (int) ($quiz->passing_score ?? 0),
+                        'is_pretest' => (bool) $quiz->is_pretest,
+                        'question_count' => $quiz->questions->count(),
+                        'attempted' => $latestAttempt !== null,
+                        'latest_score' => $latestAttempt ? (int) round((float) $latestAttempt->persentase) : null,
+                        'submitted_at' => $latestAttempt?->waktu_selesai,
+                    ];
+                });
+
+            return [
+                'id' => $module->id_module,
+                'title' => $module->judul_module ?: ('Modul ' . $module->urutan),
+                'description' => $module->deskripsi,
+                'order' => $module->urutan,
+                'materials' => $materials,
+                'completed_materials' => $materials->where('is_completed', true)->count(),
+                'total_materials' => $materials->count(),
+                'quizzes' => $moduleQuizzes,
+            ];
+        })->values();
+
+        $quizReviews = $quizzes->map(function (Quiz $quiz) use ($attemptsByQuiz, $latestAttemptByQuiz, $bestAttemptByQuiz) {
+            $latestAttempt = $latestAttemptByQuiz->get($quiz->id_quiz);
+            $bestAttempt = $bestAttemptByQuiz->get($quiz->id_quiz);
+
+            if (!$latestAttempt) {
+                return [
+                    'id' => $quiz->id_quiz,
+                    'title' => $quiz->judul ?: 'Kuiz Modul',
+                    'module_name' => $quiz->module?->judul_module ?: 'Tanpa Modul',
+                    'is_pretest' => (bool) $quiz->is_pretest,
+                    'attempt_count' => 0,
+                    'latest_attempt' => null,
+                    'best_score' => null,
+                    'question_reviews' => [],
+                ];
+            }
+
+            $latestAttempt->loadMissing(['answers.question', 'quiz.module']);
+            $correctCount = $latestAttempt->answers->where('is_correct', true)->count();
+            $questionReviews = $latestAttempt->answers
+                ->sortBy(fn (QuizAnswer $answer) => $answer->question?->urutan ?? 0)
+                ->values()
+                ->map(function (QuizAnswer $answer, int $index) {
+                    $question = $answer->question;
+                    $options = $question ? array_values((array) ($question->opsi ?? [])) : [];
+                    $selectedMeta = $this->buildQuizAnswerDisplayMetaForProgress($answer->jawaban, $options);
+                    $correctMeta = $this->buildQuizAnswerDisplayMetaForProgress($question?->jawaban_benar, $options);
+
+                    return [
+                        'number' => $index + 1,
+                        'question' => $question?->pertanyaan ?? 'Soal tidak ditemukan.',
+                        'type' => $this->formatQuizQuestionTypeForProgress($question?->tipe),
+                        'selected_label' => $selectedMeta['label'],
+                        'selected_text' => $selectedMeta['text'],
+                        'correct_label' => $correctMeta['label'],
+                        'correct_text' => $correctMeta['text'],
+                        'is_correct' => (bool) $answer->is_correct,
+                        'points' => (int) $answer->poin_diperoleh,
+                        'max_points' => (int) ($question?->bobot ?? 0),
+                        'explanation' => trim((string) ($question?->penjelasan ?? '')),
+                    ];
+                })
+                ->all();
+
+            return [
+                'id' => $quiz->id_quiz,
+                'title' => $quiz->judul ?: 'Kuiz Modul',
+                'module_name' => $quiz->module?->judul_module ?: 'Tanpa Modul',
+                'is_pretest' => (bool) $quiz->is_pretest,
+                'attempt_count' => $attemptsByQuiz->get($quiz->id_quiz)?->count() ?? 0,
+                'latest_attempt' => [
+                    'score' => (int) round((float) $latestAttempt->persentase),
+                    'earned_points' => (int) $latestAttempt->skor,
+                    'max_points' => (int) $latestAttempt->total_poin,
+                    'correct_answers' => $correctCount,
+                    'total_questions' => count($questionReviews),
+                    'is_passed' => (int) round((float) $latestAttempt->persentase) >= (int) ($quiz->passing_score ?? 0),
+                    'submitted_at' => $latestAttempt->waktu_selesai,
+                    'passing_score' => (int) ($quiz->passing_score ?? 0),
+                ],
+                'best_score' => $bestAttempt ? (int) round((float) $bestAttempt->persentase) : null,
+                'question_reviews' => $questionReviews,
+            ];
+        })->values();
+
+        $completedMaterials = $materialProgress->where('is_completed', true)->count();
+        $totalMaterials = $course->materials->count();
+        $submittedAssignments = $submissions->filter(fn (Collection $group) => $group->isNotEmpty())->count();
+        $reviewedAssignments = $submissions
+            ->map(fn (Collection $group) => $group->first())
+            ->filter(fn ($submission) => filled($submission?->reviewed_at))
+            ->count();
+        $attemptedQuizzes = $latestAttemptByQuiz->filter()->count();
+        $totalQuizQuestions = $quizReviews->sum(fn ($quizReview) => (int) ($quizReview['latest_attempt']['total_questions'] ?? 0));
+        $totalCorrectAnswers = $quizReviews->sum(fn ($quizReview) => (int) ($quizReview['latest_attempt']['correct_answers'] ?? 0));
+
+        $lastActivity = collect([
+            $materialProgress->max('updated_at'),
+            $quizAttempts->max('waktu_selesai'),
+            $submissions->flatten()->max('submitted_at'),
+            $submissions->flatten()->max('reviewed_at'),
+            $enrollment->updated_at,
+        ])->filter()->sortDesc()->first();
+
+        return view('Auth.dosen.progres-kursus-detail', [
+            'dosen' => $dosen,
+            'course' => $course,
+            'enrollment' => $enrollment,
+            'moduleSummaries' => $moduleSummaries,
+            'quizReviews' => $quizReviews,
+            'progressSummary' => [
+                'progress' => (int) round((float) ($enrollment->progress ?? 0)),
+                'total_materials' => $totalMaterials,
+                'completed_materials' => $completedMaterials,
+                'attempted_quizzes' => $attemptedQuizzes,
+                'total_quizzes' => $quizzes->count(),
+                'correct_answers' => $totalCorrectAnswers,
+                'total_questions' => $totalQuizQuestions,
+                'submitted_assignments' => $submittedAssignments,
+                'reviewed_assignments' => $reviewedAssignments,
+                'last_activity' => $lastActivity,
+            ],
         ]);
     }
 
@@ -3306,6 +3546,72 @@ class DosenController extends Controller
         }
 
         return $result;
+    }
+
+    private function formatProgressMaterialType(string $type): string
+    {
+        return match ($type) {
+            'video' => 'Video',
+            'bacaan' => 'Bacaan',
+            'kuis' => 'Kuiz',
+            'tugas' => 'Tugas',
+            default => 'Materi',
+        };
+    }
+
+    private function formatQuizQuestionTypeForProgress(?string $type): string
+    {
+        return match ($type) {
+            'benar_salah' => 'Benar / Salah',
+            'pilihan_ganda' => 'Pilihan Ganda',
+            default => 'Soal',
+        };
+    }
+
+    private function buildQuizAnswerDisplayMetaForProgress(mixed $value, array $options): array
+    {
+        if ($value === null || $value === '') {
+            return ['label' => '-', 'text' => 'Tidak dijawab'];
+        }
+
+        if (is_numeric($value)) {
+            $index = (int) $value;
+
+            return [
+                'label' => $this->quizOptionLabelFromIndexForProgress($index) ?? (string) $value,
+                'text' => $options[$index] ?? (string) $value,
+            ];
+        }
+
+        $textValue = trim((string) $value);
+        $matchedIndex = collect($options)->search(fn ($option) => trim((string) $option) === $textValue);
+
+        if ($matchedIndex !== false) {
+            return [
+                'label' => $this->quizOptionLabelFromIndexForProgress((int) $matchedIndex) ?? (string) $matchedIndex,
+                'text' => $options[$matchedIndex],
+            ];
+        }
+
+        if (strlen($textValue) === 1 && ctype_alpha($textValue)) {
+            $index = ord(strtoupper($textValue)) - 65;
+
+            return [
+                'label' => strtoupper($textValue),
+                'text' => $options[$index] ?? strtoupper($textValue),
+            ];
+        }
+
+        return ['label' => '-', 'text' => $textValue];
+    }
+
+    private function quizOptionLabelFromIndexForProgress(?int $index): ?string
+    {
+        if ($index === null || $index < 0 || $index > 25) {
+            return null;
+        }
+
+        return chr(65 + $index);
     }
 
     private function inferGradeStatusSlug(
