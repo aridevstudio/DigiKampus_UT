@@ -911,13 +911,20 @@
             document.getElementById('importStep1').classList.add('hidden');
             document.getElementById('importStep2').classList.remove('hidden');
 
+            const totalRows = preview.total ?? preview.total_rows ?? 0;
+            const validCount = preview.valid_count ?? (preview.valid_rows ? preview.valid_rows.length : 0);
+            const invalidCount = preview.invalid_count ?? preview.error_count ?? (preview.invalid_rows ? preview.invalid_rows.length : 0);
+            const previewErrors = (preview.invalid_rows || [])
+                .flatMap(row => row._errors || [])
+                .filter(Boolean);
+
             // Summary
             const summary = document.getElementById('importPreviewSummary');
             summary.innerHTML = `
                 <div class="flex gap-4 text-center">
-                    <div class="flex-1"><p class="text-lg font-bold text-gray-800 dark:text-white">${preview.total_rows}</p><p class="text-xs text-gray-500">Total Baris</p></div>
-                    <div class="flex-1"><p class="text-lg font-bold text-green-600">${preview.valid_count}</p><p class="text-xs text-gray-500">Valid</p></div>
-                    <div class="flex-1"><p class="text-lg font-bold text-red-600">${preview.error_count}</p><p class="text-xs text-gray-500">Error</p></div>
+                    <div class="flex-1"><p class="text-lg font-bold text-gray-800 dark:text-white">${totalRows}</p><p class="text-xs text-gray-500">Total Baris</p></div>
+                    <div class="flex-1"><p class="text-lg font-bold text-green-600">${validCount}</p><p class="text-xs text-gray-500">Valid</p></div>
+                    <div class="flex-1"><p class="text-lg font-bold text-red-600">${invalidCount}</p><p class="text-xs text-gray-500">Error</p></div>
                 </div>`;
 
             // Preview table (first 10 valid rows)
@@ -941,11 +948,11 @@
 
             // Errors
             const errorList = document.getElementById('importErrorList');
-            if (preview.errors && preview.errors.length > 0) {
+            if (previewErrors.length > 0) {
                 errorList.classList.remove('hidden');
                 let errHtml = '<div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"><p class="text-xs text-red-700 dark:text-red-300 font-medium mb-1">Error ditemukan:</p><ul class="text-xs text-red-600 dark:text-red-400 list-disc list-inside space-y-0.5">';
-                preview.errors.slice(0, 10).forEach(e => errHtml += '<li>' + e + '</li>');
-                if (preview.errors.length > 10) errHtml += '<li>...dan ' + (preview.errors.length - 10) + ' error lagi</li>';
+                previewErrors.slice(0, 10).forEach(e => errHtml += '<li>' + e + '</li>');
+                if (previewErrors.length > 10) errHtml += '<li>...dan ' + (previewErrors.length - 10) + ' error lagi</li>';
                 errHtml += '</ul></div>';
                 errorList.innerHTML = errHtml;
             } else {
@@ -953,7 +960,7 @@
             }
 
             // Disable confirm if no valid rows
-            document.getElementById('confirmImportBtn').disabled = !preview.valid_count;
+            document.getElementById('confirmImportBtn').disabled = !validCount;
         }
 
         function confirmImportFile(type) {
