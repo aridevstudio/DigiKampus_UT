@@ -18,6 +18,8 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class ExcelImportService
 {
+    private static ?array $jurusanLookups = null;
+
     /**
      * Required columns for each type.
      */
@@ -30,8 +32,8 @@ class ExcelImportService
      * Optional columns for each type.
      */
     private static array $optionalColumns = [
-        'mahasiswa' => ['jurusan', 'id_jurusan', 'no_hp', 'status'],
-        'dosen' => ['jurusan', 'id_jurusan', 'no_hp', 'status'],
+        'mahasiswa' => ['jurusan', 'id_jurusan', 'kode_jurusan', 'no_hp', 'status'],
+        'dosen' => ['kode_jurusan', 'jurusan', 'id_jurusan', 'no_hp', 'status'],
     ];
 
     /**
@@ -141,9 +143,24 @@ class ExcelImportService
             $errors[] = "Baris {$rowNumber}: Status harus aktif atau nonaktif.";
         }
 
-        $idJurusan = trim((string) ($row['id_jurusan'] ?? ''));
-        if ($idJurusan !== '' && !ctype_digit($idJurusan)) {
-            $errors[] = "Baris {$rowNumber}: ID Program Studi harus berupa angka.";
+        if ($type === 'dosen') {
+            $kodeJurusan = trim((string) ($row['kode_jurusan'] ?? ''));
+            if ($kodeJurusan !== '') {
+                $lookups = self::getJurusanLookups();
+                $invalidCodes = collect(self::parseDelimitedValues($kodeJurusan))
+                    ->reject(fn (string $code) => isset($lookups['byCode'][strtoupper($code)]))
+                    ->values()
+                    ->all();
+
+                if (!empty($invalidCodes)) {
+                    $errors[] = "Baris {$rowNumber}: Kode jurusan tidak ditemukan: " . implode(', ', $invalidCodes) . '.';
+                }
+            }
+        } else {
+            $idJurusan = trim((string) ($row['id_jurusan'] ?? ''));
+            if ($idJurusan !== '' && !ctype_digit($idJurusan)) {
+                $errors[] = "Baris {$rowNumber}: ID Program Studi harus berupa angka.";
+            }
         }
 
         return $errors;
@@ -178,8 +195,7 @@ class ExcelImportService
      */
     public static function executeImport(array $validRows, string $type, string $strategy, int $adminId): array
     {
-        $jurusanMap = \App\Models\Jurusan::pluck('id_jurusan', 'nama_jurusan')->toArray();
-        $jurusanById = \App\Models\Jurusan::pluck('id_jurusan', 'id_jurusan')->toArray();
+        $jurusanLookups = self::getJurusanLookups();
 
         $imported = 0;
         $skipped = 0;
@@ -218,8 +234,14 @@ class ExcelImportService
                             'status' => $status,
                         ]);
 
-                        $jurusanId = self::resolveJurusanId($row, $jurusanMap, $jurusanById);
-                        $existingUser->profile()->updateOrCreate(
+                        $jurusanIds = $type === 'dosen'
+                            ? self::resolveDosenJurusanIds($row, $jurusanLookups)
+                            : [];
+                        $jurusanId = $type === 'dosen'
+                            ? ($jurusanIds[0] ?? null)
+                            : self::resolveJurusanId($row, $jurusanLookups);
+
+                        $profile = $existingUser->profile()->updateOrCreate(
                             ['user_id' => $existingUser->id],
                             array_filter([
                                 'nomor_induk' => $identifier,
@@ -227,6 +249,11 @@ class ExcelImportService
                                 'no_hp' => $row['no_hp'] ?? null,
                             ])
                         );
+
+                        if ($type === 'dosen') {
+                            self::syncDosenJurusans($profile, $jurusanIds);
+                        }
+
                         $updated++;
                         continue;
                     }
@@ -259,12 +286,22 @@ class ExcelImportService
                     'status' => self::normalizeImportedStatus($row['status'] ?? null) ?? 'aktif',
                 ]);
 
-                $jurusanId = self::resolveJurusanId($row, $jurusanMap, $jurusanById);
-                $user->profile()->create([
+                $jurusanIds = $type === 'dosen'
+                    ? self::resolveDosenJurusanIds($row, $jurusanLookups)
+                    : [];
+                $jurusanId = $type === 'dosen'
+                    ? ($jurusanIds[0] ?? null)
+                    : self::resolveJurusanId($row, $jurusanLookups);
+
+                $profile = $user->profile()->create([
                     'nomor_induk' => $identifier,
                     'id_jurusan' => $jurusanId,
                     'no_hp' => !empty($row['no_hp']) ? $row['no_hp'] : null,
                 ]);
+
+                if ($type === 'dosen') {
+                    self::syncDosenJurusans($profile, $jurusanIds);
+                }
 
                 $imported++;
             }
@@ -325,11 +362,19 @@ class ExcelImportService
     /**
      * Match jurusan name to ID (fuzzy).
      */
-    private static function resolveJurusanId(array $row, array $jurusanMap, array $jurusanById): ?int
+    private static function resolveJurusanId(array $row, array $lookups): ?int
     {
         $idJurusan = trim((string) ($row['id_jurusan'] ?? ''));
-        if ($idJurusan !== '' && isset($jurusanById[(int) $idJurusan])) {
+        if ($idJurusan !== '' && isset($lookups['byId'][(int) $idJurusan])) {
             return (int) $idJurusan;
+        }
+
+        $kodeJurusan = trim((string) ($row['kode_jurusan'] ?? ''));
+        if ($kodeJurusan !== '') {
+            $firstCode = self::parseDelimitedValues($kodeJurusan)[0] ?? null;
+            if ($firstCode !== null && isset($lookups['byCode'][strtoupper($firstCode)])) {
+                return $lookups['byCode'][strtoupper($firstCode)];
+            }
         }
 
         $name = trim((string) ($row['jurusan'] ?? ''));
@@ -337,16 +382,103 @@ class ExcelImportService
             return null;
         }
 
-        if (ctype_digit($name) && isset($jurusanById[(int) $name])) {
+        if (ctype_digit($name) && isset($lookups['byId'][(int) $name])) {
             return (int) $name;
         }
 
-        foreach ($jurusanMap as $jurusanName => $id) {
+        foreach ($lookups['byName'] as $jurusanName => $id) {
             if (stripos($jurusanName, $name) !== false || stripos($name, $jurusanName) !== false) {
                 return $id;
             }
         }
+
         return null;
+    }
+
+    private static function resolveDosenJurusanIds(array $row, array $lookups): array
+    {
+        $kodeJurusan = trim((string) ($row['kode_jurusan'] ?? ''));
+        if ($kodeJurusan !== '') {
+            return collect(self::parseDelimitedValues($kodeJurusan))
+                ->map(fn (string $code) => $lookups['byCode'][strtoupper($code)] ?? null)
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        $idJurusan = trim((string) ($row['id_jurusan'] ?? ''));
+        if ($idJurusan !== '') {
+            return collect(self::parseDelimitedValues($idJurusan))
+                ->filter(fn (string $id) => ctype_digit($id) && isset($lookups['byId'][(int) $id]))
+                ->map(fn (string $id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        $jurusan = trim((string) ($row['jurusan'] ?? ''));
+        if ($jurusan === '') {
+            return [];
+        }
+
+        return collect(self::parseDelimitedValues($jurusan))
+            ->map(function (string $name) use ($lookups) {
+                foreach ($lookups['byName'] as $jurusanName => $id) {
+                    if (stripos($jurusanName, $name) !== false || stripos($name, $jurusanName) !== false) {
+                        return (int) $id;
+                    }
+                }
+
+                return null;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private static function syncDosenJurusans(\App\Models\Profile $profile, array $jurusanIds): void
+    {
+        $profile->jurusans()->sync($jurusanIds);
+
+        $primaryJurusanId = $jurusanIds[0] ?? null;
+        if ((string) $profile->id_jurusan !== (string) $primaryJurusanId) {
+            $profile->forceFill(['id_jurusan' => $primaryJurusanId])->save();
+        }
+    }
+
+    private static function getJurusanLookups(): array
+    {
+        if (self::$jurusanLookups !== null) {
+            return self::$jurusanLookups;
+        }
+
+        $jurusans = \App\Models\Jurusan::query()
+            ->select(['id_jurusan', 'kode_jurusan', 'nama_jurusan'])
+            ->get();
+
+        return self::$jurusanLookups = [
+            'byId' => $jurusans->pluck('id_jurusan', 'id_jurusan')->toArray(),
+            'byCode' => $jurusans
+                ->filter(fn ($jurusan) => filled($jurusan->kode_jurusan))
+                ->mapWithKeys(fn ($jurusan) => [strtoupper((string) $jurusan->kode_jurusan) => (int) $jurusan->id_jurusan])
+                ->toArray(),
+            'byName' => $jurusans
+                ->filter(fn ($jurusan) => filled($jurusan->nama_jurusan))
+                ->mapWithKeys(fn ($jurusan) => [mb_strtolower((string) $jurusan->nama_jurusan) => (int) $jurusan->id_jurusan])
+                ->toArray(),
+        ];
+    }
+
+    private static function parseDelimitedValues(?string $value): array
+    {
+        return collect(preg_split('/[\s]*[,;|]+[\s]*/', (string) $value) ?: [])
+            ->map(fn ($item) => trim((string) $item))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private static function normalizeImportedStatus(?string $status): ?string
@@ -380,7 +512,7 @@ class ExcelImportService
         // Headers
         $headers = $isMahasiswa
             ? ['Nama', 'Nomor Induk', 'Email', 'ID Jurusan', 'Jurusan', 'No HP', 'Status']
-            : ['Nama', 'Nomor Induk', 'Email', 'ID Jurusan', 'Jurusan', 'No HP', 'Status'];
+            : ['Nama', 'Nomor Induk', 'Email', 'Kode Jurusan', 'No HP', 'Status'];
 
         foreach ($headers as $col => $header) {
             $cell = chr(65 + $col) . '1';
@@ -411,6 +543,12 @@ class ExcelImportService
         ]);
 
         // Sample rows
+        $jurusanLookups = self::getJurusanLookups();
+        $availableCodes = array_keys($jurusanLookups['byCode']);
+        $firstCode = $availableCodes[0] ?? 'TI';
+        $secondCode = $availableCodes[1] ?? $firstCode;
+        $thirdCode = $availableCodes[2] ?? $firstCode;
+
         $sampleData = $isMahasiswa
             ? [
                 ['Budi Santoso', '2024001001', 'budi.santoso@example.com', '1', 'Teknik Informatika', '081234567890', 'aktif'],
@@ -418,16 +556,21 @@ class ExcelImportService
                 ['Ahmad Fadli', '2024001003', 'ahmad.fadli@example.com', '', 'Teknik Informatika', '081234567892', 'aktif'],
             ]
             : [
-                ['Dr. Ahmad Susanto', '198501012010011001', 'ahmad.susanto@example.com', '1', 'Teknik Informatika', '081234567890', 'aktif'],
-                ['Prof. Siti Aminah', '197803152005012002', 'siti.aminah@example.com', '2', 'Sistem Informasi', '081234567891', ''],
-                ['Dr. Budi Prakoso', '199002202015011003', 'budi.prakoso@example.com', '', 'Teknik Informatika', '081234567892', 'aktif'],
+                ['Dr. Ahmad Susanto', '198501012010011001', 'ahmad.susanto@example.com', $firstCode, '081234567890', 'aktif'],
+                ['Prof. Siti Aminah', '197803152005012002', 'siti.aminah@example.com', $secondCode, '081234567891', 'aktif'],
+                ['Dr. Budi Prakoso', '199002202015011003', 'budi.prakoso@example.com', implode(', ', array_unique([$firstCode, $thirdCode])), '081234567892', 'aktif'],
             ];
 
         $row = 2;
         foreach ($sampleData as $data) {
             foreach ($data as $col => $value) {
                 $cell = chr(65 + $col) . $row;
-                if (in_array($col, [1, 3, 5], true)) {
+                if ($isMahasiswa && in_array($col, [1, 3, 5], true)) {
+                    $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_STRING);
+                    continue;
+                }
+
+                if (!$isMahasiswa && in_array($col, [1, 3, 4], true)) {
                     $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_STRING);
                     continue;
                 }
@@ -447,7 +590,12 @@ class ExcelImportService
         $sheet->setCellValue("A{$notesRow}", 'Catatan:');
         $sheet->getStyle("A{$notesRow}")->getFont()->setBold(true);
         $sheet->setCellValue("A" . ($notesRow + 1), '- Kolom Nama, Nomor Induk, Email wajib diisi');
-        $sheet->setCellValue("A" . ($notesRow + 2), '- Kolom ID Jurusan atau Jurusan bisa dipakai. Prioritas baca dari ID Jurusan jika diisi');
+        $sheet->setCellValue(
+            "A" . ($notesRow + 2),
+            $isMahasiswa
+                ? '- Kolom ID Jurusan atau Jurusan bisa dipakai. Prioritas baca dari ID Jurusan jika diisi'
+                : '- Gunakan kolom Kode Jurusan. Bisa isi lebih dari satu kode jurusan, pisahkan dengan koma'
+        );
         $sheet->setCellValue("A" . ($notesRow + 3), '- Status: aktif atau nonaktif. Jika kosong akan otomatis menjadi aktif');
         $sheet->setCellValue("A" . ($notesRow + 4), '- Duplikat dicek berdasarkan Email dan Nomor Induk, bukan Nama');
         $sheet->setCellValue("A" . ($notesRow + 5), '- Format No HP: 10-15 digit angka');

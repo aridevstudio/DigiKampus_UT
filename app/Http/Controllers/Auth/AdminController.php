@@ -2421,6 +2421,52 @@ class AdminController extends Controller
         }
     }
 
+    private function parseDelimitedJurusanCodes(?string $value): array
+    {
+        return collect(preg_split('/[\s]*[,;|]+[\s]*/', (string) $value) ?: [])
+            ->map(fn ($code) => strtoupper(trim((string) $code)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function resolveJurusanIdsFromCodes(?string $value): array
+    {
+        $codes = $this->parseDelimitedJurusanCodes($value);
+        if (empty($codes)) {
+            return [];
+        }
+
+        $jurusanMap = Jurusan::query()
+            ->select(['id_jurusan', 'kode_jurusan', 'nama_jurusan'])
+            ->get()
+            ->values();
+
+        $jurusanByCode = $jurusanMap
+            ->filter(fn ($jurusan) => filled($jurusan->kode_jurusan))
+            ->mapWithKeys(fn ($jurusan) => [strtoupper((string) $jurusan->kode_jurusan) => (int) $jurusan->id_jurusan])
+            ->toArray();
+
+        return collect($codes)
+            ->map(function ($code) use ($jurusanByCode, $jurusanMap) {
+                if (isset($jurusanByCode[$code])) {
+                    return $jurusanByCode[$code];
+                }
+
+                $matchedJurusan = $jurusanMap->first(function ($jurusan) use ($code) {
+                    $name = mb_strtolower((string) ($jurusan->nama_jurusan ?? ''));
+                    return $name !== '' && (stripos($name, mb_strtolower($code)) !== false || stripos(mb_strtolower($code), $name) !== false);
+                });
+
+                return $matchedJurusan?->id_jurusan;
+            })
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
     /**
      * Import mahasiswa from CSV file
      */
@@ -2542,8 +2588,6 @@ class AdminController extends Controller
         }
 
         $header = array_map(fn($h) => strtolower(trim($h)), $header);
-
-        $jurusanMap = \App\Models\Jurusan::pluck('id_jurusan', 'nama_jurusan')->toArray();
         $imported = 0;
         $skipped = 0;
         $errors = [];
@@ -2555,8 +2599,9 @@ class AdminController extends Controller
             $nama = $data['nama'] ?? '';
             $nomor_induk = $data['nomor_induk'] ?? '';
             $email = $data['email'] ?? '';
-            $jurusanName = $data['jurusan'] ?? '';
+            $kodeJurusan = $data['kode_jurusan'] ?? ($data['jurusan'] ?? '');
             $noHp = $data['no_hp'] ?? '';
+            $status = strtolower(trim((string) ($data['status'] ?? ''))) ?: 'aktif';
 
             if (empty($nama) || empty($nomor_induk) || empty($email)) {
                 $skipped++;
@@ -2569,13 +2614,8 @@ class AdminController extends Controller
                 continue;
             }
 
-            $idJurusan = null;
-            foreach ($jurusanMap as $name => $id) {
-                if (stripos($name, $jurusanName) !== false || stripos($jurusanName, $name) !== false) {
-                    $idJurusan = $id;
-                    break;
-                }
-            }
+            $jurusanIds = $this->resolveJurusanIdsFromCodes($kodeJurusan);
+            $idJurusan = $jurusanIds[0] ?? null;
 
             try {
                 $user = User::create([
@@ -2583,14 +2623,16 @@ class AdminController extends Controller
                     'email' => $email,
                     'password' => Hash::make(\Illuminate\Support\Str::random(12)),
                     'role' => 'dosen',
-                    'status' => 'aktif',
+                    'status' => in_array($status, ['aktif', 'nonaktif'], true) ? $status : 'aktif',
                 ]);
 
-                $user->profile()->create([
+                $profile = $user->profile()->create([
                     'nomor_induk' => $nomor_induk,
                     'id_jurusan' => $idJurusan,
                     'no_hp' => $noHp ?: null,
                 ]);
+
+                $this->syncDosenJurusans($profile, $jurusanIds);
 
                 $imported++;
             } catch (\Exception $e) {
@@ -4294,7 +4336,7 @@ class AdminController extends Controller
         // Headers
         $headers = $isMahasiswa
             ? ['No', 'Nama', 'Nomor Induk', 'Email', 'Program Studi', 'No. Telepon', 'Status']
-            : ['No', 'Nama', 'Nomor Induk', 'Email', 'Program Studi', 'No. Telepon', 'Status'];
+            : ['No', 'Nama', 'Nomor Induk', 'Email', 'Kode Jurusan', 'No. Telepon', 'Status'];
 
         foreach ($headers as $col => $header) {
             $cell = chr(65 + $col) . '1';
@@ -4324,11 +4366,21 @@ class AdminController extends Controller
             $sheet->setCellValue('B' . $rowNum, $user->name);
             $sheet->setCellValueExplicit('C' . $rowNum, $user->profile?->nomor_induk ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('D' . $rowNum, $user->email);
-            $programStudi = $type === 'dosen'
-                ? (!empty($user->profile?->jurusan_names) ? implode(', ', $user->profile->jurusan_names) : '-')
-                : ($user->profile?->jurusan?->nama_jurusan ?? '-');
+            if ($type === 'dosen') {
+                $kodeJurusan = '-';
+                if ($user->profile?->relationLoaded('jurusans') && $user->profile->jurusans->isNotEmpty()) {
+                    $kodeJurusan = $user->profile->jurusans
+                        ->pluck('kode_jurusan')
+                        ->filter()
+                        ->implode(', ');
+                } elseif ($user->profile?->relationLoaded('jurusan') && $user->profile?->jurusan?->kode_jurusan) {
+                    $kodeJurusan = $user->profile->jurusan->kode_jurusan;
+                }
 
-            $sheet->setCellValue('E' . $rowNum, $programStudi);
+                $sheet->setCellValueExplicit('E' . $rowNum, $kodeJurusan, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            } else {
+                $sheet->setCellValue('E' . $rowNum, $user->profile?->jurusan?->nama_jurusan ?? '-');
+            }
             $sheet->setCellValueExplicit('F' . $rowNum, $user->profile?->no_hp ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('G' . $rowNum, ucfirst($user->status));
             $rowNum++;
