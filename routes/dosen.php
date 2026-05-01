@@ -152,7 +152,7 @@ Route::prefix('dosen')
         // ----------------------------------------------------------------------
         // Authentication
         // ----------------------------------------------------------------------
-        Route::post('/logout', [DosenController::class, 'logout'])->name('dosen.logout');
+        Route::match(['GET', 'POST'], '/logout', [DosenController::class, 'logout'])->name('dosen.logout');
         
         // ----------------------------------------------------------------------
         // Fallback

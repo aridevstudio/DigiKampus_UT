@@ -98,5 +98,5 @@ Route::prefix('mahasiswa')
         Route::get('/news', [DashboardController::class, 'news'])->name('mahasiswa.news');
         
         // Logout
-        Route::post('/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');
+        Route::match(['GET', 'POST'], '/logout', [MahasiswaController::class, 'logout'])->name('mahasiswa.logout');
     });

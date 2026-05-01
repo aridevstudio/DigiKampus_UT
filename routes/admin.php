@@ -30,7 +30,7 @@ Route::prefix('admin')
         Route::get('/mahasiswa', [AdminController::class, 'showMahasiswa'])->name('admin.mahasiswa');
 
         // post
-        Route::post('/logout', [AdminController::class, 'logout'])->name('admin.logout');
+        Route::match(['GET', 'POST'], '/logout', [AdminController::class, 'logout'])->name('admin.logout');
         
         // Dosen CRUD
         Route::post('/dosen', [AdminController::class, 'storeDosen'])->name('admin.dosen.store');

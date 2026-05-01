@@ -159,12 +159,9 @@ if ($userType === 'mahasiswa' && $user) {
                         <a href="{{ route($userType . '.profile') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">Profile</a>
                         @endif
                         <hr class="my-1 border-gray-100 dark:border-gray-700/50">
-                        <form action="{{ $routes['logout'] }}" method="POST">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
-                                Logout
-                            </button>
-                        </form>
+                        <a href="{{ $routes['logout'] }}" class="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
+                            Logout
+                        </a>
                     </div>
                 </div>
             </div>
