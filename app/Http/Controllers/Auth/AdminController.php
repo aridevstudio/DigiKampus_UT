@@ -38,6 +38,18 @@ use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
+    private const NEWS_ALLOWED_CATEGORIES = [
+        'pengumuman',
+        'berita',
+        'event',
+        'umum',
+        'akademik',
+        'keuangan',
+        'registrasi',
+        'kemahasiswaan',
+        'keungan',
+    ];
+
     /**
      * Show login form
      */
@@ -3925,7 +3937,7 @@ class AdminController extends Controller
     public function showPengumuman(Request $request)
     {
         $query = \App\Models\News::query();
-        $allowedKategori = ['pengumuman', 'berita', 'event', 'umum', 'akademik', 'keuangan', 'keungan', 'registrasi', 'kemahasiswaan'];
+        $allowedKategori = self::NEWS_ALLOWED_CATEGORIES;
 
         // Filter by kategori
         $kategoriFilter = $request->get('kategori', 'all');
@@ -4430,7 +4442,7 @@ class AdminController extends Controller
         $request->validate([
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
-            'kategori' => 'required|in:pengumuman,berita,event,umum,akademik,keuangan,keungan,registrasi,kemahasiswaan',
+            'kategori' => 'required|in:' . implode(',', self::NEWS_ALLOWED_CATEGORIES),
             'tanggal_publish' => 'required|date',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_active' => 'nullable',
@@ -4445,7 +4457,7 @@ class AdminController extends Controller
         $data = [
             'judul' => $request->judul,
             'konten' => $request->konten,
-            'kategori' => $request->kategori === 'keungan' ? 'keuangan' : $request->kategori,
+            'kategori' => $this->normalizeNewsCategory($request->kategori),
             'tanggal_publish' => $request->tanggal_publish,
             'is_active' => $request->has('is_active'),
         ];
@@ -4486,7 +4498,7 @@ class AdminController extends Controller
         $request->validate([
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
-            'kategori' => 'required|in:pengumuman,berita,event,umum,akademik,keuangan,keungan,registrasi,kemahasiswaan',
+            'kategori' => 'required|in:' . implode(',', self::NEWS_ALLOWED_CATEGORIES),
             'tanggal_publish' => 'required|date',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_active' => 'nullable',
@@ -4494,7 +4506,7 @@ class AdminController extends Controller
 
         $news->judul = $request->judul;
         $news->konten = $request->konten;
-        $news->kategori = $request->kategori === 'keungan' ? 'keuangan' : $request->kategori;
+        $news->kategori = $this->normalizeNewsCategory($request->kategori);
         $news->tanggal_publish = $request->tanggal_publish;
         $news->is_active = $request->has('is_active');
 
@@ -4618,6 +4630,16 @@ class AdminController extends Controller
         }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
+    }
+
+    private function normalizeNewsCategory(?string $category): string
+    {
+        $normalized = strtolower(trim((string) $category));
+
+        return match ($normalized) {
+            'keungan' => 'keuangan',
+            default => $normalized !== '' ? $normalized : 'pengumuman',
+        };
     }
 
     private function courseValidationRules(?int $courseId = null): array
