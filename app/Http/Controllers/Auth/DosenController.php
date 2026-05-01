@@ -1630,7 +1630,7 @@ class DosenController extends Controller
                         'tipe' => $material['tipe'],
                         'konten' => $material['konten'],
                         'video_url' => $material['tipe'] === 'video' ? $material['video_url'] : null,
-                        'durasi' => $material['tipe'] === 'tugas' ? null : $material['durasi'],
+                        'durasi' => $material['durasi'] ?? 0,
                         'urutan' => $index + 1,
                     ]);
                 }
@@ -1732,9 +1732,9 @@ class DosenController extends Controller
                 $konten = trim((string) data_get($module, 'konten', ''));
                 $videoUrl = trim((string) data_get($module, 'video_url', ''));
                 $durasiValue = data_get($module, 'durasi');
-                $durasi = $durasiValue === '' || $durasiValue === null ? null : (int) $durasiValue;
+                $durasi = $durasiValue === '' || $durasiValue === null ? 0 : max(0, (int) $durasiValue);
 
-                if ($judul === '' && $konten === '' && $videoUrl === '' && $durasi === null) {
+                if ($judul === '' && $konten === '' && $videoUrl === '' && $durasi === 0) {
                     return null;
                 }
 
@@ -1754,7 +1754,7 @@ class DosenController extends Controller
                     'tipe' => $tipe,
                     'konten' => $konten !== '' ? $konten : null,
                     'video_url' => $tipe === 'video' && $videoUrl !== '' ? $videoUrl : null,
-                    'durasi' => $tipe === 'tugas' ? null : $durasi,
+                    'durasi' => $durasi,
                 ];
             })
             ->filter()
