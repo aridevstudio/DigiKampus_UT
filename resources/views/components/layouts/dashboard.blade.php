@@ -808,7 +808,7 @@
             input.value = '';
             appendMahasiswaCsMessage('Sedang memeriksa FAQ...');
 
-            fetch('{{ route('mahasiswa.support.ask') }}', {
+            fetch(@json(route('mahasiswa.support.ask', [], false)), {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
