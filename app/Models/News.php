@@ -17,6 +17,7 @@ class News extends Model
         'konten',
         'thumbnail',
         'kategori',
+        'target_prodi',
         'tanggal_publish',
         'is_active'
     ];
@@ -42,6 +43,22 @@ class News extends Model
     public function scopePublished($query)
     {
         return $query->where('tanggal_publish', '<=', now());
+    }
+
+    /**
+     * Scope news visible for a specific prodi target.
+     */
+    public function scopeVisibleForProdi($query, array $targetKeys)
+    {
+        return $query->where(function ($q) use ($targetKeys) {
+            $q->whereNull('target_prodi')
+                ->orWhere('target_prodi', '')
+                ->orWhere('target_prodi', 'all');
+
+            if (!empty($targetKeys)) {
+                $q->orWhereIn('target_prodi', $targetKeys);
+            }
+        });
     }
 
     /**

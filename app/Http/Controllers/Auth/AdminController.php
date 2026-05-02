@@ -3957,6 +3957,11 @@ class AdminController extends Controller
             $query->where('is_active', false);
         }
 
+        $targetProdiFilter = $request->get('target_prodi', 'all');
+        if ($targetProdiFilter !== 'all') {
+            $query->where('target_prodi', $this->normalizeNewsTargetProdi($targetProdiFilter));
+        }
+
         // Search
         $search = $request->get('search');
         if ($search) {
@@ -3977,6 +3982,7 @@ class AdminController extends Controller
             'totalNews' => \App\Models\News::count(),
             'kategoriFilter' => $kategoriFilter,
             'statusFilter' => $statusFilter,
+            'targetProdiFilter' => $targetProdiFilter,
             'search' => $search,
         ]);
     }
@@ -4443,6 +4449,7 @@ class AdminController extends Controller
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
             'kategori' => 'required|in:' . implode(',', self::NEWS_ALLOWED_CATEGORIES),
+            'target_prodi' => 'nullable|string|max:100',
             'tanggal_publish' => 'required|date',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_active' => 'nullable',
@@ -4458,6 +4465,7 @@ class AdminController extends Controller
             'judul' => $request->judul,
             'konten' => $request->konten,
             'kategori' => $this->normalizeNewsCategory($request->kategori),
+            'target_prodi' => $this->normalizeNewsTargetProdi($request->target_prodi),
             'tanggal_publish' => $request->tanggal_publish,
             'is_active' => $request->has('is_active'),
         ];
@@ -4482,6 +4490,7 @@ class AdminController extends Controller
             'judul' => $news->judul,
             'konten' => $news->konten,
             'kategori' => $news->kategori,
+            'target_prodi' => $news->target_prodi,
             'tanggal_publish' => $news->tanggal_publish->format('Y-m-d\TH:i'),
             'thumbnail' => $news->thumbnail,
             'is_active' => $news->is_active,
@@ -4499,6 +4508,7 @@ class AdminController extends Controller
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
             'kategori' => 'required|in:' . implode(',', self::NEWS_ALLOWED_CATEGORIES),
+            'target_prodi' => 'nullable|string|max:100',
             'tanggal_publish' => 'required|date',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_active' => 'nullable',
@@ -4507,6 +4517,7 @@ class AdminController extends Controller
         $news->judul = $request->judul;
         $news->konten = $request->konten;
         $news->kategori = $this->normalizeNewsCategory($request->kategori);
+        $news->target_prodi = $this->normalizeNewsTargetProdi($request->target_prodi);
         $news->tanggal_publish = $request->tanggal_publish;
         $news->is_active = $request->has('is_active');
 
@@ -4640,6 +4651,13 @@ class AdminController extends Controller
             'keungan' => 'keuangan',
             default => $normalized !== '' ? $normalized : 'pengumuman',
         };
+    }
+
+    private function normalizeNewsTargetProdi(?string $targetProdi): ?string
+    {
+        $normalized = Str::slug(trim((string) $targetProdi));
+
+        return $normalized !== '' && $normalized !== 'all' ? $normalized : null;
     }
 
     private function courseValidationRules(?int $courseId = null): array

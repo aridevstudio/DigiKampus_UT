@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Auth\MahasiswaAuthController;
 use App\Http\Controllers\Api\Auth\DosenAuthController;
 use App\Http\Controllers\Api\Auth\AdminAuthController;
 use App\Http\Controllers\Api\Mahasiswa\MahasiswaDashboardController;
+use App\Http\Controllers\Api\Mahasiswa\AnnouncementController;
 use App\Http\Controllers\Api\Mahasiswa\CourseController;
 use App\Http\Controllers\Api\Mahasiswa\MyCourseController;
 use App\Http\Controllers\Api\Mahasiswa\CartController;
@@ -87,6 +88,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+        // Pengumuman routes for mobile notification feed
+        Route::get('/pengumuman', [AnnouncementController::class, 'index']);
+        Route::get('/pengumuman/{id}', [AnnouncementController::class, 'show']);
 
         // Status routes (Online/Offline)
         Route::get('/status', [StatusController::class, 'getStatus']);
