@@ -2757,7 +2757,7 @@ class AdminController extends Controller
         $selectedTicketId = (int) $request->query('ticket', 0);
 
         $query = SupportTicket::query()
-            ->with(['mahasiswa.profile', 'answeredBy'])
+            ->with(['mahasiswa.profile', 'dosen.profile', 'answeredBy'])
             ->latest();
 
         if ($status !== 'all') {
@@ -2769,6 +2769,13 @@ class AdminController extends Controller
                 $builder->where('subject', 'like', "%{$search}%")
                     ->orWhere('question', 'like', "%{$search}%")
                     ->orWhereHas('mahasiswa', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhereHas('profile', function ($profileQuery) use ($search) {
+                                $profileQuery->where('nomor_induk', 'like', "%{$search}%");
+                            });
+                    })
+                    ->orWhereHas('dosen', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%")
                             ->orWhereHas('profile', function ($profileQuery) use ($search) {
@@ -2800,7 +2807,7 @@ class AdminController extends Controller
             'status' => 'nullable|in:open,answered',
         ]);
 
-        $ticket = SupportTicket::with('mahasiswa')->findOrFail($id);
+        $ticket = SupportTicket::with(['mahasiswa', 'dosen'])->findOrFail($id);
 
         $ticket->update([
             'admin_reply' => trim($validated['admin_reply']),
@@ -2817,6 +2824,16 @@ class AdminController extends Controller
                 'info',
                 'support',
                 '#2563EB'
+            );
+        }
+
+        if ($ticket->dosen) {
+            DosenNotification::notifyDosen(
+                (int) $ticket->dosen->id,
+                'Balasan Support Baru',
+                'Admin telah membalas tiket support Anda: ' . $ticket->subject,
+                'info',
+                'support'
             );
         }
 

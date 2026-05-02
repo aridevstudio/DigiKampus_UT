@@ -488,7 +488,7 @@
                     <span class="h-2 w-2 rounded-full bg-green-500"></span>
                     CS Online
                 </span>
-                <p class="mt-1">Support ini tetap berada di bubble popup dan tidak masuk ke chat dosen-mahasiswa.</p>
+                <p class="mt-1">Pertanyaan akan dicek ke FAQ terlebih dahulu. Jika belum cocok, tiket akan diteruskan ke admin.</p>
             </div>
             <div id="dosen-cs-messages" class="mt-3 space-y-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-900/50">
                 <div class="max-w-[85%] rounded-2xl rounded-bl-md bg-white px-3 py-2 text-xs text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300">
@@ -1048,17 +1048,63 @@
             event.preventDefault();
 
             const input = document.getElementById('dosen-cs-input');
+            const submitButton = event.currentTarget?.querySelector('button[type="submit"]');
             if (!input) return;
+            if (submitButton && submitButton.disabled) return;
 
             const message = input.value.trim();
             if (!message) return;
 
             appendDosenCsMessage(message, 'user');
             input.value = '';
+            appendDosenCsMessage('Sedang memeriksa FAQ...');
 
-            window.setTimeout(() => {
-                appendDosenCsMessage('Pesan support diterima. Bubble ini tetap terpisah dari inbox mahasiswa dan saat ini masih frontend preview.');
-            }, 550);
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+
+            fetch(@json(route('dosen.support.ask', [], false)), {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                },
+                body: (() => {
+                    const formData = new FormData();
+                    formData.append('subject', 'Pertanyaan dari widget support dosen');
+                    formData.append('question', message);
+                    return formData;
+                })(),
+            })
+                .then(async (response) => {
+                    const payload = await response.json();
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.message || 'Gagal menghubungi support.');
+                    }
+
+                    const container = document.getElementById('dosen-cs-messages');
+                    if (container && container.lastElementChild) {
+                        container.removeChild(container.lastElementChild);
+                    }
+
+                    if (payload.resolved) {
+                        appendDosenCsMessage('FAQ terkait ditemukan: ' + payload.data.answer);
+                    } else {
+                        appendDosenCsMessage('Pertanyaan Anda belum ada di FAQ dan sudah diteruskan ke admin. Ticket ID: #' + payload.data.ticket_id);
+                    }
+                })
+                .catch((error) => {
+                    const container = document.getElementById('dosen-cs-messages');
+                    if (container && container.lastElementChild) {
+                        container.removeChild(container.lastElementChild);
+                    }
+                    appendDosenCsMessage(error.message || 'Terjadi kesalahan saat mengirim pertanyaan.');
+                })
+                .finally(() => {
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                    }
+                });
         }
 
         document.addEventListener('click', (event) => {
@@ -1075,4 +1121,3 @@
     @stack('scripts')
 </body>
 </html>
-

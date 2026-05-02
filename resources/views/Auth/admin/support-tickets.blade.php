@@ -1,7 +1,7 @@
 <x-layouts.admin :active="'support-tickets'">
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Tiket Support</h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Kelola pertanyaan mahasiswa yang belum terjawab oleh FAQ.</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Kelola pertanyaan mahasiswa dan dosen yang belum terjawab oleh FAQ.</p>
     </div>
 
     <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -46,6 +46,8 @@
         @forelse($tickets as $ticket)
             @php
                 $isSelected = $selectedTicketId === (int) $ticket->id_support_ticket;
+                $sender = $ticket->mahasiswa ?: $ticket->dosen;
+                $senderRole = $ticket->mahasiswa ? 'Mahasiswa' : 'Dosen';
             @endphp
             <div id="ticket-{{ $ticket->id_support_ticket }}" class="rounded-2xl border bg-white shadow-sm transition dark:bg-gray-800 {{ $isSelected ? 'border-blue-400 ring-2 ring-blue-200 dark:border-blue-500 dark:ring-blue-500/20' : 'border-gray-100 dark:border-gray-700' }}">
                 <div class="border-b border-gray-100 px-5 py-4 dark:border-gray-700">
@@ -63,9 +65,10 @@
                                 @endif
                             </div>
                             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                {{ $ticket->mahasiswa?->name ?? 'Mahasiswa' }}
-                                • {{ $ticket->mahasiswa?->email ?? '-' }}
-                                • {{ $ticket->mahasiswa?->profile?->nomor_induk ?? '-' }}
+                                {{ $senderRole }}:
+                                {{ $sender?->name ?? '-' }}
+                                &bull; {{ $sender?->email ?? '-' }}
+                                &bull; {{ $sender?->profile?->nomor_induk ?? '-' }}
                             </p>
                             <p class="mt-1 text-xs text-gray-400">
                                 Dibuat {{ optional($ticket->created_at)->translatedFormat('d M Y H:i') }}
@@ -82,7 +85,7 @@
 
                 <div class="grid grid-cols-1 gap-5 px-5 py-5 xl:grid-cols-[minmax(0,1fr)_420px]">
                     <div>
-                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pertanyaan mahasiswa</h3>
+                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pertanyaan {{ strtolower($senderRole) }}</h3>
                         <div class="mt-2 rounded-xl bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-700 dark:bg-gray-900 dark:text-gray-300">
                             {{ $ticket->question }}
                         </div>
@@ -129,7 +132,7 @@
                                     rows="7"
                                     required
                                     class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                    placeholder="Tulis balasan untuk mahasiswa..."
+                                    placeholder="Tulis balasan untuk pengguna..."
                                 >{{ old('admin_reply', $isSelected ? $ticket->admin_reply : $ticket->admin_reply) }}</textarea>
                             </div>
                             <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">

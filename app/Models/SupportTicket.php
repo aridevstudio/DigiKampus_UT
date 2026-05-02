@@ -14,6 +14,7 @@ class SupportTicket extends Model
 
     protected $fillable = [
         'id_mahasiswa',
+        'id_dosen',
         'answered_by',
         'subject',
         'question',
@@ -32,6 +33,11 @@ class SupportTicket extends Model
     public function mahasiswa()
     {
         return $this->belongsTo(User::class, 'id_mahasiswa', 'id');
+    }
+
+    public function dosen()
+    {
+        return $this->belongsTo(User::class, 'id_dosen', 'id');
     }
 
     public function answeredBy()

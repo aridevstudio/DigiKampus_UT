@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\DosenController;
 use App\Http\Controllers\Auth\DosenContentApiController;
+use App\Http\Controllers\Dosen\SupportController;
 use App\Http\Middleware\EnsureAuthenticatedDosen;
 use App\Http\Middleware\RedirectIfAuthenticatedDosen;
 use Illuminate\Support\Facades\Route;
@@ -132,6 +133,7 @@ Route::prefix('dosen')
         // Komunikasi
         // ----------------------------------------------------------------------
         Route::view('/pesan', 'Auth.dosen.pesan')->name('dosen.pesan');
+        Route::post('/support/ask', [SupportController::class, 'ask'])->name('dosen.support.ask');
         
         // ----------------------------------------------------------------------
         // Notifications (JSON endpoints for header dropdown)
