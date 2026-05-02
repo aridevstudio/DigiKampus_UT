@@ -10,6 +10,13 @@ class Notification extends Model
 {
     use HasFactory;
 
+    private const ALLOWED_TYPES = [
+        'kursus_pembelajaran',
+        'jadwal_ujian',
+        'pencapaian',
+        'umum',
+    ];
+
     protected $table = 'notifications';
     protected $primaryKey = 'id_notification';
 
@@ -69,6 +76,8 @@ class Notification extends Model
         ?string $icon = null,
         string $iconColor = '#3B82F6'
     ): self {
+        $tipe = in_array($tipe, self::ALLOWED_TYPES, true) ? $tipe : 'umum';
+
         return self::create([
             'id_mahasiswa' => $mahasiswaId,
             'judul' => $judul,
@@ -87,6 +96,7 @@ class Notification extends Model
         ?string $icon = null,
         string $iconColor = '#3B82F6'
     ): void {
+        $tipe = in_array($tipe, self::ALLOWED_TYPES, true) ? $tipe : 'umum';
         $now = now();
 
         User::query()

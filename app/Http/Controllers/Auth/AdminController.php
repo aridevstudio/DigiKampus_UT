@@ -2821,7 +2821,7 @@ class AdminController extends Controller
                 (int) $ticket->mahasiswa->id,
                 'Balasan Support Baru',
                 'Admin telah membalas tiket support Anda: ' . $ticket->subject,
-                'info',
+                'umum',
                 'support',
                 '#2563EB'
             );
