@@ -25,6 +25,10 @@
             'availableMonths' => [],
             'label' => '6 Bulan Terakhir',
         ];
+        $financeServiceFee = $financeServiceFee ?? [
+            'current' => 5000,
+            'collected' => 0,
+        ];
     @endphp
 
     <div class="mb-4 sm:mb-6 lg:mb-8">
@@ -76,6 +80,72 @@
         </div>
 
         <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] gap-4 sm:gap-6">
+                <div class="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4 sm:p-5 dark:border-blue-500/20 dark:from-blue-500/10 dark:via-gray-800 dark:to-cyan-500/10">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <span class="inline-flex items-center rounded-full bg-blue-600 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white">Biaya Layanan Global</span>
+                            <h3 class="mt-3 text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Setting checkout untuk semua pembelian kursus</h3>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Nominal ini dipakai otomatis saat mahasiswa checkout. Perubahan hanya berlaku untuk transaksi baru setelah setting disimpan.</p>
+                        </div>
+                        <div class="rounded-2xl border border-blue-200/70 bg-white/90 px-4 py-3 shadow-sm backdrop-blur dark:border-blue-400/20 dark:bg-gray-900/70">
+                            <p class="text-[11px] uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300">Nominal Aktif</p>
+                            <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">Rp {{ number_format((int) ($financeServiceFee['current'] ?? 0), 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-white/80 bg-white/80 px-4 py-3 dark:border-gray-700/60 dark:bg-gray-900/50">
+                            <p class="text-[11px] uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Fee Terkumpul Pada Periode</p>
+                            <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">Rp {{ number_format((int) ($financeServiceFee['collected'] ?? 0), 0, ',', '.') }}</p>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Diambil dari transaksi settlement/capture pada filter aktif.</p>
+                        </div>
+                        <div class="rounded-xl border border-white/80 bg-white/80 px-4 py-3 dark:border-gray-700/60 dark:bg-gray-900/50">
+                            <p class="text-[11px] uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Scope</p>
+                            <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">Semua Checkout Kursus</p>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Saat ini masih flat per transaksi, bukan per item kursus.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ route('admin.finance-report.service-fee.update') }}" class="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm dark:border-gray-700/60 dark:bg-gray-800">
+                    @csrf
+                    <input type="hidden" name="year" value="{{ $financeFilter['year'] ?? '' }}">
+                    <input type="hidden" name="month" value="{{ $financeFilter['month'] ?? '' }}">
+
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900 dark:text-white">Update Biaya Layanan</p>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Masukkan nominal rupiah tanpa titik atau simbol.</p>
+                        </div>
+                        <div class="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">Live</div>
+                    </div>
+
+                    <label for="course_service_fee" class="mt-4 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Nominal Biaya Layanan</label>
+                    <div class="mt-2 flex items-center rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900">
+                        <span class="mr-3 text-sm font-semibold text-gray-500 dark:text-gray-400">Rp</span>
+                        <input
+                            id="course_service_fee"
+                            name="course_service_fee"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value="{{ old('course_service_fee', (int) ($financeServiceFee['current'] ?? 0)) }}"
+                            class="w-full border-0 bg-transparent p-0 text-base font-semibold text-gray-900 outline-none focus:ring-0 dark:text-white"
+                            placeholder="5000"
+                        >
+                    </div>
+
+                    <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                        Perubahan nominal tidak mengubah transaksi lama. Hanya checkout baru yang akan memakai biaya layanan ini.
+                    </div>
+
+                    <button type="submit" class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+                        Simpan Biaya Layanan
+                    </button>
+                </form>
+            </div>
+
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div class="rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-700/20 p-3 sm:p-4">
                     <p class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Revenue</p>

@@ -16,6 +16,7 @@ use App\Models\Message;
 use App\Models\Notification;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentTransactionItem;
+use App\Models\PlatformSetting;
 use App\Models\Profile;
 use App\Models\SupportTicket;
 use App\Models\User;
@@ -31,6 +32,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -3998,7 +4000,43 @@ class AdminController extends Controller
             'financeChartPayload' => $financeReportData['chartPayload'],
             'financeTopProducts' => $financeReportData['topProducts'],
             'financeFilter' => $financeReportData['filter'],
+            'financeServiceFee' => $financeReportData['serviceFee'],
         ]);
+    }
+
+    public function updateFinanceServiceFee(Request $request): RedirectResponse
+    {
+        if (!Schema::hasTable('platform_settings')) {
+            return redirect()
+                ->route('admin.finance-report')
+                ->with('error', 'Tabel setting platform belum tersedia. Jalankan migration terlebih dahulu.');
+        }
+
+        $validated = $request->validate([
+            'course_service_fee' => ['required', 'integer', 'min:0', 'max:100000000'],
+            'year' => ['nullable', 'integer'],
+            'month' => ['nullable', 'integer'],
+        ], [
+            'course_service_fee.required' => 'Biaya layanan wajib diisi.',
+            'course_service_fee.integer' => 'Biaya layanan harus berupa angka bulat.',
+            'course_service_fee.min' => 'Biaya layanan tidak boleh negatif.',
+        ]);
+
+        PlatformSetting::setValue(
+            PlatformSetting::KEY_COURSE_SERVICE_FEE,
+            (int) $validated['course_service_fee'],
+            'int',
+            'Biaya layanan global untuk checkout kursus.'
+        );
+
+        $query = array_filter([
+            'year' => $validated['year'] ?? null,
+            'month' => $validated['month'] ?? null,
+        ], fn ($value) => filled($value));
+
+        return redirect()
+            ->route('admin.finance-report', $query)
+            ->with('success', 'Biaya layanan global berhasil diperbarui.');
     }
 
     public function exportFinanceReportExcel(Request $request)
@@ -4153,6 +4191,8 @@ class AdminController extends Controller
             ->all();
 
         $totalRevenue = $channelTotals['kursus'] + $channelTotals['webinar'] + $channelTotals['tiket'];
+        $serviceFeeCollected = (float) $this->baseFinanceTransactionQuery($startDate, $endDate)
+            ->sum('pt.service_fee');
         $previousPeriodRevenue = (float) $this->baseFinanceItemQuery($previousStartDate, $previousEndDate)
             ->sum('payment_transaction_items.price');
         $comparePercent = $previousPeriodRevenue > 0
@@ -4217,6 +4257,11 @@ class AdminController extends Controller
                 'availableYears' => $availableYears,
                 'availableMonths' => $this->financeMonthOptions(),
                 'label' => $filterLabel,
+            ],
+            'serviceFee' => [
+                'current' => PlatformSetting::getCourseServiceFee(),
+                'collected' => (int) round($serviceFeeCollected),
+                'settingKey' => PlatformSetting::KEY_COURSE_SERVICE_FEE,
             ],
         ];
     }
@@ -4365,6 +4410,18 @@ class AdminController extends Controller
         return PaymentTransactionItem::query()
             ->join('payment_transactions as pt', 'payment_transaction_items.id_payment_transaction', '=', 'pt.id_payment_transaction')
             ->join('courses as c', 'payment_transaction_items.id_course', '=', 'c.id_course')
+            ->whereIn('pt.transaction_status', ['settlement', 'capture'])
+            ->where(function ($query) {
+                $query->whereNull('pt.fraud_status')
+                    ->orWhere('pt.fraud_status', '!=', 'challenge');
+            })
+            ->whereBetween(DB::raw('COALESCE(pt.paid_at, pt.updated_at, pt.created_at)'), [$startDate, $endDate]);
+    }
+
+    private function baseFinanceTransactionQuery($startDate, $endDate)
+    {
+        return PaymentTransaction::query()
+            ->from('payment_transactions as pt')
             ->whereIn('pt.transaction_status', ['settlement', 'capture'])
             ->where(function ($query) {
                 $query->whereNull('pt.fraud_status')

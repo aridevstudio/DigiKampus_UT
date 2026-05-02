@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\Notification;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentTransactionItem;
+use App\Models\PlatformSetting;
 use App\Models\Voucher;
 use App\Services\MidtransSnapService;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class CheckoutController extends Controller
 
         $cartItems = $this->getCartItems($user->id);
         $subtotal = $this->calculateSubtotal($cartItems);
-        $serviceFee = $cartItems->isNotEmpty() ? 5000 : 0;
+        $serviceFee = $cartItems->isNotEmpty() ? $this->courseServiceFee() : 0;
         $total = $subtotal + $serviceFee;
         $vouchers = Voucher::available()->orderBy('code')->get();
 
@@ -123,7 +124,7 @@ class CheckoutController extends Controller
         }
 
         $subtotal = $this->calculateSubtotal($cartItems);
-        $serviceFee = 5000;
+        $serviceFee = $this->courseServiceFee();
         if ($voucher && $subtotal < (float) $voucher->min_subtotal) {
             return redirect()->route('mahasiswa.checkout')
                 ->with('error', 'Voucher membutuhkan minimal belanja Rp ' . number_format($voucher->min_subtotal, 0, ',', '.') . '.');
@@ -396,6 +397,11 @@ class CheckoutController extends Controller
         return (float) $cartItems->sum(function ($item) {
             return $item->course->harga ?? 0;
         });
+    }
+
+    private function courseServiceFee(): int
+    {
+        return PlatformSetting::getCourseServiceFee();
     }
 
     private function resolveVoucher(string $code): array

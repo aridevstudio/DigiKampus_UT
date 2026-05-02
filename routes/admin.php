@@ -153,6 +153,7 @@ Route::prefix('admin')
         Route::delete('/messages/conversations/{conversationId}', [AdminController::class, 'deleteChatConversation'])->name('admin.messages.conversation.delete');
         Route::get('/finance-report', [AdminController::class, 'showFinanceReport'])->name('admin.finance-report');
         Route::get('/finance-report/export', [AdminController::class, 'exportFinanceReportExcel'])->name('admin.finance-report.export');
+        Route::post('/finance-report/service-fee', [AdminController::class, 'updateFinanceServiceFee'])->name('admin.finance-report.service-fee.update');
 
         Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('admin.pengumuman.store');
         Route::get('/pengumuman/{id}', [AdminController::class, 'getPengumuman'])->name('admin.pengumuman.get');
