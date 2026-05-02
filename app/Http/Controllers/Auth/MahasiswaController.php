@@ -55,21 +55,15 @@ class MahasiswaController extends Controller
                     ->with('alert', 'Password salah. Silakan coba lagi.');
         }
 
-        if ($user->usesImportedDefaultPassword($validated['password'])) {
-            $user->markPendingBecauseDefaultPassword();
-
-            return back()
-                ->withInput()
-                ->with('alert', 'Akun impor ini masih memakai password default. Silakan gunakan Forgot Password untuk membuat password baru dan mengaktifkan akun.');
+        $passwordResetNotice = null;
+        if (
+            $user->usesImportedDefaultPassword($validated['password'])
+            || ($user->status === 'pending' && $user->requires_password_reset)
+        ) {
+            $passwordResetNotice = 'Akun impor ini masih memakai password default. Anda tetap bisa masuk, tetapi sangat disarankan segera mengganti password melalui Forgot Password.';
         }
 
-        if ($user->status === 'pending' && $user->requires_password_reset) {
-            return back()
-                ->withInput()
-                ->with('alert', 'Akun Anda masih menunggu aktivasi password. Silakan gunakan Forgot Password terlebih dahulu.');
-        }
-
-        if ($user->status !== 'aktif') {
+        if ($user->status !== 'aktif' && !$user->requires_password_reset) {
             return back()
                 ->withInput()
                 ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi admin.');
@@ -86,7 +80,13 @@ class MahasiswaController extends Controller
             $request->session()->regenerate();
             $deviceSessionLimitService->bindCurrentSessionToUser($request, (int) $user->id);
             $user->setOnline(); // Set user online status
-            return redirect()->route('mahasiswa.dashboard');
+            $redirect = redirect()->route('mahasiswa.dashboard');
+
+            if ($passwordResetNotice) {
+                return $redirect->with('warning', $passwordResetNotice);
+            }
+
+            return $redirect;
         }
         return back()->withErrors(['mahasiswa.login' => 'Nomor Induk atau password salah.']);
     }

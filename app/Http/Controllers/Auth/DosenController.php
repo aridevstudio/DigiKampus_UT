@@ -119,25 +119,19 @@ class DosenController extends Controller
                 ->with('alert', 'Password salah. Silakan coba lagi.');
         }
 
-        if ($user->usesImportedDefaultPassword($request->password)) {
-            $user->markPendingBecauseDefaultPassword();
-
-            return back()
-                ->withInput()
-                ->with('alert', 'Akun impor ini masih memakai password default. Silakan gunakan Forgot Password untuk membuat password baru dan mengaktifkan akun.');
+        $passwordResetNotice = null;
+        if (
+            $user->usesImportedDefaultPassword($request->password)
+            || ($user->status === 'pending' && $user->requires_password_reset)
+        ) {
+            $passwordResetNotice = 'Akun impor ini masih memakai password default. Anda tetap bisa masuk, tetapi sangat disarankan segera mengganti password melalui Forgot Password.';
         }
 
-        if ($user->status === 'pending' && $user->requires_password_reset) {
-            return back()
-                ->withInput()
-                ->with('alert', 'Akun Anda masih menunggu aktivasi password. Silakan gunakan Forgot Password terlebih dahulu.');
-        }
-
-        if ($user->status === 'pending') {
+        if ($user->status === 'pending' && !$user->requires_password_reset) {
             return back()
                 ->withInput()
                 ->with('alert', 'Akun Anda sedang menunggu persetujuan admin.');
-        } elseif ($user->status !== 'aktif') {
+        } elseif ($user->status !== 'aktif' && !($user->status === 'pending' && $user->requires_password_reset)) {
             return back()
                 ->withInput()
                 ->with('alert', 'Akun Anda sedang tidak aktif. Hubungi admin.');
@@ -154,8 +148,13 @@ class DosenController extends Controller
         $request->session()->regenerate();
         $deviceSessionLimitService->bindCurrentSessionToUser($request, (int) $user->id);
 
-        return redirect()->route('dosen.dashboard')
-            ->with('status', 'Login berhasil. Selamat datang!');
+        $redirect = redirect()->route('dosen.dashboard');
+
+        if ($passwordResetNotice) {
+            return $redirect->with('warning', $passwordResetNotice);
+        }
+
+        return $redirect->with('status', 'Login berhasil. Selamat datang!');
     }
 
     /**

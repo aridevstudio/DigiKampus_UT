@@ -1,4 +1,4 @@
-@if (session('status') || session('success') || session('error') || session('alert') || session('info') || $errors->any())
+@if (session('status') || session('success') || session('error') || session('alert') || session('warning') || session('info') || $errors->any())
 <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
         const tailwindButtonClass = 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors';
@@ -36,6 +36,20 @@
                 icon: 'warning',
                 title: 'Perhatian',
                 text: '{{ session('alert') }}',
+                confirmButtonText: 'Oke',
+                showCancelButton: false,
+                showDenyButton: false,
+                buttonsStyling: false,
+                customClass: { 
+                    container: 'font-inter',
+                    confirmButton: tailwindButtonClass
+                }
+            });
+        @elseif (session('warning'))
+            Swal.fire({
+                icon: 'warning',
+                title: 'Disarankan Ganti Password',
+                text: '{{ session('warning') }}',
                 confirmButtonText: 'Oke',
                 showCancelButton: false,
                 showDenyButton: false,

@@ -54,14 +54,12 @@ class MahasiswaAuthController extends Controller
             ], 401);
         }
 
-        if ($user->usesImportedDefaultPassword($validated['password'])) {
-            $user->markPendingBecauseDefaultPassword();
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Akun impor ini masih memakai password default. Silakan gunakan forgot password untuk membuat password baru dan mengaktifkan akun.',
-                'requires_password_reset' => true,
-            ], 403);
+        $passwordResetNotice = null;
+        if (
+            $user->usesImportedDefaultPassword($validated['password'])
+            || ($user->status === 'pending' && $user->requires_password_reset)
+        ) {
+            $passwordResetNotice = 'Akun impor ini masih memakai password default. Anda tetap bisa masuk, tetapi sangat disarankan segera mengganti password melalui forgot password.';
         }
 
         // Validasi role mahasiswa
@@ -73,15 +71,7 @@ class MahasiswaAuthController extends Controller
         }
 
         // Validasi status aktif
-        if ($user->status === 'pending' && $user->requires_password_reset) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akun Anda masih menunggu aktivasi password. Silakan gunakan forgot password terlebih dahulu.',
-                'requires_password_reset' => true,
-            ], 403);
-        }
-
-        if ($user->status !== 'aktif') {
+        if ($user->status !== 'aktif' && !$user->requires_password_reset) {
             return response()->json([
                 'success' => false,
                 'message' => 'Akun Anda sedang tidak aktif. Hubungi admin untuk informasi lebih lanjut.'
@@ -105,7 +95,9 @@ class MahasiswaAuthController extends Controller
             'data' => [
                 'user' => new MahasiswaResource($user),
                 'token' => $token,
-                'token_type' => 'Bearer'
+                'token_type' => 'Bearer',
+                'requires_password_reset' => (bool) $user->requires_password_reset,
+                'password_notice' => $passwordResetNotice,
             ]
         ], 200);
     }

@@ -89,25 +89,22 @@ class DosenAuthController extends Controller
             ], 401);
         }
 
-        if ($user->usesImportedDefaultPassword($validated['password'])) {
-            $user->markPendingBecauseDefaultPassword();
+        $passwordResetNotice = null;
+        if (
+            $user->usesImportedDefaultPassword($validated['password'])
+            || ($user->status === 'pending' && $user->requires_password_reset)
+        ) {
+            $passwordResetNotice = 'Akun impor ini masih memakai password default. Anda tetap bisa masuk, tetapi sangat disarankan segera mengganti password melalui forgot password.';
+        }
 
+        if ($user->status === 'pending' && !$user->requires_password_reset) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akun impor ini masih memakai password default. Silakan gunakan forgot password untuk membuat password baru dan mengaktifkan akun.',
-                'requires_password_reset' => true,
+                'message' => 'Akun Anda sedang menunggu persetujuan admin.'
             ], 403);
         }
 
-        if ($user->status === 'pending' && $user->requires_password_reset) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akun Anda masih menunggu aktivasi password. Silakan gunakan forgot password terlebih dahulu.',
-                'requires_password_reset' => true,
-            ], 403);
-        }
-
-        if ($user->status !== 'aktif') {
+        if ($user->status !== 'aktif' && !($user->status === 'pending' && $user->requires_password_reset)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Akun Anda tidak aktif.'
@@ -130,7 +127,9 @@ class DosenAuthController extends Controller
             'message' => 'Login berhasil.',
             'data' => [
                 'user' => new DosenResource($user),
-                'token' => $token
+                'token' => $token,
+                'requires_password_reset' => (bool) $user->requires_password_reset,
+                'password_notice' => $passwordResetNotice,
             ]
         ], 200);
     }
