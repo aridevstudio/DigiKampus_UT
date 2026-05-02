@@ -105,7 +105,7 @@
         submitButton.textContent = 'Mengirim...';
 
         try {
-            const response = await fetch('{{ route('mahasiswa.support.ask') }}', {
+            const response = await fetch(@json(route('mahasiswa.support.ask', [], false)), {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
