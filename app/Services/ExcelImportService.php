@@ -92,6 +92,8 @@ class ExcelImportService
                 $rowData[$colName] = self::readCellAsString($sheet->getCell($cellCoordinate), $colName);
             }
 
+            $rowData = self::normalizeImportRow($rowData);
+
             // Skip completely empty rows
             if (empty(array_filter($rowData))) {
                 continue;
@@ -188,6 +190,43 @@ class ExcelImportService
         }
 
         return $errors;
+    }
+
+    private static function normalizeImportRow(array $rowData): array
+    {
+        foreach ($rowData as $columnName => $value) {
+            $value = trim((string) ($value ?? ''));
+
+            if (self::isBlankMarker($value)) {
+                $rowData[$columnName] = '';
+                continue;
+            }
+
+            if ($columnName === 'no_hp') {
+                $rowData[$columnName] = self::normalizePhoneNumber($value);
+                continue;
+            }
+
+            $rowData[$columnName] = $value;
+        }
+
+        return $rowData;
+    }
+
+    private static function isBlankMarker(?string $value): bool
+    {
+        return in_array(strtolower(trim((string) $value)), ['', '-', 'n/a', 'na', 'null'], true);
+    }
+
+    private static function normalizePhoneNumber(?string $value): string
+    {
+        $value = trim((string) ($value ?? ''));
+
+        if (self::isBlankMarker($value)) {
+            return '';
+        }
+
+        return preg_replace('/\D+/', '', $value) ?? '';
     }
 
     private static function readCellAsString($cell, string $columnName): string

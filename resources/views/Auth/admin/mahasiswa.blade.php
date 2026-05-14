@@ -636,7 +636,7 @@
                     <div class="mb-4">
                         <label class="block text-sm text-gray-600 dark:text-gray-400 mb-2">Pilih File Excel</label>
                             <input type="file" id="importFile" accept=".xlsx,.xls,.csv" data-max-size-mb="5" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
-                        <p class="text-xs text-gray-400 mt-1">Maks 5MB. Format: .xlsx, .xls, .csv | Password default: password123</p>
+                        <p class="text-xs text-gray-400 mt-1">Maks 5MB. Format: .xlsx, .xls, .csv | Password default: Nomor Induk</p>
                     </div>
                     <div id="importUploadStatus" class="mb-4 hidden"></div>
                     <div class="admin-responsive-modal-actions flex justify-end gap-3">
@@ -907,6 +907,15 @@
             });
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         function showPreview(preview) {
             document.getElementById('importStep1').classList.add('hidden');
             document.getElementById('importStep2').classList.remove('hidden');
@@ -927,31 +936,45 @@
                     <div class="flex-1"><p class="text-lg font-bold text-red-600">${invalidCount}</p><p class="text-xs text-gray-500">Error</p></div>
                 </div>`;
 
-            // Preview table (first 10 valid rows)
+            // Preview table: show valid and invalid rows so admins can fix the exact row.
             const table = document.getElementById('importPreviewTable');
-            if (preview.valid_rows && preview.valid_rows.length > 0) {
-                const cols = Object.keys(preview.valid_rows[0]);
+            const validRows = (preview.valid_rows || []).map(row => ({ ...row, _valid: true }));
+            const invalidRows = (preview.invalid_rows || []).map(row => ({ ...row, _valid: false }));
+            const previewRows = [...validRows, ...invalidRows].sort((a, b) => (a._row || 0) - (b._row || 0));
+            const cols = (preview.header || ['nama', 'nomor_induk', 'email', 'kode_jurusan', 'no_hp', 'status'])
+                .filter(c => !String(c).startsWith('_'));
+
+            if (previewRows.length > 0) {
                 let html = '<table class="w-full text-xs"><thead><tr class="bg-gray-100 dark:bg-gray-700">';
-                cols.forEach(c => html += '<th class="px-2 py-1.5 text-left text-gray-600 dark:text-gray-300">' + c + '</th>');
+                html += '<th class="px-2 py-1.5 text-left text-gray-600 dark:text-gray-300 whitespace-nowrap">baris</th>';
+                cols.forEach(c => html += '<th class="px-2 py-1.5 text-left text-gray-600 dark:text-gray-300 whitespace-nowrap">' + escapeHtml(c) + '</th>');
+                html += '<th class="px-2 py-1.5 text-left text-gray-600 dark:text-gray-300 whitespace-nowrap">validasi</th>';
                 html += '</tr></thead><tbody>';
-                preview.valid_rows.slice(0, 10).forEach(row => {
-                    html += '<tr class="border-t border-gray-100 dark:border-gray-700">';
-                    cols.forEach(c => html += '<td class="px-2 py-1.5 text-gray-700 dark:text-gray-300">' + (row[c] || '-') + '</td>');
+                previewRows.slice(0, 15).forEach(row => {
+                    const rowTone = row._valid ? '' : 'bg-red-50/70 dark:bg-red-900/10';
+                    html += '<tr class="border-t border-gray-100 dark:border-gray-700 ' + rowTone + '">';
+                    html += '<td class="px-2 py-1.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">' + escapeHtml(row._row || '-') + '</td>';
+                    cols.forEach(c => html += '<td class="px-2 py-1.5 text-gray-700 dark:text-gray-300 whitespace-nowrap">' + escapeHtml(row[c] || '-') + '</td>');
+                    if (row._valid) {
+                        html += '<td class="px-2 py-1.5"><span class="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-semibold text-green-700 ring-1 ring-green-200 dark:bg-green-900/20 dark:text-green-300 dark:ring-green-800">Valid</span></td>';
+                    } else {
+                        html += '<td class="px-2 py-1.5 text-red-600 dark:text-red-300 min-w-[220px]">' + escapeHtml((row._errors || []).join(' ')) + '</td>';
+                    }
                     html += '</tr>';
                 });
-                if (preview.valid_rows.length > 10) html += '<tr><td colspan="' + cols.length + '" class="px-2 py-1.5 text-gray-400 text-center">...dan ' + (preview.valid_rows.length - 10) + ' baris lagi</td></tr>';
+                if (previewRows.length > 15) html += '<tr><td colspan="' + (cols.length + 2) + '" class="px-2 py-1.5 text-gray-400 text-center">...dan ' + (previewRows.length - 15) + ' baris lagi</td></tr>';
                 html += '</tbody></table>';
                 table.innerHTML = html;
             } else {
-                table.innerHTML = '<p class="p-4 text-sm text-gray-400 text-center">Tidak ada data valid</p>';
+                table.innerHTML = '<p class="p-4 text-sm text-gray-400 text-center">Tidak ada data yang bisa dibaca</p>';
             }
 
             // Errors
             const errorList = document.getElementById('importErrorList');
             if (previewErrors.length > 0) {
                 errorList.classList.remove('hidden');
-                let errHtml = '<div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"><p class="text-xs text-red-700 dark:text-red-300 font-medium mb-1">Error ditemukan:</p><ul class="text-xs text-red-600 dark:text-red-400 list-disc list-inside space-y-0.5">';
-                previewErrors.slice(0, 10).forEach(e => errHtml += '<li>' + e + '</li>');
+                let errHtml = '<div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"><p class="text-xs text-red-700 dark:text-red-300 font-medium mb-1">Error ditemukan:</p><p class="mb-2 text-xs text-red-600 dark:text-red-400">Baris error tidak akan diimport sampai filenya diperbaiki.</p><ul class="text-xs text-red-600 dark:text-red-400 list-disc list-inside space-y-0.5">';
+                previewErrors.slice(0, 10).forEach(e => errHtml += '<li>' + escapeHtml(e) + '</li>');
                 if (previewErrors.length > 10) errHtml += '<li>...dan ' + (previewErrors.length - 10) + ' error lagi</li>';
                 errHtml += '</ul></div>';
                 errorList.innerHTML = errHtml;
@@ -959,8 +982,11 @@
                 errorList.classList.add('hidden');
             }
 
-            // Disable confirm if no valid rows
-            document.getElementById('confirmImportBtn').disabled = !validCount;
+            const confirmBtn = document.getElementById('confirmImportBtn');
+            confirmBtn.disabled = !validCount;
+            confirmBtn.textContent = invalidCount > 0 && validCount > 0
+                ? `Import ${validCount} Data Valid Saja`
+                : 'Konfirmasi Import';
         }
 
         function confirmImportFile(type) {
