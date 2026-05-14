@@ -759,14 +759,14 @@ class AdminController extends Controller
 
         $jurusanIds = $this->normalizeJurusanIds($request->input('id_jurusan', []));
 
-        // Create user (P0 FIX: Generate secure random password instead of hardcoded)
-        $defaultPassword = \Illuminate\Support\Str::random(12);
+        $defaultPassword = (string) $request->nomor_induk;
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($defaultPassword),
             'role' => 'dosen',
             'status' => 'aktif',
+            'requires_password_reset' => true,
         ]);
 
         // Handle photo upload
@@ -786,7 +786,7 @@ class AdminController extends Controller
         $this->syncDosenJurusans($profile, $jurusanIds);
 
         return redirect()->route('admin.dosen')
-            ->with('success', "Dosen berhasil ditambahkan! Password default: {$defaultPassword} (catat sekarang, tidak ditampilkan lagi)");
+            ->with('success', "Dosen berhasil ditambahkan! Password default: {$defaultPassword} (sama dengan Nomor Induk).");
     }
 
     /**
@@ -837,6 +837,7 @@ class AdminController extends Controller
             'id_jurusan.*' => 'required|distinct|exists:jurusans,id_jurusan',
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'password' => 'nullable|string|min:8|confirmed',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
             'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
@@ -847,6 +848,8 @@ class AdminController extends Controller
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak sama.',
         ]);
 
         $jurusanIds = $this->normalizeJurusanIds($request->input('id_jurusan', []));
@@ -857,6 +860,13 @@ class AdminController extends Controller
             'email' => $request->email,
             'status' => 'aktif',
         ]);
+
+        if ($request->filled('password')) {
+            $dosen->forceFill([
+                'password' => Hash::make((string) $request->password),
+                'requires_password_reset' => false,
+            ])->save();
+        }
 
         // Handle photo upload
         $fotoPath = $dosen->profile?->foto_profile;
@@ -1044,14 +1054,14 @@ class AdminController extends Controller
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
         ]);
 
-        // Create user (P0 FIX: Generate secure random password)
-        $defaultPassword = \Illuminate\Support\Str::random(12);
+        $defaultPassword = (string) $request->nomor_induk;
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($defaultPassword),
             'role' => 'mahasiswa',
             'status' => $request->status,
+            'requires_password_reset' => $request->status === 'aktif',
         ]);
 
         // Handle photo upload
@@ -1092,7 +1102,7 @@ class AdminController extends Controller
         }
 
         return redirect()->route('admin.mahasiswa')
-            ->with('success', "Mahasiswa berhasil ditambahkan! Password default: {$defaultPassword} (catat sekarang, tidak ditampilkan lagi)");
+            ->with('success', "Mahasiswa berhasil ditambahkan! Password default: {$defaultPassword} (sama dengan Nomor Induk).");
     }
 
     /**
@@ -1159,12 +1169,15 @@ class AdminController extends Controller
             'no_hp' => 'nullable|string|max:20|regex:/^[\+]?[0-9\s\-\(\)]{8,20}$/',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:aktif,nonaktif',
+            'password' => 'nullable|string|min:8|confirmed',
         ], [
             'email.unique' => 'Email sudah terdaftar di sistem.',
             'nomor_induk.unique' => 'Nomor Induk sudah terdaftar di sistem.',
             'foto.max' => 'Ukuran foto maksimal 2MB.',
             'foto.mimes' => 'Format foto harus JPG, PNG, atau WebP.',
             'no_hp.regex' => 'Format nomor HP tidak valid (contoh: 081234567890 atau +62 812-3456-7890).',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak sama.',
         ]);
 
         // Update user
@@ -1173,6 +1186,13 @@ class AdminController extends Controller
             'email' => $request->email,
             'status' => $request->status,
         ]);
+
+        if ($request->filled('password')) {
+            $mhs->forceFill([
+                'password' => Hash::make((string) $request->password),
+                'requires_password_reset' => false,
+            ])->save();
+        }
 
         // Handle photo upload
         $fotoPath = $mhs->profile?->foto_profile;

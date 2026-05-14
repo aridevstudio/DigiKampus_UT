@@ -174,16 +174,25 @@ class AdminContentApiController extends Controller
 
         $students = Enrollment::query()
             ->where('id_course', $course->id_course)
-            ->with(['mahasiswa.profile'])
+            ->with(['mahasiswa.profile.jurusan'])
             ->orderByDesc('created_at')
             ->get()
             ->map(function (Enrollment $enrollment) {
+                $mahasiswa = $enrollment->mahasiswa;
+                $profile = $mahasiswa?->profile;
+
                 return [
                     'id' => $enrollment->id_mahasiswa,
-                    'name' => $enrollment->mahasiswa?->name ?? 'Mahasiswa',
-                    'email' => $enrollment->mahasiswa?->email,
-                    'nomor_induk' => $enrollment->mahasiswa?->profile?->nomor_induk,
+                    'name' => $mahasiswa?->name ?? 'Mahasiswa',
+                    'email' => $mahasiswa?->email,
+                    'nomor_induk' => $profile?->nomor_induk,
+                    'program_studi' => $profile?->jurusan?->nama_jurusan,
+                    'no_hp' => $profile?->no_hp,
+                    'foto' => $profile?->foto_profile,
+                    'foto_url' => $profile?->foto_profile ? asset('storage/' . $profile->foto_profile) : null,
                     'status' => $enrollment->status,
+                    'progress' => round((float) ($enrollment->progress ?? 0)),
+                    'tanggal_daftar' => $enrollment->tanggal_daftar?->format('d M Y'),
                 ];
             })
             ->filter(fn (array $item) => !empty($item['id']))

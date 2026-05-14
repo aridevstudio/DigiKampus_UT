@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Jurusan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdminValidationTest extends TestCase
@@ -24,6 +26,16 @@ class AdminValidationTest extends TestCase
     {
         Auth::guard('admin')->login($this->admin);
         return $this->withSession(['admin_login' => true]);
+    }
+
+    private function createJurusan(): Jurusan
+    {
+        return Jurusan::create([
+            'kode_jurusan' => 'PGSD',
+            'nama_jurusan' => 'PGSD',
+            'fakultas' => 'FKIP',
+            'jenjang' => 'S1',
+        ]);
     }
 
     // =====================
@@ -124,5 +136,110 @@ class AdminValidationTest extends TestCase
             ]);
 
         $response->assertSessionHasErrors('email');
+    }
+
+    public function test_store_mahasiswa_uses_nomor_induk_as_default_password(): void
+    {
+        $jurusan = $this->createJurusan();
+
+        $this->actingAsAdmin()
+            ->post(route('admin.mahasiswa.store'), [
+                'name' => 'Mahasiswa Default Password',
+                'nomor_induk' => '2026001001',
+                'email' => 'mhs-default@example.com',
+                'id_jurusan' => $jurusan->id_jurusan,
+                'status' => 'aktif',
+            ])
+            ->assertRedirect(route('admin.mahasiswa'));
+
+        $user = User::where('email', 'mhs-default@example.com')->firstOrFail();
+
+        $this->assertTrue(Hash::check('2026001001', $user->password));
+        $this->assertTrue((bool) $user->requires_password_reset);
+    }
+
+    public function test_store_dosen_uses_nomor_induk_as_default_password(): void
+    {
+        $jurusan = $this->createJurusan();
+
+        $this->actingAsAdmin()
+            ->post(route('admin.dosen.store'), [
+                'name' => 'Dosen Default Password',
+                'nomor_induk' => '1988001001',
+                'email' => 'dosen-default@example.com',
+                'id_jurusan' => [$jurusan->id_jurusan],
+            ])
+            ->assertRedirect(route('admin.dosen'));
+
+        $user = User::where('email', 'dosen-default@example.com')->firstOrFail();
+
+        $this->assertTrue(Hash::check('1988001001', $user->password));
+        $this->assertTrue((bool) $user->requires_password_reset);
+    }
+
+    public function test_update_mahasiswa_can_change_password(): void
+    {
+        $jurusan = $this->createJurusan();
+        $mahasiswa = User::factory()->mahasiswa()->create([
+            'email' => 'mhs-edit-password@example.com',
+            'password' => Hash::make('old-password'),
+            'requires_password_reset' => true,
+        ]);
+        $mahasiswa->profile()->create([
+            'nomor_induk' => '2026002001',
+            'id_jurusan' => $jurusan->id_jurusan,
+        ]);
+
+        $this->actingAsAdmin()
+            ->put(route('admin.mahasiswa.update', $mahasiswa->id), [
+                '_modal' => 'edit',
+                '_id' => $mahasiswa->id,
+                'name' => 'Mahasiswa Edit Password',
+                'nomor_induk' => '2026002001',
+                'email' => 'mhs-edit-password@example.com',
+                'id_jurusan' => $jurusan->id_jurusan,
+                'status' => 'aktif',
+                'password' => 'new-password-123',
+                'password_confirmation' => 'new-password-123',
+            ])
+            ->assertRedirect(route('admin.mahasiswa'));
+
+        $mahasiswa->refresh();
+
+        $this->assertTrue(Hash::check('new-password-123', $mahasiswa->password));
+        $this->assertFalse((bool) $mahasiswa->requires_password_reset);
+    }
+
+    public function test_update_dosen_can_change_password(): void
+    {
+        $jurusan = $this->createJurusan();
+        $dosen = User::factory()->dosen()->create([
+            'email' => 'dosen-edit-password@example.com',
+            'password' => Hash::make('old-password'),
+            'requires_password_reset' => true,
+        ]);
+        $profile = $dosen->profile()->create([
+            'nomor_induk' => '1988002001',
+            'id_jurusan' => $jurusan->id_jurusan,
+        ]);
+        $profile->jurusans()->sync([$jurusan->id_jurusan]);
+
+        $this->actingAsAdmin()
+            ->put(route('admin.dosen.update', $dosen->id), [
+                '_modal' => 'edit',
+                '_id' => $dosen->id,
+                'name' => 'Dosen Edit Password',
+                'nomor_induk' => '1988002001',
+                'email' => 'dosen-edit-password@example.com',
+                'id_jurusan' => [$jurusan->id_jurusan],
+                'password' => 'new-password-456',
+                'password_confirmation' => 'new-password-456',
+            ])
+            ->assertRedirect(route('admin.dosen'));
+
+        $dosen->refresh();
+
+        $this->assertTrue(Hash::check('new-password-456', $dosen->password));
+        $this->assertFalse((bool) $dosen->requires_password_reset);
     }
 }

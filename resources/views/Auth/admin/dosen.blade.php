@@ -410,6 +410,22 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="border border-blue-200 bg-blue-50/80 dark:border-blue-800/40 dark:bg-blue-900/10 rounded-xl p-5 mb-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.105.895-2 2-2s2 .895 2 2-.895 2-2 2m-4 4h8m-8-8h.01M7 21h10a2 2 0 002-2V7.414a2 2 0 00-.586-1.414l-3.414-3.414A2 2 0 0013.586 2H7a2 2 0 00-2 2v15a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-semibold text-blue-700 dark:text-blue-300">Password Default Dosen</h4>
+                                <p class="text-xs text-blue-600/90 dark:text-blue-300/80 mt-1">
+                                    Password awal otomatis sama dengan <span class="font-semibold">Nomor Induk</span> yang diisi pada form ini.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="border border-emerald-200 bg-emerald-50/80 dark:border-emerald-800/40 dark:bg-emerald-900/10 rounded-xl p-5">
                         <div class="flex items-start gap-3">
@@ -545,6 +561,46 @@
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nomor Telepon</label>
                                 <input type="tel" name="no_hp" id="edit_no_hp" placeholder="+62 812 3456 7890" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-4">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Ubah Password</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Kosongkan jika tidak ingin mengubah password dosen.</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Password Baru</label>
+                                <div class="relative">
+                                    <input type="password" name="password" id="edit_password" autocomplete="new-password" placeholder="Minimal 8 karakter" class="w-full px-3 py-2.5 pr-11 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                    <button type="button" onclick="togglePasswordVisibility('edit_password', this)" class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition" aria-label="Tampilkan password">
+                                        <svg class="w-4 h-4 password-eye" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <svg class="w-4 h-4 password-eye-off hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.584 10.587A2 2 0 0012 14a2 2 0 001.414-.586M9.88 4.24A9.956 9.956 0 0112 4c4.477 0 8.268 2.943 9.542 7a10.02 10.02 0 01-4.132 5.411M6.11 6.11A10.02 10.02 0 002.458 12a9.99 9.99 0 005.932 6.265" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                @if(old('_modal') === 'edit' && $errors->has('password'))
+                                    <p class="text-xs text-red-500 mt-2">{{ $errors->first('password') }}</p>
+                                @endif
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Konfirmasi Password Baru</label>
+                                <div class="relative">
+                                    <input type="password" name="password_confirmation" id="edit_password_confirmation" autocomplete="new-password" placeholder="Ulangi password baru" class="w-full px-3 py-2.5 pr-11 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                    <button type="button" onclick="togglePasswordVisibility('edit_password_confirmation', this)" class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition" aria-label="Tampilkan konfirmasi password">
+                                        <svg class="w-4 h-4 password-eye" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <svg class="w-4 h-4 password-eye-off hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.584 10.587A2 2 0 0012 14a2 2 0 001.414-.586M9.88 4.24A9.956 9.956 0 0112 4c4.477 0 8.268 2.943 9.542 7a10.02 10.02 0 01-4.132 5.411M6.11 6.11A10.02 10.02 0 002.458 12a9.99 9.99 0 005.932 6.265" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -716,6 +772,19 @@
             return true;
         }
 
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            if (!input) {
+                return;
+            }
+
+            const shouldShow = input.type === 'password';
+            input.type = shouldShow ? 'text' : 'password';
+            button.setAttribute('aria-label', shouldShow ? 'Sembunyikan password' : 'Tampilkan password');
+            button.querySelector('.password-eye')?.classList.toggle('hidden', shouldShow);
+            button.querySelector('.password-eye-off')?.classList.toggle('hidden', !shouldShow);
+        }
+
         // Add Modal functions
         function openAddModal() {
             document.getElementById('addDosenModal').classList.remove('hidden');
@@ -755,6 +824,8 @@
                     document.getElementById('edit_email').value = data.email || '';
                     document.getElementById('edit_nomor_induk').value = data.nomor_induk || '';
                     document.getElementById('edit_no_hp').value = data.no_hp || '';
+                    document.getElementById('edit_password').value = '';
+                    document.getElementById('edit_password_confirmation').value = '';
                     
                     // Uncheck all jurusan checkboxes first
                     document.querySelectorAll('.edit_id_jurusan_checkbox').forEach(cb => cb.checked = false);

@@ -5,54 +5,6 @@
         <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">Kelola data mahasiswa, tambah mahasiswa baru, dan atur status keaktifan.</p>
     </div>
 
-    {{-- Stats Cards --}}
-    <div class="responsive-grid-stats mb-6">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $totalAll }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Total Mahasiswa</p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $totalAktif }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Aktif</p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $totalNonaktif }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Nonaktif</p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $totalBaru }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Baru (30 Hari)</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     {{-- Actions Bar --}}
     <form method="GET" action="{{ route('admin.mahasiswa') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
         <div class="admin-toolbar-shell">
@@ -62,7 +14,7 @@
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    Tambah
+                    Tambah Mahasiswa
                 </button>
                 <button type="button" onclick="openImportModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-xs sm:text-sm font-medium rounded-xl transition shadow-sm shadow-green-500/25">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,12 +34,25 @@
                 </a>
             </div>
 
+            {{-- Search --}}
+            <div class="admin-toolbar-search order-3 lg:order-2 flex gap-1.5">
+                <div class="relative flex-1">
+                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari mahasiswa..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2.5 sm:pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <svg class="w-4 h-4 absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <button type="submit" class="px-3 py-1.5 sm:px-4 sm:py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium rounded-xl transition flex-shrink-0">
+                    Cari
+                </button>
+            </div>
+
             <div class="admin-toolbar-divider w-px h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
             {{-- Filters --}}
-            <div class="admin-toolbar-filters grid grid-cols-2 gap-1.5">
+            <div class="admin-toolbar-filters order-2 lg:order-3 grid grid-cols-2 gap-1.5">
                 <div class="relative">
-                    <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($statusFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
                         <option value="aktif" {{ ($statusFilter ?? '') === 'aktif' ? 'selected' : '' }}>Aktif</option>
                         <option value="nonaktif" {{ ($statusFilter ?? '') === 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
@@ -97,7 +62,7 @@
                     </svg>
                 </div>
                 <div class="relative">
-                    <select name="prodi" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <select name="prodi" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2.5 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="all" {{ ($prodiFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Prodi</option>
                         @foreach($jurusanList as $jurusan)
                         <option value="{{ $jurusan->id_jurusan }}" {{ ($prodiFilter ?? '') == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
@@ -108,124 +73,148 @@
                     </svg>
                 </div>
             </div>
-
-            {{-- Search --}}
-            <div class="admin-toolbar-search flex gap-1.5">
-                <div class="relative flex-1">
-                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari nama, email, nomor induk, prodi, kontak, status..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <svg class="w-4 h-4 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-600 transition flex-shrink-0">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    Cari
-                </button>
-            </div>
         </div>
     </form>
+
+    {{-- Summary Stats --}}
+    @php
+        $mahasiswaStatItems = [
+            ['label' => 'Total Mahasiswa', 'count' => $totalAll, 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', 'color' => 'blue'],
+            ['label' => 'Aktif', 'count' => $totalAktif, 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'color' => 'emerald'],
+            ['label' => 'Baru (30 Hari)', 'count' => $totalBaru, 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'color' => 'amber'],
+            ['label' => 'Nonaktif', 'count' => $totalNonaktif, 'icon' => 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636', 'color' => 'red'],
+        ];
+        $mahasiswaColorMap = [
+            'blue' => ['bg' => 'bg-blue-50 dark:bg-blue-900/20', 'icon' => 'text-blue-500 dark:text-blue-400', 'text' => 'text-blue-700 dark:text-blue-300', 'border' => 'border-blue-100 dark:border-blue-800/30'],
+            'emerald' => ['bg' => 'bg-emerald-50 dark:bg-emerald-900/20', 'icon' => 'text-emerald-500 dark:text-emerald-400', 'text' => 'text-emerald-700 dark:text-emerald-300', 'border' => 'border-emerald-100 dark:border-emerald-800/30'],
+            'amber' => ['bg' => 'bg-amber-50 dark:bg-amber-900/20', 'icon' => 'text-amber-500 dark:text-amber-400', 'text' => 'text-amber-700 dark:text-amber-300', 'border' => 'border-amber-100 dark:border-amber-800/30'],
+            'red' => ['bg' => 'bg-red-50 dark:bg-red-900/20', 'icon' => 'text-red-500 dark:text-red-400', 'text' => 'text-red-700 dark:text-red-300', 'border' => 'border-red-100 dark:border-red-800/30'],
+        ];
+    @endphp
+    <div class="responsive-grid-stats mb-6">
+        @foreach($mahasiswaStatItems as $stat)
+        <div class="flex items-center gap-3 p-3.5 rounded-xl {{ $mahasiswaColorMap[$stat['color']]['bg'] }} border {{ $mahasiswaColorMap[$stat['color']]['border'] }}">
+            <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">
+                <svg class="w-5 h-5 {{ $mahasiswaColorMap[$stat['color']]['icon'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $stat['icon'] }}" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-lg font-bold {{ $mahasiswaColorMap[$stat['color']]['text'] }}">{{ $stat['count'] }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">{{ $stat['label'] }}</p>
+            </div>
+        </div>
+        @endforeach
+    </div>
 
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto responsive-table">
             <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list">
                 <thead>
-                    <tr class="bg-gray-50/80 dark:bg-gray-700/30">
-                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mahasiswa</th>
-                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nomor Induk</th>
-                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Program Studi</th>
-                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kontak</th>
-                        <th class="text-center px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                        <th class="text-center px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
+                    <tr class="bg-gray-50/80 dark:bg-gray-900/40">
+                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mahasiswa</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nomor Induk</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Program Studi</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No. Telepon</th>
+                        <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
-                    @forelse($mahasiswaList as $mhs)
-                    <tr class="hover:bg-blue-50/40 dark:hover:bg-gray-700/30 transition group">
+                    @forelse($mahasiswaList as $index => $mhs)
+                    <tr class="group hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors duration-150">
+                        <td class="px-5 py-4">
+                            <span class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ ($mahasiswaPaginated->currentPage() - 1) * $mahasiswaPaginated->perPage() + $index + 1 }}</span>
+                        </td>
                         {{-- Combined Avatar + Name --}}
-                        <td class="px-6 py-3.5">
-                            <div class="flex items-center gap-3">
+                        <td class="px-5 py-4">
+                            <div class="flex items-center gap-3.5">
                                 @if($mhs['foto'])
-                                    <img src="{{ asset('storage/' . $mhs['foto']) }}" alt="{{ $mhs['nama'] }}" class="w-9 h-9 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm">
+                                    <img src="{{ asset('storage/' . $mhs['foto']) }}" alt="{{ $mhs['nama'] }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                 @else
                                     @php
                                         $initials = collect(explode(' ', $mhs['nama']))->take(2)->map(fn($w) => strtoupper(mb_substr($w, 0, 1)))->join('');
                                         $colors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-teal-500'];
                                         $bgColor = $colors[crc32($mhs['nama']) % count($colors)];
                                     @endphp
-                                    <div class="w-9 h-9 rounded-full {{ $bgColor }} flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm">
+                                    <div class="w-10 h-10 rounded-full {{ $bgColor }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}
                                     </div>
                                 @endif
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $mhs['nama'] }}</p>
-                                    <p class="text-xs text-gray-400 dark:text-gray-500 truncate">{{ $mhs['email'] }}</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[200px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ $mhs['nama'] }}</p>
+                                    <p class="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">{{ $mhs['email'] }}</p>
                                 </div>
                             </div>
                         </td>
                         {{-- Nomor Induk --}}
-                        <td class="px-6 py-3.5">
+                        <td class="px-5 py-4">
                             @if($mhs['nomor_induk'] !== '-')
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 text-xs font-mono font-medium text-gray-700 dark:text-gray-300">{{ $mhs['nomor_induk'] }}</span>
+                                <span class="text-sm text-gray-700 dark:text-gray-300 font-mono">{{ $mhs['nomor_induk'] }}</span>
                             @else
-                                <span class="text-xs text-gray-400">-</span>
+                                <span class="text-xs text-gray-300 dark:text-gray-600 italic">Belum diisi</span>
                             @endif
                         </td>
                         {{-- Program Studi --}}
-                        <td class="px-6 py-3.5">
+                        <td class="px-5 py-4">
                             @if($mhs['program_studi'] !== '-')
-                                <div class="flex items-center gap-1.5">
-                                    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $mhs['program_studi'] }}</span>
-                                </div>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/40">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    {{ $mhs['program_studi'] }}
+                                </span>
                             @else
-                                <span class="text-xs text-gray-400">-</span>
+                                <span class="text-xs text-gray-300 dark:text-gray-600 italic">Belum diisi</span>
                             @endif
                         </td>
                         {{-- Contact --}}
-                        <td class="px-6 py-3.5">
+                        <td class="px-5 py-4">
                             @if($mhs['no_telepon'] !== '-')
-                                <div class="flex items-center gap-1.5">
-                                    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ $mhs['no_telepon'] }}</span>
-                                </div>
+                                <span class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                    {{ $mhs['no_telepon'] }}
+                                </span>
                             @else
-                                <span class="text-xs text-gray-400">-</span>
+                                <span class="text-xs text-gray-300 dark:text-gray-600 italic">Belum diisi</span>
                             @endif
                         </td>
                         {{-- Status --}}
-                        <td class="px-6 py-3.5 text-center">
+                        <td class="px-5 py-4 text-center">
                             @if($mhs['status'] === 'Aktif')
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-800/50">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700/40">
                                     <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                                     Aktif
                                 </span>
                             @else
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800/50">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700/40">
                                     <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                                     Nonaktif
                                 </span>
                             @endif
                         </td>
                         {{-- Actions --}}
-                        <td class="px-6 py-3.5 text-center">
-                            <div class="inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/30 rounded-lg p-0.5">
-                                <button onclick="openEditModal({{ $mhs['id'] }})" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-white dark:hover:bg-gray-600 rounded-md transition shadow-none hover:shadow-sm" title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-5 py-4 text-center">
+                            <div class="inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-0.5">
+                                <button onclick="openEditModal({{ $mhs['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Edit Mahasiswa">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
+                                    Edit
                                 </button>
-                                <button onclick="confirmDelete({{ $mhs['id'] }})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-white dark:hover:bg-gray-600 rounded-md transition shadow-none hover:shadow-sm" title="Hapus">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-px h-4 bg-gray-200 dark:bg-gray-600"></div>
+                                <button onclick="confirmDelete({{ $mhs['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Hapus Mahasiswa">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
+                                    Hapus
                                 </button>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-16 text-center">
+                        <td colspan="7" class="px-6 py-16 text-center">
                             <div class="flex flex-col items-center">
                                 <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center mb-4">
                                     <svg class="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,11 +233,11 @@
         
         {{-- Pagination --}}
         @if($totalMahasiswa > 0)
-        <div class="px-6 py-3.5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between admin-responsive-pagination">
-            <p class="text-xs text-gray-500 dark:text-gray-400">
+        <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/20 admin-responsive-pagination">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
                 Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300">{{ $mahasiswaPaginated->firstItem() ?? 0 }}-{{ $mahasiswaPaginated->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ $totalMahasiswa }}</span> mahasiswa
             </p>
-            <div class="flex items-center gap-1 admin-responsive-actions">
+            <div class="flex flex-wrap items-center justify-center gap-1 admin-responsive-actions">
                 {{-- Previous --}}
                 @if($mahasiswaPaginated->onFirstPage())
                 <button class="p-1.5 text-gray-300 dark:text-gray-600 rounded-lg cursor-not-allowed" disabled>
@@ -377,6 +366,22 @@
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nomor Telepon</label>
                                 <input type="tel" name="no_hp" placeholder="+62 812 3456 7890" value="{{ old('_modal') === 'add' ? old('no_hp') : '' }}" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border border-blue-200 bg-blue-50/80 dark:border-blue-800/40 dark:bg-blue-900/10 rounded-xl p-5 mb-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.105.895-2 2-2s2 .895 2 2-.895 2-2 2m-4 4h8m-8-8h.01M7 21h10a2 2 0 002-2V7.414a2 2 0 00-.586-1.414l-3.414-3.414A2 2 0 0013.586 2H7a2 2 0 00-2 2v15a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-semibold text-blue-700 dark:text-blue-300">Password Default Mahasiswa</h4>
+                                <p class="text-xs text-blue-600/90 dark:text-blue-300/80 mt-1">
+                                    Password awal otomatis sama dengan <span class="font-semibold">Nomor Induk</span> yang diisi pada form ini.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -521,6 +526,46 @@
                             <div>
                                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nomor Telepon</label>
                                 <input type="tel" name="no_hp" id="edit_no_hp" placeholder="+62 812 3456 7890" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-4">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Ubah Password</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Kosongkan jika tidak ingin mengubah password mahasiswa.</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Password Baru</label>
+                                <div class="relative">
+                                    <input type="password" name="password" id="edit_password" autocomplete="new-password" placeholder="Minimal 8 karakter" class="w-full px-3 py-2.5 pr-11 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                    <button type="button" onclick="togglePasswordVisibility('edit_password', this)" class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition" aria-label="Tampilkan password">
+                                        <svg class="w-4 h-4 password-eye" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <svg class="w-4 h-4 password-eye-off hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.584 10.587A2 2 0 0012 14a2 2 0 001.414-.586M9.88 4.24A9.956 9.956 0 0112 4c4.477 0 8.268 2.943 9.542 7a10.02 10.02 0 01-4.132 5.411M6.11 6.11A10.02 10.02 0 002.458 12a9.99 9.99 0 005.932 6.265" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                @if(old('_modal') === 'edit' && $errors->has('password'))
+                                    <p class="text-xs text-red-500 mt-2">{{ $errors->first('password') }}</p>
+                                @endif
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Konfirmasi Password Baru</label>
+                                <div class="relative">
+                                    <input type="password" name="password_confirmation" id="edit_password_confirmation" autocomplete="new-password" placeholder="Ulangi password baru" class="w-full px-3 py-2.5 pr-11 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500">
+                                    <button type="button" onclick="togglePasswordVisibility('edit_password_confirmation', this)" class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition" aria-label="Tampilkan konfirmasi password">
+                                        <svg class="w-4 h-4 password-eye" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <svg class="w-4 h-4 password-eye-off hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.584 10.587A2 2 0 0012 14a2 2 0 001.414-.586M9.88 4.24A9.956 9.956 0 0112 4c4.477 0 8.268 2.943 9.542 7a10.02 10.02 0 01-4.132 5.411M6.11 6.11A10.02 10.02 0 002.458 12a9.99 9.99 0 005.932 6.265" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -730,6 +775,19 @@
             return file;
         }
 
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            if (!input) {
+                return;
+            }
+
+            const shouldShow = input.type === 'password';
+            input.type = shouldShow ? 'text' : 'password';
+            button.setAttribute('aria-label', shouldShow ? 'Sembunyikan password' : 'Tampilkan password');
+            button.querySelector('.password-eye')?.classList.toggle('hidden', shouldShow);
+            button.querySelector('.password-eye-off')?.classList.toggle('hidden', !shouldShow);
+        }
+
         // Add Modal functions
         function openAddModal() {
             document.getElementById('addMahasiswaModal').classList.remove('hidden');
@@ -775,6 +833,8 @@
                     document.getElementById('edit_nomor_induk').value = data.nomor_induk || '';
                     document.getElementById('edit_id_jurusan').value = data.id_jurusan || '';
                     document.getElementById('edit_no_hp').value = data.no_hp || '';
+                    document.getElementById('edit_password').value = '';
+                    document.getElementById('edit_password_confirmation').value = '';
                     document.getElementById('edit_status').checked = data.status === 'aktif';
                     
                     // Show existing photo if available
