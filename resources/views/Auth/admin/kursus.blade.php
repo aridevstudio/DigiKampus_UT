@@ -183,10 +183,10 @@
 
                         {{-- Peserta --}}
                         <td class="px-5 py-4 text-center">
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <button type="button" onclick="openParticipantsModal({{ $kursus['id'] }})" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Lihat peserta {{ $kursus['nama'] }}">
                                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ number_format($kursus['enrollments_count']) }}</span>
-                            </div>
+                                <span class="text-sm font-semibold">{{ number_format($kursus['enrollments_count']) }}</span>
+                            </button>
                         </td>
 
                         {{-- Kategori --}}
@@ -355,6 +355,59 @@
             </div>
         </div>
         @endif
+    </div>
+
+    {{-- Participants Modal --}}
+    <div id="participantsModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeParticipantsModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-3xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all my-auto">
+                <button onclick="closeParticipantsModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition z-10" title="Tutup">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <div class="p-6">
+                    <div class="mb-5 pr-8">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Peserta Kursus</h3>
+                        <p id="participantsCourseName" class="text-sm text-blue-500 mt-0.5">Memuat data peserta...</p>
+                    </div>
+
+                    <div id="participantsLoading" class="py-12 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                        <svg class="w-8 h-8 mb-3 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <p class="text-sm font-medium">Memuat peserta</p>
+                    </div>
+
+                    <div id="participantsEmpty" class="hidden py-12 text-center">
+                        <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 100-8 4 4 0 000 8zm8 0a4 4 0 100-8 4 4 0 000 8z" />
+                            </svg>
+                        </div>
+                        <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">Belum ada peserta</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Course ini belum diikuti mahasiswa.</p>
+                    </div>
+
+                    <div id="participantsError" class="hidden py-10 text-center">
+                        <p class="text-sm font-semibold text-red-600 dark:text-red-400">Gagal memuat peserta</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Silakan coba lagi.</p>
+                    </div>
+
+                    <div id="participantsContent" class="hidden">
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Total <span id="participantsTotal" class="font-semibold text-gray-900 dark:text-white">0</span> peserta</p>
+                        </div>
+                        <div class="border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden">
+                            <div id="participantsList" class="divide-y divide-gray-100 dark:divide-gray-700 max-h-[55vh] overflow-y-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Add Kursus Modal --}}
@@ -1808,6 +1861,155 @@
                 });
             }
         });
+
+        // ============================================================
+        // Participants Modal
+        // ============================================================
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
+        }
+
+        function getParticipantInitial(name) {
+            const trimmed = String(name || 'M').trim();
+            return trimmed ? trimmed.charAt(0).toUpperCase() : 'M';
+        }
+
+        function formatEnrollmentStatus(status) {
+            const statusMap = {
+                aktif: 'Aktif',
+                in_progress: 'Berjalan',
+                selesai: 'Selesai',
+                pending: 'Pending',
+            };
+
+            return statusMap[status] || (status ? status.charAt(0).toUpperCase() + status.slice(1) : '-');
+        }
+
+        function getEnrollmentStatusClasses(status) {
+            if (status === 'pending') {
+                return 'border-yellow-200 dark:border-yellow-700/40 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400';
+            }
+
+            if (status === 'selesai') {
+                return 'border-blue-200 dark:border-blue-700/40 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400';
+            }
+
+            return 'border-green-200 dark:border-green-700/40 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400';
+        }
+
+        function getEnrollmentStatusDot(status) {
+            if (status === 'pending') return 'bg-yellow-500';
+            if (status === 'selesai') return 'bg-blue-500';
+            return 'bg-green-500';
+        }
+
+        function renderParticipants(items) {
+            const list = document.getElementById('participantsList');
+            list.innerHTML = items.map((participant) => {
+                const name = escapeHtml(participant.name || 'Mahasiswa');
+                const email = escapeHtml(participant.email || '-');
+                const nomorInduk = escapeHtml(participant.nomor_induk || '-');
+                const prodi = escapeHtml(participant.program_studi || '-');
+                const phone = escapeHtml(participant.no_hp || '-');
+                const status = escapeHtml(formatEnrollmentStatus(participant.status));
+                const statusClasses = getEnrollmentStatusClasses(participant.status);
+                const statusDot = getEnrollmentStatusDot(participant.status);
+                const progress = Number(participant.progress || 0);
+                const joinedAt = escapeHtml(participant.tanggal_daftar || '-');
+                const avatar = participant.foto_url
+                    ? `<img src="${escapeHtml(participant.foto_url)}" alt="${name}" class="w-10 h-10 rounded-full object-cover ring-1 ring-gray-200 dark:ring-gray-600">`
+                    : `<div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center text-sm font-bold">${escapeHtml(getParticipantInitial(participant.name))}</div>`;
+
+                return `
+                    <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex items-center gap-3 min-w-0">
+                                ${avatar}
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">${name}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${email}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border ${statusClasses}">
+                                    <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
+                                    ${status}
+                                </span>
+                                <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">${progress}%</span>
+                            </div>
+                        </div>
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <div><span class="block text-gray-400">Nomor Induk</span><span class="font-medium text-gray-700 dark:text-gray-300">${nomorInduk}</span></div>
+                            <div><span class="block text-gray-400">Program Studi</span><span class="font-medium text-gray-700 dark:text-gray-300">${prodi}</span></div>
+                            <div><span class="block text-gray-400">No. Telepon</span><span class="font-medium text-gray-700 dark:text-gray-300">${phone}</span></div>
+                            <div><span class="block text-gray-400">Tanggal Daftar</span><span class="font-medium text-gray-700 dark:text-gray-300">${joinedAt}</span></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setParticipantsState(state) {
+            ['participantsLoading', 'participantsEmpty', 'participantsError', 'participantsContent'].forEach((id) => {
+                document.getElementById(id)?.classList.add('hidden');
+            });
+
+            document.getElementById(state)?.classList.remove('hidden');
+        }
+
+        function openParticipantsModal(courseId) {
+            const modal = document.getElementById('participantsModal');
+            const courseName = document.getElementById('participantsCourseName');
+            const total = document.getElementById('participantsTotal');
+
+            courseName.textContent = 'Memuat data peserta...';
+            total.textContent = '0';
+            setParticipantsState('participantsLoading');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            fetch('/admin/api/courses/' + courseId + '/students', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Gagal memuat peserta');
+                    }
+                    return response.json();
+                })
+                .then((payload) => {
+                    const data = payload.data || {};
+                    const items = Array.isArray(data.items) ? data.items : [];
+                    courseName.textContent = data.course?.nama || 'Daftar peserta course';
+                    total.textContent = items.length;
+
+                    if (items.length === 0) {
+                        setParticipantsState('participantsEmpty');
+                        return;
+                    }
+
+                    renderParticipants(items);
+                    setParticipantsState('participantsContent');
+                })
+                .catch((error) => {
+                    console.error('Participants error:', error);
+                    setParticipantsState('participantsError');
+                });
+        }
+
+        function closeParticipantsModal() {
+            document.getElementById('participantsModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
 
         // ============================================================
         // Edit Modal

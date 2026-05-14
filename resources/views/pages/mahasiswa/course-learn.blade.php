@@ -847,13 +847,49 @@
         container.scrollTop = container.scrollHeight;
     }
 
+    function stopCourseDiscussionPolling() {
+        if (discussionPoller) {
+            window.clearInterval(discussionPoller);
+            discussionPoller = null;
+        }
+    }
+
+    function handleDiscussionAuthExpired(redirectUrl = null) {
+        stopCourseDiscussionPolling();
+
+        const container = document.getElementById('diskusi-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="flex h-full flex-col items-center justify-center space-y-3 text-center">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10">
+                        <svg class="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3zm0 2c-2.761 0-5 1.343-5 3v1h10v-1c0-1.657-2.239-3-5-3z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Sesi login berakhir</p>
+                        <a href="{{ route('mahasiswa.login') }}" class="mt-1 inline-flex text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200">Login ulang</a>
+                    </div>
+                </div>`;
+        }
+
+        window.setTimeout(() => {
+            window.location.href = redirectUrl || @json(route('mahasiswa.login'));
+        }, 500);
+    }
+
     async function fetchCourseDiscussion() {
         const response = await fetch(discussionEndpoint, {
             headers: {
+                'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
             },
         });
         const data = await response.json();
+        if (response.status === 401) {
+            handleDiscussionAuthExpired(data.redirect);
+            throw new Error(data.message || 'Sesi login berakhir.');
+        }
         if (!response.ok || !data.success) {
             throw new Error(data.message || 'Gagal memuat diskusi.');
         }
@@ -914,6 +950,7 @@
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
             },
             body: (() => {
@@ -924,6 +961,10 @@
         });
 
         const data = await response.json();
+        if (response.status === 401) {
+            handleDiscussionAuthExpired(data.redirect);
+            throw new Error(data.message || 'Sesi login berakhir.');
+        }
         if (!response.ok || !data.success) {
             throw new Error(data.message || 'Gagal mengirim diskusi.');
         }
