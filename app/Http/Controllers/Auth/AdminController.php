@@ -1359,6 +1359,7 @@ class AdminController extends Controller
      */
     public function storeKursus(Request $request)
     {
+        $this->mergeGeneratedCourseCode($request);
         $request->validate($this->courseValidationRules());
         $playlistValidationError = $this->validateYoutubePlaylistForCourse($request);
         if ($playlistValidationError) {
@@ -4765,20 +4766,38 @@ class AdminController extends Controller
         ];
     }
 
+    private function mergeGeneratedCourseCode(Request $request): void
+    {
+        $request->merge([
+            'kode_course' => $this->generateNextCourseCode(
+                $this->courseCodePrefixForCategory($request->input('kategori'))
+            ),
+        ]);
+    }
+
+    private function courseCodePrefixForCategory(?string $category): string
+    {
+        return $category === 'webinar' ? 'WEB' : 'KRS';
+    }
+
     private function buildAdminCoursePayload(Request $request, string $status, ?string $thumbnailPath = null, ?Course $existingCourse = null): array
     {
         $isWebinar = $request->kategori === 'webinar';
-        $generatedCode = $isWebinar
-            ? $this->generateNextCourseCode('WEB', $existingCourse?->id_course)
-            : $this->generateNextCourseCode('KRS', $existingCourse?->id_course);
+        $generatedCode = $this->generateNextCourseCode(
+            $this->courseCodePrefixForCategory($request->kategori),
+            $existingCourse?->id_course
+        );
+        $requestedCode = trim((string) $request->kode_course);
         $durasiSatuan = !$isWebinar && $request->filled('estimasi_waktu')
             ? ($request->durasi_satuan ?: 'Jam')
             : null;
 
         $data = [
-            'kode_course' => $isWebinar
-                ? ($existingCourse?->kode_course ?: $generatedCode)
-                : ($request->kode_course ?: $generatedCode),
+            'kode_course' => $existingCourse !== null
+                ? ($isWebinar
+                    ? ($existingCourse->kode_course ?: $generatedCode)
+                    : ($requestedCode ?: $existingCourse->kode_course ?: $generatedCode))
+                : $generatedCode,
             'nama_course' => $request->nama_course,
             'deskripsi' => $request->deskripsi,
             'persyaratan' => $request->persyaratan,
@@ -5355,20 +5374,23 @@ class AdminController extends Controller
 
     private function generateNextCourseCode(string $prefix, ?int $ignoreCourseId = null): string
     {
-        $latestCode = Course::query()
+        $usedNumbers = Course::query()
             ->when($ignoreCourseId !== null, fn ($query) => $query->where('id_course', '!=', $ignoreCourseId))
             ->where('kode_course', 'like', $prefix . '%')
-            ->orderByRaw('LENGTH(kode_course) DESC')
-            ->orderByDesc('kode_course')
-            ->value('kode_course');
+            ->pluck('kode_course')
+            ->map(function ($code) use ($prefix) {
+                if (is_string($code) && preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $code, $matches)) {
+                    return (int) $matches[1];
+                }
 
-        $lastNumber = 0;
+                return null;
+            })
+            ->filter()
+            ->values();
 
-        if (is_string($latestCode) && preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $latestCode, $matches)) {
-            $lastNumber = (int) $matches[1];
-        }
+        $nextNumber = $usedNumbers->isEmpty() ? 1 : ((int) $usedNumbers->max() + 1);
 
-        return $prefix . str_pad((string) ($lastNumber + 1), 2, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) $nextNumber, 2, '0', STR_PAD_LEFT);
     }
 
     /**

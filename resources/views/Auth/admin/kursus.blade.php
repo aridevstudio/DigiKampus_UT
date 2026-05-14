@@ -394,8 +394,8 @@
                                         @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-gray-300 dark:text-gray-600">(otomatis)</span></label>
-                                        <input type="text" name="kode_course" id="add_kode_course" readonly value="{{ old('_modal') === 'add' ? old('kode_course') : ($nextKursusCode ?? 'KRS01') }}" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white cursor-not-allowed">
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Kursus <span class="text-gray-300 dark:text-gray-600">(otomatis saat disimpan)</span></label>
+                                        <input type="text" name="kode_course" id="add_kode_course" readonly value="{{ old('_modal') === 'add' ? old('kode_course') : ($nextKursusCode ?? 'KRS01') }}" data-kursus-code="{{ $nextKursusCode ?? 'KRS01' }}" data-webinar-code="{{ $nextWebinarCode ?? 'WEB01' }}" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white cursor-not-allowed">
                                     </div>
                                 </div>
                                 
@@ -670,8 +670,8 @@
                                         @error('nama_course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Webinar <span class="text-gray-300 dark:text-gray-600">(otomatis)</span></label>
-                                        <input type="text" name="kode_course" id="webinar_kode_course" readonly value="{{ old('_modal') === 'add_webinar' ? old('kode_course') : ($nextWebinarCode ?? 'WEB01') }}" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white cursor-not-allowed">
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Kode Webinar <span class="text-gray-300 dark:text-gray-600">(otomatis saat disimpan)</span></label>
+                                        <input type="text" name="kode_course" id="webinar_kode_course" readonly value="{{ old('_modal') === 'add_webinar' ? old('kode_course') : ($nextWebinarCode ?? 'WEB01') }}" data-default-code="{{ $nextWebinarCode ?? 'WEB01' }}" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white cursor-not-allowed">
                                     </div>
                                 </div>
 
@@ -1292,7 +1292,7 @@
 
         // IDs of all saveable fields per modal
         const addFieldIds = [
-            'add_nama_course', 'add_kode_course', 'add_deskripsi', 'add_persyaratan',
+            'add_nama_course', 'add_deskripsi', 'add_persyaratan',
             'add_id_dosen', 'add_id_jurusan', 'add_level', 'add_estimasi_waktu', 'add_durasi_satuan',
             'add_kategori', 'add_youtube_playlist', 'add_harga', 'add_diskon',
             'add_status_input', 'add_tipe_input'
@@ -1669,9 +1669,24 @@
         // ============================================================
         // Add Modal
         // ============================================================
+        function syncAddCourseCode() {
+            const codeInput = document.getElementById('add_kode_course');
+            const kategoriInput = document.getElementById('add_kategori');
+
+            if (!codeInput) {
+                return;
+            }
+
+            const kategori = kategoriInput?.value || 'kursus';
+            codeInput.value = kategori === 'webinar'
+                ? (codeInput.dataset.webinarCode || 'WEB01')
+                : (codeInput.dataset.kursusCode || 'KRS01');
+        }
+
         function openAddModal() {
             // Restore any previously saved data
             restoreFormState(addFieldIds, addCheckboxIds, ADD_FORM_KEY);
+            syncAddCourseCode();
             document.getElementById('addKursusModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -1771,6 +1786,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             initAddToggles();
             initEditToggles();
+            syncAddCourseCode();
+
+            const addKategori = document.getElementById('add_kategori');
+            if (addKategori) {
+                addKategori.addEventListener('change', syncAddCourseCode);
+            }
 
             // Clear add form storage on successful submit
             const addForm = document.querySelector('#addKursusModal form');
@@ -1999,6 +2020,10 @@
         // Add Webinar Modal
         // ============================================================
         function openAddWebinarModal() {
+            const webinarCode = document.getElementById('webinar_kode_course');
+            if (webinarCode) {
+                webinarCode.value = webinarCode.dataset.defaultCode || 'WEB01';
+            }
             document.getElementById('addWebinarModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
