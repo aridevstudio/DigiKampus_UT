@@ -2,17 +2,17 @@ name: Deploy DigiKampusUT to VPS
 
 on:
   push:
-    branches: [ Develop ]
+    branches: [Develop]
   workflow_dispatch:
     inputs:
       deployment_type:
-        description: 'Deployment type'
+        description: Deployment type
         required: true
-        default: 'incremental'
+        default: incremental
         type: choice
         options:
-        - incremental
-        - full
+          - incremental
+          - full
 
 jobs:
   deploy:
@@ -20,149 +20,199 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 2  # Get last 2 commits for diff.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-    - name: Determine deployment mode
-      id: deploy_mode
-      run: |
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          DEPLOY_TYPE="${{ github.event.inputs.deployment_type }}"
-        else
-          DEPLOY_TYPE="incremental"
-        fi
-        echo "deployment_type=$DEPLOY_TYPE" >> $GITHUB_OUTPUT
-        echo "🚀 Deployment mode: $DEPLOY_TYPE"
+      - name: Determine deployment mode
+        id: deploy_mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            DEPLOY_TYPE="${{ github.event.inputs.deployment_type }}"
+          else
+            DEPLOY_TYPE="incremental"
+          fi
+          echo "deployment_type=$DEPLOY_TYPE" >> $GITHUB_OUTPUT
+          echo "Deployment mode: $DEPLOY_TYPE"
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
 
-    - name: Install NPM Dependencies
-      run: npm ci
+      - name: Install NPM Dependencies
+        run: npm ci
 
-    - name: Build Vite Assets
-      run: |
-        npm run build
-        echo "✅ Vite build completed - assets ready in public/build/"
+      - name: Validate Reverb Secrets
+        run: |
+          if [ -z "${{ secrets.REVERB_APP_KEY }}" ] || [ -z "${{ secrets.REVERB_APP_SECRET }}" ]; then
+            echo "::error::Set GitHub secrets REVERB_APP_KEY and REVERB_APP_SECRET before deploying Reverb."
+            exit 1
+          fi
+          echo "Reverb deployment secrets are present."
 
-    - name: Smart Laravel DigiKampusUT Sync
-      id: sync_deploy
-      uses: nick-fields/retry@v2
-      with:
-        timeout_minutes: 10
-        max_attempts: 3
-        retry_wait_seconds: 20
-        command: |
-          # Install lftp for smart sync
-          sudo apt-get update && sudo apt-get install -y lftp
+      - name: Build Vite Assets
+        env:
+          VITE_REVERB_APP_KEY: ${{ secrets.REVERB_APP_KEY }}
+          VITE_REVERB_HOST: ${{ vars.REVERB_HOST || 'ws-demo-digikampusut.gilarya.my.id' }}
+          VITE_REVERB_PORT: ${{ vars.REVERB_PORT || '443' }}
+          VITE_REVERB_SCHEME: ${{ vars.REVERB_SCHEME || 'https' }}
+        run: |
+          npm run build
+          echo "Vite build completed - assets ready in public/build/"
 
-          echo "🎓 DigiKampusUT Smart Sync - Only sync changed Laravel files..."
-          echo "📋 Will sync: app/, config/, resources/, routes/, public/ (excluding server files)"
-          echo "⚡ Excluding: vendor/, .env, storage/logs (server managed)"
-          echo "✅ Safe deployment - only application code"
+      - name: Smart Laravel DigiKampusUT Sync
+        id: sync_deploy
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 20
+          command: |
+            sudo apt-get update && sudo apt-get install -y lftp
 
-          # Smart Laravel folder sync via SSH/SFTP
-          lftp -e "
-          set sftp:auto-confirm yes;
-          set net:timeout 60;
-          set net:max-retries 3;
-          set net:reconnect-interval-base 5;
-          open sftp://${{ secrets.VPS_USERNAME }}:${{ secrets.VPS_PASSWORD }}@${{ secrets.VPS_HOST }};
-          cd /var/www/digikampusut/;
-          lcd ./;
+            echo "DigiKampusUT Smart Sync - only syncing changed Laravel files."
+            echo "Will sync: app/, config/, resources/, routes/, public/, database/migrations/, bootstrap/app.php"
+            echo "Excluding: vendor/, .env, storage/logs"
 
-          echo 'Starting DigiKampusUT smart sync...';
+            lftp -e "
+            set sftp:auto-confirm yes;
+            set net:timeout 60;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
+            open sftp://${{ secrets.VPS_USERNAME }}:${{ secrets.VPS_PASSWORD }}@${{ secrets.VPS_HOST }};
+            cd /var/www/digikampusut/;
+            lcd ./;
 
-          # Sync core Laravel folders (only newer files)
-          mirror --reverse --only-newer --verbose --parallel=2 app/ app/;
-          mirror --reverse --only-newer --verbose --parallel=2 config/ config/;
-          mirror --reverse --only-newer --verbose --parallel=2 resources/ resources/;
-          mirror --reverse --only-newer --verbose --parallel=2 routes/ routes/;
-          mirror --reverse --only-newer --verbose --parallel=2 database/migrations/ database/migrations/;
+            echo 'Starting DigiKampusUT smart sync...';
 
-          # Sync Vite build assets (with --delete to replace old hashed files)
-          mirror --reverse --delete --verbose --parallel=2 public/build/ public/build/;
+            mirror --reverse --only-newer --verbose --parallel=2 app/ app/;
+            mirror --reverse --only-newer --verbose --parallel=2 config/ config/;
+            mirror --reverse --only-newer --verbose --parallel=2 resources/ resources/;
+            mirror --reverse --only-newer --verbose --parallel=2 routes/ routes/;
+            mirror --reverse --only-newer --verbose --parallel=2 database/migrations/ database/migrations/;
+            put bootstrap/app.php -o bootstrap/app.php;
 
-          # Sync public folder but exclude server-managed files and build (already synced above)
-          mirror --reverse --only-newer --verbose --parallel=2 --exclude='index.php' --exclude='.htaccess' --exclude='build/' public/ public/;
+            mirror --reverse --delete --verbose --parallel=2 public/build/ public/build/;
+            mirror --reverse --only-newer --verbose --parallel=2 --exclude='index.php' --exclude='.htaccess' --exclude='build/' public/ public/;
 
-          # Sync storage/app/public for uploaded files (avatars, images, etc)
-          mirror --reverse --only-newer --verbose --parallel=2 storage/app/public/ storage/app/public/;
+            mirror --reverse --only-newer --verbose --parallel=2 storage/app/public/ storage/app/public/;
+            mirror --reverse --only-newer --verbose --parallel=2 storage/app/private/ storage/app/private/;
 
-          # Sync storage/app/private for sensitive documents (KTP, CV, NPWP - admin only)
-          mirror --reverse --only-newer --verbose --parallel=2 storage/app/private/ storage/app/private/;
+            put composer.json -o composer.json;
+            put composer.lock -o composer.lock;
 
-          # Sync composer files for dependency management
-          put composer.json -o composer.json;
-          put composer.lock -o composer.lock;
+            mirror --reverse --delete --verbose --parallel=1 bootstrap/cache/ bootstrap/cache/;
 
-          # Clear bootstrap cache
-          mirror --reverse --delete --verbose --parallel=1 bootstrap/cache/ bootstrap/cache/;
+            echo 'DigiKampusUT sync completed.';
+            quit
+            "
 
-          echo '✅ DigiKampusUT sync completed!';
-          quit
-          "
+      - name: Run Laravel Commands via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          script: |
+            cd /var/www/digikampusut
 
-    - name: Run Laravel Commands via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USERNAME }}
-        password: ${{ secrets.VPS_PASSWORD }}
-        port: 22
-        script: |
-          cd /var/www/digikampusut
+            echo "Installing/updating Composer dependencies..."
+            export COMPOSER_ALLOW_SUPERUSER=1
+            sudo -E composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --working-dir=/var/www/digikampusut 2>&1 || echo "Composer install had issues, check logs."
 
-          echo "📦 Installing/updating Composer dependencies..."
-          export COMPOSER_ALLOW_SUPERUSER=1
-          sudo -E composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --working-dir=/var/www/digikampusut 2>&1 || echo "⚠️ Composer install had issues, check logs"
+            echo "Setting proper permissions..."
+            sudo chown -R www-data:www-data /var/www/digikampusut
+            sudo chmod -R 755 /var/www/digikampusut
+            sudo chmod -R 775 /var/www/digikampusut/storage
+            sudo chmod -R 775 /var/www/digikampusut/bootstrap/cache
 
-          echo "🔧 Setting proper permissions..." 
+            echo "Running Laravel optimization commands..."
+            sudo -u www-data php artisan storage:link --force 2>/dev/null || echo "Storage link already exists."
 
-          # Set proper permissions AFTER composer install
-          sudo chown -R www-data:www-data /var/www/digikampusut
-          sudo chmod -R 755 /var/www/digikampusut
-          sudo chmod -R 775 /var/www/digikampusut/storage
-          sudo chmod -R 775 /var/www/digikampusut/bootstrap/cache
+            echo "Applying Reverb environment configuration..."
+            set_env_var() {
+              local key="$1"
+              local value="$2"
+              local escaped_value
+              escaped_value=$(printf '%s' "$value" | sed -e 's/[\/&]/\\&/g')
 
-          echo "�🔧 Running Laravel optimization commands..."
+              if sudo test -f .env && sudo grep -q "^${key}=" .env; then
+                sudo sed -i "s/^${key}=.*/${key}=${escaped_value}/" .env
+              else
+                printf '%s=%s\n' "$key" "$value" | sudo tee -a .env >/dev/null
+              fi
+            }
 
-          # Create storage symlink (important for uploaded files)
-          sudo -u www-data php artisan storage:link --force 2>/dev/null || echo "Storage link already exists"
+            set_env_var BROADCAST_CONNECTION reverb
+            set_env_var REVERB_APP_ID "${{ vars.REVERB_APP_ID || 'digikampus' }}"
+            set_env_var REVERB_APP_KEY "${{ secrets.REVERB_APP_KEY }}"
+            set_env_var REVERB_APP_SECRET "${{ secrets.REVERB_APP_SECRET }}"
+            set_env_var REVERB_SERVER_HOST "${{ vars.REVERB_SERVER_HOST || '0.0.0.0' }}"
+            set_env_var REVERB_SERVER_PORT "${{ vars.REVERB_SERVER_PORT || '8080' }}"
+            set_env_var REVERB_HOST "${{ vars.REVERB_HOST || 'ws-demo-digikampusut.gilarya.my.id' }}"
+            set_env_var REVERB_PORT "${{ vars.REVERB_PORT || '443' }}"
+            set_env_var REVERB_SCHEME "${{ vars.REVERB_SCHEME || 'https' }}"
+            set_env_var VITE_REVERB_APP_KEY '${REVERB_APP_KEY}'
+            set_env_var VITE_REVERB_HOST '${REVERB_HOST}'
+            set_env_var VITE_REVERB_PORT '${REVERB_PORT}'
+            set_env_var VITE_REVERB_SCHEME '${REVERB_SCHEME}'
 
-          # Clear all caches
-          sudo -u www-data php artisan config:clear
-          sudo -u www-data php artisan route:clear
-          sudo -u www-data php artisan view:clear
+            sudo -u www-data php artisan config:clear
+            sudo -u www-data php artisan route:clear
+            sudo -u www-data php artisan view:clear
 
-          # Cache for production
-          sudo -u www-data php artisan config:cache
-          sudo -u www-data php artisan route:cache
-          sudo -u www-data php artisan view:cache
+            sudo -u www-data php artisan config:cache
+            sudo -u www-data php artisan route:cache
+            sudo -u www-data php artisan view:cache
 
-          echo "✅ DigiKampusUT optimization completed!"
-  
-    - name: Restart PHP-FPM
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USERNAME }}
-        password: ${{ secrets.VPS_PASSWORD }}
-        port: 22
-        script: |
-          echo "Restarting PHP-FPM..."
-          sudo systemctl restart php8.2-fpm
-          sudo systemctl restart nginx
-            echo "✅ PHP-FPM and Nginx restarted successfully!"
+            echo "DigiKampusUT optimization completed."
 
-    - name: Deployment Summary
-      if: always()
-      run: |
-        echo "✅ DigiKampusUT deployment completed!"
-        echo "🔄 Only changed Laravel files were synced"
-        echo "🧹 Caches cleared and optimized"
-        echo "🎯 Server synchronized with Git repository"
+      - name: Restart Services
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          script: |
+            echo "Restarting PHP-FPM and Nginx..."
+            sudo systemctl restart php8.2-fpm
+            sudo systemctl restart nginx
+
+            echo "Preparing Reverb supervisor process..."
+            if command -v supervisorctl >/dev/null 2>&1; then
+              if ! sudo supervisorctl status digikampus-reverb >/dev/null 2>&1; then
+                printf '%s\n' \
+                  '[program:digikampus-reverb]' \
+                  'process_name=%(program_name)s' \
+                  'command=php /var/www/digikampusut/artisan reverb:start --host=0.0.0.0 --port=8080' \
+                  'directory=/var/www/digikampusut' \
+                  'autostart=true' \
+                  'autorestart=true' \
+                  'user=www-data' \
+                  'redirect_stderr=true' \
+                  'stdout_logfile=/var/www/digikampusut/storage/logs/reverb.log' \
+                  'stopwaitsecs=60' \
+                  | sudo tee /etc/supervisor/conf.d/digikampus-reverb.conf >/dev/null
+                sudo supervisorctl reread
+                sudo supervisorctl update
+              fi
+
+              sudo supervisorctl restart digikampus-reverb || sudo supervisorctl start digikampus-reverb
+              sudo supervisorctl status digikampus-reverb
+            else
+              echo "supervisorctl not found. Install supervisor or start Reverb manually."
+            fi
+
+            echo "Service restart completed."
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "DigiKampusUT deployment completed."
+          echo "Only changed Laravel files were synced."
+          echo "Caches cleared and optimized."
+          echo "Server synchronized with Git repository."

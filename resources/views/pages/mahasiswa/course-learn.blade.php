@@ -737,6 +737,13 @@
                 btn.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
             }
         });
+
+        if (tabName === 'diskusi') {
+            refreshCourseDiscussion().catch(() => {});
+            startCourseDiscussionPolling();
+        } else {
+            stopCourseDiscussionPolling();
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -777,7 +784,10 @@
 
     const discussionEndpoint = @json($discussionEndpoint);
     const discussionStoreEndpoint = @json($discussionStoreEndpoint);
+    const discussionPollIntervalMs = 30000;
     let discussionPoller = null;
+    let discussionFetchInFlight = false;
+    let discussionVisibilityListenerBound = false;
     let discussionComments = [];
     let discussionPendingComments = [];
     let discussionTempSeed = 0;
@@ -851,6 +861,41 @@
         if (discussionPoller) {
             window.clearInterval(discussionPoller);
             discussionPoller = null;
+        }
+    }
+
+    function isDiscussionTabActive() {
+        const discussionTab = document.getElementById('tab-diskusi');
+
+        return discussionTab && !discussionTab.classList.contains('hidden') && !document.hidden;
+    }
+
+    function startCourseDiscussionPolling() {
+        if (!isDiscussionTabActive() || discussionPoller) {
+            return;
+        }
+
+        discussionPoller = window.setInterval(() => {
+            if (!isDiscussionTabActive()) {
+                stopCourseDiscussionPolling();
+                return;
+            }
+
+            refreshCourseDiscussion().catch(() => {});
+        }, discussionPollIntervalMs);
+    }
+
+    async function refreshCourseDiscussion() {
+        if (discussionFetchInFlight || !isDiscussionTabActive()) {
+            return;
+        }
+
+        discussionFetchInFlight = true;
+
+        try {
+            await fetchCourseDiscussion();
+        } finally {
+            discussionFetchInFlight = false;
         }
     }
 
@@ -1020,13 +1065,23 @@
     }
 
     function initCourseDiscussion() {
-        fetchCourseDiscussion().catch(() => {});
-        if (discussionPoller) {
-            window.clearInterval(discussionPoller);
+        refreshCourseDiscussion().catch(() => {});
+        startCourseDiscussionPolling();
+
+        if (!discussionVisibilityListenerBound) {
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    stopCourseDiscussionPolling();
+                    return;
+                }
+
+                if (isDiscussionTabActive()) {
+                    refreshCourseDiscussion().catch(() => {});
+                    startCourseDiscussionPolling();
+                }
+            });
+            discussionVisibilityListenerBound = true;
         }
-        discussionPoller = window.setInterval(() => {
-            fetchCourseDiscussion().catch(() => {});
-        }, 5000);
 
         const input = document.getElementById('discussion-input');
         input?.addEventListener('keydown', function (event) {
