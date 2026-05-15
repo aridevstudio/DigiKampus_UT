@@ -1348,11 +1348,6 @@ class AdminController extends Controller
             ->where('status', 'aktif')
             ->orderBy('name')
             ->get();
-        $webinarSpeakerList = User::whereIn('role', ['dosen', 'admin'])
-            ->where('status', 'aktif')
-            ->orderByRaw("CASE WHEN role = 'admin' THEN 0 ELSE 1 END")
-            ->orderBy('name')
-            ->get();
         $jurusanList = \App\Models\Jurusan::orderBy('nama_jurusan')->get();
         
         return view('Auth.admin.kursus', [
@@ -1367,7 +1362,7 @@ class AdminController extends Controller
             'tipeFilter' => $request->tipe ?? 'all',
             'kategoriFilter' => $request->kategori ?? 'all',
             'dosenList' => $dosenList,
-            'webinarSpeakerList' => $webinarSpeakerList,
+            'webinarSpeakerList' => $dosenList,
             'jurusanList' => $jurusanList,
             'nextKursusCode' => $this->generateNextCourseCode('KRS'),
             'nextWebinarCode' => $this->generateNextCourseCode('WEB'),
@@ -1380,7 +1375,7 @@ class AdminController extends Controller
     public function storeKursus(Request $request)
     {
         $this->mergeGeneratedCourseCode($request);
-        $request->validate($this->courseValidationRules());
+        $request->validate($this->courseValidationRules(null, $request->input('kategori')));
         $playlistValidationError = $this->validateYoutubePlaylistForCourse($request);
         if ($playlistValidationError) {
             return redirect()->back()->withInput()->with('error', $playlistValidationError);
@@ -1470,7 +1465,7 @@ class AdminController extends Controller
                 ->with('error', 'Kursus tidak ditemukan');
         }
 
-        $request->validate($this->courseValidationRules($id));
+        $request->validate($this->courseValidationRules($id, $request->input('kategori')));
         $playlistValidationError = $this->validateYoutubePlaylistForCourse($request);
         if ($playlistValidationError) {
             return redirect()->back()->withInput()->with('error', $playlistValidationError);
@@ -4755,7 +4750,7 @@ class AdminController extends Controller
         return $normalized !== '' && $normalized !== 'all' ? $normalized : null;
     }
 
-    private function courseValidationRules(?int $courseId = null): array
+    private function courseValidationRules(?int $courseId = null, ?string $category = null): array
     {
         $kodeCourseRule = 'required|string|max:50|unique:courses,kode_course';
         if ($courseId !== null) {
@@ -4767,7 +4762,10 @@ class AdminController extends Controller
             'kode_course' => $kodeCourseRule,
             'deskripsi' => 'nullable|string',
             'persyaratan' => 'nullable|string',
-            'id_dosen' => 'nullable|exists:users,id',
+            'id_dosen' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'dosen')),
+            ],
             'id_jurusan' => 'nullable|exists:jurusans,id_jurusan',
             'tipe' => 'required|in:gratis,berbayar',
             'kategori' => 'required|in:webinar,tiket,kursus',

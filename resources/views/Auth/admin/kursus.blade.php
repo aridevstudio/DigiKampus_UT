@@ -1292,7 +1292,7 @@
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'role_label' => ($user->role ?? null) === 'admin' ? 'Admin' : 'Dosen',
+                    'role_label' => 'Dosen',
                 ];
             })
             ->values();
@@ -1312,7 +1312,7 @@
                 search: '',
                 selectedId: '',
                 open: false,
-                items: prefix === 'add' ? dosenItems : webinarSpeakerItems,
+                items: dosenItems,
                 filteredItems() {
                     if (!this.search) return this.items;
                     const q = this.search.toLowerCase();
@@ -1329,6 +1329,12 @@
                 clear() {
                     this.selectedId = '';
                     this.search = '';
+                },
+                setMode(category) {
+                    this.items = dosenItems;
+                    if (this.selectedId && !this.items.some(i => String(i.id) === String(this.selectedId))) {
+                        this.clear();
+                    }
                 },
                 setById(id) {
                     const found = this.items.find(i => String(i.id) === String(id));
@@ -1377,6 +1383,11 @@
             const kuotaGroup = document.getElementById('edit_kuota_group');
             const linkLabel = document.getElementById('edit_link_label');
             const linkInput = document.getElementById('edit_youtube_playlist');
+            const editDosenEl = document.querySelector('[x-ref="editDosenWrap"]');
+            const editDosenData = editDosenEl ? Alpine.$data(editDosenEl) : null;
+            if (editDosenData?.setMode) {
+                editDosenData.setMode(normalizedCategory);
+            }
             const copyMap = {
                 kursus: {
                     modalTitle: 'Edit Kursus',
@@ -2055,6 +2066,8 @@
                         document.getElementById('edit_kode_course').value = data.kode_course || '';
                         document.getElementById('edit_deskripsi').value = data.deskripsi || '';
                         document.getElementById('edit_persyaratan').value = data.persyaratan || '';
+                        document.getElementById('edit_kategori').value = data.kategori || 'kursus';
+                        syncEditCategoryUI(data.kategori || 'kursus');
                         
                         // Set dosen via Alpine searchable dropdown
                         const editDosenEl = document.querySelector('[x-ref="editDosenWrap"]');
@@ -2070,8 +2083,6 @@
                         document.getElementById('edit_level').value = data.level || '';
                         document.getElementById('edit_estimasi_waktu').value = data.estimasi_waktu || 20;
                         document.getElementById('edit_durasi_satuan').value = data.durasi_satuan || 'Jam';
-                        document.getElementById('edit_kategori').value = data.kategori || 'kursus';
-                        syncEditCategoryUI(data.kategori || 'kursus');
                         document.getElementById('edit_tanggal_webinar').value = data.tanggal_webinar || '';
                         document.getElementById('edit_jam_mulai_webinar').value = data.jam_mulai_webinar || '';
                         document.getElementById('edit_jam_selesai_webinar').value = data.jam_selesai_webinar || '';
