@@ -281,7 +281,13 @@ class CourseController extends Controller
         foreach ($materials as $material) {
             $moduleNum = $material->id_module ?? $material->modul ?? 1;
             $moduleEntity = $courseModules->get($moduleNum);
-            $moduleQuiz = $courseQuizzes->get($moduleNum)?->first(fn (Quiz $quiz) => !$quiz->is_pretest)
+            $materialType = $this->normalizeMaterialType($material->tipe);
+            $materialTitle = $material->judul_material ?? $material->judul ?? 'Materi';
+            $materialQuiz = $materialType === 'kuis'
+                ? $this->resolveQuizForLegacyMaterialLink((int) $courseId, $material)
+                : null;
+            $moduleQuiz = $materialQuiz
+                ?? $courseQuizzes->get($moduleNum)?->first(fn (Quiz $quiz) => !$quiz->is_pretest)
                 ?? $courseQuizzes->get($moduleNum)?->first();
             $moduleQuizAttempt = $moduleQuiz ? $completedQuizAttempts->get($moduleQuiz->id_quiz)?->first() : null;
             $moduleTopic = trim((string) ($moduleEntity?->judul_module ?? $material->topik ?? 'Materi'));
@@ -299,6 +305,7 @@ class CourseController extends Controller
                         'is_pretest' => (bool) $moduleQuiz->is_pretest,
                         'passing_score' => $moduleQuiz->passing_score,
                     ] : null,
+                    'quizzes' => [],
                     'quiz_completed' => $moduleQuizAttempt !== null,
                     'feedback_available' => $moduleQuizAttempt !== null,
                     'assignment' => null,
@@ -311,9 +318,6 @@ class CourseController extends Controller
                 ->where('is_completed', true)
                 ->exists();
 
-            $materialType = $this->normalizeMaterialType($material->tipe);
-            $materialTitle = $material->judul_material ?? $material->judul ?? 'Materi';
-            
             $modules[$moduleNum]['materials'][] = [
                 'id' => $material->id_material,
                 'title' => $materialTitle,
@@ -322,16 +326,37 @@ class CourseController extends Controller
                 'duration' => $material->durasi ?? '10 menit',
                 'is_completed' => $isCompleted,
                 'video_url' => $material->video_url,
-                'quiz_id' => $materialType === 'kuis' ? ($moduleQuiz?->id_quiz) : null,
+                'quiz_id' => $materialType === 'kuis' ? ($materialQuiz?->id_quiz) : null,
             ];
 
-            if ($materialType === 'kuis' && empty($modules[$moduleNum]['quiz'])) {
+            if ($materialType === 'kuis' && $materialQuiz) {
+                $materialQuizAttempt = $completedQuizAttempts->get($materialQuiz->id_quiz)?->first();
+                $quizData = [
+                    'id' => $materialQuiz->id_quiz,
+                    'title' => $materialTitle ?: 'Kuis Akhir Modul',
+                    'duration' => max(5, (int) ($materialQuiz->durasi_menit ?? $material->durasi ?? 30)),
+                    'is_pretest' => (bool) $materialQuiz->is_pretest,
+                    'passing_score' => (int) ($materialQuiz->passing_score ?? 70),
+                    'completed' => $materialQuizAttempt !== null,
+                ];
+
+                if (!collect($modules[$moduleNum]['quizzes'])->contains('id', $quizData['id'])) {
+                    $modules[$moduleNum]['quizzes'][] = $quizData;
+                }
+
+                if (empty($modules[$moduleNum]['quiz'])) {
+                    $modules[$moduleNum]['quiz'] = $quizData;
+                    $modules[$moduleNum]['quiz_completed'] = $quizData['completed'];
+                    $modules[$moduleNum]['feedback_available'] = $quizData['completed'];
+                }
+            } elseif ($materialType === 'kuis' && empty($modules[$moduleNum]['quiz'])) {
                 $modules[$moduleNum]['quiz'] = [
                     'id' => $material->id_material,
                     'title' => $materialTitle ?: 'Kuis Akhir Modul',
                     'duration' => max(5, (int) ($material->durasi ?? 30)),
                     'is_pretest' => (bool) ($material->is_pretest ?? false),
                     'passing_score' => 70,
+                    'completed' => false,
                 ];
             }
 
@@ -828,7 +853,7 @@ class CourseController extends Controller
             ]);
         });
 
-        $this->markQuizMaterialsAsCompleted((int) $courseId, (int) ($quiz->id_module ?? 0), $user->id);
+        $this->markQuizMaterialAsCompleted((int) $courseId, $quiz, $user->id);
         if ($enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->where('id_course', $courseId)->first()) {
             $enrollment->recalculateProgress($user->id);
         }
@@ -1415,19 +1440,64 @@ class CourseController extends Controller
         return $this->provisionQuizFromLegacyMaterial($courseId, $legacyQuizMaterial);
     }
 
+    private function resolveQuizForLegacyMaterialLink(int $courseId, CourseMaterial $legacyQuizMaterial): ?Quiz
+    {
+        if ($this->normalizeMaterialType($legacyQuizMaterial->tipe) !== 'kuis' || empty($legacyQuizMaterial->id_module)) {
+            return null;
+        }
+
+        try {
+            return $this->provisionQuizFromLegacyMaterial($courseId, $legacyQuizMaterial);
+        } catch (\Throwable $exception) {
+            Log::warning('Gagal sinkronisasi material kuis ke quiz.', [
+                'course_id' => $courseId,
+                'material_id' => $legacyQuizMaterial->id_material,
+                'module_id' => $legacyQuizMaterial->id_module,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
     private function provisionQuizFromLegacyMaterial(int $courseId, CourseMaterial $legacyQuizMaterial): Quiz
     {
         $title = trim((string) ($legacyQuizMaterial->judul_material ?? $legacyQuizMaterial->judul ?? 'Kuis Akhir Modul'));
+        $sourceMarker = 'legacy_material:' . (int) $legacyQuizMaterial->id_material;
 
         $existingQuiz = Quiz::where('id_course', $courseId)
             ->where('id_module', $legacyQuizMaterial->id_module)
-            ->whereRaw('LOWER(TRIM(judul)) = ?', [strtolower($title)])
+            ->where('deskripsi', 'like', '%' . $sourceMarker . '%')
             ->orderByDesc('id_quiz')
             ->first();
+
+        if (!$existingQuiz) {
+            $sameTitleLegacyCount = CourseMaterial::where('id_course', $courseId)
+                ->where('id_module', $legacyQuizMaterial->id_module)
+                ->get()
+                ->filter(function (CourseMaterial $material) use ($title) {
+                    return $this->normalizeMaterialType($material->tipe) === 'kuis'
+                        && strtolower(trim((string) ($material->judul_material ?? $material->judul ?? ''))) === strtolower($title);
+                })
+                ->count();
+
+            if ($sameTitleLegacyCount <= 1) {
+                $existingQuiz = Quiz::where('id_course', $courseId)
+                    ->where('id_module', $legacyQuizMaterial->id_module)
+                    ->whereRaw('LOWER(TRIM(judul)) = ?', [strtolower($title)])
+                    ->orderByDesc('id_quiz')
+                    ->first();
+            }
+        }
 
         if ($existingQuiz) {
             if (!$existingQuiz->is_active) {
                 $existingQuiz->forceFill(['is_active' => true])->save();
+            }
+            if (!str_contains((string) $existingQuiz->deskripsi, $sourceMarker)) {
+                $existingQuiz->forceFill([
+                    'deskripsi' => trim((string) $existingQuiz->deskripsi . ' ' . $sourceMarker),
+                ])->save();
             }
             if ($existingQuiz->questions()->count() === 0) {
                 $this->seedQuizQuestionsFromLegacyMaterial($existingQuiz, $legacyQuizMaterial);
@@ -1448,7 +1518,7 @@ class CourseController extends Controller
                 'id_module' => $legacyQuizMaterial->id_module,
                 'id_course' => $courseId,
                 'judul' => $title,
-                'deskripsi' => 'Kuis dibuat otomatis dari materi kuis lama.',
+                'deskripsi' => 'Kuis dibuat otomatis dari materi kuis lama. ' . $sourceMarker,
                 'durasi_menit' => max(5, (int) ($legacyQuizMaterial->durasi ?? 30)),
                 'is_pretest' => (bool) ($legacyQuizMaterial->is_pretest ?? false),
                 'is_active' => true,
@@ -1743,8 +1813,9 @@ class CourseController extends Controller
         return "Hasil Anda belum mencapai nilai lulus. Anda menjawab {$correctAnswers} dari {$totalQuestions} soal dengan benar. Tinjau ulang penjelasan pada soal yang salah sebelum mencoba lagi.";
     }
 
-    private function markQuizMaterialsAsCompleted(int $courseId, int $moduleId, int $mahasiswaId): void
+    private function markQuizMaterialAsCompleted(int $courseId, Quiz $quiz, int $mahasiswaId): void
     {
+        $moduleId = (int) ($quiz->id_module ?? 0);
         if ($moduleId <= 0) {
             return;
         }
@@ -1754,7 +1825,17 @@ class CourseController extends Controller
             ->get()
             ->filter(fn (CourseMaterial $material) => $this->normalizeMaterialType($material->tipe) === 'kuis');
 
-        foreach ($quizMaterials as $material) {
+        $quizTitle = Str::lower(trim((string) ($quiz->judul ?? '')));
+        $matchedMaterials = $quizMaterials->filter(function (CourseMaterial $material) use ($quizTitle) {
+            return $quizTitle !== ''
+                && Str::lower(trim((string) ($material->judul_material ?? $material->judul ?? ''))) === $quizTitle;
+        });
+
+        if ($matchedMaterials->isEmpty() && $quizMaterials->count() === 1) {
+            $matchedMaterials = $quizMaterials;
+        }
+
+        foreach ($matchedMaterials as $material) {
             \App\Models\MaterialProgress::updateOrCreate(
                 [
                     'id_mahasiswa' => $mahasiswaId,

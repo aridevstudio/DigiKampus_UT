@@ -181,26 +181,35 @@
                             @endforeach
                         @endif
                         
-                        {{-- Quiz Link --}}
-                        @if(!empty($module['quiz']))
-                        <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $module['quiz']['id']]) }}" 
+                        {{-- Quiz Links --}}
+                        @php
+                            $moduleQuizLinks = collect($module['quizzes'] ?? []);
+                            if ($moduleQuizLinks->isEmpty() && !empty($module['quiz'])) {
+                                $moduleQuizLinks = collect([$module['quiz']]);
+                            }
+                        @endphp
+                        @foreach($moduleQuizLinks as $moduleQuizLink)
+                        @php
+                            $moduleQuizLinkCompleted = $moduleQuizLink['completed'] ?? ($moduleQuizLinks->count() === 1 && ($module['quiz_completed'] ?? false));
+                        @endphp
+                        <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $moduleQuizLink['id']]) }}" 
                            class="flex items-center gap-3 p-3 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition bg-yellow-50/50 dark:bg-yellow-500/5 border-t border-yellow-200 dark:border-yellow-700/30">
                             <div class="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0 relative">
                                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                 </svg>
-                                @if($module['quiz_completed'] ?? false)
+                                @if($moduleQuizLinkCompleted)
                                 <div class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 flex items-center justify-center border border-white dark:border-gray-800">
                                 </div>
                                 @endif
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-400">{{ $module['quiz']['title'] ?? 'Kuis Akhir Modul' }}</p>
+                                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-400">{{ $moduleQuizLink['title'] ?? 'Kuis Akhir Modul' }}</p>
                                 <p class="text-xs text-yellow-600 dark:text-yellow-500">
-                                    @if($module['quiz_completed'] ?? false)
+                                    @if($moduleQuizLinkCompleted)
                                         Selesai
                                     @else
-                                        Durasi: {{ $module['quiz']['duration'] ?? 30 }} menit
+                                        Durasi: {{ $moduleQuizLink['duration'] ?? 30 }} menit
                                     @endif
                                 </p>
                             </div>
@@ -208,7 +217,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                         </a>
-                        @endif
+                        @endforeach
                         
                         {{-- Assignment Link --}}
                         @if(!empty($module['assignment']))
@@ -529,7 +538,13 @@
             @endif
 
             {{-- Dropdown Pre-test / Kuis Modul Ini --}}
-            @if($currentMaterial && isset($modules[$currentModuleIndex]) && !empty($modules[$currentModuleIndex]['quiz']))
+            @php
+                $currentModuleQuizLinks = collect($modules[$currentModuleIndex]['quizzes'] ?? []);
+                if ($currentModuleQuizLinks->isEmpty() && !empty($modules[$currentModuleIndex]['quiz'])) {
+                    $currentModuleQuizLinks = collect([$modules[$currentModuleIndex]['quiz']]);
+                }
+            @endphp
+            @if($currentMaterial && isset($modules[$currentModuleIndex]) && $currentModuleQuizLinks->isNotEmpty())
             <div class="mt-6 border border-gray-200 dark:border-gray-700/50 rounded-2xl overflow-hidden bg-white dark:bg-[#1f2937] shadow-sm">
                 <button onclick="togglePretest()" class="w-full flex items-center justify-between p-4 focus:outline-none hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <div class="flex items-center gap-3">
@@ -549,23 +564,27 @@
                 </button>
                 
                 <div id="pretest-content" class="hidden border-t border-gray-200 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/50 p-6">
-                    <div class="flex flex-col md:flex-row gap-6 items-center justify-between">
-                        <div>
-                            <h4 class="font-semibold text-gray-800 dark:text-gray-100 mb-1">{{ $modules[$currentModuleIndex]['quiz']['title'] ?? 'Pre-test / Kuis Akhir' }}</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Selesaikan kuis ini untuk memvalidasi pengetahuan Anda tentang materi di modul ini. Durasi pengerjaan: {{ $modules[$currentModuleIndex]['quiz']['duration'] ?? 30 }} menit.</p>
-                            
-                            @if($modules[$currentModuleIndex]['quiz_completed'] ?? false)
-                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-full">
-                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                                Sudah Dikerjakan
-                            </span>
-                            @endif
+                    <div class="space-y-3">
+                        @foreach($currentModuleQuizLinks as $quizLink)
+                        <div class="flex flex-col md:flex-row gap-4 md:items-center justify-between rounded-2xl border border-yellow-200/70 dark:border-yellow-500/20 bg-white dark:bg-gray-800/70 p-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-800 dark:text-gray-100 mb-1">{{ $quizLink['title'] ?? 'Pre-test / Kuis Akhir' }}</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Selesaikan kuis ini untuk memvalidasi pengetahuan Anda tentang materi di modul ini. Durasi pengerjaan: {{ $quizLink['duration'] ?? 30 }} menit.</p>
+
+                                @if($quizLink['completed'] ?? false)
+                                <span class="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-full">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    Sudah Dikerjakan
+                                </span>
+                                @endif
+                            </div>
+                            <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $quizLink['id']]) }}" class="flex-shrink-0 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-xl transition shadow-sm text-center">
+                                Buka Kuis Sekarang
+                            </a>
                         </div>
-                        <a href="{{ route('mahasiswa.course-quiz', ['courseId' => $course->id_course, 'quizId' => $modules[$currentModuleIndex]['quiz']['id']]) }}" class="flex-shrink-0 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-xl transition shadow-sm">
-                            Buka Kuis Sekarang
-                        </a>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -737,13 +756,6 @@
                 btn.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
             }
         });
-
-        if (tabName === 'diskusi') {
-            refreshCourseDiscussion().catch(() => {});
-            startCourseDiscussionPolling();
-        } else {
-            stopCourseDiscussionPolling();
-        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -784,10 +796,7 @@
 
     const discussionEndpoint = @json($discussionEndpoint);
     const discussionStoreEndpoint = @json($discussionStoreEndpoint);
-    const discussionPollIntervalMs = 30000;
     let discussionPoller = null;
-    let discussionFetchInFlight = false;
-    let discussionVisibilityListenerBound = false;
     let discussionComments = [];
     let discussionPendingComments = [];
     let discussionTempSeed = 0;
@@ -861,41 +870,6 @@
         if (discussionPoller) {
             window.clearInterval(discussionPoller);
             discussionPoller = null;
-        }
-    }
-
-    function isDiscussionTabActive() {
-        const discussionTab = document.getElementById('tab-diskusi');
-
-        return discussionTab && !discussionTab.classList.contains('hidden') && !document.hidden;
-    }
-
-    function startCourseDiscussionPolling() {
-        if (!isDiscussionTabActive() || discussionPoller) {
-            return;
-        }
-
-        discussionPoller = window.setInterval(() => {
-            if (!isDiscussionTabActive()) {
-                stopCourseDiscussionPolling();
-                return;
-            }
-
-            refreshCourseDiscussion().catch(() => {});
-        }, discussionPollIntervalMs);
-    }
-
-    async function refreshCourseDiscussion() {
-        if (discussionFetchInFlight || !isDiscussionTabActive()) {
-            return;
-        }
-
-        discussionFetchInFlight = true;
-
-        try {
-            await fetchCourseDiscussion();
-        } finally {
-            discussionFetchInFlight = false;
         }
     }
 
@@ -1065,23 +1039,13 @@
     }
 
     function initCourseDiscussion() {
-        refreshCourseDiscussion().catch(() => {});
-        startCourseDiscussionPolling();
-
-        if (!discussionVisibilityListenerBound) {
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    stopCourseDiscussionPolling();
-                    return;
-                }
-
-                if (isDiscussionTabActive()) {
-                    refreshCourseDiscussion().catch(() => {});
-                    startCourseDiscussionPolling();
-                }
-            });
-            discussionVisibilityListenerBound = true;
+        fetchCourseDiscussion().catch(() => {});
+        if (discussionPoller) {
+            window.clearInterval(discussionPoller);
         }
+        discussionPoller = window.setInterval(() => {
+            fetchCourseDiscussion().catch(() => {});
+        }, 5000);
 
         const input = document.getElementById('discussion-input');
         input?.addEventListener('keydown', function (event) {
