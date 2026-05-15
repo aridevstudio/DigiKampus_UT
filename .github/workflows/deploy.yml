@@ -179,7 +179,13 @@ jobs:
           port: 22
           script: |
             echo "Restarting PHP-FPM and Nginx..."
-            sudo systemctl restart php8.2-fpm
+            if systemctl list-unit-files | grep -q '^php8.3-fpm\.service'; then
+              sudo systemctl restart php8.3-fpm
+            elif systemctl list-unit-files | grep -q '^php8.2-fpm\.service'; then
+              sudo systemctl restart php8.2-fpm
+            else
+              sudo systemctl restart php-fpm || true
+            fi
             sudo systemctl restart nginx
 
             echo "Preparing Reverb supervisor process..."
