@@ -4938,6 +4938,8 @@ class AdminController extends Controller
 
     public function getChatConversations(Request $request)
     {
+        $this->resetExpiredChatMessages();
+
         $search = trim((string) $request->query('search', ''));
         $adminId = (int) (Auth::guard('admin')->id() ?? 0);
 
@@ -5052,6 +5054,8 @@ class AdminController extends Controller
 
     public function getChatConversationMessages(string $conversationId)
     {
+        $this->resetExpiredChatMessages();
+
         $parsed = $this->parseConversationId($conversationId);
         if ($parsed === null) {
             return response()->json([
@@ -5128,6 +5132,8 @@ class AdminController extends Controller
 
     public function sendAdminChatMessage(Request $request)
     {
+        $this->resetExpiredChatMessages();
+
         $admin = Auth::guard('admin')->user();
         $validated = $request->validate([
             'conversation_id' => ['required', 'string'],
@@ -5175,6 +5181,8 @@ class AdminController extends Controller
 
     public function deleteChatMessage(int $messageId)
     {
+        $this->resetExpiredChatMessages();
+
         $message = Message::find($messageId);
         if (!$message) {
             return response()->json([
@@ -5193,6 +5201,8 @@ class AdminController extends Controller
 
     public function purgeChatByRole(Request $request, string $conversationId)
     {
+        $this->resetExpiredChatMessages();
+
         $validated = $request->validate([
             'role' => ['required', Rule::in(['student', 'lecturer', 'admin'])],
         ]);
@@ -5243,6 +5253,8 @@ class AdminController extends Controller
 
     public function deleteChatConversation(string $conversationId)
     {
+        $this->resetExpiredChatMessages();
+
         $parsed = $this->parseConversationId($conversationId);
         if ($parsed === null) {
             return response()->json([
@@ -5306,6 +5318,13 @@ class AdminController extends Controller
         }
 
         return [$studentId, $lecturerId];
+    }
+
+    private function resetExpiredChatMessages(): int
+    {
+        return Message::query()
+            ->where('created_at', '<', now()->subMonth())
+            ->delete();
     }
 
     private function resolveConversationParticipants(int $studentId, int $lecturerId): ?array
