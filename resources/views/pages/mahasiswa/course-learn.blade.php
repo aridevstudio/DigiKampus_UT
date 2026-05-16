@@ -1244,8 +1244,11 @@
         const safeDate = escapeCertificateHtml(completedDate || '');
         const safeNumber = escapeCertificateHtml(certificateNumber || '-');
         const backgroundStyle = tpl.kind === 'image' && tpl.image
-            ? `background-image:url('${String(tpl.image).replace(/'/g, '%27')}');background-size:cover;background-position:center;`
+            ? 'background:#fff;'
             : `background:${tpl.gradient};`;
+        const templateImage = tpl.kind === 'image' && tpl.image
+            ? `<img class="template-bg" src="${escapeCertificateHtml(tpl.image)}" alt="">`
+            : '';
         const showFrame = tpl.kind !== 'image';
         const showLabels = tpl.kind !== 'image';
 
@@ -1254,9 +1257,12 @@
             <head>
                 <title>Sertifikat ${safeCourse}</title>
                 <style>
+                    @page { size:A4 landscape; margin:0; }
+                    * { box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
                     body { margin:0; font-family: Inter, system-ui, sans-serif; background:#eef2ff; }
-                    .page { width:1123px; height:794px; margin:24px auto; position:relative; overflow:hidden; box-sizing:border-box; ${backgroundStyle} }
-                    .page::after { content:''; position:absolute; inset:0; background:${tpl.kind === 'image' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.14)'}; }
+                    .page { width:1123px; height:794px; margin:24px auto; position:relative; overflow:hidden; ${backgroundStyle} }
+                    .template-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; }
+                    .page::after { content:''; position:absolute; inset:0; background:${tpl.kind === 'image' ? 'transparent' : 'rgba(255,255,255,0.14)'}; z-index:1; pointer-events:none; }
                     .frame-outer { position:absolute; inset:18px; border:${showFrame ? '10px solid rgba(29,78,216,0.18)' : '0'}; border-radius:22px; z-index:1; }
                     .frame-inner { position:absolute; inset:34px; border:${showFrame ? '2px solid rgba(59,130,246,0.28)' : '0'}; border-radius:18px; z-index:1; }
                     .content { position:absolute; inset:0; z-index:2; color:#0f172a; }
@@ -1270,11 +1276,12 @@
                     .value-date { font-weight:600; color:#334155; }
                     .footer-line { position:absolute; right:86px; bottom:118px; width:240px; border-top:1px solid rgba(71,85,105,0.42); }
                     .footer-label { position:absolute; right:88px; bottom:90px; width:236px; text-align:center; font-size:12px; color:#334155; font-weight:500; }
-                    @media print { body { background:#fff; } .page { margin:0 auto; } }
+                    @media print { body { background:#fff; } .page { width:297mm; height:210mm; margin:0; } }
                 </style>
             </head>
             <body>
                 <div class="page">
+                    ${templateImage}
                     <div class="frame-outer"></div>
                     <div class="frame-inner"></div>
                     <div class="content">
@@ -1311,7 +1318,18 @@
 
         popup.document.write(buildCertificateHtml(safeCourse, studentName, completedDate, certNo, template) + `
             <script>
-                window.onload = function() { window.print(); };
+                window.onload = function() {
+                    var images = Array.from(document.images || []);
+                    Promise.all(images.map(function(img) {
+                        if (img.complete) return Promise.resolve();
+                        return new Promise(function(resolve) {
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                        });
+                    })).then(function() {
+                        setTimeout(function() { window.print(); }, 250);
+                    });
+                };
             <\/script>
         `);
         popup.document.close();

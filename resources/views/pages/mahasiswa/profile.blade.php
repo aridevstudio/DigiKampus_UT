@@ -170,14 +170,6 @@
                         {{ $statusAkademik ?? '-' }}
                     </span>
                 </div>
-                <div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">IPK Terakhir</p>
-                    <p class="text-lg font-bold text-blue-500">{{ number_format((float)$ipk, 2) }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Total SKS</p>
-                    <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $totalSks }} dari {{ $maxSks }}</p>
-                </div>
             </div>
         </div>
         
