@@ -3490,7 +3490,7 @@ class AdminController extends Controller
             ->values();
 
         $certificates = AutomaticCertificate::query()
-            ->with('template')
+            ->with(['template', 'mahasiswa:id,name', 'course:id_course,nama_course,kategori'])
             ->latest('id')
             ->get()
             ->map(fn (AutomaticCertificate $certificate) => $this->transformAutomaticCertificate($certificate, $templateCollection))
@@ -3700,11 +3700,35 @@ class AdminController extends Controller
             ]);
         }
 
+        if (Schema::hasColumn('automatic_certificates', 'source')) {
+            $validated['source'] = $certificate?->source ?: 'manual';
+        }
+
         return $validated;
     }
 
     private function notifyMahasiswaCertificateAvailable(AutomaticCertificate $certificate): void
     {
+        $mappedEnrollment = null;
+        if (
+            Schema::hasColumn('automatic_certificates', 'id_mahasiswa')
+            && Schema::hasColumn('automatic_certificates', 'id_course')
+            && $certificate->id_mahasiswa
+            && $certificate->id_course
+        ) {
+            $mappedEnrollment = \App\Models\Enrollment::query()
+                ->where('id_mahasiswa', (int) $certificate->id_mahasiswa)
+                ->where('id_course', (int) $certificate->id_course)
+                ->whereHas('course', fn ($query) => $query->where('sertifikat', true))
+                ->with(['mahasiswa:id,name', 'course:id_course,nama_course,sertifikat,kategori'])
+                ->first();
+        }
+
+        if ($mappedEnrollment) {
+            $this->notifyEnrollmentCertificateAvailable($mappedEnrollment, $certificate);
+            return;
+        }
+
         $participantName = Str::lower(trim((string) $certificate->nama_peserta));
         $programName = Str::lower(trim((string) $certificate->nama_program));
 
@@ -3737,29 +3761,46 @@ class AdminController extends Controller
                 continue;
             }
 
-            $courseName = trim((string) ($enrollment->course?->nama_course ?? $certificate->nama_program));
-
-            $alreadyNotified = Notification::query()
-                ->where('id_mahasiswa', $mahasiswa->id)
-                ->where('tipe', 'pencapaian')
-                ->where('icon', 'certificate')
-                ->where('judul', 'Sertifikat Kursus Tersedia')
-                ->where('konten', 'like', '%' . $courseName . '%')
-                ->exists();
-
-            if ($alreadyNotified) {
-                continue;
-            }
-
-            Notification::notifyMahasiswa(
-                $mahasiswa->id,
-                'Sertifikat Kursus Tersedia',
-                'Sertifikat untuk kursus "' . $courseName . '" sudah tersedia. Buka halaman kursus dan klik Download Sertifikat.',
-                'pencapaian',
-                'certificate',
-                '#10B981'
-            );
+            $this->notifyEnrollmentCertificateAvailable($enrollment, $certificate);
         }
+    }
+
+    private function notifyEnrollmentCertificateAvailable($enrollment, AutomaticCertificate $certificate): void
+    {
+        $mahasiswa = $enrollment->relationLoaded('mahasiswa') ? $enrollment->mahasiswa : $enrollment->mahasiswa()->first();
+        if (!$mahasiswa) {
+            return;
+        }
+
+        $isCompleted = (($enrollment->status ?? null) === 'selesai') || ((float) ($enrollment->progress ?? 0) >= 100);
+        if (!$isCompleted) {
+            return;
+        }
+
+        $course = $enrollment->relationLoaded('course') ? $enrollment->course : $enrollment->course()->first();
+        $courseName = trim((string) ($course?->nama_course ?? $certificate->nama_program));
+        $programType = ($course?->kategori ?? null) === 'webinar' ? 'webinar' : 'kursus';
+
+        $alreadyNotified = Notification::query()
+            ->where('id_mahasiswa', $mahasiswa->id)
+            ->where('tipe', 'pencapaian')
+            ->where('icon', 'certificate')
+            ->where('judul', 'Sertifikat Kursus Tersedia')
+            ->where('konten', 'like', '%' . $courseName . '%')
+            ->exists();
+
+        if ($alreadyNotified) {
+            return;
+        }
+
+        Notification::notifyMahasiswa(
+            $mahasiswa->id,
+            'Sertifikat Kursus Tersedia',
+            'Sertifikat untuk ' . $programType . ' "' . $courseName . '" sudah tersedia. Buka halaman kursus dan klik Download Sertifikat.',
+            'pencapaian',
+            'certificate',
+            '#10B981'
+        );
     }
 
     private function ensureDefaultCertificateTemplates(): void
@@ -3922,6 +3963,9 @@ class AdminController extends Controller
             'program' => $certificate->nama_program,
             'tanggal' => optional($certificate->tanggal_terbit)->format('Y-m-d'),
             'templateId' => $resolvedTemplate?->id ?? $certificate->certificate_template_id,
+            'source' => $certificate->source ?: 'manual',
+            'mahasiswaId' => $certificate->id_mahasiswa,
+            'courseId' => $certificate->id_course,
         ];
     }
 

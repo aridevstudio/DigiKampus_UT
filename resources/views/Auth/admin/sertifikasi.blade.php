@@ -23,7 +23,7 @@
                     </p>
                     <h1 class="mt-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Sertifikat Otomatis</h1>
                     <p class="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-                        Kelola blangko, atur posisi teks, edit data peserta, dan ekspor sertifikat PDF dari satu workspace.
+                        Kelola blangko, atur posisi teks, dan pantau sertifikat yang diterbitkan otomatis saat mahasiswa menyelesaikan kursus atau webinar bersertifikat.
                     </p>
                 </div>
                 <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -51,6 +51,24 @@
                     <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Hasil Filter</p>
                     <p id="statFilteredCount" class="mt-1 text-xl font-bold text-gray-900 dark:text-white">0</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="grid gap-3 lg:grid-cols-3">
+            <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-300">Flow Otomatis</p>
+                <p class="mt-1 font-semibold">Course/Webinar bersertifikat</p>
+                <p class="mt-1 text-xs text-emerald-700 dark:text-emerald-200">Dosen atau admin menyalakan sertifikasi otomatis saat membuat atau mengedit program.</p>
+            </div>
+            <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-100">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-600 dark:text-blue-300">Penerbitan</p>
+                <p class="mt-1 font-semibold">Selesai 100% atau webinar selesai</p>
+                <p class="mt-1 text-xs text-blue-700 dark:text-blue-200">Sistem membuat nomor sertifikat, mengikatnya ke mahasiswa dan course, lalu memakai blangko aktif terbaru.</p>
+            </div>
+            <div class="rounded-2xl border border-orange-100 bg-orange-50/70 p-4 text-sm text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/30 dark:text-orange-100">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-orange-600 dark:text-orange-300">Notifikasi</p>
+                <p class="mt-1 font-semibold">Mahasiswa dapat link download</p>
+                <p class="mt-1 text-xs text-orange-700 dark:text-orange-200">Notifikasi mengarah ke halaman belajar/detail course agar sertifikat bisa langsung diunduh sebagai PDF.</p>
             </div>
         </section>
 
@@ -637,7 +655,12 @@
                     <tr class="hover:bg-orange-50/40 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-4 py-3 text-sm font-mono text-gray-700 dark:text-gray-200">${certificate.nomor}</td>
                         <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">${certificate.nama}</td>
-                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${certificate.program}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span>${certificate.program}</span>
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${certificate.source === 'auto' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}">${certificate.source === 'auto' ? 'Auto' : 'Manual'}</span>
+                            </div>
+                        </td>
                         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${formatDateIndonesia(certificate.tanggal)}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-center gap-1">

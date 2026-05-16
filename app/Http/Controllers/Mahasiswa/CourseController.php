@@ -112,8 +112,13 @@ class CourseController extends Controller
             $isEnrolled = $enrollment !== null;
 
             if ($isEnrolled && $enrollment) {
-                $this->notifyCertificateReadyIfEligible($user, $course, $enrollment, (int) round((float) ($enrollment->progress ?? 0)));
-                $issuedCertificate = $this->resolveIssuedCertificateForMahasiswa($user->name ?? '', $course->nama_course ?? '');
+                $enrollment = $this->syncWebinarCompletionIfEligible($user, $course, $enrollment);
+                $issuedCertificate = $this->issueCertificateForEnrollmentIfEligible(
+                    $user,
+                    $course,
+                    $enrollment,
+                    (int) round((float) ($enrollment->progress ?? 0))
+                );
             }
             
             $isFavorited = \App\Models\Favorite::where('id_mahasiswa', $user->id)
@@ -440,8 +445,10 @@ class CourseController extends Controller
             'status' => $nextStatus,
         ]);
 
-        $this->notifyCertificateReadyIfEligible($user, $course, $enrollment, $progressPercent);
-        $issuedCertificate = $this->resolveIssuedCertificateForMahasiswa($user->name ?? '', $course->nama_course ?? '');
+        $enrollment = $enrollment->fresh() ?: $enrollment;
+        $enrollment = $this->syncWebinarCompletionIfEligible($user, $course, $enrollment);
+        $progressPercent = (int) round((float) ($enrollment->progress ?? $progressPercent));
+        $issuedCertificate = $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, $progressPercent);
         
         return view('pages.mahasiswa.course-learn', [
             'course' => $course,
@@ -500,11 +507,17 @@ class CourseController extends Controller
 
         // Recalculate aggregate progress and update enrollment status.
         $enrollment->recalculateProgress($user->id);
+        $enrollment = $enrollment->fresh() ?: $enrollment;
+        $course = $material->course ?: Course::find($material->id_course);
+        $issuedCertificate = $course
+            ? $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, (int) round((float) ($enrollment->progress ?? 0)))
+            : null;
 
         if (request()->expectsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Materi ditandai selesai.',
+                'certificate_ready' => $issuedCertificate !== null,
             ]);
         }
 
@@ -856,6 +869,8 @@ class CourseController extends Controller
         $this->markQuizMaterialAsCompleted((int) $courseId, $quiz, $user->id);
         if ($enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->where('id_course', $courseId)->first()) {
             $enrollment->recalculateProgress($user->id);
+            $enrollment = $enrollment->fresh() ?: $enrollment;
+            $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, (int) round((float) ($enrollment->progress ?? 0)));
         }
         $this->clearQuizSession($resolvedQuizId);
 
@@ -1201,8 +1216,25 @@ class CourseController extends Controller
             session(['completed_assignments' => $completedAssignments]);
         }
 
-        // Notify dosen about assignment submission
         $course = Course::find($courseId);
+        \App\Models\MaterialProgress::updateOrCreate(
+            [
+                'id_mahasiswa' => $user->id,
+                'id_material' => $assignmentMaterial->id_material,
+            ],
+            [
+                'is_completed' => true,
+                'completed_at' => now(),
+            ]
+        );
+
+        $enrollment->recalculateProgress($user->id);
+        $enrollment = $enrollment->fresh() ?: $enrollment;
+        if ($course) {
+            $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, (int) round((float) ($enrollment->progress ?? 0)));
+        }
+
+        // Notify dosen about assignment submission
         if ($course && $course->id_dosen) {
             $mahasiswa = auth('mahasiswa')->user();
             DosenNotification::notifyDosen(
@@ -1999,16 +2031,98 @@ class CourseController extends Controller
 
     private function notifyCertificateReadyIfEligible($mahasiswa, Course $course, $enrollment, int $progressPercent): void
     {
+        $this->issueCertificateForEnrollmentIfEligible($mahasiswa, $course, $enrollment, $progressPercent);
+    }
+
+    private function issueCertificateForEnrollmentIfEligible($mahasiswa, Course $course, $enrollment, int $progressPercent): ?array
+    {
         if (!($course->sertifikat ?? false)) {
-            return;
+            return null;
         }
 
         $isCompleted = (($enrollment->status ?? null) === 'selesai') || $progressPercent >= 100;
         if (!$isCompleted) {
-            return;
+            return null;
         }
 
+        $certificate = $this->resolveIssuedCertificateModel($mahasiswa, $course);
+        if (!$certificate) {
+            $template = $this->resolvePreferredCertificateTemplate();
+            if (!$template) {
+                return null;
+            }
+
+            $attributes = [
+                'certificate_template_id' => $template->id,
+                'nomor_sertifikat' => $this->generateNextCertificateNumber($course),
+                'nama_peserta' => trim((string) ($mahasiswa->name ?? 'Mahasiswa')),
+                'nama_program' => trim((string) ($course->nama_course ?? 'Kursus')),
+                'tanggal_terbit' => now()->toDateString(),
+            ];
+
+            if ($this->automaticCertificateHasDirectMapping()) {
+                $attributes['id_mahasiswa'] = (int) $mahasiswa->id;
+                $attributes['id_course'] = (int) $course->id_course;
+                $attributes['source'] = 'auto';
+            }
+
+            $certificate = AutomaticCertificate::create($attributes);
+        }
+
+        $this->notifyCertificateAvailableOnce($mahasiswa, $course);
+
+        return $this->formatIssuedCertificatePayload($certificate->loadMissing('template'));
+    }
+
+    private function syncWebinarCompletionIfEligible($mahasiswa, Course $course, $enrollment)
+    {
+        if (($course->kategori ?? null) !== 'webinar') {
+            return $enrollment;
+        }
+
+        if (!in_array((string) ($enrollment->status ?? ''), ['aktif', 'in_progress', 'selesai'], true)) {
+            return $enrollment;
+        }
+
+        if ((string) ($enrollment->status ?? '') === 'selesai' || (float) ($enrollment->progress ?? 0) >= 100) {
+            return $enrollment;
+        }
+
+        if (!$this->hasWebinarEnded($course)) {
+            return $enrollment;
+        }
+
+        $enrollment->update([
+            'progress' => 100,
+            'status' => 'selesai',
+        ]);
+
+        return $enrollment->fresh() ?: $enrollment;
+    }
+
+    private function hasWebinarEnded(Course $course): bool
+    {
+        if (!$course->tanggal_webinar) {
+            return false;
+        }
+
+        $date = $course->tanggal_webinar instanceof \DateTimeInterface
+            ? $course->tanggal_webinar->format('Y-m-d')
+            : (string) $course->tanggal_webinar;
+        $time = $course->jam_selesai_webinar ?: '23:59:59';
+
+        try {
+            return \Carbon\Carbon::parse(trim($date . ' ' . $time), config('app.timezone'))->lte(now());
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function notifyCertificateAvailableOnce($mahasiswa, Course $course): void
+    {
         $courseName = trim((string) ($course->nama_course ?? 'Kursus'));
+        $programType = ($course->kategori ?? null) === 'webinar' ? 'webinar' : 'kursus';
+
         $alreadyNotified = Notification::query()
             ->where('id_mahasiswa', $mahasiswa->id)
             ->where('tipe', 'pencapaian')
@@ -2024,14 +2138,51 @@ class CourseController extends Controller
         Notification::notifyMahasiswa(
             $mahasiswa->id,
             'Sertifikat Kursus Tersedia',
-            'Sertifikat untuk kursus "' . $courseName . '" sudah tersedia. Buka halaman kursus dan klik Download Sertifikat.',
+            'Sertifikat untuk ' . $programType . ' "' . $courseName . '" sudah tersedia. Buka halaman kursus dan klik Download Sertifikat.',
             'pencapaian',
             'certificate',
             '#10B981'
         );
     }
 
-    private function resolveIssuedCertificateForMahasiswa(string $mahasiswaName, string $courseName): ?array
+    private function resolveIssuedCertificateModel($mahasiswa, Course $course): ?AutomaticCertificate
+    {
+        if ($this->automaticCertificateHasDirectMapping()) {
+            $certificate = AutomaticCertificate::query()
+                ->with('template')
+                ->where('id_mahasiswa', (int) $mahasiswa->id)
+                ->where('id_course', (int) $course->id_course)
+                ->orderByDesc('tanggal_terbit')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($certificate) {
+                return $certificate;
+            }
+        }
+
+        $certificate = $this->findCertificateByNames($mahasiswa->name ?? '', $course->nama_course ?? '');
+
+        if ($certificate && $this->automaticCertificateHasDirectMapping()) {
+            $updates = [];
+            if (!$certificate->id_mahasiswa) {
+                $updates['id_mahasiswa'] = (int) $mahasiswa->id;
+            }
+            if (!$certificate->id_course) {
+                $updates['id_course'] = (int) $course->id_course;
+            }
+            if (!($certificate->source ?? null)) {
+                $updates['source'] = 'manual';
+            }
+            if ($updates) {
+                $certificate->update($updates);
+            }
+        }
+
+        return $certificate;
+    }
+
+    private function findCertificateByNames(string $mahasiswaName, string $courseName): ?AutomaticCertificate
     {
         $normalizedName = Str::lower(trim($mahasiswaName));
         $normalizedCourse = Str::lower(trim($courseName));
@@ -2040,18 +2191,65 @@ class CourseController extends Controller
             return null;
         }
 
-        $certificate = AutomaticCertificate::query()
+        return AutomaticCertificate::query()
             ->with('template')
             ->whereRaw('LOWER(TRIM(nama_peserta)) = ?', [$normalizedName])
             ->whereRaw('LOWER(TRIM(nama_program)) = ?', [$normalizedCourse])
             ->orderByDesc('tanggal_terbit')
             ->orderByDesc('id')
             ->first();
+    }
 
-        if (!$certificate) {
-            return null;
+    private function automaticCertificateHasDirectMapping(): bool
+    {
+        return Schema::hasColumn('automatic_certificates', 'id_mahasiswa')
+            && Schema::hasColumn('automatic_certificates', 'id_course');
+    }
+
+    private function generateNextCertificateNumber(?Course $course = null): string
+    {
+        $currentYear = now()->year;
+        $prefix = ($course?->kategori ?? null) === 'webinar' ? 'WEB' : 'SRT';
+
+        $maxNumber = AutomaticCertificate::query()
+            ->where('nomor_sertifikat', 'like', "{$prefix}-{$currentYear}-%")
+            ->get(['nomor_sertifikat'])
+            ->map(function (AutomaticCertificate $certificate): int {
+                if (preg_match('/(\d+)$/', $certificate->nomor_sertifikat, $matches)) {
+                    return (int) $matches[1];
+                }
+
+                return 0;
+            })
+            ->max() ?? 0;
+
+        return $prefix . '-' . $currentYear . '-' . str_pad((string) ($maxNumber + 1), 4, '0', STR_PAD_LEFT);
+    }
+
+    private function resolvePreferredCertificateTemplate(): ?CertificateTemplate
+    {
+        return CertificateTemplate::query()
+            ->latest('id')
+            ->get()
+            ->first(fn (CertificateTemplate $template) => $this->isCertificateTemplateAvailable($template));
+    }
+
+    private function isCertificateTemplateAvailable(?CertificateTemplate $template): bool
+    {
+        if (!$template) {
+            return false;
         }
 
+        if ($template->background_type !== 'image') {
+            return true;
+        }
+
+        return filled($template->background_image_path)
+            && Storage::disk('public')->exists($template->background_image_path);
+    }
+
+    private function formatIssuedCertificatePayload(AutomaticCertificate $certificate): array
+    {
         return [
             'id' => $certificate->id,
             'number' => $certificate->nomor_sertifikat,
@@ -2061,6 +2259,17 @@ class CourseController extends Controller
             'program_name' => $certificate->nama_program,
             'template' => $this->buildCertificateTemplatePayload($certificate->template),
         ];
+    }
+
+    private function resolveIssuedCertificateForMahasiswa(string $mahasiswaName, string $courseName): ?array
+    {
+        $certificate = $this->findCertificateByNames($mahasiswaName, $courseName);
+
+        if (!$certificate) {
+            return null;
+        }
+
+        return $this->formatIssuedCertificatePayload($certificate);
     }
 
     private function buildCertificateTemplatePayload(?CertificateTemplate $template): array
