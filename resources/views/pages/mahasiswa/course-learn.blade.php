@@ -43,12 +43,32 @@
         ->all();
 
     $isPlaylistMode = request('play') === 'pack';
-    $certificateEligible = (bool) ($course->sertifikat ?? false)
-        && (($enrollment->status ?? null) === 'selesai' || (int) ($progressPercent ?? 0) >= 100);
+    $certificateEnabled = (bool) ($course->sertifikat ?? false);
+    $courseCompletedForCertificate = (($enrollment->status ?? null) === 'selesai' || (int) ($progressPercent ?? 0) >= 100);
+    $certificateEligible = $certificateEnabled && $courseCompletedForCertificate && !empty($issuedCertificate);
     $issuedCertificateNumber = $issuedCertificate['number'] ?? null;
     $issuedCertificateDate = $issuedCertificate['issued_date'] ?? now()->format('d F Y');
     $issuedCertificateTemplate = $issuedCertificate['template'] ?? null;
     $certificateAutoDownload = request('certificate') === 'download' && $certificateEligible;
+    $certificatePanelVisible = $certificateEligible || $certificateEnabled || $courseCompletedForCertificate || request('certificate') === 'download';
+    $certificateStatusTitle = 'Sertifikat belum tersedia';
+    $certificateStatusMessage = 'Selesaikan semua materi kursus terlebih dahulu untuk membuka sertifikat.';
+    $certificateStatusTone = 'amber';
+
+    if ($certificateEligible) {
+        $certificateStatusTitle = 'Sertifikat kursus Anda sudah tersedia';
+        $certificateStatusMessage = 'File unduhan mengikuti blangko sertifikat yang sudah dipublikasikan admin. Anda bisa download PDF atau cetak langsung dari panel ini.';
+        $certificateStatusTone = 'emerald';
+    } elseif (!$certificateEnabled) {
+        $certificateStatusTitle = 'Sertifikasi belum diaktifkan';
+        $certificateStatusMessage = 'Course ini belum mengaktifkan sertifikasi otomatis dari dosen/admin, jadi tombol download belum bisa ditampilkan.';
+    } elseif (!$courseCompletedForCertificate) {
+        $certificateStatusTitle = 'Selesaikan course untuk membuka sertifikat';
+        $certificateStatusMessage = 'Progress harus 100% atau status enrollment sudah selesai sebelum sertifikat bisa diunduh.';
+    } else {
+        $certificateStatusTitle = 'Template sertifikat belum siap';
+        $certificateStatusMessage = 'Sertifikasi course sudah aktif, tetapi blangko/template sertifikat admin belum valid atau belum tersedia.';
+    }
 @endphp
 
 {{-- Back Link & Title Row --}}
@@ -454,17 +474,17 @@
                 @endif
             </div>
 
-            {{-- Certificate Ready --}}
-            @if($certificateEligible)
-            <div id="course-certificate-panel" class="relative overflow-hidden rounded-[28px] border border-emerald-200/80 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/30 dark:via-gray-900 dark:to-teal-950/20 p-5 sm:p-6">
-                <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-500/20"></div>
-                <div class="absolute -left-10 bottom-0 h-24 w-24 rounded-full bg-teal-200/40 blur-3xl dark:bg-teal-500/10"></div>
+            {{-- Certificate Status --}}
+            @if($certificatePanelVisible)
+            <div id="course-certificate-panel" class="relative overflow-hidden rounded-[28px] border {{ $certificateEligible ? 'border-emerald-200/80 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/30 dark:via-gray-900 dark:to-teal-950/20' : 'border-amber-200/80 dark:border-amber-700/40 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20' }} p-5 sm:p-6">
+                <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full {{ $certificateEligible ? 'bg-emerald-200/40 dark:bg-emerald-500/20' : 'bg-amber-200/50 dark:bg-amber-500/20' }} blur-3xl"></div>
+                <div class="absolute -left-10 bottom-0 h-24 w-24 rounded-full {{ $certificateEligible ? 'bg-teal-200/40 dark:bg-teal-500/10' : 'bg-orange-200/40 dark:bg-orange-500/10' }} blur-3xl"></div>
 
                 <div class="relative flex flex-col xl:flex-row gap-5 xl:items-center xl:justify-between">
                     <div class="flex-1 space-y-4">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                                Sertifikat Aktif
+                            <span class="inline-flex items-center rounded-full {{ $certificateEligible ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' }} px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]">
+                                {{ $certificateEligible ? 'Sertifikat Aktif' : 'Status Sertifikat' }}
                             </span>
                             @if($certificateAutoDownload)
                             <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
@@ -474,8 +494,8 @@
                         </div>
 
                         <div>
-                            <h3 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Sertifikat kursus Anda sudah tersedia</h3>
-                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">File unduhan mengikuti blangko sertifikat yang sudah dipublikasikan admin. Anda bisa download PDF atau cetak langsung dari panel ini.</p>
+                            <h3 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">{{ $certificateStatusTitle }}</h3>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ $certificateStatusMessage }}</p>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -489,11 +509,12 @@
                             </div>
                             <div class="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Status</p>
-                                <p class="mt-1 text-sm font-semibold text-emerald-700 dark:text-emerald-300">Siap Download</p>
+                                <p class="mt-1 text-sm font-semibold {{ $certificateEligible ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300' }}">{{ $certificateEligible ? 'Siap Download' : 'Belum Bisa Download' }}</p>
                             </div>
                         </div>
 
                         <div class="flex flex-col sm:flex-row gap-3">
+                            @if($certificateEligible)
                             <button type="button"
                                     onclick="downloadCourseCertificate(@js($course->nama_course), @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'), @js($issuedCertificateDate), @js($issuedCertificateNumber), @js($issuedCertificateTemplate))"
                                     class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition shadow-sm">
@@ -510,9 +531,17 @@
                                 </svg>
                                 Cetak Sertifikat
                             </button>
+                            @else
+                            <button type="button"
+                                    disabled
+                                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gray-200 text-gray-500 text-sm font-semibold cursor-not-allowed dark:bg-gray-800 dark:text-gray-400">
+                                Download Sertifikat Belum Tersedia
+                            </button>
+                            @endif
                         </div>
                     </div>
 
+                    @if($certificateEligible)
                     <div class="xl:w-[320px] xl:flex-shrink-0">
                         <div class="rounded-[24px] border border-emerald-200/80 dark:border-emerald-700/40 bg-white/90 dark:bg-gray-900/70 p-4 shadow-sm">
                             <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Preview Ringkas</p>
@@ -533,6 +562,7 @@
                             <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Unduhan PDF akan memakai layout blangko yang sama dengan preview ini.</p>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
             @endif
