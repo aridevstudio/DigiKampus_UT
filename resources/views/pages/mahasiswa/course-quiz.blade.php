@@ -199,6 +199,40 @@ const quizAnswerEndpoint = @json($quizAnswerEndpoint);
 const quizFlagEndpoint = @json($quizFlagEndpoint);
 const quizSubmitEndpoint = @json($quizSubmitEndpoint);
 
+function showQuizNotice(icon, title, message) {
+    if (window.Swal && typeof window.Swal.fire === 'function') {
+        window.Swal.fire({
+            icon,
+            title,
+            text: message,
+            confirmButtonText: 'Oke',
+            buttonsStyling: false,
+            customClass: {
+                container: 'font-inter',
+                confirmButton: 'bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors'
+            }
+        });
+        return;
+    }
+
+    alert(message);
+}
+
+function parseQuizJsonResponse(response) {
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+        return response.text().then(() => {
+            const message = response.status === 419
+                ? 'Sesi halaman sudah kedaluwarsa. Refresh halaman lalu coba lagi.'
+                : 'Server mengirim halaman error, bukan JSON. Refresh halaman lalu coba lagi.';
+
+            throw new Error(message);
+        });
+    }
+
+    return response.json().then(data => ({ ok: response.ok, data }));
+}
+
 function selectOption(label, key) {
     // Mark as answered
     isCurrentQuestionAnswered = true;
@@ -230,6 +264,7 @@ function selectOption(label, key) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
         body: JSON.stringify({
@@ -263,6 +298,7 @@ function toggleFlag() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
         body: JSON.stringify({
@@ -334,13 +370,14 @@ function confirmSubmit() {
     const submitQuizRequest = () => {
         fetch(quizSubmitEndpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({})
+    })
+        .then(parseQuizJsonResponse)
         .then(({ ok, data }) => {
             if (!ok || !data.success) {
                 throw new Error(data.message || 'Gagal menyelesaikan kuis.');
@@ -350,7 +387,7 @@ function confirmSubmit() {
         })
         .catch(error => {
             console.error('Error submitting quiz:', error);
-            alert(error.message || 'Gagal menyelesaikan kuis. Coba lagi.');
+            showQuizNotice('error', 'Submit gagal', error.message || 'Gagal menyelesaikan kuis. Coba lagi.');
         });
     };
 

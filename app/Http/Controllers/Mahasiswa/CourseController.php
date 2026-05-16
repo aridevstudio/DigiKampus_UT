@@ -870,7 +870,9 @@ class CourseController extends Controller
         if ($enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->where('id_course', $courseId)->first()) {
             $enrollment->recalculateProgress($user->id);
             $enrollment = $enrollment->fresh() ?: $enrollment;
-            $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, (int) round((float) ($enrollment->progress ?? 0)));
+            if ($course = Course::find((int) $courseId)) {
+                $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, (int) round((float) ($enrollment->progress ?? 0)));
+            }
         }
         $this->clearQuizSession($resolvedQuizId);
 
