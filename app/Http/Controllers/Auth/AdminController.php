@@ -4121,7 +4121,8 @@ class AdminController extends Controller
 
         $query = Voucher::query()
             ->with([
-                'usedBy:id,name,email,nomor_induk',
+                'usedBy:id,name,email',
+                'usedBy.profile:user_id,nomor_induk',
                 'paymentTransaction:id_payment_transaction,order_id,transaction_status',
             ]);
 
@@ -4131,7 +4132,9 @@ class AdminController extends Controller
                     ->orWhereHas('usedBy', function ($usedByQuery) use ($search) {
                         $usedByQuery->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%")
-                            ->orWhere('nomor_induk', 'like', "%{$search}%");
+                            ->orWhereHas('profile', function ($profileQuery) use ($search) {
+                                $profileQuery->where('nomor_induk', 'like', "%{$search}%");
+                            });
                     });
             });
         }
@@ -4185,7 +4188,8 @@ class AdminController extends Controller
     public function getVoucher($id)
     {
         $voucher = Voucher::with([
-            'usedBy:id,name,email,nomor_induk',
+            'usedBy:id,name,email',
+            'usedBy.profile:user_id,nomor_induk',
             'paymentTransaction:id_payment_transaction,order_id,transaction_status',
         ])->findOrFail($id);
 
@@ -4200,7 +4204,7 @@ class AdminController extends Controller
             'used_by' => $voucher->usedBy ? [
                 'name' => $voucher->usedBy->name,
                 'email' => $voucher->usedBy->email,
-                'nomor_induk' => $voucher->usedBy->nomor_induk,
+                'nomor_induk' => $voucher->usedBy->profile?->nomor_induk,
             ] : null,
             'payment_transaction' => $voucher->paymentTransaction ? [
                 'order_id' => $voucher->paymentTransaction->order_id,
