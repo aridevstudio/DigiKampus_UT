@@ -73,7 +73,7 @@ jobs:
             sudo apt-get update && sudo apt-get install -y lftp
 
             echo "DigiKampusUT Smart Sync - only syncing changed Laravel files."
-            echo "Will sync: app/, config/, resources/, routes/, public/, database/migrations/, bootstrap/app.php"
+            echo "Will sync: Laravel app files, config, resources, routes, public assets, migrations, and root entry files."
             echo "Excluding: vendor/, .env, storage/logs"
 
             lftp -e "
@@ -87,21 +87,41 @@ jobs:
 
             echo 'Starting DigiKampusUT smart sync...';
 
+            mkdir -p bootstrap;
+            mkdir -p bootstrap/cache;
+            mkdir -p public;
+            mkdir -p storage;
+            mkdir -p storage/app;
+            mkdir -p storage/app/public;
+            mkdir -p storage/app/private;
+            mkdir -p storage/framework;
+            mkdir -p storage/framework/cache;
+            mkdir -p storage/framework/cache/data;
+            mkdir -p storage/framework/sessions;
+            mkdir -p storage/framework/views;
+            mkdir -p storage/logs;
+
             mirror --reverse --only-newer --verbose --parallel=2 app/ app/;
             mirror --reverse --only-newer --verbose --parallel=2 config/ config/;
             mirror --reverse --only-newer --verbose --parallel=2 resources/ resources/;
             mirror --reverse --only-newer --verbose --parallel=2 routes/ routes/;
             mirror --reverse --only-newer --verbose --parallel=2 database/migrations/ database/migrations/;
+            put artisan -o artisan;
             put bootstrap/app.php -o bootstrap/app.php;
 
             mirror --reverse --delete --verbose --parallel=2 public/build/ public/build/;
             mirror --reverse --only-newer --verbose --parallel=2 --exclude='index.php' --exclude='.htaccess' --exclude='build/' public/ public/;
+            put public/index.php -o public/index.php;
+            put public/.htaccess -o public/.htaccess;
 
             mirror --reverse --only-newer --verbose --parallel=2 storage/app/public/ storage/app/public/;
             mirror --reverse --only-newer --verbose --parallel=2 storage/app/private/ storage/app/private/;
 
             put composer.json -o composer.json;
             put composer.lock -o composer.lock;
+            put package.json -o package.json;
+            put package-lock.json -o package-lock.json;
+            put .env.example -o .env.example;
 
             mirror --reverse --delete --verbose --parallel=1 bootstrap/cache/ bootstrap/cache/;
 
@@ -119,9 +139,34 @@ jobs:
           script: |
             cd /var/www/digikampusut
 
+            if [ ! -f artisan ]; then
+              echo "Missing artisan. Deploy sync did not upload Laravel root files."
+              exit 1
+            fi
+
+            if ! command -v composer >/dev/null 2>&1; then
+              echo "Composer not found. Installing Composer..."
+              EXPECTED_CHECKSUM="$(curl -sS https://composer.github.io/installer.sig)"
+              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+              if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then
+                rm composer-setup.php
+                echo "Invalid Composer installer checksum."
+                exit 1
+              fi
+              sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+              rm composer-setup.php
+            fi
+
             echo "Installing/updating Composer dependencies..."
             export COMPOSER_ALLOW_SUPERUSER=1
-            sudo -E composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --working-dir=/var/www/digikampusut 2>&1 || echo "Composer install had issues, check logs."
+            sudo -E composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --working-dir=/var/www/digikampusut
+
+            if [ ! -f .env ]; then
+              echo "Creating .env from .env.example. Update DB and app secrets on the server after this first deploy."
+              cp .env.example .env
+              php artisan key:generate --force
+            fi
 
             echo "Setting proper permissions..."
             sudo chown -R www-data:www-data /var/www/digikampusut
@@ -179,7 +224,16 @@ jobs:
           port: 22
           script: |
             echo "Restarting PHP-FPM and Nginx..."
-            sudo systemctl restart php8.2-fpm
+            sudo mkdir -p /var/www/digikampusut/storage/logs
+            sudo chown -R www-data:www-data /var/www/digikampusut/storage
+
+            if systemctl list-unit-files | grep -q '^php8.3-fpm\.service'; then
+              sudo systemctl restart php8.3-fpm
+            elif systemctl list-unit-files | grep -q '^php8.2-fpm\.service'; then
+              sudo systemctl restart php8.2-fpm
+            else
+              sudo systemctl restart php-fpm || true
+            fi
             sudo systemctl restart nginx
 
             echo "Preparing Reverb supervisor process..."
