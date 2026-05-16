@@ -20,7 +20,7 @@
             <div class="flex flex-col items-center mb-6">
                 <div class="relative mb-2">
                     <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600 border-4 border-white dark:border-gray-700 shadow-lg">
-                        <img id="preview-foto" src="{{ $fotoProfile ?? 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&size=128&background=3b82f6&color=fff' }}" alt="Profile Photo" class="w-full h-full object-cover">
+                        <img id="preview-foto" src="{{ $fotoProfile ?? 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&size=128&background=3b82f6&color=fff' }}" alt="Profile Photo" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($userName) }}&size=128&background=3b82f6&color=fff'">
                     </div>
                     <label for="foto_profile" class="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg transition cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -436,20 +436,48 @@
 
     @push('scripts')
     <script>
+        function showUploadError(message) {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Upload tidak valid',
+                    text: message,
+                    confirmButtonText: 'Oke',
+                });
+                return;
+            }
+
+            alert(message);
+        }
+
+        function isValidThumbnailFile(input) {
+            const file = input?.files?.[0];
+            if (!file) return true;
+
+            const maxSizeMb = Number(input.dataset.maxSizeMb || 2);
+            if (!file.type.startsWith('image/')) {
+                showUploadError('Harap pilih file gambar JPG, PNG, atau WebP.');
+                input.value = '';
+                return false;
+            }
+
+            if (file.size > maxSizeMb * 1024 * 1024) {
+                showUploadError(`Ukuran thumbnail maksimal ${maxSizeMb}MB. Kompres gambar atau pilih file yang lebih kecil.`);
+                input.value = '';
+                return false;
+            }
+
+            return true;
+        }
+
         // Thumbnail Preview (matching admin style)
         function previewThumbnail(input) {
             const file = input.files[0];
             if (file) {
-                if (!file.type.startsWith('image/')) {
-                    alert('Harap pilih file gambar (PNG, JPG)');
-                    input.value = '';
+                if (!isValidThumbnailFile(input)) {
                     return;
                 }
-                if (file.size > 2 * 1024 * 1024) {
-                    alert('Ukuran file maksimal 2MB');
-                    input.value = '';
-                    return;
-                }
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const preview = document.getElementById('thumbnailPreview');
@@ -795,6 +823,13 @@
             const form = document.getElementById('buatKursusForm');
             if (form) {
                 form.addEventListener('submit', function(e) {
+                    const thumbnailInput = document.getElementById('thumbnail-input');
+                    if (thumbnailInput && !isValidThumbnailFile(thumbnailInput)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+
                     const submitBtn = e.submitter;
                     if (submitBtn) {
                         const statusVal = submitBtn.value;

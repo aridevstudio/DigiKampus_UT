@@ -278,9 +278,18 @@
                     @php
                         $dosenUser = Auth::guard('dosen')->user();
                         $dosenPhoto = $dosenUser?->profile?->foto_profile;
+                        $dosenPhoto = $dosenPhoto
+                            ? preg_replace('#^/?storage/#i', '', preg_replace('#^https?://[^/]+/storage/#i', '', $dosenPhoto))
+                            : null;
+                        $dosenPhotoUrl = ($dosenPhoto && \Illuminate\Support\Facades\Storage::disk('public')->exists(ltrim($dosenPhoto, '/')))
+                            ? '/storage/' . ltrim($dosenPhoto, '/')
+                            : null;
                     @endphp
-                    @if($dosenPhoto)
-                        <img src="{{ asset('storage/' . $dosenPhoto) }}" alt="Profile" class="w-10 h-10 rounded-full object-cover">
+                    @if($dosenPhotoUrl)
+                        <img src="{{ $dosenPhotoUrl }}" alt="Profile" class="w-10 h-10 rounded-full object-cover" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                        <div class="hidden w-10 h-10 rounded-full bg-blue-500 items-center justify-center text-white font-bold">
+                            {{ substr(Auth::guard('dosen')->user()->name ?? 'D', 0, 1) }}
+                        </div>
                     @else
                         <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
                             {{ substr(Auth::guard('dosen')->user()->name ?? 'D', 0, 1) }}
@@ -434,11 +443,20 @@
                             $navDosenUser = Auth::guard('dosen')->user();
                             $navDosenName = $navDosenUser->name ?? 'Dosen';
                             $navDosenPhoto = $navDosenUser?->profile?->foto_profile;
+                            $navDosenPhoto = $navDosenPhoto
+                                ? preg_replace('#^/?storage/#i', '', preg_replace('#^https?://[^/]+/storage/#i', '', $navDosenPhoto))
+                                : null;
+                            $navDosenPhotoUrl = ($navDosenPhoto && \Illuminate\Support\Facades\Storage::disk('public')->exists(ltrim($navDosenPhoto, '/')))
+                                ? '/storage/' . ltrim($navDosenPhoto, '/')
+                                : null;
                         @endphp
                         <div class="relative group">
-                            @if($navDosenPhoto)
+                            @if($navDosenPhotoUrl)
                             <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden">
-                                <img src="{{ asset('storage/' . $navDosenPhoto) }}" alt="{{ $navDosenName }}" class="w-full h-full object-cover">
+                                <img src="{{ $navDosenPhotoUrl }}" alt="{{ $navDosenName }}" class="w-full h-full object-cover" onerror="this.closest('button').classList.add('hidden'); this.closest('button').nextElementSibling.classList.remove('hidden'); this.closest('button').nextElementSibling.classList.add('flex');">
+                            </button>
+                            <button class="hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center text-white font-semibold text-xs sm:text-sm">
+                                {{ strtoupper(substr($navDosenName, 0, 2)) }}
                             </button>
                             @else
                             <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">

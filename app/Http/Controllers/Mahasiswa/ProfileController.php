@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -45,9 +46,8 @@ class ProfileController extends Controller
         $totalSks = $profile?->total_sks ?? 0;
         $maxSks = 144;
         $statusAkademik = $profile?->status_akademik ?? 'Aktif';
-        $fotoProfile = $profile?->foto_profile
-            ? asset('storage/' . $profile->foto_profile)
-            : asset('assets/image/default-avatar.png');
+        $fotoProfile = $this->publicStorageUrlIfExists($profile?->foto_profile)
+            ?? 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&size=128&background=3b82f6&color=fff';
         $bio = $profile?->bio;
 
         $programStudi = $jurusan?->nama_jurusan;
@@ -114,7 +114,7 @@ class ProfileController extends Controller
                 ? Carbon::parse($profile->tanggal_lahir)->format('Y-m-d')
                 : '',
             'jenisKelamin' => $profile?->jenis_kelamin ?? 'L',
-            'fotoProfile' => $profile?->foto_profile ? asset('storage/' . $profile->foto_profile) : null,
+            'fotoProfile' => $this->publicStorageUrlIfExists($profile?->foto_profile),
             'bio' => $profile?->bio ?? '',
             'programStudi' => $jurusan?->nama_jurusan ?? 'Belum diisi',
             'fakultas' => $jurusan?->fakultas ?? 'Belum diisi',
@@ -135,7 +135,7 @@ class ProfileController extends Controller
             'alamat' => ['nullable', 'string', 'max:500'],
             'no_hp' => ['nullable', 'string', 'max:20'],
             'bio' => ['nullable', 'string', 'max:500'],
-            'foto_profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'foto_profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z]).+$/'],
         ], [
             'password.regex' => 'Kata sandi harus mengandung huruf besar dan huruf kecil.',
@@ -165,6 +165,10 @@ class ProfileController extends Controller
 
         // Handle foto upload - simpan ke local storage
         if ($request->hasFile('foto_profile')) {
+            if ($user->profile?->foto_profile && Storage::disk('public')->exists($user->profile->foto_profile)) {
+                Storage::disk('public')->delete($user->profile->foto_profile);
+            }
+
             $file = $request->file('foto_profile');
             $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('profiles', $filename, 'public');
@@ -271,5 +275,23 @@ class ProfileController extends Controller
         }
 
         return $items;
+    }
+
+    private function publicStorageUrlIfExists(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+
+        $path = preg_replace('#^https?://[^/]+/storage/#i', '', $path);
+        $path = preg_replace('#^/?storage/#i', '', (string) $path);
+        $path = ltrim((string) $path, '/');
+
+        if ($path === '' || !Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return '/storage/' . $path;
     }
 }

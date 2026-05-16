@@ -80,11 +80,11 @@
         {{-- Avatar Preview --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 text-center">
             <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-6">Preview</h2>
-            @php
-                $foto = $dosen->profile?->foto_profile;
-            @endphp
-            @if($foto)
-                <img src="{{ asset('storage/' . $foto) }}" alt="Profile" class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-blue-100 dark:border-blue-500/20">
+            @if($fotoProfile)
+                <img src="{{ $fotoProfile }}" alt="Profile" class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-blue-100 dark:border-blue-500/20" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                <div class="hidden w-24 h-24 rounded-full mx-auto bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center text-white text-3xl font-bold border-4 border-blue-100 dark:border-blue-500/20">
+                    {{ strtoupper(substr($dosen->name, 0, 2)) }}
+                </div>
             @else
                 <div class="w-24 h-24 rounded-full mx-auto bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold border-4 border-blue-100 dark:border-blue-500/20">
                     {{ strtoupper(substr($dosen->name, 0, 2)) }}

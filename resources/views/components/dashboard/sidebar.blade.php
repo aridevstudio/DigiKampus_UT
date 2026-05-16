@@ -19,6 +19,12 @@ $user = Auth::guard('mahasiswa')->user();
 $profile = $user?->profile;
 $userName = $user?->name ?? 'Mahasiswa';
 $userProfilePicture = $profile?->foto_profile;
+$userProfilePicture = $userProfilePicture
+    ? preg_replace('#^/?storage/#i', '', preg_replace('#^https?://[^/]+/storage/#i', '', $userProfilePicture))
+    : null;
+$userProfilePictureUrl = ($userProfilePicture && \Illuminate\Support\Facades\Storage::disk('public')->exists(ltrim($userProfilePicture, '/')))
+    ? '/storage/' . ltrim($userProfilePicture, '/')
+    : null;
 @endphp
 
 {{-- Sidebar - Soft Dark Mode --}}
@@ -41,8 +47,11 @@ $userProfilePicture = $profile?->foto_profile;
     {{-- User Profile --}}
     <div class="p-4 border-b border-gray-100 dark:border-gray-700/50">
         <div class="sidebar-user-wrap flex items-center gap-3 transition-all duration-300">
-            @if($userProfilePicture)
-            <img src="{{ asset('storage/' . $userProfilePicture) }}" alt="{{ $userName }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+            @if($userProfilePictureUrl)
+            <img src="{{ $userProfilePictureUrl }}" alt="{{ $userName }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+            <div class="hidden w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                {{ strtoupper(substr($userName, 0, 2)) }}
+            </div>
             @else
             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                 {{ strtoupper(substr($userName, 0, 2)) }}

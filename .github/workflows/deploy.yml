@@ -177,6 +177,20 @@ jobs:
             echo "Running Laravel optimization commands..."
             sudo -u www-data php artisan storage:link --force 2>/dev/null || echo "Storage link already exists."
 
+            echo "Configuring upload limits for course/webinar thumbnails..."
+            sudo tee /etc/nginx/conf.d/digikampus-upload-size.conf >/dev/null <<'EOF'
+            client_max_body_size 20M;
+            EOF
+
+            for PHP_INI in /etc/php/*/fpm/php.ini; do
+              if [ -f "$PHP_INI" ]; then
+                sudo sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 20M/' "$PHP_INI"
+                sudo sed -i 's/^post_max_size = .*/post_max_size = 20M/' "$PHP_INI"
+              fi
+            done
+
+            sudo nginx -t
+
             echo "Applying Reverb environment configuration..."
             set_env_var() {
               local key="$1"

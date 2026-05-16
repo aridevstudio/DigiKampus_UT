@@ -52,7 +52,7 @@
                     <h2 class="text-lg font-bold text-gray-900 dark:text-white">Informasi Kursus</h2>
                 </div>
 
-                <form action="{{ route('dosen.kursus.update', $course->id_course) }}" method="POST" enctype="multipart/form-data" x-data="{ isLoading: false, selectedKategori: '{{ old('kategori', $course->kategori ?? 'kursus') }}' }" @submit="isLoading = true">
+                <form id="editCourseForm" action="{{ route('dosen.kursus.update', $course->id_course) }}" method="POST" enctype="multipart/form-data" x-data="{ isLoading: false, selectedKategori: '{{ old('kategori', $course->kategori ?? 'kursus') }}' }" @submit="isLoading = true">
                     @csrf
                     @method('PUT')
                     
@@ -1157,8 +1157,46 @@
         onEditMaterialTypeChange();
         initializeInitialContentForms();
 
+        function showUploadError(message) {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Upload tidak valid',
+                    text: message,
+                    confirmButtonText: 'Oke',
+                });
+                return;
+            }
+
+            alert(message);
+        }
+
+        function isValidThumbnailFile(input) {
+            const file = input?.files?.[0];
+            if (!file) return true;
+
+            const maxSizeMb = Number(input.dataset.maxSizeMb || 2);
+            if (!file.type.startsWith('image/')) {
+                showUploadError('Harap pilih file gambar JPG, PNG, atau WebP.');
+                input.value = '';
+                return false;
+            }
+
+            if (file.size > maxSizeMb * 1024 * 1024) {
+                showUploadError(`Ukuran thumbnail maksimal ${maxSizeMb}MB. Kompres gambar atau pilih file yang lebih kecil.`);
+                input.value = '';
+                return false;
+            }
+
+            return true;
+        }
+
         function previewImage(input) {
             if (input.files && input.files[0]) {
+                if (!isValidThumbnailFile(input)) {
+                    return;
+                }
+
                 var reader = new FileReader();
                 reader.onload = function (e) {
                     var preview = document.querySelector('img[alt="Thumbnail"]');
@@ -1179,6 +1217,14 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
+        document.getElementById('editCourseForm')?.addEventListener('submit', function (event) {
+            const thumbnailInput = this.querySelector('input[name="thumbnail"]');
+            if (thumbnailInput && !isValidThumbnailFile(thumbnailInput)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
     </script>
     @endpush
 </x-layouts.dosen>

@@ -16,6 +16,12 @@ if (Auth::guard('mahasiswa')->check()) {
 
 $userName = $user?->name ?? 'User';
 $userProfilePicture = $user?->profile?->foto_profile;
+$userProfilePicture = $userProfilePicture
+    ? preg_replace('#^/?storage/#i', '', preg_replace('#^https?://[^/]+/storage/#i', '', $userProfilePicture))
+    : null;
+$userProfilePictureUrl = ($userProfilePicture && \Illuminate\Support\Facades\Storage::disk('public')->exists(ltrim($userProfilePicture, '/')))
+    ? '/storage/' . ltrim($userProfilePicture, '/')
+    : null;
 
 // Define routes based on user type
 $routes = [
@@ -142,9 +148,12 @@ if ($userType === 'mahasiswa' && $user) {
 
             {{-- User Avatar --}}
             <div class="relative group">
-                @if($userProfilePicture)
+                @if($userProfilePictureUrl)
                 <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden">
-                    <img src="{{ asset('storage/' . $userProfilePicture) }}" alt="{{ $userName }}" class="w-full h-full object-cover">
+                    <img src="{{ $userProfilePictureUrl }}" alt="{{ $userName }}" class="w-full h-full object-cover" onerror="this.closest('button').classList.add('hidden'); this.closest('button').nextElementSibling.classList.remove('hidden'); this.closest('button').nextElementSibling.classList.add('flex');">
+                </button>
+                <button class="hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center text-white font-semibold text-xs sm:text-sm">
+                    {{ strtoupper(substr($userName, 0, 2)) }}
                 </button>
                 @else
                 <button class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">

@@ -207,9 +207,11 @@ class DosenController extends Controller
             ->take(5)
             ->get()
             ->map(function($enrollment) {
+                $fotoProfile = $this->publicStorageUrlIfExists($enrollment->mahasiswa?->profile?->foto_profile);
+
                 return [
                     'nama' => $enrollment->mahasiswa?->name ?? 'Unknown',
-                    'foto' => $enrollment->mahasiswa?->profile?->foto_profile,
+                    'foto' => $fotoProfile,
                     'course' => $enrollment->course?->nama_course ?? '-',
                     'progress' => round($enrollment->progress ?? 0),
                     'updated' => $enrollment->updated_at?->diffForHumans() ?? '-',
@@ -517,9 +519,13 @@ class DosenController extends Controller
      */
     public function showProfile()
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = Auth::guard('dosen')->user()->loadMissing('profile');
+        $fotoProfile = $this->publicStorageUrlIfExists($dosen->profile?->foto_profile);
 
-        return view('Auth.dosen.profile', ['dosen' => $dosen]);
+        return view('Auth.dosen.profile', [
+            'dosen' => $dosen,
+            'fotoProfile' => $fotoProfile,
+        ]);
     }
 
     /**
@@ -3747,5 +3753,23 @@ class DosenController extends Controller
 
         $year = $course->created_at?->format('Y') ?? now()->format('Y');
         return 'Periode ' . $year;
+    }
+
+    private function publicStorageUrlIfExists(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+
+        $path = preg_replace('#^https?://[^/]+/storage/#i', '', $path);
+        $path = preg_replace('#^/?storage/#i', '', (string) $path);
+        $path = ltrim((string) $path, '/');
+
+        if ($path === '' || !Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return '/storage/' . $path;
     }
 }
