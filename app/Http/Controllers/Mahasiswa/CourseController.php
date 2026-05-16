@@ -901,7 +901,7 @@ class CourseController extends Controller
         }
 
         $attempt->loadMissing('answers');
-        $enrollment = Enrollment::where('id_mahasiswa', $user->id)
+        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
             ->where('id_course', $courseId)
             ->first();
         $progressPercent = (int) round((float) ($enrollment->progress ?? 0));
