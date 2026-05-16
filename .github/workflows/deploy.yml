@@ -206,6 +206,7 @@ jobs:
             set_env_var VITE_REVERB_SCHEME '${REVERB_SCHEME}'
 
             sudo -u www-data php artisan config:clear
+            sudo -u www-data php artisan cache:clear
             sudo -u www-data php artisan route:clear
             sudo -u www-data php artisan view:clear
 

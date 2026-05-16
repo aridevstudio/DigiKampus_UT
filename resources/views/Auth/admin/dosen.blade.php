@@ -136,15 +136,18 @@
                         </td>
                         {{-- Avatar + Name + Email (combined) --}}
                         <td class="px-5 py-4">
+                            @php
+                                $colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'];
+                                $colorClass = $colors[$dosen['id'] % count($colors)];
+                                $initials = collect(explode(' ', $dosen['nama']))->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join('');
+                            @endphp
                             <div class="flex items-center gap-3.5">
-                                @if($dosen['foto'])
-                                    <img src="{{ asset('storage/' . $dosen['foto']) }}" alt="{{ $dosen['nama'] }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                @if($dosen['foto_url'])
+                                    <img src="{{ $dosen['foto_url'] }}" alt="{{ $dosen['nama'] }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                                    <div class="hidden w-10 h-10 rounded-full {{ $colorClass }} items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                        {{ $initials }}
+                                    </div>
                                 @else
-                                    @php
-                                        $colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'];
-                                        $colorClass = $colors[$dosen['id'] % count($colors)];
-                                        $initials = collect(explode(' ', $dosen['nama']))->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join('');
-                                    @endphp
                                     <div class="w-10 h-10 rounded-full {{ $colorClass }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}
                                     </div>
@@ -754,6 +757,28 @@
             }
         }
 
+        function setPhotoPreviewFromUrl(previewId, photoUrl) {
+            const preview = document.getElementById(previewId);
+            if (!preview) {
+                return;
+            }
+
+            if (!photoUrl) {
+                resetPhotoPreview(previewId);
+                return;
+            }
+
+            const img = document.createElement('img');
+            img.src = photoUrl;
+            img.className = 'w-full h-full object-cover';
+            img.onerror = function() {
+                resetPhotoPreview(previewId);
+            };
+
+            preview.innerHTML = '';
+            preview.appendChild(img);
+        }
+
         function validatePhotoBeforePreview(input, previewId) {
             if (!input.files || !input.files[0]) {
                 resetPhotoPreview(previewId);
@@ -838,13 +863,7 @@
                         });
                     }
                     
-                    // Show existing photo if available
-                    const preview = document.getElementById('editPhotoPreview');
-                    if (data.foto) {
-                        preview.innerHTML = '<img src="/storage/' + data.foto + '" class="w-full h-full object-cover">';
-                    } else {
-                        preview.innerHTML = '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-                    }
+                    setPhotoPreviewFromUrl('editPhotoPreview', data.foto_url || null);
                     
                     document.getElementById('editDosenModal').classList.remove('hidden');
                     document.body.style.overflow = 'hidden';

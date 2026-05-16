@@ -130,15 +130,18 @@
                         </td>
                         {{-- Combined Avatar + Name --}}
                         <td class="px-5 py-4">
+                            @php
+                                $initials = collect(explode(' ', $mhs['nama']))->take(2)->map(fn($w) => strtoupper(mb_substr($w, 0, 1)))->join('');
+                                $colors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-teal-500'];
+                                $bgColor = $colors[crc32($mhs['nama']) % count($colors)];
+                            @endphp
                             <div class="flex items-center gap-3.5">
-                                @if($mhs['foto'])
-                                    <img src="{{ asset('storage/' . $mhs['foto']) }}" alt="{{ $mhs['nama'] }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                @if($mhs['foto_url'])
+                                    <img src="{{ $mhs['foto_url'] }}" alt="{{ $mhs['nama'] }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                                    <div class="hidden w-10 h-10 rounded-full {{ $bgColor }} items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                        {{ $initials }}
+                                    </div>
                                 @else
-                                    @php
-                                        $initials = collect(explode(' ', $mhs['nama']))->take(2)->map(fn($w) => strtoupper(mb_substr($w, 0, 1)))->join('');
-                                        $colors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-teal-500'];
-                                        $bgColor = $colors[crc32($mhs['nama']) % count($colors)];
-                                    @endphp
                                     <div class="w-10 h-10 rounded-full {{ $bgColor }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}
                                     </div>
@@ -753,6 +756,28 @@
             preview.innerHTML = defaultPhotoPreviewSvg;
         }
 
+        function setPhotoPreviewFromUrl(previewElementId, photoUrl) {
+            const preview = document.getElementById(previewElementId);
+            if (!preview) {
+                return;
+            }
+
+            if (!photoUrl) {
+                resetPhotoPreview(previewElementId);
+                return;
+            }
+
+            const img = document.createElement('img');
+            img.src = photoUrl;
+            img.className = 'w-full h-full object-cover';
+            img.onerror = function() {
+                resetPhotoPreview(previewElementId);
+            };
+
+            preview.innerHTML = '';
+            preview.appendChild(img);
+        }
+
         function validatePhotoBeforePreview(input, previewElementId, errorElementId) {
             const file = input.files?.[0];
             const maxSizeMb = Number(input.dataset.maxSizeMb || 2);
@@ -837,13 +862,7 @@
                     document.getElementById('edit_password_confirmation').value = '';
                     document.getElementById('edit_status').checked = data.status === 'aktif';
                     
-                    // Show existing photo if available
-                    const preview = document.getElementById('editPhotoPreview');
-                    if (data.foto) {
-                        preview.innerHTML = '<img src="/storage/' + data.foto + '" class="w-full h-full object-cover">';
-                    } else {
-                        preview.innerHTML = defaultPhotoPreviewSvg;
-                    }
+                    setPhotoPreviewFromUrl('editPhotoPreview', data.foto_url || null);
                     setPhotoError('', 'editPhotoError');
                     
                     // Populate enrolled courses

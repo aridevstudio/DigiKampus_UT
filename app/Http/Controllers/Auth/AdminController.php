@@ -684,9 +684,12 @@ class AdminController extends Controller
 
         // Transform data for view
         $dosenList = $dosenPaginated->map(function($dosen) {
+            $fotoPath = $this->normalizePublicStoragePath($dosen->profile?->foto_profile);
+
             return [
                 'id' => $dosen->id,
-                'foto' => $dosen->profile?->foto_profile,
+                'foto' => $fotoPath,
+                'foto_url' => $fotoPath ? $this->publicStorageUrl($fotoPath) : null,
                 'nama' => $dosen->name,
                 'nomor_induk' => $dosen->profile?->nomor_induk ?? '-',
                 'program_studi' => !empty($dosen->profile?->jurusan_names)
@@ -800,6 +803,8 @@ class AdminController extends Controller
             return response()->json(['error' => 'Dosen tidak ditemukan'], 404);
         }
 
+        $fotoPath = $this->normalizePublicStoragePath($dosen->profile?->foto_profile);
+
         return response()->json([
             'id' => $dosen->id,
             'name' => $dosen->name,
@@ -808,7 +813,8 @@ class AdminController extends Controller
             'nomor_induk' => $dosen->profile?->nomor_induk,
             'id_jurusan' => $dosen->profile?->jurusan_ids ?? [],
             'no_hp' => $dosen->profile?->no_hp,
-            'foto' => $dosen->profile?->foto_profile,
+            'foto' => $fotoPath,
+            'foto_url' => $fotoPath ? $this->publicStorageUrl($fotoPath) : null,
         ]);
     }
 
@@ -986,9 +992,12 @@ class AdminController extends Controller
             ->paginate($perPage);
         $mahasiswaPaginated->appends($request->only(['search', 'status', 'prodi']));
         $mahasiswaList = $mahasiswaPaginated->map(function($mhs) {
+            $fotoPath = $this->normalizePublicStoragePath($mhs->profile?->foto_profile);
+
             return [
                 'id' => $mhs->id,
-                'foto' => $mhs->profile?->foto_profile,
+                'foto' => $fotoPath,
+                'foto_url' => $fotoPath ? $this->publicStorageUrl($fotoPath) : null,
                 'nama' => $mhs->name,
                 'nomor_induk' => $mhs->profile?->nomor_induk ?? '-',
                 'program_studi' => $mhs->profile?->jurusan?->nama_jurusan ?? '-',
@@ -1132,6 +1141,8 @@ class AdminController extends Controller
             }
         }
 
+        $fotoPath = $this->normalizePublicStoragePath($mhs->profile?->foto_profile);
+
         return response()->json([
             'id' => $mhs->id,
             'name' => $mhs->name,
@@ -1140,7 +1151,8 @@ class AdminController extends Controller
             'nomor_induk' => $mhs->profile?->nomor_induk,
             'id_jurusan' => $mhs->profile?->id_jurusan,
             'no_hp' => $mhs->profile?->no_hp,
-            'foto' => $mhs->profile?->foto_profile,
+            'foto' => $fotoPath,
+            'foto_url' => $fotoPath ? $this->publicStorageUrl($fotoPath) : null,
             'enrolled_courses' => $enrolledCourses,
         ]);
     }
@@ -2430,6 +2442,29 @@ class AdminController extends Controller
         }
 
         return null;
+    }
+
+    private function normalizePublicStoragePath(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+
+        $path = preg_replace('#^https?://[^/]+/storage/#i', '', $path);
+        $path = preg_replace('#^/?storage/#i', '', (string) $path);
+        $path = ltrim((string) $path, '/');
+
+        if ($path === '' || !Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return $path;
+    }
+
+    private function publicStorageUrl(string $path): string
+    {
+        return '/storage/' . ltrim($path, '/');
     }
 
     private function normalizeJurusanIds(array $jurusanIds): array
