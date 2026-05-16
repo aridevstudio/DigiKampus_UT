@@ -70,6 +70,15 @@
             Kembali ke Modul
         </a>
 
+        @if($certificateEligible ?? false)
+        <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'certificate' => 'download']) }}#course-certificate-panel" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s; box-shadow: 0 12px 24px rgba(16,185,129,0.22);" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m5.506 0C13.009 17.799 12 14.517 12 11m0 0C12 7.483 13.009 4.201 14.753 1.429m-5.506 0C10.991 4.201 12 7.483 12 11m0 0h8.25M12 11H3.75" />
+            </svg>
+            Download Sertifikat
+        </a>
+        @endif
+
         <a href="{{ route('mahasiswa.module-feedback', ['courseId' => $course->id_course, 'moduleId' => $result['module_id']]) }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
             <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />

@@ -901,6 +901,17 @@ class CourseController extends Controller
         }
 
         $attempt->loadMissing('answers');
+        $enrollment = Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->first();
+        $progressPercent = (int) round((float) ($enrollment->progress ?? 0));
+        $issuedCertificate = $enrollment
+            ? $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, $progressPercent)
+            : null;
+        $certificateEligible = (bool) ($course->sertifikat ?? false)
+            && $enrollment
+            && (($enrollment->status ?? null) === 'selesai' || $progressPercent >= 100)
+            && $issuedCertificate !== null;
         $score = (int) round((float) $attempt->persentase);
         $durationText = $attempt->waktu_mulai && $attempt->waktu_selesai
             ? $attempt->waktu_mulai->diffForHumans($attempt->waktu_selesai, true, true, 2)
@@ -927,6 +938,8 @@ class CourseController extends Controller
             'course' => $course,
             'result' => $result,
             'quizId' => $resolvedQuizId,
+            'certificateEligible' => $certificateEligible,
+            'issuedCertificate' => $issuedCertificate,
         ]);
     }
     

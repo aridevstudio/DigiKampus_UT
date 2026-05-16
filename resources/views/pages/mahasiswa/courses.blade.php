@@ -126,9 +126,9 @@
                         {{ $progress >= 100 ? 'Lihat Kursus' : 'Lanjutkan Belajar' }}
                     </a>
                     @if($certificateEligible)
-                    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}"
+                    <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'certificate' => 'download']) }}#course-certificate-panel"
                        class="block w-full text-center bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-xl font-medium text-sm transition">
-                        Cetak Sertifikat
+                        Download Sertifikat
                     </a>
                     @endif
                 </div>
