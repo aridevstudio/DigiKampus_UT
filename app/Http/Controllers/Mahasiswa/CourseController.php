@@ -1545,7 +1545,7 @@ class CourseController extends Controller
             ->where('id_module', $legacyQuizMaterial->id_module)
             ->max('urutan');
 
-        $quiz = DB::transaction(function () use ($courseId, $legacyQuizMaterial, $title, $nextOrder) {
+        $quiz = DB::transaction(function () use ($courseId, $legacyQuizMaterial, $title, $sourceMarker, $nextOrder) {
             $quiz = Quiz::create([
                 'id_module' => $legacyQuizMaterial->id_module,
                 'id_course' => $courseId,
