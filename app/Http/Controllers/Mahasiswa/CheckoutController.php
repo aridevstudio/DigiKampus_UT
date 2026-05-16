@@ -11,10 +11,13 @@ use App\Models\PaymentTransaction;
 use App\Models\PaymentTransactionItem;
 use App\Models\PlatformSetting;
 use App\Models\Voucher;
+use App\Models\VoucherUsage;
 use App\Services\MidtransSnapService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
@@ -30,6 +33,7 @@ class CheckoutController extends Controller
     public function index()
     {
         $user = Auth::guard('mahasiswa')->user();
+        Voucher::releaseExpiredReservations();
 
         $cartItems = $this->getCartItems($user->id);
         $subtotal = $this->calculateSubtotal($cartItems);
@@ -166,6 +170,10 @@ class CheckoutController extends Controller
                     ]);
                 }
 
+                if ($voucher && $discountAmount > 0) {
+                    $this->reserveVoucherUsage($voucher, $paymentTransaction);
+                }
+
                 return $paymentTransaction->load('items.course');
             });
 
@@ -187,14 +195,6 @@ class CheckoutController extends Controller
                     'response' => $midtransResponse,
                 ],
             ]);
-
-            if ($voucher) {
-                $voucher->update([
-                    'used_by_user_id' => $user->id,
-                    'used_payment_transaction_id' => $transaction->id_payment_transaction,
-                    'used_at' => now(),
-                ]);
-            }
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -222,6 +222,17 @@ class CheckoutController extends Controller
                 'snapRedirectUrl' => $midtransResponse['redirect_url'] ?? null,
                 'snapToken' => $midtransResponse['token'] ?? null,
             ]);
+        } catch (ValidationException $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => collect($e->errors())->flatten()->first() ?: 'Voucher tidak dapat digunakan.',
+                ], 422);
+            }
+
+            return redirect()->route('mahasiswa.checkout')
+                ->withErrors($e->errors())
+                ->with('error', collect($e->errors())->flatten()->first() ?: 'Voucher tidak dapat digunakan.');
         } catch (\Throwable $e) {
             report($e);
 
@@ -406,6 +417,8 @@ class CheckoutController extends Controller
 
     private function resolveVoucher(string $code): array
     {
+        Voucher::releaseExpiredReservations();
+
         $voucher = Voucher::whereRaw('LOWER(code) = ?', [Str::lower($code)])->first();
         if (!$voucher) {
             return ['success' => false, 'message' => 'Kode voucher tidak dikenali.'];
@@ -415,8 +428,25 @@ class CheckoutController extends Controller
             return ['success' => false, 'message' => 'Voucher tidak aktif.'];
         }
 
-        if ($voucher->used_at !== null) {
-            return ['success' => false, 'message' => 'Voucher ini sudah dipakai pada transaksi lain.'];
+        if ($voucher->isExpired()) {
+            return ['success' => false, 'message' => 'Voucher sudah melewati masa berlaku.'];
+        }
+
+        if (!$voucher->hasUsageRemaining()) {
+            return ['success' => false, 'message' => 'Kuota voucher sudah habis.'];
+        }
+
+        if (Schema::hasTable('voucher_usages')) {
+            $user = Auth::guard('mahasiswa')->user();
+            $alreadyUsedByUser = VoucherUsage::where('id_voucher', $voucher->id_voucher)
+                ->where('id_user', $user?->id)
+                ->whereNull('released_at')
+                ->whereIn('status', ['reserved', 'confirmed'])
+                ->exists();
+
+            if ($alreadyUsedByUser) {
+                return ['success' => false, 'message' => 'Voucher ini sudah pernah Anda gunakan.'];
+            }
         }
 
         return ['success' => true, 'voucher' => $voucher];
@@ -520,12 +550,16 @@ class CheckoutController extends Controller
 
         if (in_array($status, ['settlement', 'capture'], true)) {
             $this->finalizeSuccessfulTransaction($transaction->fresh(['items.course', 'voucher']));
+        } elseif (in_array($status, ['deny', 'cancel', 'expire', 'failure'], true)) {
+            $this->releaseVoucherUsage($transaction);
         }
     }
 
     private function finalizeSuccessfulTransaction(PaymentTransaction $transaction): void
     {
         DB::transaction(function () use ($transaction) {
+            $this->confirmVoucherUsage($transaction);
+
             foreach ($transaction->items as $item) {
                 $exists = Enrollment::where('id_mahasiswa', $transaction->id_mahasiswa)
                     ->where('id_course', $item->id_course)
@@ -565,6 +599,141 @@ class CheckoutController extends Controller
             'payment',
             '#10B981'
         );
+    }
+
+    private function reserveVoucherUsage(Voucher $voucher, PaymentTransaction $transaction): void
+    {
+        if (!Schema::hasTable('voucher_usages') || !Schema::hasColumn('vouchers', 'used_count')) {
+            $voucher->forceFill([
+                'used_by_user_id' => $transaction->id_mahasiswa,
+                'used_payment_transaction_id' => $transaction->id_payment_transaction,
+                'used_at' => now(),
+            ])->save();
+
+            return;
+        }
+
+        $lockedVoucher = Voucher::whereKey($voucher->id_voucher)->lockForUpdate()->first();
+
+        if (!$lockedVoucher || !$lockedVoucher->isAvailableForCheckout()) {
+            throw ValidationException::withMessages([
+                'voucher' => 'Voucher tidak tersedia, kuota habis, atau sudah expired.',
+            ]);
+        }
+
+        $alreadyUsedByUser = VoucherUsage::where('id_voucher', $lockedVoucher->id_voucher)
+            ->where('id_user', $transaction->id_mahasiswa)
+            ->whereNull('released_at')
+            ->whereIn('status', ['reserved', 'confirmed'])
+            ->exists();
+
+        if ($alreadyUsedByUser) {
+            throw ValidationException::withMessages([
+                'voucher' => 'Voucher ini sudah pernah digunakan oleh akun Anda.',
+            ]);
+        }
+
+        VoucherUsage::create([
+            'id_voucher' => $lockedVoucher->id_voucher,
+            'id_payment_transaction' => $transaction->id_payment_transaction,
+            'id_user' => $transaction->id_mahasiswa,
+            'discount_amount' => $transaction->discount_amount,
+            'status' => 'reserved',
+            'used_at' => now(),
+        ]);
+
+        $lockedVoucher->forceFill([
+            'used_count' => (int) $lockedVoucher->used_count + 1,
+            'used_by_user_id' => $transaction->id_mahasiswa,
+            'used_payment_transaction_id' => $transaction->id_payment_transaction,
+            'used_at' => now(),
+        ])->save();
+    }
+
+    private function confirmVoucherUsage(PaymentTransaction $transaction): void
+    {
+        if (!$transaction->id_voucher || (float) $transaction->discount_amount <= 0) {
+            return;
+        }
+
+        if (!Schema::hasTable('voucher_usages') || !Schema::hasColumn('vouchers', 'used_count')) {
+            return;
+        }
+
+        $voucher = Voucher::whereKey($transaction->id_voucher)->lockForUpdate()->first();
+        if (!$voucher) {
+            return;
+        }
+
+        $usage = VoucherUsage::where('id_payment_transaction', $transaction->id_payment_transaction)->first();
+
+        if (!$usage) {
+            $usage = VoucherUsage::create([
+                'id_voucher' => $voucher->id_voucher,
+                'id_payment_transaction' => $transaction->id_payment_transaction,
+                'id_user' => $transaction->id_mahasiswa,
+                'discount_amount' => $transaction->discount_amount,
+                'status' => 'confirmed',
+                'used_at' => now(),
+                'confirmed_at' => now(),
+            ]);
+
+            $voucher->forceFill(['used_count' => (int) $voucher->used_count + 1])->save();
+        } elseif ($usage->released_at !== null) {
+            $usage->update([
+                'status' => 'confirmed',
+                'released_at' => null,
+                'confirmed_at' => now(),
+                'used_at' => $usage->used_at ?? now(),
+            ]);
+
+            $voucher->forceFill(['used_count' => (int) $voucher->used_count + 1])->save();
+        } elseif ($usage->status !== 'confirmed') {
+            $usage->update([
+                'status' => 'confirmed',
+                'confirmed_at' => now(),
+            ]);
+        }
+
+        $voucher->forceFill([
+            'used_by_user_id' => $transaction->id_mahasiswa,
+            'used_payment_transaction_id' => $transaction->id_payment_transaction,
+            'used_at' => $usage->used_at ?? now(),
+        ])->save();
+    }
+
+    private function releaseVoucherUsage(PaymentTransaction $transaction): void
+    {
+        if (!$transaction->id_voucher) {
+            return;
+        }
+
+        if (!Schema::hasTable('voucher_usages') || !Schema::hasColumn('vouchers', 'used_count')) {
+            return;
+        }
+
+        DB::transaction(function () use ($transaction) {
+            $usage = VoucherUsage::where('id_payment_transaction', $transaction->id_payment_transaction)
+                ->whereNull('released_at')
+                ->lockForUpdate()
+                ->first();
+
+            if (!$usage || $usage->status === 'confirmed') {
+                return;
+            }
+
+            $usage->update([
+                'status' => 'released',
+                'released_at' => now(),
+            ]);
+
+            $voucher = Voucher::whereKey($usage->id_voucher)->lockForUpdate()->first();
+            if ($voucher) {
+                $voucher->forceFill([
+                    'used_count' => max(0, (int) $voucher->used_count - 1),
+                ])->save();
+            }
+        });
     }
 
     private function hasValidMidtransSignature(Request $request, PaymentTransaction $transaction): bool

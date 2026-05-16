@@ -55,6 +55,11 @@ class PaymentTransaction extends Model
         return $this->belongsTo(Voucher::class, 'id_voucher', 'id_voucher');
     }
 
+    public function voucherUsage()
+    {
+        return $this->hasOne(VoucherUsage::class, 'id_payment_transaction', 'id_payment_transaction');
+    }
+
     public function items()
     {
         return $this->hasMany(PaymentTransactionItem::class, 'id_payment_transaction', 'id_payment_transaction');

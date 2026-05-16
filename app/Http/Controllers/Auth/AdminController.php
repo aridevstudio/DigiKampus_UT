@@ -21,6 +21,7 @@ use App\Models\Profile;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Models\VoucherUsage;
 use App\Models\YoutubePlaylistVideo;
 use App\Services\DeviceSessionLimitService;
 use App\Services\ExcelImportService;
@@ -4107,13 +4108,30 @@ class AdminController extends Controller
         if (!Schema::hasTable('vouchers')) {
             return view('Auth.admin.voucher', [
                 'vouchers' => collect(),
-                'stats' => ['total' => 0, 'active' => 0, 'available' => 0, 'used' => 0],
+                'stats' => ['total' => 0, 'active' => 0, 'available' => 0, 'used' => 0, 'expired' => 0],
                 'search' => '',
                 'statusFilter' => 'all',
                 'typeFilter' => 'all',
                 'tableMissing' => true,
             ]);
         }
+
+        if (
+            !Schema::hasColumn('vouchers', 'usage_limit')
+            || !Schema::hasColumn('vouchers', 'used_count')
+            || !Schema::hasColumn('vouchers', 'expires_at')
+        ) {
+            return view('Auth.admin.voucher', [
+                'vouchers' => collect(),
+                'stats' => ['total' => 0, 'active' => 0, 'available' => 0, 'used' => 0, 'expired' => 0],
+                'search' => '',
+                'statusFilter' => 'all',
+                'typeFilter' => 'all',
+                'tableMissing' => true,
+            ]);
+        }
+
+        Voucher::releaseExpiredReservations();
 
         $search = trim((string) $request->get('search', ''));
         $statusFilter = $request->get('status', 'all');
@@ -4124,6 +4142,7 @@ class AdminController extends Controller
                 'usedBy:id,name,email',
                 'usedBy.profile:user_id,nomor_induk',
                 'paymentTransaction:id_payment_transaction,order_id,transaction_status',
+                'usages' => fn ($usageQuery) => $usageQuery->latest('used_at')->limit(3),
             ]);
 
         if ($search !== '') {
@@ -4144,10 +4163,14 @@ class AdminController extends Controller
         }
 
         match ($statusFilter) {
-            'active' => $query->where('is_active', true),
+            'active' => $query->where('is_active', true)
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                }),
             'inactive' => $query->where('is_active', false),
-            'used' => $query->whereNotNull('used_at'),
-            'available' => $query->where('is_active', true)->whereNull('used_at'),
+            'used' => $query->where('used_count', '>', 0),
+            'expired' => $query->whereNotNull('expires_at')->where('expires_at', '<', now()),
+            'available' => $query->available(),
             default => null,
         };
 
@@ -4161,9 +4184,14 @@ class AdminController extends Controller
             'vouchers' => $vouchers,
             'stats' => [
                 'total' => Voucher::count(),
-                'active' => Voucher::where('is_active', true)->count(),
-                'available' => Voucher::where('is_active', true)->whereNull('used_at')->count(),
-                'used' => Voucher::whereNotNull('used_at')->count(),
+                'active' => Voucher::where('is_active', true)
+                    ->where(function ($q) {
+                        $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                    })
+                    ->count(),
+                'available' => Voucher::available()->count(),
+                'used' => Voucher::where('used_count', '>', 0)->count(),
+                'expired' => Voucher::whereNotNull('expires_at')->where('expires_at', '<', now())->count(),
             ],
             'search' => $search,
             'statusFilter' => $statusFilter,
@@ -4191,6 +4219,7 @@ class AdminController extends Controller
             'usedBy:id,name,email',
             'usedBy.profile:user_id,nomor_induk',
             'paymentTransaction:id_payment_transaction,order_id,transaction_status',
+            'usages' => fn ($usageQuery) => $usageQuery->latest('used_at')->limit(5),
         ])->findOrFail($id);
 
         return response()->json([
@@ -4199,6 +4228,13 @@ class AdminController extends Controller
             'type' => $voucher->type,
             'value' => (float) $voucher->value,
             'min_subtotal' => (float) $voucher->min_subtotal,
+            'usage_limit' => $voucher->usage_limit,
+            'used_count' => (int) $voucher->used_count,
+            'remaining_uses' => $voucher->remainingUses(),
+            'expires_at' => optional($voucher->expires_at)->format('Y-m-d\TH:i'),
+            'expires_at_label' => optional($voucher->expires_at)->format('d M Y H:i'),
+            'is_expired' => $voucher->isExpired(),
+            'is_available' => $voucher->isAvailableForCheckout(),
             'is_active' => (bool) $voucher->is_active,
             'used_at' => optional($voucher->used_at)->format('d M Y H:i'),
             'used_by' => $voucher->usedBy ? [
@@ -4233,7 +4269,13 @@ class AdminController extends Controller
     public function resetVoucherUsage($id): RedirectResponse
     {
         $voucher = Voucher::findOrFail($id);
+
+        if (Schema::hasTable('voucher_usages')) {
+            VoucherUsage::where('id_voucher', $voucher->id_voucher)->delete();
+        }
+
         $voucher->update([
+            'used_count' => 0,
             'used_by_user_id' => null,
             'used_payment_transaction_id' => null,
             'used_at' => null,
@@ -4246,7 +4288,7 @@ class AdminController extends Controller
     {
         $voucher = Voucher::findOrFail($id);
 
-        if ($voucher->used_at) {
+        if ((int) $voucher->used_count > 0 || $voucher->used_at) {
             return back()->with('error', 'Voucher yang sudah terpakai tidak dihapus agar riwayat transaksi tetap aman. Gunakan Nonaktifkan jika tidak ingin dipakai lagi.');
         }
 
@@ -4272,6 +4314,8 @@ class AdminController extends Controller
             'type' => ['required', Rule::in(['percent', 'fixed'])],
             'value' => ['required', 'numeric', 'min:0.01', Rule::when($request->input('type') === 'percent', ['max:100'])],
             'min_subtotal' => ['nullable', 'numeric', 'min:0'],
+            'usage_limit' => ['nullable', 'integer', 'min:1'],
+            'expires_at' => ['nullable', 'date'],
             'is_active' => ['nullable', 'boolean'],
         ], [
             'code.required' => 'Kode voucher wajib diisi.',
@@ -4283,6 +4327,9 @@ class AdminController extends Controller
             'value.numeric' => 'Nilai voucher harus berupa angka.',
             'value.max' => 'Voucher persen tidak boleh lebih dari 100%.',
             'min_subtotal.numeric' => 'Minimal pembelian harus berupa angka.',
+            'usage_limit.integer' => 'Batas pemakaian harus berupa angka.',
+            'usage_limit.min' => 'Batas pemakaian minimal 1.',
+            'expires_at.date' => 'Tanggal expired tidak valid.',
         ]);
 
         return [
@@ -4290,6 +4337,8 @@ class AdminController extends Controller
             'type' => $validated['type'],
             'value' => (float) $validated['value'],
             'min_subtotal' => (float) ($validated['min_subtotal'] ?? 0),
+            'usage_limit' => filled($validated['usage_limit'] ?? null) ? (int) $validated['usage_limit'] : null,
+            'expires_at' => filled($validated['expires_at'] ?? null) ? $validated['expires_at'] : null,
             'is_active' => $request->boolean('is_active'),
         ];
     }

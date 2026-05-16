@@ -24,6 +24,10 @@
             'type' => $voucher->type,
             'value' => $value,
             'minSubtotal' => (float) $voucher->min_subtotal,
+            'usageLimit' => $voucher->usage_limit,
+            'usedCount' => (int) $voucher->used_count,
+            'remainingUses' => $voucher->remainingUses(),
+            'expiresAt' => optional($voucher->expires_at)->format('d M Y H:i'),
         ]];
     });
 @endphp
@@ -132,7 +136,7 @@
                 @empty
                 <span class="text-gray-400">Belum ada voucher aktif saat ini.</span>
                 @endforelse
-                <span class="text-gray-400">Hanya 1 voucher per transaksi dan voucher hanya dapat dipakai 1 kali.</span>
+                <span class="text-gray-400">Hanya 1 voucher per transaksi. Voucher mengikuti kuota dan masa berlaku.</span>
             </div>
             <div id="voucher-feedback" class="mt-3 hidden rounded-lg px-3 py-2 text-sm"></div>
             <div id="voucher-active-box" class="mt-3 hidden items-center justify-between rounded-xl border border-green-200 bg-green-50 px-3 py-2 dark:border-green-700/40 dark:bg-green-500/10">
@@ -417,7 +421,9 @@
 
         activeVoucher = voucher;
         refreshCheckoutSummary();
-        showVoucherFeedback('Voucher ' + voucher.code + ' aktif. Voucher ini hanya bisa dipakai untuk 1 transaksi.', 'success');
+        const expiryInfo = voucher.expiresAt ? ' Berlaku sampai ' + voucher.expiresAt + '.' : '';
+        const quotaInfo = voucher.remainingUses === null ? ' Kuota tanpa batas.' : ' Sisa kuota ' + voucher.remainingUses + '.';
+        showVoucherFeedback('Voucher ' + voucher.code + ' aktif.' + quotaInfo + expiryInfo, 'success');
     });
 
     document.getElementById('remove-voucher-btn')?.addEventListener('click', function () {
