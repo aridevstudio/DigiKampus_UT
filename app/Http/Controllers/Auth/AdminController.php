@@ -20,6 +20,7 @@ use App\Models\PlatformSetting;
 use App\Models\Profile;
 use App\Models\SupportTicket;
 use App\Models\User;
+use App\Models\Voucher;
 use App\Models\YoutubePlaylistVideo;
 use App\Services\DeviceSessionLimitService;
 use App\Services\ExcelImportService;
@@ -4099,6 +4100,194 @@ class AdminController extends Controller
             'targetProdiFilter' => $targetProdiFilter,
             'search' => $search,
         ]);
+    }
+
+    public function showVoucher(Request $request)
+    {
+        if (!Schema::hasTable('vouchers')) {
+            return view('Auth.admin.voucher', [
+                'vouchers' => collect(),
+                'stats' => ['total' => 0, 'active' => 0, 'available' => 0, 'used' => 0],
+                'search' => '',
+                'statusFilter' => 'all',
+                'typeFilter' => 'all',
+                'tableMissing' => true,
+            ]);
+        }
+
+        $search = trim((string) $request->get('search', ''));
+        $statusFilter = $request->get('status', 'all');
+        $typeFilter = $request->get('type', 'all');
+
+        $query = Voucher::query()
+            ->with([
+                'usedBy:id,name,email,nomor_induk',
+                'paymentTransaction:id_payment_transaction,order_id,transaction_status',
+            ]);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                    ->orWhereHas('usedBy', function ($usedByQuery) use ($search) {
+                        $usedByQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('nomor_induk', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if (in_array($typeFilter, ['percent', 'fixed'], true)) {
+            $query->where('type', $typeFilter);
+        }
+
+        match ($statusFilter) {
+            'active' => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            'used' => $query->whereNotNull('used_at'),
+            'available' => $query->where('is_active', true)->whereNull('used_at'),
+            default => null,
+        };
+
+        $vouchers = $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id_voucher')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('Auth.admin.voucher', [
+            'vouchers' => $vouchers,
+            'stats' => [
+                'total' => Voucher::count(),
+                'active' => Voucher::where('is_active', true)->count(),
+                'available' => Voucher::where('is_active', true)->whereNull('used_at')->count(),
+                'used' => Voucher::whereNotNull('used_at')->count(),
+            ],
+            'search' => $search,
+            'statusFilter' => $statusFilter,
+            'typeFilter' => $typeFilter,
+            'tableMissing' => false,
+        ]);
+    }
+
+    public function storeVoucher(Request $request): RedirectResponse
+    {
+        if (!Schema::hasTable('vouchers')) {
+            return back()->with('error', 'Tabel voucher belum tersedia. Jalankan migration terlebih dahulu.');
+        }
+
+        Voucher::create($this->validateVoucherPayload($request));
+
+        return redirect()
+            ->route('admin.voucher')
+            ->with('success', 'Voucher berhasil dibuat.');
+    }
+
+    public function getVoucher($id)
+    {
+        $voucher = Voucher::with([
+            'usedBy:id,name,email,nomor_induk',
+            'paymentTransaction:id_payment_transaction,order_id,transaction_status',
+        ])->findOrFail($id);
+
+        return response()->json([
+            'id_voucher' => $voucher->id_voucher,
+            'code' => $voucher->code,
+            'type' => $voucher->type,
+            'value' => (float) $voucher->value,
+            'min_subtotal' => (float) $voucher->min_subtotal,
+            'is_active' => (bool) $voucher->is_active,
+            'used_at' => optional($voucher->used_at)->format('d M Y H:i'),
+            'used_by' => $voucher->usedBy ? [
+                'name' => $voucher->usedBy->name,
+                'email' => $voucher->usedBy->email,
+                'nomor_induk' => $voucher->usedBy->nomor_induk,
+            ] : null,
+            'payment_transaction' => $voucher->paymentTransaction ? [
+                'order_id' => $voucher->paymentTransaction->order_id,
+                'transaction_status' => $voucher->paymentTransaction->transaction_status,
+            ] : null,
+        ]);
+    }
+
+    public function updateVoucher(Request $request, $id): RedirectResponse
+    {
+        $voucher = Voucher::findOrFail($id);
+        $voucher->update($this->validateVoucherPayload($request, $voucher));
+
+        $query = array_filter([
+            'search' => $request->input('filter_search'),
+            'status' => $request->input('filter_status'),
+            'type' => $request->input('filter_type'),
+            'page' => $request->input('filter_page'),
+        ], fn ($value) => filled($value));
+
+        return redirect()
+            ->route('admin.voucher', $query)
+            ->with('success', 'Voucher berhasil diperbarui.');
+    }
+
+    public function resetVoucherUsage($id): RedirectResponse
+    {
+        $voucher = Voucher::findOrFail($id);
+        $voucher->update([
+            'used_by_user_id' => null,
+            'used_payment_transaction_id' => null,
+            'used_at' => null,
+        ]);
+
+        return back()->with('success', 'Status pemakaian voucher berhasil direset.');
+    }
+
+    public function deleteVoucher($id): RedirectResponse
+    {
+        $voucher = Voucher::findOrFail($id);
+
+        if ($voucher->used_at) {
+            return back()->with('error', 'Voucher yang sudah terpakai tidak dihapus agar riwayat transaksi tetap aman. Gunakan Nonaktifkan jika tidak ingin dipakai lagi.');
+        }
+
+        $voucher->delete();
+
+        return back()->with('success', 'Voucher berhasil dihapus.');
+    }
+
+    private function validateVoucherPayload(Request $request, ?Voucher $voucher = null): array
+    {
+        $request->merge([
+            'code' => Str::upper(trim((string) $request->input('code'))),
+            'type' => strtolower(trim((string) $request->input('type'))),
+        ]);
+
+        $uniqueCodeRule = Rule::unique('vouchers', 'code');
+        if ($voucher) {
+            $uniqueCodeRule->ignore($voucher->id_voucher, 'id_voucher');
+        }
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50', 'regex:/^[A-Z0-9_-]+$/', $uniqueCodeRule],
+            'type' => ['required', Rule::in(['percent', 'fixed'])],
+            'value' => ['required', 'numeric', 'min:0.01', Rule::when($request->input('type') === 'percent', ['max:100'])],
+            'min_subtotal' => ['nullable', 'numeric', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
+        ], [
+            'code.required' => 'Kode voucher wajib diisi.',
+            'code.regex' => 'Kode voucher hanya boleh memakai huruf besar, angka, strip, dan underscore.',
+            'code.unique' => 'Kode voucher sudah digunakan.',
+            'type.required' => 'Jenis voucher wajib dipilih.',
+            'type.in' => 'Jenis voucher tidak valid.',
+            'value.required' => 'Nilai voucher wajib diisi.',
+            'value.numeric' => 'Nilai voucher harus berupa angka.',
+            'value.max' => 'Voucher persen tidak boleh lebih dari 100%.',
+            'min_subtotal.numeric' => 'Minimal pembelian harus berupa angka.',
+        ]);
+
+        return [
+            'code' => $validated['code'],
+            'type' => $validated['type'],
+            'value' => (float) $validated['value'],
+            'min_subtotal' => (float) ($validated['min_subtotal'] ?? 0),
+            'is_active' => $request->boolean('is_active'),
+        ];
     }
 
     public function showFinanceReport(Request $request)

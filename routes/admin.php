@@ -154,6 +154,12 @@ Route::prefix('admin')
         Route::get('/finance-report', [AdminController::class, 'showFinanceReport'])->name('admin.finance-report');
         Route::get('/finance-report/export', [AdminController::class, 'exportFinanceReportExcel'])->name('admin.finance-report.export');
         Route::post('/finance-report/service-fee', [AdminController::class, 'updateFinanceServiceFee'])->name('admin.finance-report.service-fee.update');
+        Route::get('/voucher', [AdminController::class, 'showVoucher'])->name('admin.voucher');
+        Route::post('/voucher', [AdminController::class, 'storeVoucher'])->name('admin.voucher.store');
+        Route::get('/voucher/{id}', [AdminController::class, 'getVoucher'])->name('admin.voucher.get');
+        Route::put('/voucher/{id}', [AdminController::class, 'updateVoucher'])->name('admin.voucher.update');
+        Route::put('/voucher/{id}/reset-usage', [AdminController::class, 'resetVoucherUsage'])->name('admin.voucher.reset-usage');
+        Route::delete('/voucher/{id}', [AdminController::class, 'deleteVoucher'])->name('admin.voucher.delete');
 
         Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('admin.pengumuman.store');
         Route::get('/pengumuman/{id}', [AdminController::class, 'getPengumuman'])->name('admin.pengumuman.get');
