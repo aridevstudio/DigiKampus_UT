@@ -87,27 +87,13 @@ jobs:
 
             echo 'Starting DigiKampusUT smart sync...';
 
-            mkdir -p bootstrap;
-            mkdir -p bootstrap/cache;
-            mkdir -p public;
-            mkdir -p storage;
-            mkdir -p storage/app;
-            mkdir -p storage/app/public;
-            mkdir -p storage/app/private;
-            mkdir -p storage/framework;
-            mkdir -p storage/framework/cache;
-            mkdir -p storage/framework/cache/data;
-            mkdir -p storage/framework/sessions;
-            mkdir -p storage/framework/views;
-            mkdir -p storage/logs;
-
             mirror --reverse --only-newer --verbose --parallel=2 app/ app/;
+            mirror --reverse --only-newer --verbose --parallel=2 bootstrap/ bootstrap/;
             mirror --reverse --only-newer --verbose --parallel=2 config/ config/;
             mirror --reverse --only-newer --verbose --parallel=2 resources/ resources/;
             mirror --reverse --only-newer --verbose --parallel=2 routes/ routes/;
             mirror --reverse --only-newer --verbose --parallel=2 database/migrations/ database/migrations/;
             put artisan -o artisan;
-            put bootstrap/app.php -o bootstrap/app.php;
 
             mirror --reverse --delete --verbose --parallel=2 public/build/ public/build/;
             mirror --reverse --only-newer --verbose --parallel=2 --exclude='index.php' --exclude='.htaccess' --exclude='build/' public/ public/;
@@ -181,6 +167,14 @@ jobs:
             fi
 
             echo "Setting proper permissions..."
+            sudo mkdir -p /var/www/digikampusut/bootstrap/cache
+            sudo mkdir -p /var/www/digikampusut/storage/app/public
+            sudo mkdir -p /var/www/digikampusut/storage/app/private
+            sudo mkdir -p /var/www/digikampusut/storage/framework/cache/data
+            sudo mkdir -p /var/www/digikampusut/storage/framework/sessions
+            sudo mkdir -p /var/www/digikampusut/storage/framework/views
+            sudo mkdir -p /var/www/digikampusut/storage/logs
+
             sudo chown -R www-data:www-data /var/www/digikampusut
             sudo chmod -R 755 /var/www/digikampusut
             sudo chmod -R 775 /var/www/digikampusut/storage
