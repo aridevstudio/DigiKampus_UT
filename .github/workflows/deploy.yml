@@ -164,6 +164,12 @@ jobs:
               fi
             fi
 
+            echo "Installing Redis server and PHP Redis extension..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server php-redis
+            sudo systemctl enable redis-server
+            sudo systemctl start redis-server
+
             echo "Installing/updating Composer dependencies..."
             export COMPOSER_ALLOW_SUPERUSER=1
             sudo -E composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --working-dir=/var/www/digikampusut
@@ -212,11 +218,21 @@ jobs:
             }
 
             set_env_var BROADCAST_CONNECTION reverb
+            set_env_var CACHE_STORE redis
+            set_env_var REDIS_CLIENT phpredis
+            set_env_var REDIS_HOST 127.0.0.1
+            set_env_var REDIS_USERNAME null
+            set_env_var REDIS_PASSWORD null
+            set_env_var REDIS_PORT 6379
+            set_env_var REDIS_DB 0
+            set_env_var REDIS_CACHE_DB 1
+            set_env_var REDIS_CACHE_CONNECTION cache
             set_env_var REVERB_APP_ID "${{ vars.REVERB_APP_ID || 'digikampus' }}"
             set_env_var REVERB_APP_KEY "${{ secrets.REVERB_APP_KEY }}"
             set_env_var REVERB_APP_SECRET "${{ secrets.REVERB_APP_SECRET }}"
             set_env_var REVERB_SERVER_HOST "${{ vars.REVERB_SERVER_HOST || '0.0.0.0' }}"
             set_env_var REVERB_SERVER_PORT "${{ vars.REVERB_SERVER_PORT || '8080' }}"
+            set_env_var REVERB_SCALING_ENABLED "${{ vars.REVERB_SCALING_ENABLED || 'false' }}"
             set_env_var REVERB_HOST "${{ vars.REVERB_HOST || 'ws-demo-digikampusut.gilarya.my.id' }}"
             set_env_var REVERB_PORT "${{ vars.REVERB_PORT || '443' }}"
             set_env_var REVERB_SCHEME "${{ vars.REVERB_SCHEME || 'https' }}"
@@ -247,6 +263,10 @@ jobs:
             echo "Restarting PHP-FPM and Nginx..."
             sudo mkdir -p /var/www/digikampusut/storage/logs
             sudo chown -R www-data:www-data /var/www/digikampusut/storage
+
+            if systemctl list-unit-files | grep -q '^redis-server\.service'; then
+              sudo systemctl restart redis-server
+            fi
 
             if systemctl list-unit-files | grep -q '^php8.3-fpm\.service'; then
               sudo systemctl restart php8.3-fpm
