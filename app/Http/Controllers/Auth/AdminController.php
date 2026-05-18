@@ -526,10 +526,11 @@ class AdminController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        $externalMentors = ExternalMentor::query()
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->get(['id_external_mentor', 'name', 'email', 'expertise', 'institution']);
+        $externalMentorQuery = ExternalMentor::query()->orderBy('name');
+        if ($this->externalMentorStatusColumnExists()) {
+            $externalMentorQuery->where('status', 'active');
+        }
+        $externalMentors = $externalMentorQuery->get(['id_external_mentor', 'name', 'email', 'expertise', 'institution']);
 
         return view('Auth.admin.bootcamp-tiket', [
             'bootcampStats' => $bootcampStats,
@@ -644,6 +645,11 @@ class AdminController extends Controller
 
     public function assignBootcampMentor(Request $request, $id)
     {
+        $externalMentorExistsRule = Rule::exists('external_mentors', 'id_external_mentor');
+        if ($this->externalMentorStatusColumnExists()) {
+            $externalMentorExistsRule->where(fn ($query) => $query->where('status', 'active'));
+        }
+
         $validated = $request->validate([
             'risk' => ['nullable', 'string', 'max:2000'],
             'mentor_user_ids' => ['nullable', 'array'],
@@ -652,7 +658,7 @@ class AdminController extends Controller
                 Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'dosen')->where('status', 'aktif')),
             ],
             'external_mentor_ids' => ['nullable', 'array'],
-            'external_mentor_ids.*' => ['integer', Rule::exists('external_mentors', 'id_external_mentor')->where(fn ($query) => $query->where('status', 'active'))],
+            'external_mentor_ids.*' => ['integer', $externalMentorExistsRule],
             'mentor_role' => ['nullable', 'string', 'max:100'],
             'external_name' => ['nullable', 'string', 'max:255'],
             'external_email' => ['nullable', 'email', 'max:255'],
@@ -845,6 +851,11 @@ class AdminController extends Controller
 
     private function validateBootcampPayload(Request $request): array
     {
+        $externalMentorExistsRule = Rule::exists('external_mentors', 'id_external_mentor');
+        if ($this->externalMentorStatusColumnExists()) {
+            $externalMentorExistsRule->where(fn ($query) => $query->where('status', 'active'));
+        }
+
         return $request->validate([
             'program_type' => ['required', Rule::in(['bootcamp', 'ticketed_event'])],
             'title' => ['required', 'string', 'max:255'],
@@ -862,7 +873,7 @@ class AdminController extends Controller
             'external_mentor_ids' => ['nullable', 'array'],
             'external_mentor_ids.*' => [
                 'integer',
-                Rule::exists('external_mentors', 'id_external_mentor')->where(fn ($query) => $query->where('status', 'active')),
+                $externalMentorExistsRule,
             ],
             'mentor_role' => ['nullable', 'string', 'max:100'],
             'external_name' => ['nullable', 'string', 'max:255'],
@@ -1053,14 +1064,24 @@ class AdminController extends Controller
             $query->where('email', $email);
         }
 
-        return $query->first() ?: ExternalMentor::create([
+        $externalMentorData = [
             'name' => $name,
             'email' => $email ?: null,
             'phone' => $this->cleanTextInput($request->input('external_phone')) ?: null,
             'expertise' => $this->cleanTextInput($request->input('external_expertise')) ?: null,
             'institution' => $this->cleanTextInput($request->input('external_institution')) ?: null,
-            'status' => 'active',
-        ]);
+        ];
+
+        if ($this->externalMentorStatusColumnExists()) {
+            $externalMentorData['status'] = 'active';
+        }
+
+        return $query->first() ?: ExternalMentor::create($externalMentorData);
+    }
+
+    private function externalMentorStatusColumnExists(): bool
+    {
+        return Schema::hasTable('external_mentors') && Schema::hasColumn('external_mentors', 'status');
     }
 
     private function buildBootcampScheduleLabel(array $validated): string

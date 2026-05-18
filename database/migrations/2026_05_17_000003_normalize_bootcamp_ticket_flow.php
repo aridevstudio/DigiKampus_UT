@@ -23,6 +23,36 @@ return new class extends Migration
 
                 $table->index(['status', 'name']);
             });
+        } else {
+            Schema::table('external_mentors', function (Blueprint $table) {
+                if (!Schema::hasColumn('external_mentors', 'name')) {
+                    $table->string('name')->nullable();
+                }
+                if (!Schema::hasColumn('external_mentors', 'email')) {
+                    $table->string('email')->nullable();
+                }
+                if (!Schema::hasColumn('external_mentors', 'phone')) {
+                    $table->string('phone')->nullable();
+                }
+                if (!Schema::hasColumn('external_mentors', 'expertise')) {
+                    $table->string('expertise')->nullable();
+                }
+                if (!Schema::hasColumn('external_mentors', 'institution')) {
+                    $table->string('institution')->nullable();
+                }
+                if (!Schema::hasColumn('external_mentors', 'status')) {
+                    $table->enum('status', ['active', 'inactive'])->default('active');
+                }
+                if (!Schema::hasColumn('external_mentors', 'notes')) {
+                    $table->text('notes')->nullable();
+                }
+                if (!Schema::hasColumn('external_mentors', 'created_at')) {
+                    $table->timestamp('created_at')->nullable();
+                }
+                if (!Schema::hasColumn('external_mentors', 'updated_at')) {
+                    $table->timestamp('updated_at')->nullable();
+                }
+            });
         }
 
         Schema::table('bootcamps', function (Blueprint $table) {
