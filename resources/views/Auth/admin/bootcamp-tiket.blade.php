@@ -1,807 +1,388 @@
 @php
-    $bootcampStats = [
-        ['label' => 'Bootcamp Aktif', 'value' => 6, 'helper' => '3 batch berjalan minggu ini', 'tone' => 'from-sky-500 to-blue-600'],
-        ['label' => 'Kuota Terisi', 'value' => '428/560', 'helper' => '76% seat occupancy', 'tone' => 'from-emerald-500 to-teal-600'],
-        ['label' => 'Mentor Aktif', 'value' => 18, 'helper' => 'dosen dan mentor eksternal', 'tone' => 'from-violet-500 to-fuchsia-600'],
-        ['label' => 'Pending Approval', 'value' => 9, 'helper' => 'draft, publish, dan refund', 'tone' => 'from-amber-500 to-orange-500'],
-    ];
-
-    $bootcampPrograms = [
-        [
-            'id' => 'bootcamp-uiux',
-            'title' => 'Bootcamp UI/UX Product Sprint',
-            'type' => 'Bootcamp',
-            'batch' => 'Batch April 2026',
-            'status' => 'Open Registration',
-            'mentor' => '3 mentor',
-            'seats' => '72 / 90 kursi',
-            'price' => 'Rp 1.450.000',
-            'schedule' => 'Sabtu & Minggu, 09.00 - 12.00',
-            'risk' => 'Mentor cadangan belum ditetapkan',
-            'accent' => 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20',
-        ],
-        [
-            'id' => 'bootcamp-data-analyst',
-            'title' => 'Bootcamp Data Analyst Career Track',
-            'type' => 'Bootcamp',
-            'batch' => 'Batch Mei 2026',
-            'status' => 'Internal Review',
-            'mentor' => '4 mentor',
-            'seats' => '48 / 60 kursi',
-            'price' => 'Rp 1.950.000',
-            'schedule' => 'Senin, Rabu, Jumat, 19.00 - 21.00',
-            'risk' => 'Silabus final assignment belum dikunci',
-            'accent' => 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:border-violet-500/20',
-        ],
-        [
-            'id' => 'tiket-edutech-summit',
-            'title' => 'Tiket EduTech Summit 2026',
-            'type' => 'Tiket Event',
-            'batch' => 'Event 24 Mei 2026',
-            'status' => 'Published',
-            'mentor' => 'Speaker 6 sesi',
-            'seats' => '310 / 400 tiket',
-            'price' => 'Rp 275.000',
-            'schedule' => 'Hybrid event, 08.00 - 17.00',
-            'risk' => 'QR gate dan check-in onsite belum diuji',
-            'accent' => 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20',
-        ],
-    ];
-
-    $opsBoard = [
-        ['label' => 'Draft Baru', 'count' => 4, 'helper' => 'Perlu review admin sebelum publish', 'tone' => 'bg-slate-50 dark:bg-gray-900/40'],
-        ['label' => 'Butuh Mentor', 'count' => 2, 'helper' => 'Batch baru belum lengkap pengajar', 'tone' => 'bg-amber-50 dark:bg-amber-500/10'],
-        ['label' => 'Refund / Reschedule', 'count' => 3, 'helper' => 'Kasus peserta perlu tindak lanjut', 'tone' => 'bg-rose-50 dark:bg-rose-500/10'],
-        ['label' => 'Siap Publish', 'count' => 5, 'helper' => 'Konten, jadwal, kuota sudah lengkap', 'tone' => 'bg-emerald-50 dark:bg-emerald-500/10'],
-    ];
-
-    $ticketFlows = [
-        ['name' => 'Landing -> Checkout', 'value' => '64%', 'note' => 'Butuh voucher + countdown seat'],
-        ['name' => 'Checkout -> Paid', 'value' => '41%', 'note' => 'Payment reminder belum otomatis'],
-        ['name' => 'Paid -> Attend', 'value' => '82%', 'note' => 'Attendance gate cukup sehat'],
-        ['name' => 'Attend -> Certificate', 'value' => '67%', 'note' => 'Masih tunggu logic backend publish'],
-    ];
-
-    $mentorRows = [
-        ['name' => 'Rafi Akbar', 'role' => 'Lead Mentor UI/UX', 'load' => '2 batch aktif', 'status' => 'Aman'],
-        ['name' => 'Anisa Paramita', 'role' => 'Data Analyst Mentor', 'load' => '1 batch + 1 webinar', 'status' => 'Perlu Backup'],
-        ['name' => 'Dimas Prakoso', 'role' => 'Facilitator Onsite Event', 'load' => 'EduTech Summit', 'status' => 'Siap'],
+    $bootcampStats = $bootcampStats ?? [];
+    $bootcampPrograms = $bootcampPrograms ?? [];
+    $opsBoard = $opsBoard ?? [];
+    $ticketFlows = $ticketFlows ?? [];
+    $mentorRows = $mentorRows ?? [];
+    $availableMentors = $availableMentors ?? collect();
+    $externalMentors = $externalMentors ?? collect();
+    $statusOptions = [
+        'draft' => 'Draft',
+        'internal_review' => 'Internal Review',
+        'open_registration' => 'Open Registration',
+        'published' => 'Published',
+        'registration_closed' => 'Registration Closed',
+        'in_progress' => 'In Progress',
+        'completed' => 'Completed',
+        'archived' => 'Archived',
     ];
 @endphp
 
 <x-layouts.admin title="Bootcamp & Tiket" active="bootcamp">
-    <div class="bootcamp-shell" id="bootcamp-ticket-page">
-        <section class="bootcamp-hero">
-            <div class="relative px-6 py-7 sm:px-8">
-                <div class="relative flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                    <div class="max-w-3xl">
-                        <span class="bootcamp-badge-dark">
-                            Ticket Ops Center
-                        </span>
-                        <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Pusat operasional bootcamp dan tiket</h1>
-                        <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-gray-400 sm:text-base">
-                            Semua program, batch, publish, kuota, mentor, dan alur penjualan dipantau dari sini. Tampilan dosen dibuat seragam, tetapi panel admin tetap menampung data seluruh bootcamp dan tiket yang aktif.
-                        </p>
-                        <div class="mt-5 flex flex-wrap gap-2 text-xs">
-                            <span class="rounded-full bg-slate-900 px-3 py-1.5 font-semibold text-white dark:bg-white dark:text-slate-900">All Program View</span>
-                            <span class="rounded-full bg-blue-50 px-3 py-1.5 font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">Admin Owned</span>
-                            <span class="rounded-full bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">Publish + Sales</span>
-                        </div>
-                    </div>
-
-                    <div class="bootcamp-toolbar xl:w-[420px]">
-                        <button id="bootcampCreateBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Buat Bootcamp
-                        </button>
-                        <button id="ticketSalesToggleBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m9-4a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Buka Penjualan Tiket
-                        </button>
-                        <button id="bootcampExportBtn" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-900">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h6m-2 8l-4-4m0 0l4-4m-4 4h14" />
-                            </svg>
-                            Export Batch
-                        </button>
-                    </div>
+    <div class="space-y-6" id="bootcamp-ticket-page" data-action-base="{{ url('/admin/bootcamp-tiket') }}">
+        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div class="max-w-3xl">
+                    <span class="inline-flex rounded-full bg-slate-900 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] text-white">Ticket Ops Center</span>
+                    <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Pusat operasional bootcamp dan tiket</h1>
+                    <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                        Kelola program, batch/event, publish, kuota, mentor, dan export operasional dari data backend. Tiket atau bootcamp dapat dibuka untuk penjualan setelah statusnya Open Registration atau Published.
+                    </p>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-3 xl:w-[460px]">
+                    <button type="button" data-modal-open="create" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">+ Buat Bootcamp</button>
+                    <button type="button" data-focus-ticket class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">Atur Tiket</button>
+                    <a href="{{ route('admin.bootcamp-tiket.export') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white">Export Batch</a>
                 </div>
             </div>
         </section>
 
+        @if ($errors->any())
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+                <p class="font-semibold">Data belum bisa disimpan.</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             @foreach ($bootcampStats as $item)
-                <article class="bootcamp-kpi-card">
-                    <div class="h-1.5 bg-gradient-to-r {{ $item['tone'] }}"></div>
+                <article class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="h-1.5 bg-gradient-to-r {{ $item['tone'] ?? 'from-blue-500 to-blue-600' }}"></div>
                     <div class="p-5">
-                        <p class="bootcamp-label">{{ $item['label'] }}</p>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ $item['value'] }}</p>
-                        <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">{{ $item['helper'] }}</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.20em] text-slate-400">{{ $item['label'] ?? '-' }}</p>
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">{{ $item['value'] ?? 0 }}</p>
+                        <p class="mt-2 text-sm text-slate-500">{{ $item['helper'] ?? '' }}</p>
                     </div>
                 </article>
             @endforeach
         </section>
 
         <section class="grid gap-6 2xl:grid-cols-[1.45fr_0.95fr]">
-            <div class="bootcamp-panel p-5">
-                <div class="flex flex-col gap-3 border-b border-slate-200 pb-4 dark:border-gray-700 sm:flex-row sm:items-end sm:justify-between">
+            <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p class="bootcamp-label">Program Aktif</p>
-                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Semua bootcamp dan tiket yang sedang dipantau</h2>
+                        <p class="text-xs font-bold uppercase tracking-[0.20em] text-slate-400">Program Aktif</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-900">Semua bootcamp dan tiket yang sedang dipantau</h2>
                     </div>
-                    <div class="flex flex-wrap gap-2 text-xs">
-                        <span class="rounded-full bg-slate-100 px-3 py-1.5 font-semibold text-slate-600 dark:bg-gray-900/60 dark:text-gray-300">Frontend Preview</span>
-                        <span class="rounded-full bg-blue-50 px-3 py-1.5 font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">Admin Owned</span>
-                    </div>
+                    <p class="text-sm text-slate-500">Data berasal dari backend.</p>
                 </div>
-
                 <div class="mt-5 grid gap-4" id="bootcampProgramList">
-                    @foreach ($bootcampPrograms as $program)
-                        <article
-                            class="bootcamp-program-card p-5"
+                    @forelse ($bootcampPrograms as $program)
+                        <article class="bootcamp-program-card rounded-3xl border border-slate-200 bg-white p-5 transition hover:border-blue-200 hover:shadow-md"
                             data-bootcamp-card="true"
                             data-program-id="{{ $program['id'] }}"
-                            data-program-type="{{ $program['type'] }}"
+                            data-program-type="{{ $program['program_type'] ?? 'bootcamp' }}"
                             data-title="{{ $program['title'] }}"
                             data-batch="{{ $program['batch'] }}"
+                            data-status-key="{{ $program['status_key'] ?? 'draft' }}"
                             data-status="{{ $program['status'] }}"
                             data-mentor="{{ $program['mentor'] }}"
                             data-seats="{{ $program['seats'] }}"
+                            data-seat-total="{{ $program['seat_total'] ?? 0 }}"
                             data-price="{{ $program['price'] }}"
                             data-schedule="{{ $program['schedule'] }}"
                             data-risk="{{ $program['risk'] }}"
-                            data-accent="{{ $program['accent'] }}"
-                        >
+                            data-mentor-ids='@json($program["mentor_ids"] ?? [])'
+                            data-external-mentor-ids='@json($program["external_mentor_ids"] ?? [])'>
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                <div class="min-w-0">
+                                <div>
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <span class="inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] {{ $program['accent'] }}">{{ $program['type'] }}</span>
-                                        <span class="text-xs font-medium text-slate-500 dark:text-gray-400">{{ $program['batch'] }}</span>
+                                        <span class="inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] {{ $program['accent'] ?? 'bg-sky-50 text-sky-700 border-sky-200' }}">{{ $program['type'] }}</span>
+                                        <span class="text-xs font-medium text-slate-500">{{ $program['batch'] }}</span>
                                     </div>
-                                    <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{{ $program['title'] }}</h3>
-                                    <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">{{ $program['schedule'] }}</p>
+                                    <h3 class="mt-3 text-lg font-semibold text-slate-900">{{ $program['title'] }}</h3>
+                                    <p class="mt-2 text-sm text-slate-500">{{ $program['schedule'] }}</p>
+                                    @if (!empty($program['badges']))
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            @foreach ($program['badges'] as $badge)
+                                                <span class="rounded-full px-3 py-1 text-[11px] font-semibold {{ $badge['tone'] ?? 'bg-slate-100 text-slate-600' }}">{{ $badge['label'] }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="grid gap-2 text-left text-sm lg:min-w-[180px] lg:text-right">
-                                    <p class="font-semibold text-slate-900 dark:text-white">{{ $program['price'] }}</p>
-                                    <p class="text-slate-500 dark:text-gray-400" data-card-seats="true">{{ $program['seats'] }}</p>
-                                    <p class="text-xs font-medium text-amber-600 dark:text-amber-300" data-card-risk="true">{{ $program['risk'] }}</p>
+                                    <p class="font-semibold text-slate-900">{{ $program['price'] }}</p>
+                                    <p class="text-slate-500">{{ $program['seats'] }}</p>
+                                    <p class="text-xs font-medium text-amber-600 whitespace-pre-line">{{ $program['risk'] }}</p>
                                 </div>
                             </div>
-
-                            <div class="bootcamp-mini-grid mt-4">
-                                <div class="bootcamp-mini-stat">
-                                    <p class="bootcamp-label">Status</p>
-                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-status="true">{{ $program['status'] }}</p>
-                                </div>
-                                <div class="bootcamp-mini-stat">
-                                    <p class="bootcamp-label">Mentor</p>
-                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-mentor="true">{{ $program['mentor'] }}</p>
-                                </div>
-                                <div class="bootcamp-mini-stat">
-                                    <p class="bootcamp-label">Seat</p>
-                                    <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-seats="true">{{ $program['seats'] }}</p>
-                                </div>
-                                <div class="bootcamp-mini-stat">
-                                    <p class="bootcamp-label">Operasi</p>
-                                    <div class="mt-2 flex flex-wrap gap-2">
-                                        <button type="button" data-action="manage-batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
-                                        <button type="button" data-action="assign-mentor" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
-                                    </div>
-                                </div>
+                            <div class="mt-4 grid gap-3 md:grid-cols-4">
+                                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Status</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['status'] }}</p></div>
+                                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Mentor</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['mentor'] }}</p></div>
+                                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Seat</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['seats'] }}</p></div>
+                                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Operasi</p><div class="mt-2 flex flex-wrap gap-2"><button type="button" data-modal-open="batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Kelola Batch</button><button type="button" data-modal-open="mentor" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">Assign Mentor</button>@if (in_array($program['status_key'] ?? 'draft', ['open_registration', 'published'], true))<form method="POST" action="{{ route('admin.bootcamp-tiket.sales.close', $program['id']) }}">@csrf @method('PUT')<button type="submit" class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white">Tutup Penjualan</button></form>@else<form method="POST" action="{{ route('admin.bootcamp-tiket.sales.open', $program['id']) }}">@csrf @method('PUT')<button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">Buka Penjualan</button></form>@endif</div></div>
                             </div>
                         </article>
-                    @endforeach
+                    @empty
+                        <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                            <p class="font-semibold text-slate-900">Belum ada program bootcamp atau tiket.</p>
+                            <p class="mt-2 text-sm text-slate-500">Klik Buat Bootcamp untuk membuat draft pertama dari backend.</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
             <div class="space-y-6">
-                <section class="bootcamp-panel p-5">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="bootcamp-label">Ops Board</p>
-                            <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Prioritas Operasional</h2>
-                        </div>
-                        <span class="rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">9 action items</span>
-                    </div>
-
+                <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p class="text-xs font-bold uppercase tracking-[0.20em] text-slate-400">Ops Board</p>
+                    <h2 class="mt-2 text-lg font-semibold text-slate-900">Prioritas Operasional</h2>
                     <div class="mt-4 grid gap-3">
                         @foreach ($opsBoard as $item)
-                            <div class="rounded-2xl border border-slate-200 {{ $item['tone'] }} px-4 py-3 dark:border-gray-700">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div>
-                                        <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $item['label'] }}</p>
-                                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">{{ $item['helper'] }}</p>
-                                    </div>
-                                    <span class="text-xl font-bold text-slate-900 dark:text-white">{{ $item['count'] }}</span>
-                                </div>
+                            <div class="rounded-2xl border border-slate-200 {{ $item['tone'] ?? 'bg-slate-50' }} px-4 py-3">
+                                <div class="flex items-start justify-between gap-3"><div><p class="text-sm font-semibold text-slate-900">{{ $item['label'] }}</p><p class="mt-1 text-xs text-slate-500">{{ $item['helper'] }}</p></div><span class="text-xl font-bold text-slate-900">{{ $item['count'] }}</span></div>
                             </div>
                         @endforeach
                     </div>
                 </section>
-
-                <section class="bootcamp-panel p-5">
-                    <div>
-                        <p class="bootcamp-label">Funnel Tiket</p>
-                        <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Revenue Conversion</h2>
-                    </div>
+                <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p class="text-xs font-bold uppercase tracking-[0.20em] text-slate-400">Funnel Tiket</p>
+                    <h2 class="mt-2 text-lg font-semibold text-slate-900">Revenue Conversion</h2>
                     <div class="mt-4 space-y-3">
                         @foreach ($ticketFlows as $flow)
-                            <div class="rounded-2xl border border-slate-200 px-4 py-3 dark:border-gray-700">
-                                <div class="flex items-center justify-between gap-3">
-                                    <div>
-                                        <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $flow['name'] }}</p>
-                                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">{{ $flow['note'] }}</p>
-                                    </div>
-                                    <span class="text-lg font-bold text-slate-900 dark:text-white">{{ $flow['value'] }}</span>
-                                </div>
-                            </div>
+                            <div class="rounded-2xl border border-slate-200 px-4 py-3"><div class="flex items-center justify-between gap-3"><div><p class="text-sm font-semibold text-slate-900">{{ $flow['name'] }}</p><p class="mt-1 text-xs text-slate-500">{{ $flow['note'] }}</p></div><span class="text-lg font-bold text-slate-900">{{ $flow['value'] }}</span></div></div>
                         @endforeach
                     </div>
                 </section>
-
-                <section class="bootcamp-panel p-5">
-                    <div>
-                        <p class="bootcamp-label">Mentor Roster</p>
-                        <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Distribusi Pengampu</h2>
-                    </div>
+                <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p class="text-xs font-bold uppercase tracking-[0.20em] text-slate-400">Mentor Roster</p>
+                    <h2 class="mt-2 text-lg font-semibold text-slate-900">Distribusi Pengampu</h2>
                     <div class="mt-4 space-y-3">
-                        @foreach ($mentorRows as $mentor)
-                            <div class="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-3 dark:border-gray-700">
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $mentor['name'] }}</p>
-                                    <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">{{ $mentor['role'] }}</p>
-                                    <p class="mt-2 text-xs font-medium text-slate-600 dark:text-gray-300">{{ $mentor['load'] }}</p>
-                                </div>
-                                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600 dark:bg-gray-900/60 dark:text-gray-300">{{ $mentor['status'] }}</span>
-                            </div>
-                        @endforeach
+                        @forelse ($mentorRows as $mentor)
+                            <div class="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-3"><div><p class="text-sm font-semibold text-slate-900">{{ $mentor['name'] }}</p><p class="mt-1 text-xs text-slate-500">{{ $mentor['role'] }}</p><p class="mt-2 text-xs font-medium text-slate-600">{{ $mentor['load'] }}</p></div><span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600">{{ $mentor['status'] }}</span></div>
+                        @empty
+                            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">Belum ada mentor yang ditugaskan.</div>
+                        @endforelse
                     </div>
                 </section>
             </div>
         </section>
     </div>
-
     <div id="bootcampCreateModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" data-modal-close="create"></div>
         <div class="relative flex min-h-full items-start justify-center px-4 py-4 sm:items-center sm:py-6">
-            <div class="flex w-full max-w-2xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
-                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-gray-700">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Frontend Draft</p>
-                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Buat Bootcamp Baru</h2>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Data akan ditambahkan ke daftar program secara lokal di halaman ini.</p>
-                    </div>
-                    <button id="bootcampModalCloseBtn" type="button" class="rounded-2xl border border-slate-200 p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <form id="bootcampCreateForm" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+            <div class="flex w-full max-w-3xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Backend Form</p><h2 class="mt-2 text-xl font-semibold text-slate-900">Buat Bootcamp / Tiket Baru</h2><p class="mt-1 text-sm text-slate-500">Data disimpan ke database sebagai draft.</p></div><button type="button" data-modal-close="create" class="rounded-2xl border border-slate-200 p-2 text-slate-500">X</button></div>
+                <form method="POST" action="{{ route('admin.bootcamp-tiket.store') }}" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+                    @csrf
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Nama Program</span>
-                            <input name="title" type="text" required placeholder="Bootcamp Product Management" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tipe</span>
-                            <select name="type" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                                <option value="Bootcamp">Bootcamp</option>
-                                <option value="Tiket Event">Tiket Event</option>
-                            </select>
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Batch / Event</span>
-                            <input name="batch" type="text" required placeholder="Batch Juni 2026" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Harga</span>
-                            <input name="price" type="text" required placeholder="Rp 1.250.000" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Mentor</span>
-                            <input name="mentor" type="text" required placeholder="2 mentor" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Seat</span>
-                            <input name="seats" type="text" required placeholder="0 / 40 kursi" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                        </label>
+                        <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Nama Program</span><input name="title" type="text" required value="{{ old('title') }}" placeholder="Bootcamp Product Management" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"></label>
+                        <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tipe</span><select name="program_type" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"><option value="bootcamp" @selected(old('program_type') === 'bootcamp')>Bootcamp</option><option value="ticketed_event" @selected(old('program_type') === 'ticketed_event')>Tiket Event</option></select></label>
+                        <label class="block"><span data-batch-label class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Nama Batch</span><input name="batch" data-batch-input type="text" required value="{{ old('batch') }}" placeholder="Batch Juni 2026" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"><p class="mt-1 text-xs text-slate-500">Label otomatis menyesuaikan tipe program.</p></label>
+                        <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Harga</span><input name="price" type="text" required value="{{ old('price') }}" data-rupiah-input placeholder="Rp 1.250.000" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></label>
+                        <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Kapasitas Seat</span><input name="seat_capacity" type="number" required min="1" max="100000" value="{{ old('seat_capacity') }}" placeholder="40" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"><p class="mt-1 text-xs text-slate-500">Hanya angka. Disimpan sebagai 0 / kapasitas kursi.</p></label>
+                        <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tanggal</span><input name="schedule_date" type="date" required value="{{ old('schedule_date') }}" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></label>
+                        <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Jam Mulai</span><input name="schedule_start_time" type="time" required value="{{ old('schedule_start_time') }}" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></label>
+                        <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Jam Selesai</span><input name="schedule_end_time" type="time" value="{{ old('schedule_end_time') }}" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></label>
                     </div>
-
-                    <label class="block">
-                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Jadwal</span>
-                        <input name="schedule" type="text" required placeholder="Selasa & Kamis, 19.00 - 21.00" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                    </label>
-
-                    <label class="block">
-                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Risiko</span>
-                        <textarea name="risk" rows="3" required placeholder="Contoh: mentor cadangan belum ditentukan" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white"></textarea>
-                    </label>
-
-                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-gray-700 sm:flex-row sm:justify-end">
-                        <button id="bootcampModalCancelBtn" type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/60">
-                            Batal
-                        </button>
-                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
-                            Simpan Draft Frontend
-                        </button>
-                    </div>
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4"><div class="grid gap-4 md:grid-cols-2">
+                        <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Internal</span><select name="mentor_user_ids[]" multiple size="6" data-enhanced-multiselect data-placeholder="Cari dosen aktif..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">@foreach ($availableMentors as $mentor)<option value="{{ $mentor->id }}" @selected(in_array($mentor->id, old('mentor_user_ids', [])))>{{ $mentor->name }}</option>@endforeach</select><p class="mt-1 text-xs text-slate-500">Sumber data dari user role dosen. Admin tidak ditampilkan.</p></label>
+                        <div class="space-y-4"><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Role Mentor</span><input name="mentor_role" type="text" value="{{ old('mentor_role', 'mentor') }}" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"></label><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Eksternal Tersimpan</span><select name="external_mentor_ids[]" multiple size="4" data-enhanced-multiselect data-placeholder="Cari mentor eksternal..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">@foreach ($externalMentors as $mentor)<option value="{{ $mentor->id_external_mentor }}" @selected(in_array($mentor->id_external_mentor, old('external_mentor_ids', [])))>{{ $mentor->name }}{{ $mentor->expertise ? ' - ' . $mentor->expertise : '' }}</option>@endforeach</select></label><div class="rounded-2xl border border-dashed border-slate-300 bg-white p-3"><p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tambah Mentor Eksternal Baru</p><div class="grid gap-2"><input name="external_name" type="text" value="{{ old('external_name') }}" placeholder="Nama mentor luar" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_email" type="email" value="{{ old('external_email') }}" placeholder="Email opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_expertise" type="text" value="{{ old('external_expertise') }}" placeholder="Keahlian / topik" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_institution" type="text" value="{{ old('external_institution') }}" placeholder="Institusi opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></div></div></div>
+                    </div></div>
+                    <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Catatan Risiko</span><textarea name="risk" rows="3" placeholder="Contoh: mentor cadangan belum ditentukan" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">{{ old('risk') }}</textarea></label>
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end"><button type="button" data-modal-close="create" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Batal</button><button type="submit" class="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">Simpan Draft</button></div>
                 </form>
             </div>
         </div>
     </div>
-
     <div id="bootcampBatchModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"></div>
-        <div class="relative flex min-h-full items-start justify-center px-4 py-4 sm:items-center sm:py-6">
-            <div class="flex w-full max-w-2xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
-                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-gray-700">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Batch Ops</p>
-                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Kelola Batch</h2>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Ubah status batch dan catatan risiko langsung dari halaman admin.</p>
-                    </div>
-                    <button id="bootcampBatchModalCloseBtn" type="button" class="rounded-2xl border border-slate-200 p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" data-modal-close="batch"></div>
+        <div class="relative flex min-h-full items-start justify-center px-4 py-4 sm:items-center sm:py-6"><div class="flex w-full max-w-xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Batch Ops</p><h2 class="mt-2 text-xl font-semibold text-slate-900">Kelola Batch</h2><p class="mt-1 text-sm text-slate-500" id="batchModalProgramMeta">Program</p></div><button type="button" data-modal-close="batch" class="rounded-2xl border border-slate-200 p-2 text-slate-500">X</button></div>
+            <form id="bootcampBatchForm" method="POST" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+                @csrf @method('PUT')
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Status Batch</span><select name="status" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">@foreach ($statusOptions as $key => $label)<option value="{{ $key }}">{{ $label }}</option>@endforeach</select></label>
+                    <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Kapasitas Seat</span><input name="seat_capacity" type="number" required min="1" max="100000" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></label>
                 </div>
-
-                <form id="bootcampBatchForm" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
-                    <div class="rounded-2xl bg-slate-50 px-4 py-4 dark:bg-gray-900/50">
-                        <p class="text-sm font-semibold text-slate-900 dark:text-white" id="batchModalProgramTitle">Program</p>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" id="batchModalProgramMeta">Batch</p>
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status Batch</span>
-                            <select name="status" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                                <option value="Draft">Draft</option>
-                                <option value="Internal Review">Internal Review</option>
-                                <option value="Open Registration">Open Registration</option>
-                                <option value="Published">Published</option>
-                                <option value="Registration Closed">Registration Closed</option>
-                            </select>
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Seat Batch</span>
-                            <input name="seats" type="text" placeholder="72 / 90 kursi" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                        </label>
-                    </div>
-
-                    <label class="block">
-                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Risiko</span>
-                        <textarea name="risk" rows="3" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white"></textarea>
-                    </label>
-
-                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-gray-700 sm:flex-row sm:justify-end">
-                        <button id="bootcampBatchModalCancelBtn" type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/60">
-                            Batal
-                        </button>
-                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100">
-                            Simpan Update Batch
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Catatan Risiko</span><textarea name="risk" rows="4" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></textarea></label>
+                <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end"><button type="button" data-modal-close="batch" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Batal</button><button type="submit" class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white">Simpan Update Batch</button></div>
+            </form>
+        </div></div>
     </div>
 
     <div id="bootcampMentorModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"></div>
-        <div class="relative flex min-h-full items-start justify-center px-4 py-4 sm:items-center sm:py-6">
-            <div class="flex w-full max-w-xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
-                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-gray-700">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Mentor Ops</p>
-                        <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Assign Mentor</h2>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Update jumlah mentor atau assign speaker untuk program yang dipilih.</p>
-                    </div>
-                    <button id="bootcampMentorModalCloseBtn" type="button" class="rounded-2xl border border-slate-200 p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" data-modal-close="mentor"></div>
+        <div class="relative flex min-h-full items-start justify-center px-4 py-4 sm:items-center sm:py-6"><div class="flex w-full max-w-2xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Mentor Ops</p><h2 class="mt-2 text-xl font-semibold text-slate-900">Assign Mentor</h2><p class="mt-1 text-sm text-slate-500" id="mentorModalProgramMeta">Program</p></div><button type="button" data-modal-close="mentor" class="rounded-2xl border border-slate-200 p-2 text-slate-500">X</button></div>
+            <form id="bootcampMentorForm" method="POST" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+                @csrf
+                <div class="grid gap-4 md:grid-cols-2">
+                    <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Internal</span><select name="mentor_user_ids[]" multiple size="7" data-enhanced-multiselect data-placeholder="Cari dosen aktif..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">@foreach ($availableMentors as $mentor)<option value="{{ $mentor->id }}">{{ $mentor->name }}</option>@endforeach</select><p class="mt-1 text-xs text-slate-500">Hanya role dosen. Mentor luar isi sebelah kanan.</p></label>
+                    <div class="space-y-4"><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Role Mentor</span><input name="mentor_role" type="text" value="mentor" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></label><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Eksternal Tersimpan</span><select name="external_mentor_ids[]" multiple size="4" data-enhanced-multiselect data-placeholder="Cari mentor eksternal..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">@foreach ($externalMentors as $mentor)<option value="{{ $mentor->id_external_mentor }}">{{ $mentor->name }}{{ $mentor->expertise ? ' - ' . $mentor->expertise : '' }}</option>@endforeach</select></label><div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-3"><p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tambah Mentor Eksternal Baru</p><div class="grid gap-2"><input name="external_name" type="text" placeholder="Nama mentor luar" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_email" type="email" placeholder="Email opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_expertise" type="text" placeholder="Keahlian / topik" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_institution" type="text" placeholder="Institusi opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></div></div></div>
                 </div>
-
-                <form id="bootcampMentorForm" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
-                    <div class="rounded-2xl bg-slate-50 px-4 py-4 dark:bg-gray-900/50">
-                        <p class="text-sm font-semibold text-slate-900 dark:text-white" id="mentorModalProgramTitle">Program</p>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-gray-400" id="mentorModalProgramMeta">Batch</p>
-                    </div>
-
-                    <label class="block">
-                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Label Mentor</span>
-                        <input name="mentor" type="text" placeholder="4 mentor" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                    </label>
-
-                    <label class="block">
-                        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Catatan Penugasan</span>
-                        <textarea name="risk" rows="3" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white"></textarea>
-                    </label>
-
-                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-gray-700 sm:flex-row sm:justify-end">
-                        <button id="bootcampMentorModalCancelBtn" type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/60">
-                            Batal
-                        </button>
-                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
-                            Simpan Mentor
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Catatan Penugasan</span><textarea name="risk" rows="3" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></textarea></label>
+                <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end"><button type="button" data-modal-close="mentor" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Batal</button><button type="submit" class="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">Simpan Mentor</button></div>
+            </form>
+        </div></div>
     </div>
-
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const createBtn = document.getElementById('bootcampCreateBtn');
-                const salesToggleBtn = document.getElementById('ticketSalesToggleBtn');
-                const exportBtn = document.getElementById('bootcampExportBtn');
-                const modal = document.getElementById('bootcampCreateModal');
-                const modalCloseBtn = document.getElementById('bootcampModalCloseBtn');
-                const modalCancelBtn = document.getElementById('bootcampModalCancelBtn');
-                const createForm = document.getElementById('bootcampCreateForm');
-                const programList = document.getElementById('bootcampProgramList');
-                const pageRoot = document.getElementById('bootcamp-ticket-page');
-                const batchModal = document.getElementById('bootcampBatchModal');
-                const batchModalCloseBtn = document.getElementById('bootcampBatchModalCloseBtn');
-                const batchModalCancelBtn = document.getElementById('bootcampBatchModalCancelBtn');
+                const root = document.getElementById('bootcamp-ticket-page');
+                if (!root) return;
+                const actionBase = root.dataset.actionBase;
+                const modals = { create: document.getElementById('bootcampCreateModal'), batch: document.getElementById('bootcampBatchModal'), mentor: document.getElementById('bootcampMentorModal') };
                 const batchForm = document.getElementById('bootcampBatchForm');
-                const batchModalProgramTitle = document.getElementById('batchModalProgramTitle');
-                const batchModalProgramMeta = document.getElementById('batchModalProgramMeta');
-                const mentorModal = document.getElementById('bootcampMentorModal');
-                const mentorModalCloseBtn = document.getElementById('bootcampMentorModalCloseBtn');
-                const mentorModalCancelBtn = document.getElementById('bootcampMentorModalCancelBtn');
                 const mentorForm = document.getElementById('bootcampMentorForm');
-                const mentorModalProgramTitle = document.getElementById('mentorModalProgramTitle');
-                const mentorModalProgramMeta = document.getElementById('mentorModalProgramMeta');
-
-                if (!createBtn || !salesToggleBtn || !exportBtn || !modal || !createForm || !programList || !pageRoot || !batchModal || !batchForm || !mentorModal || !mentorForm) {
-                    return;
-                }
-
-                const accentByType = {
-                    'Bootcamp': 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20',
-                    'Tiket Event': 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20',
+                const batchMeta = document.getElementById('batchModalProgramMeta');
+                const mentorMeta = document.getElementById('mentorModalProgramMeta');
+                const openModal = (name) => { modals[name]?.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); };
+                const closeModal = (name) => { modals[name]?.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); };
+                const refreshEnhancedSelect = (select) => {
+                    if (!select || typeof select._refreshEnhancedSelect !== 'function') return;
+                    select._refreshEnhancedSelect();
                 };
+                const initEnhancedSelect = (select) => {
+                    if (select.dataset.enhancedReady === '1') return;
+                    select.dataset.enhancedReady = '1';
 
-                let ticketSalesOpen = false;
-                let activeBatchCard = null;
-                let activeMentorCard = null;
+                    const wrapper = document.createElement('div');
+                    wrapper.dataset.enhancedSelect = 'true';
+                    wrapper.className = 'space-y-2';
+                    const chips = document.createElement('div');
+                    chips.className = 'flex min-h-10 flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2';
+                    const search = document.createElement('input');
+                    search.type = 'search';
+                    search.placeholder = select.dataset.placeholder || 'Cari dan pilih data...';
+                    search.className = 'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20';
+                    const optionsBox = document.createElement('div');
+                    optionsBox.className = 'max-h-52 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm';
+                    wrapper.append(chips, search, optionsBox);
+                    select.insertAdjacentElement('afterend', wrapper);
+                    select.classList.add('hidden');
 
-                const getCards = () => Array.from(programList.querySelectorAll('[data-bootcamp-card="true"]'));
-
-                const openModal = (targetModal) => {
-                    targetModal.classList.remove('hidden');
-                    document.body.classList.add('overflow-hidden');
-                };
-
-                const closeModal = (targetModal) => {
-                    targetModal.classList.add('hidden');
-                    document.body.classList.remove('overflow-hidden');
-                };
-
-                const getCardData = (card) => ({
-                    id: card.dataset.programId || '',
-                    type: card.dataset.programType || '',
-                    title: card.dataset.title || '',
-                    batch: card.dataset.batch || '',
-                    status: card.dataset.status || '',
-                    mentor: card.dataset.mentor || '',
-                    seats: card.dataset.seats || '',
-                    price: card.dataset.price || '',
-                    schedule: card.dataset.schedule || '',
-                    risk: card.dataset.risk || '',
-                    accent: card.dataset.accent || '',
-                });
-
-                const updateCard = (card, nextData) => {
-                    if (!card) return;
-
-                    const data = { ...getCardData(card), ...nextData };
-                    card.dataset.programId = data.id;
-                    card.dataset.programType = data.type;
-                    card.dataset.title = data.title;
-                    card.dataset.batch = data.batch;
-                    card.dataset.status = data.status;
-                    card.dataset.mentor = data.mentor;
-                    card.dataset.seats = data.seats;
-                    card.dataset.price = data.price;
-                    card.dataset.schedule = data.schedule;
-                    card.dataset.risk = data.risk;
-                    card.dataset.accent = data.accent;
-
-                    card.querySelectorAll('[data-card-status="true"]').forEach((node) => node.textContent = data.status);
-                    card.querySelectorAll('[data-card-mentor="true"]').forEach((node) => node.textContent = data.mentor);
-                    card.querySelectorAll('[data-card-seats="true"]').forEach((node) => node.textContent = data.seats);
-                    card.querySelectorAll('[data-card-risk="true"]').forEach((node) => node.textContent = data.risk);
-                };
-
-                const renderCard = (program) => {
-                    const article = document.createElement('article');
-                    article.className = 'bootcamp-program-card p-5';
-                    article.dataset.bootcampCard = 'true';
-                    article.dataset.programId = program.id;
-                    article.dataset.programType = program.type;
-                    article.dataset.title = program.title;
-                    article.dataset.batch = program.batch;
-                    article.dataset.status = program.status;
-                    article.dataset.mentor = program.mentor;
-                    article.dataset.seats = program.seats;
-                    article.dataset.price = program.price;
-                    article.dataset.schedule = program.schedule;
-                    article.dataset.risk = program.risk;
-                    article.dataset.accent = program.accent;
-
-                    article.innerHTML = `
-                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                            <div class="min-w-0">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${program.accent}">${program.type}</span>
-                                    <span class="text-xs font-medium text-slate-500 dark:text-gray-400">${program.batch}</span>
-                                </div>
-                                <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">${program.title}</h3>
-                                <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">${program.schedule}</p>
-                            </div>
-                            <div class="grid gap-2 text-left text-sm lg:min-w-[180px] lg:text-right">
-                                <p class="font-semibold text-slate-900 dark:text-white">${program.price}</p>
-                                <p class="text-slate-500 dark:text-gray-400" data-card-seats="true">${program.seats}</p>
-                                <p class="text-xs font-medium text-amber-600 dark:text-amber-300" data-card-risk="true">${program.risk}</p>
-                            </div>
-                        </div>
-                        <div class="bootcamp-mini-grid mt-4">
-                            <div class="bootcamp-mini-stat">
-                                <p class="bootcamp-label">Status</p>
-                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-status="true">${program.status}</p>
-                            </div>
-                            <div class="bootcamp-mini-stat">
-                                <p class="bootcamp-label">Mentor</p>
-                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-mentor="true">${program.mentor}</p>
-                            </div>
-                            <div class="bootcamp-mini-stat">
-                                <p class="bootcamp-label">Seat</p>
-                                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white" data-card-seats="true">${program.seats}</p>
-                            </div>
-                            <div class="bootcamp-mini-stat">
-                                <p class="bootcamp-label">Operasi</p>
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    <button type="button" data-action="manage-batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Kelola Batch</button>
-                                    <button type="button" data-action="assign-mentor" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-gray-700 dark:text-gray-300">Assign Mentor</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    return article;
-                };
-
-                const updateTicketSalesButton = () => {
-                    salesToggleBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700', 'shadow-emerald-600/20', 'bg-amber-500', 'hover:bg-amber-600', 'shadow-amber-500/20');
-                    if (ticketSalesOpen) {
-                        salesToggleBtn.classList.add('bg-amber-500', 'hover:bg-amber-600', 'shadow-amber-500/20');
-                        salesToggleBtn.innerHTML = `
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-12.728 12.728M9 9l6 6" />
-                            </svg>
-                            Tutup Penjualan Tiket
-                        `;
-                        return;
-                    }
-
-                    salesToggleBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'shadow-emerald-600/20');
-                    salesToggleBtn.innerHTML = `
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2m9-4a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Buka Penjualan Tiket
-                    `;
-                };
-
-                const updateTicketCards = () => {
-                    getCards()
-                        .filter((card) => card.dataset.programType === 'Tiket Event')
-                        .forEach((card) => {
-                            const nextStatus = ticketSalesOpen ? 'Published' : 'Registration Closed';
-                            updateCard(card, { status: nextStatus });
+                    const render = () => {
+                        const selectedOptions = Array.from(select.selectedOptions);
+                        chips.innerHTML = '';
+                        if (selectedOptions.length === 0) {
+                            const empty = document.createElement('span');
+                            empty.className = 'text-xs text-slate-400';
+                            empty.textContent = 'Belum ada mentor dipilih';
+                            chips.appendChild(empty);
+                        }
+                        selectedOptions.forEach((option) => {
+                            const chip = document.createElement('button');
+                            chip.type = 'button';
+                            chip.dataset.removeValue = option.value;
+                            chip.className = 'inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700';
+                            chip.textContent = option.textContent.trim();
+                            const close = document.createElement('span');
+                            close.textContent = 'x';
+                            close.className = 'text-blue-400';
+                            chip.appendChild(close);
+                            chips.appendChild(chip);
                         });
-                };
 
-                const openBatchModal = (card) => {
-                    activeBatchCard = card;
-                    const data = getCardData(card);
-                    batchModalProgramTitle.textContent = data.title;
-                    batchModalProgramMeta.textContent = `${data.batch} • ${data.type}`;
-                    batchForm.elements.status.value = data.status;
-                    batchForm.elements.seats.value = data.seats;
-                    batchForm.elements.risk.value = data.risk;
-                    openModal(batchModal);
-                };
-
-                const openMentorModal = (card) => {
-                    activeMentorCard = card;
-                    const data = getCardData(card);
-                    mentorModalProgramTitle.textContent = data.title;
-                    mentorModalProgramMeta.textContent = `${data.batch} • ${data.type}`;
-                    mentorForm.elements.mentor.value = data.mentor;
-                    mentorForm.elements.risk.value = data.risk;
-                    openModal(mentorModal);
-                };
-
-                const exportPrograms = () => {
-                    const rows = getCards().map((card) => ({
-                        title: card.dataset.title || '',
-                        type: card.dataset.programType || '',
-                        batch: card.dataset.batch || '',
-                        status: card.dataset.status || '',
-                        mentor: card.dataset.mentor || '',
-                        seats: card.dataset.seats || '',
-                        price: card.dataset.price || '',
-                        schedule: card.dataset.schedule || '',
-                        risk: card.dataset.risk || '',
-                    }));
-
-                    const header = ['Program', 'Tipe', 'Batch', 'Status', 'Mentor', 'Seat', 'Harga', 'Jadwal', 'Risiko'];
-                    const csvLines = [
-                        header.join(','),
-                        ...rows.map((row) => [
-                            row.title,
-                            row.type,
-                            row.batch,
-                            row.status,
-                            row.mentor,
-                            row.seats,
-                            row.price,
-                            row.schedule,
-                            row.risk,
-                        ].map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')),
-                    ];
-
-                    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `bootcamp-batch-${new Date().toISOString().slice(0, 10)}.csv`;
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    URL.revokeObjectURL(link.href);
-
-                    showAppAlert('Data batch frontend berhasil diexport ke CSV.', 'success', 'Export Selesai', { toast: true });
-                };
-
-                createBtn.addEventListener('click', () => openModal(modal));
-                modalCloseBtn?.addEventListener('click', () => closeModal(modal));
-                modalCancelBtn?.addEventListener('click', () => closeModal(modal));
-                batchModalCloseBtn?.addEventListener('click', () => closeModal(batchModal));
-                batchModalCancelBtn?.addEventListener('click', () => closeModal(batchModal));
-                mentorModalCloseBtn?.addEventListener('click', () => closeModal(mentorModal));
-                mentorModalCancelBtn?.addEventListener('click', () => closeModal(mentorModal));
-
-                [modal, batchModal, mentorModal].forEach((targetModal) => {
-                    targetModal.addEventListener('click', (event) => {
-                        if (event.target === targetModal || event.target === targetModal.firstElementChild) {
-                            closeModal(targetModal);
+                        const term = search.value.trim().toLowerCase();
+                        const options = Array.from(select.options).filter((option) => option.textContent.toLowerCase().includes(term));
+                        optionsBox.innerHTML = '';
+                        if (options.length === 0) {
+                            const empty = document.createElement('p');
+                            empty.className = 'px-3 py-2 text-sm text-slate-400';
+                            empty.textContent = 'Tidak ada data yang cocok';
+                            optionsBox.appendChild(empty);
+                            return;
                         }
-                    });
-                });
-
-                programList.addEventListener('click', (event) => {
-                    const button = event.target.closest('button[data-action]');
-                    const card = event.target.closest('[data-bootcamp-card="true"]');
-
-                    if (!button || !card) {
-                        return;
-                    }
-
-                    if (button.dataset.action === 'manage-batch') {
-                        openBatchModal(card);
-                    }
-
-                    if (button.dataset.action === 'assign-mentor') {
-                        openMentorModal(card);
-                    }
-                });
-
-                document.addEventListener('keydown', (event) => {
-                    if (event.key !== 'Escape') {
-                        return;
-                    }
-
-                    [modal, batchModal, mentorModal].forEach((targetModal) => {
-                        if (!targetModal.classList.contains('hidden')) {
-                            closeModal(targetModal);
-                        }
-                    });
-                });
-
-                batchForm.addEventListener('submit', (event) => {
-                    event.preventDefault();
-
-                    if (!activeBatchCard) {
-                        return;
-                    }
-
-                    updateCard(activeBatchCard, {
-                        status: batchForm.elements.status.value.trim() || 'Draft',
-                        seats: batchForm.elements.seats.value.trim() || '0 / 0 kursi',
-                        risk: batchForm.elements.risk.value.trim() || 'Belum ada catatan risiko',
-                    });
-
-                    closeModal(batchModal);
-                    showAppAlert('Perubahan batch frontend berhasil diterapkan ke card program.', 'success', 'Batch Diperbarui', { toast: true });
-                });
-
-                mentorForm.addEventListener('submit', (event) => {
-                    event.preventDefault();
-
-                    if (!activeMentorCard) {
-                        return;
-                    }
-
-                    updateCard(activeMentorCard, {
-                        mentor: mentorForm.elements.mentor.value.trim() || '0 mentor',
-                        risk: mentorForm.elements.risk.value.trim() || 'Belum ada catatan penugasan',
-                    });
-
-                    closeModal(mentorModal);
-                    showAppAlert('Distribusi mentor frontend berhasil diupdate untuk program terpilih.', 'success', 'Mentor Diperbarui', { toast: true });
-                });
-
-                createForm.addEventListener('submit', (event) => {
-                    event.preventDefault();
-                    const formData = new FormData(createForm);
-                    const type = formData.get('type');
-                    const program = {
-                        id: `program-${Date.now()}`,
-                        title: formData.get('title')?.toString().trim() || 'Bootcamp Baru',
-                        type: type?.toString() || 'Bootcamp',
-                        batch: formData.get('batch')?.toString().trim() || 'Batch Baru',
-                        status: 'Draft',
-                        mentor: formData.get('mentor')?.toString().trim() || '0 mentor',
-                        seats: formData.get('seats')?.toString().trim() || '0 / 0 kursi',
-                        price: formData.get('price')?.toString().trim() || 'Rp 0',
-                        schedule: formData.get('schedule')?.toString().trim() || 'Jadwal belum diisi',
-                        risk: formData.get('risk')?.toString().trim() || 'Belum ada catatan risiko',
-                        accent: accentByType[type] || accentByType['Bootcamp'],
+                        options.forEach((option) => {
+                            const item = document.createElement('button');
+                            item.type = 'button';
+                            item.dataset.optionValue = option.value;
+                            item.className = `mb-1 flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${option.selected ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`;
+                            const label = document.createElement('span');
+                            label.textContent = option.textContent.trim();
+                            const marker = document.createElement('span');
+                            marker.textContent = option.selected ? 'Dipilih' : '+';
+                            marker.className = 'text-xs font-semibold';
+                            item.append(label, marker);
+                            optionsBox.appendChild(item);
+                        });
                     };
 
-                    programList.prepend(renderCard(program));
-                    createForm.reset();
-                    closeModal(modal);
-                    if (typeof window.pushAdminNotification === 'function') {
-                        window.pushAdminNotification({
-                            icon: 'success',
-                            message: `${program.type} baru dibuat`,
-                            detail: `${program.title} masuk ke daftar program dengan status ${program.status}.`,
-                        });
+                    wrapper.addEventListener('click', (event) => {
+                        const optionButton = event.target.closest('[data-option-value]');
+                        const removeButton = event.target.closest('[data-remove-value]');
+                        if (optionButton) {
+                            const option = Array.from(select.options).find((item) => item.value === optionButton.dataset.optionValue);
+                            if (option) option.selected = !option.selected;
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        if (removeButton) {
+                            const option = Array.from(select.options).find((item) => item.value === removeButton.dataset.removeValue);
+                            if (option) option.selected = false;
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                    search.addEventListener('input', render);
+                    select.addEventListener('change', render);
+                    select._refreshEnhancedSelect = render;
+                    render();
+                };
+
+                document.querySelectorAll('select[data-enhanced-multiselect]').forEach(initEnhancedSelect);
+
+                document.querySelectorAll('[data-modal-open]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const name = button.dataset.modalOpen;
+                        const card = button.closest('[data-bootcamp-card="true"]');
+                        if (name === 'batch' && card && batchForm) {
+                            batchForm.action = `${actionBase}/${card.dataset.programId}/batch`;
+                            batchForm.status.value = card.dataset.statusKey || 'draft';
+                            batchForm.seat_capacity.value = card.dataset.seatTotal || '';
+                            batchForm.risk.value = card.dataset.risk || '';
+                            batchMeta.textContent = `${card.dataset.title || 'Program'} - ${card.dataset.batch || ''}`;
+                        }
+                        if (name === 'mentor' && card && mentorForm) {
+                            mentorForm.action = `${actionBase}/${card.dataset.programId}/assign-mentor`;
+                            mentorForm.risk.value = card.dataset.risk || '';
+
+                            mentorMeta.textContent = `${card.dataset.title || 'Program'} - ${card.dataset.batch || ''}`;
+                            const selectedIds = JSON.parse(card.dataset.mentorIds || '[]').map(String);
+                            Array.from(mentorForm.querySelectorAll('select[name="mentor_user_ids[]"] option')).forEach((option) => option.selected = selectedIds.includes(option.value));
+                            const selectedExternalIds = JSON.parse(card.dataset.externalMentorIds || '[]').map(String);
+                            Array.from(mentorForm.querySelectorAll('select[name="external_mentor_ids[]"] option')).forEach((option) => option.selected = selectedExternalIds.includes(option.value));
+                            mentorForm.querySelectorAll('select[data-enhanced-multiselect]').forEach(refreshEnhancedSelect);
+                        }
+                        openModal(name);
+                    });
+                });
+
+                document.querySelectorAll('[data-modal-close]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.modalClose)));
+                document.querySelectorAll('[data-rupiah-input]').forEach((input) => input.addEventListener('input', () => {
+                    const number = input.value.replace(/\D/g, '');
+                    input.value = number ? `Rp ${new Intl.NumberFormat('id-ID').format(Number(number))}` : '';
+                }));
+                document.querySelectorAll('select[name="program_type"]').forEach((select) => {
+                    const form = select.closest('form');
+                    const label = form?.querySelector('[data-batch-label]');
+                    const input = form?.querySelector('[data-batch-input]');
+                    const updateLabel = () => {
+                        const isTicket = select.value === 'ticketed_event';
+                        if (label) label.textContent = isTicket ? 'Nama Event' : 'Nama Batch';
+                        if (input) input.placeholder = isTicket ? 'Seminar EduTech 2026' : 'Batch Juni 2026';
+                    };
+                    select.addEventListener('change', updateLabel);
+                    updateLabel();
+                });
+                document.querySelector('[data-focus-ticket]')?.addEventListener('click', () => {
+                    const ticketCard = document.querySelector('[data-program-type="ticketed_event"]');
+                    if (!ticketCard) {
+                        const createForm = modals.create?.querySelector('form');
+                        const typeSelect = createForm?.querySelector('select[name="program_type"]');
+                        if (typeSelect) {
+                            typeSelect.value = 'ticketed_event';
+                            typeSelect.dispatchEvent(new Event('change'));
+                        }
+                        openModal('create');
+                        return;
                     }
-                    showAppAlert(`Draft "${program.title}" berhasil ditambahkan ke daftar program.`, 'success', 'Draft Ditambahkan', { toast: true });
+                    ticketCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    ticketCard.classList.add('ring-4', 'ring-emerald-200');
+                    window.setTimeout(() => ticketCard.classList.remove('ring-4', 'ring-emerald-200'), 1800);
                 });
-
-                salesToggleBtn.addEventListener('click', () => {
-                    ticketSalesOpen = !ticketSalesOpen;
-                    updateTicketSalesButton();
-                    updateTicketCards();
-
-                    const message = ticketSalesOpen
-                        ? 'Penjualan tiket frontend dibuka. Status tiket event berubah menjadi Published.'
-                        : 'Penjualan tiket frontend ditutup. Status tiket event berubah menjadi Registration Closed.';
-
-                    showAppAlert(message, 'success', 'Status Tiket Diperbarui', { toast: true });
-                });
-
-                exportBtn.addEventListener('click', exportPrograms);
-
-                updateTicketSalesButton();
-                updateTicketCards();
             });
         </script>
     @endpush

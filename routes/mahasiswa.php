@@ -49,6 +49,7 @@ Route::prefix('mahasiswa')
         // Courses
         Route::get('/courses', [CourseController::class, 'myCourses'])->name('mahasiswa.courses');
         Route::get('/get-courses', [CourseController::class, 'index'])->name('mahasiswa.get-courses');
+        Route::get('/bootcamp', [CourseController::class, 'bootcampCatalog'])->name('mahasiswa.bootcamp');
         Route::get('/course/{id}', [CourseController::class, 'show'])->name('mahasiswa.course-detail');
         Route::get('/course/{id}/learn', [CourseController::class, 'learn'])->name('mahasiswa.course-learn');
         Route::post('/course/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.course.review');

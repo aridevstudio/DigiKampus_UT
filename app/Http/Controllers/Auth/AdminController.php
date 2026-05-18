@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\CertificateTemplate;
 use App\Models\Course;
 use App\Models\DosenNotification;
+use App\Models\ExternalMentor;
 use App\Models\Jurusan;
 use App\Models\Message;
 use App\Models\Notification;
@@ -398,25 +399,53 @@ class AdminController extends Controller
     public function showBootcampTiket()
     {
         $bootcamps = Bootcamp::query()
-            ->with(['mentorAssignments.user'])
+            ->with(['mentorAssignments.user', 'mentorAssignments.externalMentor', 'linkedCourse'])
             ->latest('id_bootcamp')
             ->get();
 
         $bootcampPrograms = $bootcamps->map(function (Bootcamp $bootcamp) {
             $isTicket = $bootcamp->program_type === 'ticketed_event';
+            $seatFilled = $this->bootcampSeatFilled($bootcamp);
+            $seatTotal = $this->bootcampSeatCapacity($bootcamp);
+            $price = $this->bootcampPrice($bootcamp);
+            $scheduleLabel = $this->bootcampScheduleDisplay($bootcamp);
+            $mentorLabel = $this->bootcampMentorDisplay($bootcamp);
 
             return [
                 'id' => (string) $bootcamp->id_bootcamp,
                 'title' => $bootcamp->title,
                 'type' => $isTicket ? 'Tiket Event' : 'Bootcamp',
+                'program_type' => $bootcamp->program_type,
                 'batch' => $bootcamp->batch_label,
                 'status' => $this->bootcampStatusLabel($bootcamp->status),
                 'status_key' => $bootcamp->status,
-                'mentor' => $bootcamp->mentor_label,
-                'seats' => $bootcamp->seats_label,
-                'price' => $bootcamp->price_label,
-                'schedule' => $bootcamp->schedule_label ?: 'Jadwal belum diatur',
+                'mentor' => $mentorLabel,
+                'seats' => $seatFilled . ' / ' . $seatTotal . ' kursi',
+                'price' => $this->formatBootcampRupiah($price),
+                'schedule' => $scheduleLabel,
                 'risk' => $bootcamp->risk_note ?: 'Belum ada catatan risiko',
+                'seat_filled' => $seatFilled,
+                'seat_total' => $seatTotal,
+                'price_value' => $price,
+                'schedule_date' => optional($bootcamp->schedule_date)->format('Y-m-d'),
+                'start_time' => $this->timeForInput($bootcamp->start_time),
+                'end_time' => $this->timeForInput($bootcamp->end_time),
+                'linked_course_id' => $bootcamp->linked_course_id,
+                'mentor_ids' => $bootcamp->mentorAssignments
+                    ->where('mentor_type', 'internal')
+                    ->pluck('id_user')
+                    ->filter()
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all(),
+                'external_mentor_ids' => $bootcamp->mentorAssignments
+                    ->where('mentor_type', 'external')
+                    ->pluck('id_external_mentor')
+                    ->filter()
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all(),
+                'badges' => $this->bootcampOperationalBadges($bootcamp),
                 'accent' => $isTicket
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20'
                     : 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20',
@@ -429,47 +458,48 @@ class AdminController extends Controller
             ->count();
 
         $seatSummary = $bootcamps->reduce(function (array $carry, Bootcamp $bootcamp) {
-            [$filled, $total] = $this->parseSeatLabel($bootcamp->seats_label);
-            $carry['filled'] += $filled;
-            $carry['total'] += $total;
+            $carry['filled'] += $this->bootcampSeatFilled($bootcamp);
+            $carry['total'] += $this->bootcampSeatCapacity($bootcamp);
             return $carry;
         }, ['filled' => 0, 'total' => 0]);
 
         $mentorAssignments = BootcampMentor::query()
-            ->with('user')
+            ->with(['user', 'externalMentor'])
             ->latest('id_bootcamp_mentor')
             ->get();
 
         $mentorRows = $mentorAssignments
-            ->groupBy('id_user')
-            ->map(function ($rows) {
-                $first = $rows->first();
-                $user = $first?->user;
+            ->map(function (BootcampMentor $assignment) {
+                $isExternal = $assignment->mentor_type === 'external';
+                $mentor = $isExternal ? $assignment->externalMentor : $assignment->user;
 
-                if (!$user) {
+                if (!$mentor) {
                     return null;
                 }
 
                 return [
-                    'name' => $user->name,
-                    'role' => $first->role_label ?: 'mentor',
-                    'load' => $rows->count() . ' batch aktif',
+                    'name' => $mentor->name,
+                    'role' => ($assignment->role_label ?: 'mentor') . ($isExternal ? ' eksternal' : ' internal'),
+                    'load' => BootcampMentor::query()
+                        ->where($isExternal ? 'id_external_mentor' : 'id_user', $isExternal ? $assignment->id_external_mentor : $assignment->id_user)
+                        ->count() . ' batch aktif',
                     'status' => 'Siap',
                 ];
             })
             ->filter()
-            ->take(5)
+            ->unique(fn ($row) => $row['name'] . '|' . $row['role'])
+            ->take(6)
             ->values()
             ->all();
 
         $pendingCount = $bootcamps->whereIn('status', ['draft', 'internal_review'])->count();
-        $needMentorCount = $bootcamps->filter(fn (Bootcamp $bootcamp) => blank(trim((string) $bootcamp->mentor_label)) || str_contains(strtolower((string) $bootcamp->mentor_label), '0 mentor'))->count();
-        $publishReadyCount = $bootcamps->whereIn('status', ['open_registration', 'published'])->count();
+        $needMentorCount = $bootcamps->filter(fn (Bootcamp $bootcamp) => $bootcamp->mentorAssignments->isEmpty())->count();
+        $publishReadyCount = $bootcamps->filter(fn (Bootcamp $bootcamp) => $this->isBootcampReadyForSales($bootcamp))->count();
         $opsBoard = [
             ['label' => 'Draft Baru', 'count' => $pendingCount, 'helper' => 'Perlu review admin sebelum publish', 'tone' => 'bg-slate-50 dark:bg-gray-900/40'],
             ['label' => 'Butuh Mentor', 'count' => $needMentorCount, 'helper' => 'Batch baru belum lengkap pengajar', 'tone' => 'bg-amber-50 dark:bg-amber-500/10'],
-            ['label' => 'Refund / Reschedule', 'count' => 0, 'helper' => 'Kasus peserta perlu tindak lanjut', 'tone' => 'bg-rose-50 dark:bg-rose-500/10'],
-            ['label' => 'Siap Publish', 'count' => $publishReadyCount, 'helper' => 'Konten, jadwal, kuota sudah lengkap', 'tone' => 'bg-emerald-50 dark:bg-emerald-500/10'],
+            ['label' => 'Butuh Jadwal', 'count' => $bootcamps->filter(fn (Bootcamp $bootcamp) => blank($bootcamp->schedule_date) || blank($bootcamp->start_time))->count(), 'helper' => 'Tanggal atau jam belum lengkap', 'tone' => 'bg-rose-50 dark:bg-rose-500/10'],
+            ['label' => 'Siap Publish', 'count' => $publishReadyCount, 'helper' => 'Mentor, jadwal, kuota, harga sudah lengkap', 'tone' => 'bg-emerald-50 dark:bg-emerald-500/10'],
         ];
 
         $occupancyPercent = $seatSummary['total'] > 0
@@ -477,16 +507,16 @@ class AdminController extends Controller
             : 0;
 
         $ticketFlows = [
-            ['name' => 'Landing -> Checkout', 'value' => $occupancyPercent . '%', 'note' => 'Seat occupancy tiket dan bootcamp aktif'],
-            ['name' => 'Checkout -> Paid', 'value' => max(0, $occupancyPercent - 12) . '%', 'note' => 'Perlu reminder pembayaran otomatis'],
-            ['name' => 'Paid -> Attend', 'value' => max(0, min(100, $occupancyPercent + 8)) . '%', 'note' => 'Konversi attendance estimasi operasional'],
-            ['name' => 'Attend -> Certificate', 'value' => max(0, min(100, $occupancyPercent - 5)) . '%', 'note' => 'Menunggu integrasi sertifikat final'],
+            ['name' => 'Katalog Mahasiswa', 'value' => $bootcamps->whereNotNull('linked_course_id')->count(), 'note' => 'Program yang sudah tersambung ke checkout course/tiket'],
+            ['name' => 'Open Registration', 'value' => $bootcamps->where('status', 'open_registration')->count(), 'note' => 'Bisa dibeli dari katalog mahasiswa'],
+            ['name' => 'Seat Terisi', 'value' => $occupancyPercent . '%', 'note' => 'Dihitung dari transaksi sukses linked course'],
+            ['name' => 'Registration Closed', 'value' => $bootcamps->where('status', 'registration_closed')->count(), 'note' => 'Tidak bisa dibeli sampai dibuka lagi'],
         ];
 
         $bootcampStats = [
             ['label' => 'Bootcamp Aktif', 'value' => $activeBootcampCount, 'helper' => $activeBootcampCount . ' batch berjalan', 'tone' => 'from-sky-500 to-blue-600'],
             ['label' => 'Kuota Terisi', 'value' => $seatSummary['filled'] . '/' . $seatSummary['total'], 'helper' => $occupancyPercent . '% seat occupancy', 'tone' => 'from-emerald-500 to-teal-600'],
-            ['label' => 'Mentor Aktif', 'value' => $mentorAssignments->pluck('id_user')->unique()->count(), 'helper' => 'dosen dan mentor eksternal', 'tone' => 'from-violet-500 to-fuchsia-600'],
+            ['label' => 'Mentor Aktif', 'value' => $mentorAssignments->filter(fn ($row) => $row->id_user || $row->id_external_mentor)->count(), 'helper' => 'dosen internal dan mentor eksternal', 'tone' => 'from-violet-500 to-fuchsia-600'],
             ['label' => 'Pending Approval', 'value' => $pendingCount, 'helper' => 'draft dan internal review', 'tone' => 'from-amber-500 to-orange-500'],
         ];
 
@@ -494,7 +524,12 @@ class AdminController extends Controller
             ->where('role', 'dosen')
             ->where('status', 'aktif')
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'email']);
+
+        $externalMentors = ExternalMentor::query()
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id_external_mentor', 'name', 'email', 'expertise', 'institution']);
 
         return view('Auth.admin.bootcamp-tiket', [
             'bootcampStats' => $bootcampStats,
@@ -503,53 +538,55 @@ class AdminController extends Controller
             'ticketFlows' => $ticketFlows,
             'mentorRows' => $mentorRows,
             'availableMentors' => $availableMentors,
+            'externalMentors' => $externalMentors,
         ]);
     }
 
     public function storeBootcamp(Request $request)
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'program_type' => ['required', Rule::in(['bootcamp', 'ticketed_event'])],
-            'batch' => ['required', 'string', 'max:255'],
-            'price' => ['required', 'string', 'max:100'],
-            'mentor' => ['required', 'string', 'max:100'],
-            'seats' => ['required', 'string', 'max:100'],
-            'schedule' => ['required', 'string', 'max:255'],
-            'risk' => ['required', 'string', 'max:2000'],
-            'mentor_user_id' => ['nullable', 'exists:users,id'],
-            'mentor_role' => ['nullable', 'string', 'max:100'],
-        ]);
+        $validated = $this->validateBootcampPayload($request);
+        $mentorIds = $this->normalizeIdList($validated['mentor_user_ids'] ?? []);
+        $externalMentorIds = $this->normalizeIdList($validated['external_mentor_ids'] ?? []);
+        $createdExternalMentor = $this->createExternalMentorFromRequest($request);
+        if ($createdExternalMentor) {
+            $externalMentorIds[] = $createdExternalMentor->id_external_mentor;
+            $externalMentorIds = array_values(array_unique($externalMentorIds));
+        }
+
+        $price = $this->moneyToInteger($validated['price']);
+        $seatCapacity = (int) $validated['seat_capacity'];
+        $scheduleLabel = $this->buildBootcampScheduleLabel($validated);
+        $mentorLabel = $this->buildBootcampMentorLabel($mentorIds, $externalMentorIds);
 
         $bootcamp = Bootcamp::create([
             'program_type' => $validated['program_type'],
             'title' => $this->cleanTextInput($validated['title']),
             'batch_label' => $this->cleanTextInput($validated['batch']),
             'status' => 'draft',
-            'mentor_label' => $this->cleanTextInput($validated['mentor']),
-            'seats_label' => $this->cleanTextInput($validated['seats']),
-            'price_label' => $this->cleanTextInput($validated['price']),
-            'schedule_label' => $this->cleanTextInput($validated['schedule']),
-            'risk_note' => $this->cleanTextInput($validated['risk']),
+            'mentor_label' => $mentorLabel,
+            'seats_label' => '0 / ' . $seatCapacity . ' kursi',
+            'seat_capacity' => $seatCapacity,
+            'price_label' => $this->formatBootcampRupiah($price),
+            'price' => $price,
+            'schedule_label' => $scheduleLabel,
+            'schedule_date' => $validated['schedule_date'],
+            'start_time' => $validated['schedule_start_time'],
+            'end_time' => $validated['schedule_end_time'] ?? null,
+            'risk_note' => $this->cleanTextInput($validated['risk'] ?? ''),
             'created_by' => Auth::guard('admin')->id(),
         ]);
 
-        if (!empty($validated['mentor_user_id'])) {
-            BootcampMentor::updateOrCreate(
-                [
-                    'id_bootcamp' => $bootcamp->id_bootcamp,
-                    'id_user' => (int) $validated['mentor_user_id'],
-                ],
-                [
-                    'role_label' => $validated['mentor_role'] ?? 'mentor',
-                    'assignment_note' => $validated['risk'],
-                ]
-            );
-        }
+        $this->syncBootcampMentors(
+            $bootcamp,
+            $mentorIds,
+            $externalMentorIds,
+            $validated['mentor_role'] ?? 'mentor',
+            $bootcamp->risk_note
+        );
 
         return redirect()
             ->route('admin.bootcamp-tiket')
-            ->with('success', 'Bootcamp baru berhasil dibuat.');
+            ->with('success', 'Draft bootcamp/tiket berhasil dibuat. Buka penjualan jika sudah siap.');
     }
 
     public function updateBootcampBatch(Request $request, $id)
@@ -565,16 +602,40 @@ class AdminController extends Controller
                 'completed',
                 'archived',
             ])],
-            'seats' => ['required', 'string', 'max:100'],
+            'seat_capacity' => ['required', 'integer', 'min:1', 'max:100000'],
             'risk' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $bootcamp = Bootcamp::findOrFail($id);
-        $bootcamp->update([
+        $bootcamp = Bootcamp::with(['mentorAssignments.user', 'mentorAssignments.externalMentor'])->findOrFail($id);
+        $filled = $this->bootcampSeatFilled($bootcamp);
+        $capacity = (int) $validated['seat_capacity'];
+
+        if ($capacity < $filled) {
+            throw ValidationException::withMessages([
+                'seat_capacity' => 'Kapasitas seat tidak boleh lebih kecil dari peserta yang sudah membayar (' . $filled . ').',
+            ]);
+        }
+
+        $update = [
             'status' => $validated['status'],
-            'seats_label' => $this->cleanTextInput($validated['seats']),
+            'seat_capacity' => $capacity,
+            'seats_label' => $filled . ' / ' . $capacity . ' kursi',
             'risk_note' => $this->cleanTextInput($validated['risk'] ?? ''),
-        ]);
+        ];
+
+        if (in_array($validated['status'], ['open_registration', 'published'], true)) {
+            $update['sales_opened_at'] = $bootcamp->sales_opened_at ?? now();
+            $update['published_at'] = $bootcamp->published_at ?? now();
+        }
+
+        $bootcamp->update($update);
+        $bootcamp->refresh();
+
+        if (in_array($bootcamp->status, ['open_registration', 'published'], true)) {
+            $this->syncBootcampToCheckoutCourse($bootcamp);
+        } elseif ($bootcamp->status === 'registration_closed') {
+            $this->closeLinkedBootcampCourse($bootcamp);
+        }
 
         return redirect()
             ->route('admin.bootcamp-tiket')
@@ -584,29 +645,48 @@ class AdminController extends Controller
     public function assignBootcampMentor(Request $request, $id)
     {
         $validated = $request->validate([
-            'mentor' => ['required', 'string', 'max:100'],
             'risk' => ['nullable', 'string', 'max:2000'],
-            'mentor_user_id' => ['nullable', 'exists:users,id'],
+            'mentor_user_ids' => ['nullable', 'array'],
+            'mentor_user_ids.*' => [
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'dosen')->where('status', 'aktif')),
+            ],
+            'external_mentor_ids' => ['nullable', 'array'],
+            'external_mentor_ids.*' => ['integer', Rule::exists('external_mentors', 'id_external_mentor')->where(fn ($query) => $query->where('status', 'active'))],
             'mentor_role' => ['nullable', 'string', 'max:100'],
+            'external_name' => ['nullable', 'string', 'max:255'],
+            'external_email' => ['nullable', 'email', 'max:255'],
+            'external_phone' => ['nullable', 'string', 'max:50'],
+            'external_expertise' => ['nullable', 'string', 'max:255'],
+            'external_institution' => ['nullable', 'string', 'max:255'],
         ]);
 
         $bootcamp = Bootcamp::findOrFail($id);
+        $mentorIds = $this->normalizeIdList($validated['mentor_user_ids'] ?? []);
+        $externalMentorIds = $this->normalizeIdList($validated['external_mentor_ids'] ?? []);
+        $createdExternalMentor = $this->createExternalMentorFromRequest($request);
+        if ($createdExternalMentor) {
+            $externalMentorIds[] = $createdExternalMentor->id_external_mentor;
+            $externalMentorIds = array_values(array_unique($externalMentorIds));
+        }
+
+        $riskNote = $this->cleanTextInput($validated['risk'] ?? '');
+
         $bootcamp->update([
-            'mentor_label' => $this->cleanTextInput($validated['mentor']),
-            'risk_note' => $this->cleanTextInput($validated['risk'] ?? ''),
+            'mentor_label' => $this->buildBootcampMentorLabel($mentorIds, $externalMentorIds),
+            'risk_note' => $riskNote,
         ]);
 
-        if (!empty($validated['mentor_user_id'])) {
-            BootcampMentor::updateOrCreate(
-                [
-                    'id_bootcamp' => $bootcamp->id_bootcamp,
-                    'id_user' => (int) $validated['mentor_user_id'],
-                ],
-                [
-                    'role_label' => $validated['mentor_role'] ?? 'mentor',
-                    'assignment_note' => $validated['risk'] ?? null,
-                ]
-            );
+        $this->syncBootcampMentors(
+            $bootcamp,
+            $mentorIds,
+            $externalMentorIds,
+            $validated['mentor_role'] ?? 'mentor',
+            $riskNote
+        );
+
+        if (in_array($bootcamp->status, ['open_registration', 'published'], true)) {
+            $this->syncBootcampToCheckoutCourse($bootcamp->fresh(['mentorAssignments']));
         }
 
         return redirect()
@@ -614,6 +694,141 @@ class AdminController extends Controller
             ->with('success', 'Mentor bootcamp berhasil diperbarui.');
     }
 
+    public function openBootcampSales($id)
+    {
+        $bootcamp = Bootcamp::with(['mentorAssignments.user', 'mentorAssignments.externalMentor'])->findOrFail($id);
+
+        if (!$this->isBootcampReadyForSales($bootcamp)) {
+            throw ValidationException::withMessages([
+                'sales' => 'Lengkapi mentor, jadwal, dan kapasitas seat sebelum membuka penjualan.',
+            ]);
+        }
+
+        $bootcamp->update([
+            'status' => 'open_registration',
+            'sales_opened_at' => $bootcamp->sales_opened_at ?? now(),
+            'published_at' => $bootcamp->published_at ?? now(),
+        ]);
+
+        $this->syncBootcampToCheckoutCourse($bootcamp->fresh(['mentorAssignments']));
+
+        return redirect()
+            ->route('admin.bootcamp-tiket')
+            ->with('success', 'Penjualan bootcamp/tiket berhasil dibuka dan tersambung ke katalog mahasiswa.');
+    }
+
+    public function closeBootcampSales($id)
+    {
+        $bootcamp = Bootcamp::findOrFail($id);
+        $bootcamp->update(['status' => 'registration_closed']);
+        $this->closeLinkedBootcampCourse($bootcamp);
+
+        return redirect()
+            ->route('admin.bootcamp-tiket')
+            ->with('success', 'Penjualan bootcamp/tiket berhasil ditutup.');
+    }
+
+    public function exportBootcampBatch()
+    {
+        $bootcamps = Bootcamp::query()
+            ->with(['mentorAssignments.user', 'mentorAssignments.externalMentor', 'linkedCourse'])
+            ->orderByDesc('id_bootcamp')
+            ->get();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $summary = $spreadsheet->getActiveSheet();
+        $summary->setTitle('Ringkasan');
+        $batch = $spreadsheet->createSheet();
+        $batch->setTitle('Batch');
+        $mentor = $spreadsheet->createSheet();
+        $mentor->setTitle('Mentor');
+        $participants = $spreadsheet->createSheet();
+        $participants->setTitle('Peserta');
+
+        $seatFilled = $bootcamps->sum(fn (Bootcamp $bootcamp) => $this->bootcampSeatFilled($bootcamp));
+        $seatCapacity = $bootcamps->sum(fn (Bootcamp $bootcamp) => $this->bootcampSeatCapacity($bootcamp));
+        $revenue = $this->bootcampRevenue($bootcamps);
+        $summaryRows = [
+            ['Metrik', 'Nilai'],
+            ['Total Bootcamp', $bootcamps->where('program_type', 'bootcamp')->count()],
+            ['Total Tiket Event', $bootcamps->where('program_type', 'ticketed_event')->count()],
+            ['Seat Capacity', $seatCapacity],
+            ['Seat Terisi', $seatFilled],
+            ['Revenue', $revenue],
+        ];
+        $summary->fromArray($summaryRows, null, 'A1');
+        $summary->getStyle('A1:B1')->getFont()->setBold(true);
+
+        $batch->fromArray([['No', 'Program', 'Tipe', 'Batch/Event', 'Status', 'Harga', 'Seat Terisi', 'Seat Capacity', 'Jadwal', 'Mentor', 'Linked Course', 'Catatan']], null, 'A1');
+        foreach ($bootcamps as $index => $bootcamp) {
+            $batch->fromArray([[
+                $index + 1,
+                $bootcamp->title,
+                $bootcamp->program_type === 'ticketed_event' ? 'Tiket Event' : 'Bootcamp',
+                $bootcamp->batch_label,
+                $this->bootcampStatusLabel($bootcamp->status),
+                $this->bootcampPrice($bootcamp),
+                $this->bootcampSeatFilled($bootcamp),
+                $this->bootcampSeatCapacity($bootcamp),
+                $this->bootcampScheduleDisplay($bootcamp),
+                $this->bootcampMentorDisplay($bootcamp),
+                $bootcamp->linked_course_id,
+                $bootcamp->risk_note,
+            ]], null, 'A' . ($index + 2));
+        }
+
+        $mentor->fromArray([['No', 'Nama Mentor', 'Email', 'Tipe', 'Jumlah Batch', 'Role']], null, 'A1');
+        $mentorRows = BootcampMentor::with(['user', 'externalMentor'])->get()
+            ->groupBy(fn (BootcampMentor $row) => $row->mentor_type . ':' . ($row->mentor_type === 'external' ? $row->id_external_mentor : $row->id_user));
+        $rowIndex = 2;
+        foreach ($mentorRows as $rows) {
+            $first = $rows->first();
+            $person = $first->mentor_type === 'external' ? $first->externalMentor : $first->user;
+            if (!$person) {
+                continue;
+            }
+            $mentor->fromArray([[
+                $rowIndex - 1,
+                $person->name,
+                $person->email ?? '-',
+                $first->mentor_type === 'external' ? 'Eksternal' : 'Internal',
+                $rows->count(),
+                $first->role_label,
+            ]], null, 'A' . $rowIndex);
+            $rowIndex++;
+        }
+
+        $participants->fromArray([['No', 'Program', 'Order ID', 'Mahasiswa', 'Email', 'Status Pembayaran', 'Tanggal Bayar']], null, 'A1');
+        $participantRows = $this->bootcampParticipantRows($bootcamps);
+        foreach ($participantRows as $index => $row) {
+            $participants->fromArray([[
+                $index + 1,
+                $row['program'],
+                $row['order_id'],
+                $row['name'],
+                $row['email'],
+                $row['status'],
+                $row['paid_at'],
+            ]], null, 'A' . ($index + 2));
+        }
+
+        foreach ([$summary, $batch, $mentor, $participants] as $sheet) {
+            foreach (range('A', 'L') as $column) {
+                $sheet->getColumnDimension($column)->setAutoSize(true);
+            }
+            $sheet->getStyle('A1:L1')->getFont()->setBold(true);
+            $sheet->freezePane('A2');
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = 'Bootcamp_Tiket_' . now()->format('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
     private function bootcampStatusLabel(string $status): string
     {
         return match ($status) {
@@ -628,6 +843,37 @@ class AdminController extends Controller
         };
     }
 
+    private function validateBootcampPayload(Request $request): array
+    {
+        return $request->validate([
+            'program_type' => ['required', Rule::in(['bootcamp', 'ticketed_event'])],
+            'title' => ['required', 'string', 'max:255'],
+            'batch' => ['required', 'string', 'max:255'],
+            'price' => ['required', 'string', 'max:50'],
+            'seat_capacity' => ['required', 'integer', 'min:1', 'max:100000'],
+            'schedule_date' => ['required', 'date'],
+            'schedule_start_time' => ['required', 'date_format:H:i'],
+            'schedule_end_time' => ['nullable', 'date_format:H:i', 'after:schedule_start_time'],
+            'mentor_user_ids' => ['nullable', 'array'],
+            'mentor_user_ids.*' => [
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'dosen')->where('status', 'aktif')),
+            ],
+            'external_mentor_ids' => ['nullable', 'array'],
+            'external_mentor_ids.*' => [
+                'integer',
+                Rule::exists('external_mentors', 'id_external_mentor')->where(fn ($query) => $query->where('status', 'active')),
+            ],
+            'mentor_role' => ['nullable', 'string', 'max:100'],
+            'external_name' => ['nullable', 'string', 'max:255'],
+            'external_email' => ['nullable', 'email', 'max:255'],
+            'external_phone' => ['nullable', 'string', 'max:50'],
+            'external_expertise' => ['nullable', 'string', 'max:255'],
+            'external_institution' => ['nullable', 'string', 'max:255'],
+            'risk' => ['nullable', 'string', 'max:2000'],
+        ]);
+    }
+
     private function parseSeatLabel(?string $seatLabel): array
     {
         $label = (string) $seatLabel;
@@ -639,9 +885,344 @@ class AdminController extends Controller
         return [0, 0];
     }
 
-    /**
-     * Show Kelola Dosen page
-     */
+    private function bootcampSeatCapacity(Bootcamp $bootcamp): int
+    {
+        $capacity = (int) ($bootcamp->seat_capacity ?? 0);
+        if ($capacity > 0) {
+            return $capacity;
+        }
+
+        [, $legacyCapacity] = $this->parseSeatLabel($bootcamp->seats_label);
+
+        return $legacyCapacity;
+    }
+
+    private function bootcampSeatFilled(Bootcamp $bootcamp): int
+    {
+        if ($bootcamp->linked_course_id) {
+            return PaymentTransactionItem::query()
+                ->join('payment_transactions as pt', 'payment_transaction_items.id_payment_transaction', '=', 'pt.id_payment_transaction')
+                ->where('payment_transaction_items.id_course', $bootcamp->linked_course_id)
+                ->whereIn('pt.transaction_status', ['settlement', 'capture'])
+                ->where(function ($query) {
+                    $query->whereNull('pt.fraud_status')
+                        ->orWhere('pt.fraud_status', '!=', 'challenge');
+                })
+                ->count();
+        }
+
+        [$legacyFilled] = $this->parseSeatLabel($bootcamp->seats_label);
+
+        return $legacyFilled;
+    }
+
+    private function bootcampPrice(Bootcamp $bootcamp): int
+    {
+        $price = (int) ($bootcamp->price ?? 0);
+
+        return $price > 0 ? $price : $this->moneyToInteger($bootcamp->price_label);
+    }
+
+    private function bootcampScheduleDisplay(Bootcamp $bootcamp): string
+    {
+        if ($bootcamp->schedule_date) {
+            $date = \Carbon\Carbon::parse($bootcamp->schedule_date)->locale('id')->translatedFormat('d M Y');
+            $start = $bootcamp->start_time ? \Carbon\Carbon::parse($bootcamp->start_time)->format('H:i') : null;
+            $end = $bootcamp->end_time ? \Carbon\Carbon::parse($bootcamp->end_time)->format('H:i') : null;
+
+            if ($start && $end) {
+                return "{$date}, {$start} - {$end}";
+            }
+
+            return $start ? "{$date}, {$start}" : $date;
+        }
+
+        return $bootcamp->schedule_label ?: '-';
+    }
+
+    private function bootcampMentorDisplay(Bootcamp $bootcamp): string
+    {
+        $bootcamp->loadMissing(['mentorAssignments.user', 'mentorAssignments.externalMentor']);
+
+        $names = $bootcamp->mentorAssignments
+            ->map(function (BootcampMentor $assignment) {
+                if ($assignment->mentor_type === 'external') {
+                    return $assignment->externalMentor?->name;
+                }
+
+                return $assignment->user?->name;
+            })
+            ->filter()
+            ->values();
+
+        return $names->isNotEmpty() ? $names->implode(', ') : ($bootcamp->mentor_label ?: 'Belum ada mentor');
+    }
+
+    private function bootcampOperationalBadges(Bootcamp $bootcamp): array
+    {
+        $badges = [];
+
+        if ($bootcamp->mentorAssignments->isEmpty()) {
+            $badges[] = ['label' => 'Butuh Mentor', 'tone' => 'bg-amber-100 text-amber-700'];
+        }
+
+        if (blank($bootcamp->schedule_date) || blank($bootcamp->start_time)) {
+            $badges[] = ['label' => 'Butuh Jadwal', 'tone' => 'bg-rose-100 text-rose-700'];
+        }
+
+        if ($this->bootcampSeatCapacity($bootcamp) <= 0) {
+            $badges[] = ['label' => 'Butuh Kuota', 'tone' => 'bg-slate-100 text-slate-700'];
+        }
+
+        if ($this->isBootcampReadyForSales($bootcamp)) {
+            $badges[] = ['label' => 'Siap Publish', 'tone' => 'bg-emerald-100 text-emerald-700'];
+        }
+
+        return $badges;
+    }
+
+    private function isBootcampReadyForSales(Bootcamp $bootcamp): bool
+    {
+        $bootcamp->loadMissing('mentorAssignments');
+
+        return $bootcamp->mentorAssignments->isNotEmpty()
+            && filled($bootcamp->schedule_date)
+            && filled($bootcamp->start_time)
+            && $this->bootcampSeatCapacity($bootcamp) > 0;
+    }
+
+    private function normalizeIdList(mixed $ids): array
+    {
+        return collect((array) $ids)
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function buildBootcampMentorLabel(array $mentorIds, array $externalMentorIds = []): string
+    {
+        $total = count($this->normalizeIdList($mentorIds)) + count($this->normalizeIdList($externalMentorIds));
+
+        return $total > 0 ? $total . ' mentor' : '0 mentor';
+    }
+
+    private function syncBootcampMentors(Bootcamp $bootcamp, array $mentorIds, array $externalMentorIds, ?string $roleLabel, ?string $note): void
+    {
+        $role = $this->cleanTextInput($roleLabel ?: 'mentor');
+        $assignmentNote = $this->cleanTextInput($note ?? '');
+
+        BootcampMentor::where('id_bootcamp', $bootcamp->id_bootcamp)->delete();
+
+        foreach ($this->normalizeIdList($mentorIds) as $mentorId) {
+            BootcampMentor::create([
+                'id_bootcamp' => $bootcamp->id_bootcamp,
+                'mentor_type' => 'internal',
+                'id_user' => $mentorId,
+                'id_external_mentor' => null,
+                'role_label' => $role,
+                'assignment_note' => $assignmentNote,
+            ]);
+        }
+
+        foreach ($this->normalizeIdList($externalMentorIds) as $externalMentorId) {
+            BootcampMentor::create([
+                'id_bootcamp' => $bootcamp->id_bootcamp,
+                'mentor_type' => 'external',
+                'id_user' => null,
+                'id_external_mentor' => $externalMentorId,
+                'role_label' => $role,
+                'assignment_note' => $assignmentNote,
+            ]);
+        }
+    }
+
+    private function createExternalMentorFromRequest(Request $request): ?ExternalMentor
+    {
+        $name = $this->cleanTextInput($request->input('external_name'));
+
+        if (blank($name)) {
+            return null;
+        }
+
+        $email = strtolower($this->cleanTextInput($request->input('external_email')));
+        $query = ExternalMentor::query()->where('name', $name);
+        if (filled($email)) {
+            $query->where('email', $email);
+        }
+
+        return $query->first() ?: ExternalMentor::create([
+            'name' => $name,
+            'email' => $email ?: null,
+            'phone' => $this->cleanTextInput($request->input('external_phone')) ?: null,
+            'expertise' => $this->cleanTextInput($request->input('external_expertise')) ?: null,
+            'institution' => $this->cleanTextInput($request->input('external_institution')) ?: null,
+            'status' => 'active',
+        ]);
+    }
+
+    private function buildBootcampScheduleLabel(array $validated): string
+    {
+        $date = \Carbon\Carbon::parse($validated['schedule_date'])->locale('id')->translatedFormat('d M Y');
+        $start = (string) $validated['schedule_start_time'];
+        $end = (string) ($validated['schedule_end_time'] ?? '');
+
+        return filled($end) ? "{$date}, {$start} - {$end}" : "{$date}, {$start}";
+    }
+
+    private function timeForInput(mixed $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('H:i');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function moneyToInteger(mixed $value): int
+    {
+        return (int) preg_replace('/\D+/', '', (string) $value);
+    }
+
+    private function formatBootcampRupiah(int $amount): string
+    {
+        return 'Rp ' . number_format(max(0, $amount), 0, ',', '.');
+    }
+
+    private function syncBootcampToCheckoutCourse(Bootcamp $bootcamp): Course
+    {
+        $bootcamp->loadMissing(['mentorAssignments.user', 'mentorAssignments.externalMentor']);
+
+        $internalMentor = $bootcamp->mentorAssignments
+            ->first(fn (BootcampMentor $assignment) => $assignment->mentor_type === 'internal' && $assignment->id_user);
+        $price = $this->bootcampPrice($bootcamp);
+        $course = $bootcamp->linked_course_id ? Course::find($bootcamp->linked_course_id) : null;
+
+        if (!$course) {
+            $course = new Course();
+            $course->kode_course = $this->generateNextCourseCode('TKT');
+        }
+
+        $description = trim(implode("\n", array_filter([
+            $bootcamp->batch_label,
+            $this->bootcampScheduleDisplay($bootcamp),
+            $bootcamp->risk_note,
+        ])));
+
+        $payload = [
+            'nama_course' => $bootcamp->title,
+            'deskripsi' => $description ?: $bootcamp->title,
+            'id_dosen' => $internalMentor?->id_user,
+            'status' => 'aktif',
+            'approval_status' => 'tidak_perlu',
+            'tipe' => $price > 0 ? 'berbayar' : 'gratis',
+            'kategori' => 'tiket',
+            'tanggal_webinar' => $bootcamp->schedule_date,
+            'jam_mulai_webinar' => $this->timeForInput($bootcamp->start_time),
+            'jam_selesai_webinar' => $this->timeForInput($bootcamp->end_time),
+            'kuota_peserta' => $this->bootcampSeatCapacity($bootcamp),
+            'harga' => $price,
+            'estimasi_waktu' => 1,
+            'durasi_satuan' => 'Event',
+            'level' => 'Pemula',
+            'sertifikat' => true,
+            'akses_publik' => true,
+            'diskon' => 0,
+        ];
+
+        foreach ($payload as $column => $value) {
+            if (Schema::hasColumn('courses', $column)) {
+                $course->{$column} = $value;
+            }
+        }
+
+        $course->save();
+
+        if ((int) $bootcamp->linked_course_id !== (int) $course->id_course) {
+            $bootcamp->update(['linked_course_id' => $course->id_course]);
+        }
+
+        return $course;
+    }
+
+    private function closeLinkedBootcampCourse(Bootcamp $bootcamp): void
+    {
+        if (!$bootcamp->linked_course_id) {
+            return;
+        }
+
+        Course::where('id_course', $bootcamp->linked_course_id)->update(['status' => 'nonaktif']);
+    }
+
+    private function bootcampRevenue($bootcamps): int
+    {
+        $courseIds = collect($bootcamps)
+            ->pluck('linked_course_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($courseIds->isEmpty()) {
+            return 0;
+        }
+
+        return (int) PaymentTransactionItem::query()
+            ->join('payment_transactions as pt', 'payment_transaction_items.id_payment_transaction', '=', 'pt.id_payment_transaction')
+            ->whereIn('payment_transaction_items.id_course', $courseIds->all())
+            ->whereIn('pt.transaction_status', ['settlement', 'capture'])
+            ->where(function ($query) {
+                $query->whereNull('pt.fraud_status')
+                    ->orWhere('pt.fraud_status', '!=', 'challenge');
+            })
+            ->sum('payment_transaction_items.price');
+    }
+
+    private function bootcampParticipantRows($bootcamps): array
+    {
+        $courseToBootcamp = collect($bootcamps)
+            ->filter(fn (Bootcamp $bootcamp) => filled($bootcamp->linked_course_id))
+            ->mapWithKeys(fn (Bootcamp $bootcamp) => [(int) $bootcamp->linked_course_id => $bootcamp->title]);
+
+        if ($courseToBootcamp->isEmpty()) {
+            return [];
+        }
+
+        return PaymentTransactionItem::query()
+            ->join('payment_transactions as pt', 'payment_transaction_items.id_payment_transaction', '=', 'pt.id_payment_transaction')
+            ->join('users as u', 'pt.id_mahasiswa', '=', 'u.id')
+            ->whereIn('payment_transaction_items.id_course', $courseToBootcamp->keys()->all())
+            ->whereIn('pt.transaction_status', ['settlement', 'capture'])
+            ->where(function ($query) {
+                $query->whereNull('pt.fraud_status')
+                    ->orWhere('pt.fraud_status', '!=', 'challenge');
+            })
+            ->orderByDesc('pt.paid_at')
+            ->select([
+                'payment_transaction_items.id_course',
+                'pt.order_id',
+                'pt.transaction_status',
+                'pt.paid_at',
+                'u.name',
+                'u.email',
+            ])
+            ->get()
+            ->map(fn ($row) => [
+                'program' => $courseToBootcamp[(int) $row->id_course] ?? '-',
+                'order_id' => $row->order_id,
+                'name' => $row->name,
+                'email' => $row->email,
+                'status' => $row->transaction_status,
+                'paid_at' => optional($row->paid_at)->format('Y-m-d H:i:s') ?: '-',
+            ])
+            ->all();
+    }
+
     public function showDosen(Request $request)
     {
         $admin = Auth::guard('admin')->user();
@@ -2737,7 +3318,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Get notifications (JSON API) â€” real persistent notifications
+     * Get notifications (JSON API) Ã¢â‚¬â€ real persistent notifications
      */
     public function getNotifications()
     {
@@ -5085,7 +5666,7 @@ class AdminController extends Controller
             'persyaratan' => 'nullable|string',
             'id_dosen' => [
                 'nullable',
-                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'dosen')),
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'dosen')->where('status', 'aktif')),
             ],
             'id_jurusan' => 'nullable|exists:jurusans,id_jurusan',
             'tipe' => 'required|in:gratis,berbayar',

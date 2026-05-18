@@ -83,6 +83,40 @@ class CourseController extends Controller
     }
 
     /**
+     * Dedicated bootcamp and ticket event catalog for mahasiswa.
+     */
+    public function bootcampCatalog()
+    {
+        $search = request('search');
+        $user = Auth::guard('mahasiswa')->user();
+
+        $enrolledCourseIds = [];
+        if ($user) {
+            $enrolledCourseIds = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+                ->pluck('id_course')
+                ->toArray();
+        }
+
+        $bootcampCourses = Course::with(['dosen', 'jurusan'])
+            ->withCount('ratings as real_jumlah_ulasan')
+            ->withAvg('ratings as real_rating', 'rating')
+            ->aktif()
+            ->where('kategori', 'tiket')
+            ->search($search)
+            ->when(!empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
+                return $query->whereNotIn('id_course', $enrolledCourseIds);
+            })
+            ->orderByRaw('tanggal_webinar IS NULL, tanggal_webinar ASC')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('pages.mahasiswa.bootcamp', [
+            'bootcampCourses' => $bootcampCourses,
+            'searchQuery' => $search,
+        ]);
+    }
+
+    /**
      * Show course detail page
      */
     public function show($id)

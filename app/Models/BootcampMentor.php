@@ -14,7 +14,9 @@ class BootcampMentor extends Model
 
     protected $fillable = [
         'id_bootcamp',
+        'mentor_type',
         'id_user',
+        'id_external_mentor',
         'role_label',
         'assignment_note',
     ];
@@ -28,5 +30,9 @@ class BootcampMentor extends Model
     {
         return $this->belongsTo(User::class, 'id_user', 'id');
     }
-}
 
+    public function externalMentor()
+    {
+        return $this->belongsTo(ExternalMentor::class, 'id_external_mentor', 'id_external_mentor');
+    }
+}

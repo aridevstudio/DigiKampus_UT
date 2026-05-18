@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
+use App\Models\Bootcamp;
 use App\Models\DosenNotification;
 use App\Models\Enrollment;
 use App\Models\Notification;
@@ -75,6 +76,11 @@ class CheckoutController extends Controller
             return back()->with('error', 'Anda sudah terdaftar di kursus ini');
         }
 
+        $bootcampCheck = $this->validateBootcampTicketAvailability($courseId);
+        if (!$bootcampCheck['ok']) {
+            return back()->with('error', $bootcampCheck['message']);
+        }
+
         Cart::create([
             'id_mahasiswa' => $user->id,
             'id_course' => $courseId,
@@ -116,6 +122,13 @@ class CheckoutController extends Controller
         $cartItems = $this->getCartItems($user->id);
         if ($cartItems->isEmpty()) {
             return redirect()->route('mahasiswa.checkout')->with('error', 'Keranjang Anda kosong');
+        }
+
+        foreach ($cartItems as $cartItem) {
+            $bootcampCheck = $this->validateBootcampTicketAvailability((int) $cartItem->id_course);
+            if (!$bootcampCheck['ok']) {
+                return redirect()->route('mahasiswa.checkout')->with('error', $bootcampCheck['message']);
+            }
         }
 
         $voucher = null;
@@ -401,6 +414,46 @@ class CheckoutController extends Controller
             ->where('id_mahasiswa', $mahasiswaId)
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    private function validateBootcampTicketAvailability(int $courseId): array
+    {
+        $bootcamp = Bootcamp::query()
+            ->where('linked_course_id', $courseId)
+            ->first();
+
+        if (!$bootcamp) {
+            return ['ok' => true, 'message' => null];
+        }
+
+        if (!in_array($bootcamp->status, ['open_registration', 'published'], true)) {
+            return ['ok' => false, 'message' => 'Penjualan bootcamp/tiket ini belum dibuka atau sudah ditutup.'];
+        }
+
+        $capacity = (int) ($bootcamp->seat_capacity ?? 0);
+        if ($capacity <= 0 && preg_match('/\d+\s*\/\s*(\d+)/', (string) $bootcamp->seats_label, $matches)) {
+            $capacity = (int) $matches[1];
+        }
+
+        if ($capacity <= 0) {
+            return ['ok' => false, 'message' => 'Kuota bootcamp/tiket belum dikonfigurasi.'];
+        }
+
+        $filled = PaymentTransactionItem::query()
+            ->join('payment_transactions as pt', 'payment_transaction_items.id_payment_transaction', '=', 'pt.id_payment_transaction')
+            ->where('payment_transaction_items.id_course', $courseId)
+            ->whereIn('pt.transaction_status', ['settlement', 'capture'])
+            ->where(function ($query) {
+                $query->whereNull('pt.fraud_status')
+                    ->orWhere('pt.fraud_status', '!=', 'challenge');
+            })
+            ->count();
+
+        if ($filled >= $capacity) {
+            return ['ok' => false, 'message' => 'Kuota bootcamp/tiket sudah penuh.'];
+        }
+
+        return ['ok' => true, 'message' => null];
     }
 
     private function calculateSubtotal($cartItems): float

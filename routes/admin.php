@@ -130,7 +130,10 @@ Route::prefix('admin')
 
         // Bootcamp & Ticket Ops
         Route::get('/bootcamp-tiket', [AdminController::class, 'showBootcampTiket'])->name('admin.bootcamp-tiket');
+        Route::get('/bootcamp-tiket/export', [AdminController::class, 'exportBootcampBatch'])->name('admin.bootcamp-tiket.export');
         Route::post('/bootcamp-tiket', [AdminController::class, 'storeBootcamp'])->name('admin.bootcamp-tiket.store');
+        Route::put('/bootcamp-tiket/{id}/sales/open', [AdminController::class, 'openBootcampSales'])->name('admin.bootcamp-tiket.sales.open');
+        Route::put('/bootcamp-tiket/{id}/sales/close', [AdminController::class, 'closeBootcampSales'])->name('admin.bootcamp-tiket.sales.close');
         Route::put('/bootcamp-tiket/{id}/batch', [AdminController::class, 'updateBootcampBatch'])->name('admin.bootcamp-tiket.batch.update');
         Route::post('/bootcamp-tiket/{id}/assign-mentor', [AdminController::class, 'assignBootcampMentor'])->name('admin.bootcamp-tiket.mentor.assign');
 
