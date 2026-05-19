@@ -19,7 +19,7 @@
 @endphp
 
 <x-layouts.admin title="Bootcamp & Tiket" active="bootcamp">
-    <div class="space-y-6" id="bootcamp-ticket-page" data-action-base="{{ url('/admin/bootcamp-tiket') }}">
+    <div class="space-y-6" id="bootcamp-ticket-page" data-action-base="{{ url('/admin/bootcamp-tiket') }}" data-external-mentor-url="{{ route('admin.bootcamp-tiket.external-mentors.store') }}">
         <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                 <div class="max-w-3xl">
@@ -180,7 +180,7 @@
                     </div>
                     <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4"><div class="grid gap-4 md:grid-cols-2">
                         <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Internal</span><select name="mentor_user_ids[]" multiple size="6" data-enhanced-multiselect data-placeholder="Cari dosen aktif..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">@foreach ($availableMentors as $mentor)<option value="{{ $mentor->id }}" @selected(in_array($mentor->id, old('mentor_user_ids', [])))>{{ $mentor->name }}</option>@endforeach</select><p class="mt-1 text-xs text-slate-500">Sumber data dari user role dosen. Admin tidak ditampilkan.</p></label>
-                        <div class="space-y-4"><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Role Mentor</span><input name="mentor_role" type="text" value="{{ old('mentor_role', 'mentor') }}" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"></label><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Eksternal Tersimpan</span><select name="external_mentor_ids[]" multiple size="4" data-enhanced-multiselect data-placeholder="Cari mentor eksternal..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">@foreach ($externalMentors as $mentor)<option value="{{ $mentor->id_external_mentor }}" @selected(in_array($mentor->id_external_mentor, old('external_mentor_ids', [])))>{{ $mentor->name }}{{ $mentor->expertise ? ' - ' . $mentor->expertise : '' }}</option>@endforeach</select></label><div class="rounded-2xl border border-dashed border-slate-300 bg-white p-3"><p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tambah Mentor Eksternal Baru</p><div class="grid gap-2"><input name="external_name" type="text" value="{{ old('external_name') }}" placeholder="Nama mentor luar" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_email" type="email" value="{{ old('external_email') }}" placeholder="Email opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_expertise" type="text" value="{{ old('external_expertise') }}" placeholder="Keahlian / topik" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_institution" type="text" value="{{ old('external_institution') }}" placeholder="Institusi opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></div></div></div>
+                        <div class="space-y-4"><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Role Mentor</span><input name="mentor_role" type="text" value="{{ old('mentor_role', 'mentor') }}" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"></label><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Eksternal Tersimpan</span><select name="external_mentor_ids[]" multiple size="4" data-enhanced-multiselect data-placeholder="Cari mentor eksternal..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">@foreach ($externalMentors as $mentor)<option value="{{ $mentor->id_external_mentor }}" @selected(in_array($mentor->id_external_mentor, old('external_mentor_ids', [])))>{{ $mentor->name }}{{ $mentor->expertise ? ' - ' . $mentor->expertise : '' }}</option>@endforeach</select></label><div class="rounded-2xl border border-dashed border-slate-300 bg-white p-3" data-external-mentor-form><div class="mb-3 flex items-center justify-between gap-3"><p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tambah Mentor Eksternal Baru</p><button type="button" data-external-mentor-save class="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700">Tambah</button></div><div class="grid gap-2"><input data-external-field="external_name" type="text" placeholder="Nama mentor luar" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input data-external-field="external_email" type="email" placeholder="Email opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input data-external-field="external_expertise" type="text" placeholder="Keahlian / topik" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input data-external-field="external_institution" type="text" placeholder="Institusi opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></div><p data-external-mentor-message class="mt-2 hidden text-xs font-medium"></p></div></div>
                     </div></div>
                     <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Catatan Risiko</span><textarea name="risk" rows="3" placeholder="Contoh: mentor cadangan belum ditentukan" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">{{ old('risk') }}</textarea></label>
                     <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end"><button type="button" data-modal-close="create" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Batal</button><button type="submit" class="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">Simpan Draft</button></div>
@@ -212,7 +212,7 @@
                 @csrf
                 <div class="grid gap-4 md:grid-cols-2">
                     <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Internal</span><select name="mentor_user_ids[]" multiple size="7" data-enhanced-multiselect data-placeholder="Cari dosen aktif..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">@foreach ($availableMentors as $mentor)<option value="{{ $mentor->id }}">{{ $mentor->name }}</option>@endforeach</select><p class="mt-1 text-xs text-slate-500">Hanya role dosen. Mentor luar isi sebelah kanan.</p></label>
-                    <div class="space-y-4"><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Role Mentor</span><input name="mentor_role" type="text" value="mentor" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></label><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Eksternal Tersimpan</span><select name="external_mentor_ids[]" multiple size="4" data-enhanced-multiselect data-placeholder="Cari mentor eksternal..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">@foreach ($externalMentors as $mentor)<option value="{{ $mentor->id_external_mentor }}">{{ $mentor->name }}{{ $mentor->expertise ? ' - ' . $mentor->expertise : '' }}</option>@endforeach</select></label><div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-3"><p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tambah Mentor Eksternal Baru</p><div class="grid gap-2"><input name="external_name" type="text" placeholder="Nama mentor luar" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_email" type="email" placeholder="Email opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_expertise" type="text" placeholder="Keahlian / topik" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input name="external_institution" type="text" placeholder="Institusi opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></div></div></div>
+                    <div class="space-y-4"><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Role Mentor</span><input name="mentor_role" type="text" value="mentor" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></label><label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mentor Eksternal Tersimpan</span><select name="external_mentor_ids[]" multiple size="4" data-enhanced-multiselect data-placeholder="Cari mentor eksternal..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">@foreach ($externalMentors as $mentor)<option value="{{ $mentor->id_external_mentor }}">{{ $mentor->name }}{{ $mentor->expertise ? ' - ' . $mentor->expertise : '' }}</option>@endforeach</select></label><div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-3" data-external-mentor-form><div class="mb-3 flex items-center justify-between gap-3"><p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tambah Mentor Eksternal Baru</p><button type="button" data-external-mentor-save class="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700">Tambah</button></div><div class="grid gap-2"><input data-external-field="external_name" type="text" placeholder="Nama mentor luar" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input data-external-field="external_email" type="email" placeholder="Email opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input data-external-field="external_expertise" type="text" placeholder="Keahlian / topik" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"><input data-external-field="external_institution" type="text" placeholder="Institusi opsional" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></div><p data-external-mentor-message class="mt-2 hidden text-xs font-medium"></p></div></div>
                 </div>
                 <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Catatan Penugasan</span><textarea name="risk" rows="3" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"></textarea></label>
                 <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end"><button type="button" data-modal-close="mentor" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Batal</button><button type="submit" class="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">Simpan Mentor</button></div>
@@ -225,6 +225,8 @@
                 const root = document.getElementById('bootcamp-ticket-page');
                 if (!root) return;
                 const actionBase = root.dataset.actionBase;
+                const externalMentorUrl = root.dataset.externalMentorUrl;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
                 const modals = { create: document.getElementById('bootcampCreateModal'), batch: document.getElementById('bootcampBatchModal'), mentor: document.getElementById('bootcampMentorModal') };
                 const batchForm = document.getElementById('bootcampBatchForm');
                 const mentorForm = document.getElementById('bootcampMentorForm');
@@ -323,6 +325,82 @@
                 };
 
                 document.querySelectorAll('select[data-enhanced-multiselect]').forEach(initEnhancedSelect);
+
+                const setExternalMentorMessage = (panel, message, isError = false) => {
+                    const messageBox = panel?.querySelector('[data-external-mentor-message]');
+                    if (!messageBox) return;
+                    messageBox.textContent = message;
+                    messageBox.classList.remove('hidden', 'text-emerald-600', 'text-rose-600');
+                    messageBox.classList.add(isError ? 'text-rose-600' : 'text-emerald-600');
+                };
+
+                const addExternalMentorToSelects = (mentor, sourcePanel) => {
+                    const value = String(mentor.id);
+                    const label = mentor.label || mentor.name;
+                    document.querySelectorAll('select[name="external_mentor_ids[]"]').forEach((select) => {
+                        let option = Array.from(select.options).find((item) => item.value === value);
+                        if (!option) {
+                            option = new Option(label, value, false, false);
+                            select.add(option);
+                        } else {
+                            option.textContent = label;
+                        }
+
+                        if (sourcePanel?.closest('.space-y-4')?.contains(select)) {
+                            option.selected = true;
+                        }
+
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                };
+
+                document.querySelectorAll('[data-external-mentor-save]').forEach((button) => {
+                    button.addEventListener('click', async () => {
+                        const panel = button.closest('[data-external-mentor-form]');
+                        if (!panel || !externalMentorUrl) return;
+
+                        const payload = {};
+                        panel.querySelectorAll('[data-external-field]').forEach((input) => {
+                            payload[input.dataset.externalField] = input.value.trim();
+                        });
+
+                        if (!payload.external_name) {
+                            setExternalMentorMessage(panel, 'Nama mentor wajib diisi.', true);
+                            return;
+                        }
+
+                        button.disabled = true;
+                        const originalLabel = button.textContent;
+                        button.textContent = 'Menyimpan...';
+
+                        try {
+                            const response = await fetch(externalMentorUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                },
+                                body: JSON.stringify(payload),
+                            });
+                            const data = await response.json().catch(() => ({}));
+
+                            if (!response.ok) {
+                                const errors = data.errors ? Object.values(data.errors).flat() : [];
+                                throw new Error(errors[0] || data.message || 'Mentor eksternal gagal disimpan.');
+                            }
+
+                            addExternalMentorToSelects(data.mentor, panel);
+                            panel.querySelectorAll('[data-external-field]').forEach((input) => input.value = '');
+                            setExternalMentorMessage(panel, data.message || 'Mentor eksternal berhasil ditambahkan.');
+                        } catch (error) {
+                            setExternalMentorMessage(panel, error.message || 'Mentor eksternal gagal disimpan.', true);
+                        } finally {
+                            button.disabled = false;
+                            button.textContent = originalLabel;
+                        }
+                    });
+                });
 
                 document.querySelectorAll('[data-modal-open]').forEach((button) => {
                     button.addEventListener('click', () => {

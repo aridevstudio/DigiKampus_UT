@@ -590,6 +590,31 @@ class AdminController extends Controller
             ->with('success', 'Draft bootcamp/tiket berhasil dibuat. Buka penjualan jika sudah siap.');
     }
 
+    public function storeBootcampExternalMentor(Request $request)
+    {
+        $request->validate([
+            'external_name' => ['required', 'string', 'max:255'],
+            'external_email' => ['nullable', 'email', 'max:255'],
+            'external_phone' => ['nullable', 'string', 'max:50'],
+            'external_expertise' => ['nullable', 'string', 'max:255'],
+            'external_institution' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $mentor = $this->createExternalMentorFromRequest($request);
+
+        return response()->json([
+            'mentor' => [
+                'id' => $mentor->id_external_mentor,
+                'name' => $mentor->name,
+                'email' => $mentor->email,
+                'expertise' => $mentor->expertise,
+                'institution' => $mentor->institution,
+                'label' => $mentor->name . ($mentor->expertise ? ' - ' . $mentor->expertise : ''),
+            ],
+            'message' => 'Mentor eksternal berhasil ditambahkan.',
+        ]);
+    }
+
     public function updateBootcampBatch(Request $request, $id)
     {
         $validated = $request->validate([
