@@ -71,7 +71,7 @@
         </div>
     </div>
 
-    <form method="GET" action="{{ route('admin.voucher') }}" class="mb-6 rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-700/50 dark:bg-gray-800">
+    <form method="GET" action="{{ route('admin.voucher', [], false) }}" class="mb-6 rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-700/50 dark:bg-gray-800">
         <div class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_180px_180px_auto]">
             <div class="relative">
                 <input type="text" name="search" value="{{ $search }}" placeholder="Cari kode voucher atau pengguna..." class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 pl-10 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-700/50 dark:text-gray-200">
@@ -162,7 +162,7 @@
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                 </button>
                                 @if((int) $voucher->used_count > 0)
-                                <form method="POST" action="{{ route('admin.voucher.reset-usage', $voucher->id_voucher) }}" onsubmit="return confirm('Reset histori pemakaian voucher ini? Tindakan ini hanya untuk koreksi admin.')">
+                                <form method="POST" action="{{ route('admin.voucher.reset-usage', $voucher->id_voucher, false) }}" onsubmit="return confirm('Reset histori pemakaian voucher ini? Tindakan ini hanya untuk koreksi admin.')">
                                     @csrf
                                     @method('PUT')
                                     <button type="submit" class="rounded-lg p-2 text-gray-500 transition hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20" title="Reset Pemakaian">
@@ -170,7 +170,7 @@
                                     </button>
                                 </form>
                                 @else
-                                <form method="POST" action="{{ route('admin.voucher.delete', $voucher->id_voucher) }}" onsubmit="return confirm('Hapus voucher {{ addslashes($voucher->code) }}?')">
+                                <form method="POST" action="{{ route('admin.voucher.delete', $voucher->id_voucher, false) }}" onsubmit="return confirm('Hapus voucher {{ addslashes($voucher->code) }}?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20" title="Hapus">
@@ -212,7 +212,7 @@
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
 
-                <form id="voucherForm" action="{{ route('admin.voucher.store') }}" method="POST" class="p-6">
+                <form id="voucherForm" action="{{ route('admin.voucher.store', [], false) }}" method="POST" class="p-6">
                     @csrf
                     <input type="hidden" id="voucherMethod" name="_method" value="POST" disabled>
                     <input type="hidden" name="filter_search" value="{{ $search }}">
@@ -287,9 +287,9 @@
         const voucherUsageLimit = document.getElementById('voucherUsageLimit');
         const voucherExpiresAt = document.getElementById('voucherExpiresAt');
         const voucherIsActive = document.getElementById('voucherIsActive');
-        const storeVoucherUrl = @json(route('admin.voucher.store'));
-        const getVoucherUrl = @json(route('admin.voucher.get', ['id' => '__ID__']));
-        const updateVoucherUrl = @json(route('admin.voucher.update', ['id' => '__ID__']));
+        const storeVoucherUrl = @json(route('admin.voucher.store', [], false));
+        const getVoucherUrl = @json(route('admin.voucher.get', ['id' => '__ID__'], false));
+        const updateVoucherUrl = @json(route('admin.voucher.update', ['id' => '__ID__'], false));
 
         function openAddVoucherModal() {
             voucherModalTitle.textContent = 'Tambah Voucher';

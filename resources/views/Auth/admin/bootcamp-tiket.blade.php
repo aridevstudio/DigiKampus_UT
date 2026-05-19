@@ -19,7 +19,7 @@
 @endphp
 
 <x-layouts.admin title="Bootcamp & Tiket" active="bootcamp">
-    <div class="space-y-6" id="bootcamp-ticket-page" data-action-base="{{ url('/admin/bootcamp-tiket') }}" data-external-mentor-url="{{ route('admin.bootcamp-tiket.external-mentors.store') }}">
+    <div class="space-y-6" id="bootcamp-ticket-page" data-action-base="/admin/bootcamp-tiket" data-external-mentor-url="{{ route('admin.bootcamp-tiket.external-mentors.store', [], false) }}">
         <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                 <div class="max-w-3xl">
@@ -32,7 +32,7 @@
                 <div class="grid gap-3 sm:grid-cols-3 xl:w-[460px]">
                     <button type="button" data-modal-open="create" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">+ Buat Bootcamp</button>
                     <button type="button" data-focus-ticket class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">Atur Tiket</button>
-                    <a href="{{ route('admin.bootcamp-tiket.export') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white">Export Batch</a>
+                    <a href="{{ route('admin.bootcamp-tiket.export', [], false) }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white">Export Batch</a>
                 </div>
             </div>
         </section>
@@ -114,7 +114,7 @@
                                 <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Status</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['status'] }}</p></div>
                                 <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Mentor</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['mentor'] }}</p></div>
                                 <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Seat</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['seats'] }}</p></div>
-                                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Operasi</p><div class="mt-2 flex flex-wrap gap-2"><button type="button" data-modal-open="batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Kelola Batch</button><button type="button" data-modal-open="mentor" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">Assign Mentor</button>@if (in_array($program['status_key'] ?? 'draft', ['open_registration', 'published'], true))<form method="POST" action="{{ route('admin.bootcamp-tiket.sales.close', $program['id']) }}">@csrf @method('PUT')<button type="submit" class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white">Tutup Penjualan</button></form>@else<form method="POST" action="{{ route('admin.bootcamp-tiket.sales.open', $program['id']) }}">@csrf @method('PUT')<button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">Buka Penjualan</button></form>@endif</div></div>
+                                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Operasi</p><div class="mt-2 flex flex-wrap gap-2"><button type="button" data-modal-open="batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Kelola Batch</button><button type="button" data-modal-open="mentor" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">Assign Mentor</button>@if (in_array($program['status_key'] ?? 'draft', ['open_registration', 'published'], true))<form method="POST" action="{{ route('admin.bootcamp-tiket.sales.close', $program['id'], false) }}">@csrf @method('PUT')<button type="submit" class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white">Tutup Penjualan</button></form>@else<form method="POST" action="{{ route('admin.bootcamp-tiket.sales.open', $program['id'], false) }}">@csrf @method('PUT')<button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">Buka Penjualan</button></form>@endif</div></div>
                             </div>
                         </article>
                     @empty
@@ -166,7 +166,7 @@
         <div class="relative flex min-h-full items-start justify-center px-4 py-4 sm:items-center sm:py-6">
             <div class="flex w-full max-w-3xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
                 <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Backend Form</p><h2 class="mt-2 text-xl font-semibold text-slate-900">Buat Bootcamp / Tiket Baru</h2><p class="mt-1 text-sm text-slate-500">Data disimpan ke database sebagai draft.</p></div><button type="button" data-modal-close="create" class="rounded-2xl border border-slate-200 p-2 text-slate-500">X</button></div>
-                <form method="POST" action="{{ route('admin.bootcamp-tiket.store') }}" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+                <form method="POST" action="{{ route('admin.bootcamp-tiket.store', [], false) }}" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
                     @csrf
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="block"><span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Nama Program</span><input name="title" type="text" required value="{{ old('title') }}" placeholder="Bootcamp Product Management" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"></label>

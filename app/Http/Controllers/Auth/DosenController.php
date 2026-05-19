@@ -3116,10 +3116,10 @@ class DosenController extends Controller
         })->values()->all();
 
         $gradeApi = [
-            'draft' => url('/dosen/kelola-nilai/course/__COURSE__/draft'),
-            'publish' => url('/dosen/kelola-nilai/course/__COURSE__/publish'),
-            'score' => url('/dosen/kelola-nilai/course/__COURSE__/students/__STUDENT__/score'),
-            'review' => url('/dosen/kelola-nilai/course/__COURSE__/students/__STUDENT__/review'),
+            'draft' => '/dosen/kelola-nilai/course/__COURSE__/draft',
+            'publish' => '/dosen/kelola-nilai/course/__COURSE__/publish',
+            'score' => '/dosen/kelola-nilai/course/__COURSE__/students/__STUDENT__/score',
+            'review' => '/dosen/kelola-nilai/course/__COURSE__/students/__STUDENT__/review',
         ];
 
         return view('Auth.dosen.kelola-nilai', [
