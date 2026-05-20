@@ -137,6 +137,7 @@ Route::prefix('admin')
         Route::put('/bootcamp-tiket/{id}/sales/close', [AdminController::class, 'closeBootcampSales'])->name('admin.bootcamp-tiket.sales.close');
         Route::put('/bootcamp-tiket/{id}/batch', [AdminController::class, 'updateBootcampBatch'])->name('admin.bootcamp-tiket.batch.update');
         Route::post('/bootcamp-tiket/{id}/assign-mentor', [AdminController::class, 'assignBootcampMentor'])->name('admin.bootcamp-tiket.mentor.assign');
+        Route::delete('/bootcamp-tiket/{id}', [AdminController::class, 'deleteBootcamp'])->name('admin.bootcamp-tiket.delete');
 
         // Frontend-only pages
         Route::get('/sertifikasi', [AdminController::class, 'showSertifikasi'])->name('admin.sertifikasi');

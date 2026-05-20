@@ -759,6 +759,27 @@ class AdminController extends Controller
             ->with('success', 'Penjualan bootcamp/tiket berhasil ditutup.');
     }
 
+    public function deleteBootcamp($id)
+    {
+        $bootcamp = Bootcamp::findOrFail($id);
+
+        if ($this->bootcampHasLinkedActivity($bootcamp)) {
+            return redirect()
+                ->route('admin.bootcamp-tiket')
+                ->with('error', 'Bootcamp/tiket tidak bisa dihapus karena sudah memiliki peserta atau transaksi. Tutup penjualan atau arsipkan program agar riwayat tetap aman.');
+        }
+
+        DB::transaction(function () use ($bootcamp) {
+            $this->closeLinkedBootcampCourse($bootcamp);
+            BootcampMentor::where('id_bootcamp', $bootcamp->id_bootcamp)->delete();
+            $bootcamp->delete();
+        });
+
+        return redirect()
+            ->route('admin.bootcamp-tiket')
+            ->with('success', 'Bootcamp/tiket berhasil dihapus.');
+    }
+
     public function exportBootcampBatch()
     {
         $bootcamps = Bootcamp::query()
@@ -950,6 +971,35 @@ class AdminController extends Controller
         [$legacyFilled] = $this->parseSeatLabel($bootcamp->seats_label);
 
         return $legacyFilled;
+    }
+
+    private function bootcampHasLinkedActivity(Bootcamp $bootcamp): bool
+    {
+        if ($this->bootcampSeatFilled($bootcamp) > 0) {
+            return true;
+        }
+
+        if (!$bootcamp->linked_course_id) {
+            return false;
+        }
+
+        if (
+            Schema::hasTable('enrollments')
+            && Schema::hasColumn('enrollments', 'id_course')
+            && DB::table('enrollments')->where('id_course', $bootcamp->linked_course_id)->exists()
+        ) {
+            return true;
+        }
+
+        if (
+            Schema::hasTable('payment_transaction_items')
+            && Schema::hasColumn('payment_transaction_items', 'id_course')
+            && DB::table('payment_transaction_items')->where('id_course', $bootcamp->linked_course_id)->exists()
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     private function bootcampPrice(Bootcamp $bootcamp): int

@@ -37,6 +37,18 @@
             </div>
         </section>
 
+        @if (session('success'))
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
+                {{ session('error') }}
+            </div>
+        @endif
+
         @if ($errors->any())
             <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
                 <p class="font-semibold">Data belum bisa disimpan.</p>
@@ -114,7 +126,31 @@
                                 <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Status</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['status'] }}</p></div>
                                 <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Mentor</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['mentor'] }}</p></div>
                                 <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Seat</p><p class="mt-2 text-sm font-semibold text-slate-900">{{ $program['seats'] }}</p></div>
-                                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Operasi</p><div class="mt-2 flex flex-wrap gap-2"><button type="button" data-modal-open="batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Kelola Batch</button><button type="button" data-modal-open="mentor" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">Assign Mentor</button>@if (in_array($program['status_key'] ?? 'draft', ['open_registration', 'published'], true))<form method="POST" action="{{ route('admin.bootcamp-tiket.sales.close', $program['id'], false) }}">@csrf @method('PUT')<button type="submit" class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white">Tutup Penjualan</button></form>@else<form method="POST" action="{{ route('admin.bootcamp-tiket.sales.open', $program['id'], false) }}">@csrf @method('PUT')<button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">Buka Penjualan</button></form>@endif</div></div>
+                                <div class="rounded-2xl bg-slate-50 p-4">
+                                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Operasi</p>
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        <button type="button" data-modal-open="batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Kelola Batch</button>
+                                        <button type="button" data-modal-open="mentor" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">Assign Mentor</button>
+                                        @if (in_array($program['status_key'] ?? 'draft', ['open_registration', 'published'], true))
+                                            <form method="POST" action="{{ route('admin.bootcamp-tiket.sales.close', $program['id'], false) }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="submit" class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white">Tutup Penjualan</button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('admin.bootcamp-tiket.sales.open', $program['id'], false) }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">Buka Penjualan</button>
+                                            </form>
+                                        @endif
+                                        <form method="POST" action="{{ route('admin.bootcamp-tiket.delete', $program['id'], false) }}" onsubmit="return confirm('Hapus bootcamp/tiket ini? Data yang sudah punya peserta atau transaksi tidak bisa dihapus.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50">Hapus</button>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
                         </article>
                     @empty
