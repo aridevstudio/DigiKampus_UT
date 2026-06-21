@@ -382,13 +382,13 @@
 <body>
 
     {{-- ═══════════ NAVBAR ═══════════ --}}
-    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pt-4">
-        <div class="nav-glass max-w-6xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
-            <a href="/" class="flex items-center gap-2.5" style="text-decoration:none">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="DigiKampus" class="h-8" loading="eager">
-                <div>
-                    <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--c-text)">DigiKampus</span>
-                    <span style="font-size:11px;color:var(--c-text-light);margin-left:3px;font-weight:500">UT</span>
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 px-3 sm:px-6 pt-3 sm:pt-4">
+        <div class="nav-glass max-w-6xl mx-auto px-3.5 sm:px-6 h-14 flex items-center justify-between gap-3">
+            <a href="/" class="flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5 overflow-hidden" style="text-decoration:none">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="DigiKampus" class="h-7 max-w-[78px] shrink-0 object-contain sm:h-8 sm:max-w-[132px]" loading="eager">
+                <div class="flex min-w-0 flex-col leading-none sm:flex-row sm:items-baseline sm:gap-1">
+                    <span class="truncate" style="font-family:var(--font-display);font-weight:700;font-size:clamp(13px,3.4vw,15px);color:var(--c-text)">DigiKampus</span>
+                    <span class="mt-0.5 inline-flex w-fit shrink-0 rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-blue-500 sm:mt-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-[11px]" style="color:var(--c-text-light)">UT</span>
                 </div>
             </a>
             <div class="hidden md:flex items-center" style="gap:32px">
@@ -396,12 +396,12 @@
                 <a href="#portal" style="font-size:14px;color:var(--c-text-muted);text-decoration:none;font-weight:500;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Portal</a>
                 <a href="#testimoni" style="font-size:14px;color:var(--c-text-muted);text-decoration:none;font-weight:500;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Testimoni</a>
             </div>
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open" @click.away="open = false" class="btn-primary" style="padding:9px 20px;font-size:13px;border-radius:10px; display:inline-flex; align-items:center; gap:6px;">
+            <div class="relative shrink-0" x-data="{ open: false }">
+                <button @click="open = !open" @click.away="open = false" class="btn-primary whitespace-nowrap" style="padding:9px 14px;font-size:13px;border-radius:10px; display:inline-flex; align-items:center; gap:6px;">
                     Masuk
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" :class="{'rotate-180': open}" style="transition: transform 0.2s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                 </button>
-                <div x-show="open" x-transition.opacity.scale.95 style="display: none;" class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
+                <div x-show="open" x-transition.opacity.scale.95 style="display: none;" class="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-56 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
                     <a href="{{ route('mahasiswa.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Mahasiswa</a>
                     <a href="{{ route('dosen.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Dosen</a>
                     <a href="{{ route('admin.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Admin</a>
@@ -676,6 +676,5 @@
     </script>
 </body>
 </html>
-
 
 

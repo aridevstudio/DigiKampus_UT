@@ -326,10 +326,10 @@
         {{-- Main Content --}}
         <div id="admin-layout-main" class="flex-1 flex flex-col lg:ml-64">
             {{-- Header --}}
-            <header class="sticky top-0 z-30 bg-white dark:bg-[#1f2937] border-b border-gray-100 dark:border-gray-700/50 px-4 sm:px-6 py-3">
-                <div class="flex items-center justify-between">
+            <header class="sticky top-0 z-30 bg-white dark:bg-[#1f2937] border-b border-gray-100 dark:border-gray-700/50 px-3 sm:px-6 py-3">
+                <div class="flex items-center justify-between gap-3">
                     {{-- Left Side: Hamburger Menu (mobile) --}}
-                    <div class="flex items-center gap-3">
+                    <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                         {{-- Hamburger Menu Button --}}
                         <button onclick="toggleSidebar()" class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -350,12 +350,16 @@
                         <img 
                             src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" 
                             alt="SALUT Logo" 
-                            class="h-8 object-contain lg:hidden"
+                            class="h-7 max-w-[78px] shrink-0 object-contain sm:h-8 sm:max-w-[132px] lg:hidden"
                         >
+                        <div class="min-w-0 leading-none lg:hidden">
+                            <div class="truncate text-[13px] font-bold text-gray-800 dark:text-gray-100 sm:text-sm">DigiKampus</div>
+                            <div class="mt-0.5 inline-flex rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-blue-500 dark:bg-blue-500/10 dark:text-blue-300">UT</div>
+                        </div>
                     </div>
 
                     {{-- Right Side --}}
-                    <div class="flex items-center gap-2 sm:gap-4">
+                    <div class="flex shrink-0 items-center gap-1.5 sm:gap-4">
                         {{-- Online Status --}}
                         <div class="hidden sm:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                             <span class="w-2 h-2 bg-green-500 animate-pulse rounded-full"></span>
@@ -1032,4 +1036,3 @@
     @stack('scripts')
 </body>
 </html>
-
