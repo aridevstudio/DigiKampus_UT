@@ -72,12 +72,8 @@ if ($userType === 'mahasiswa' && $user) {
             <img 
                 src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" 
                 alt="SALUT Logo" 
-                class="h-7 max-w-[78px] shrink-0 object-contain sm:h-8 sm:max-w-[132px] lg:hidden"
+                class="h-8 max-w-[132px] shrink-0 object-contain lg:hidden"
             >
-            <div class="min-w-0 leading-none lg:hidden">
-                <div class="truncate text-[13px] font-bold text-gray-800 dark:text-gray-100 sm:text-sm">DigiKampus</div>
-                <div class="mt-0.5 inline-flex rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-blue-500 dark:bg-blue-500/10 dark:text-blue-300">UT</div>
-            </div>
         </div>
 
         {{-- Right Side --}}

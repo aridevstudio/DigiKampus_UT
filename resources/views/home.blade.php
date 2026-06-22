@@ -31,7 +31,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; overflow-x: hidden; }
         body {
             font-family: var(--font-body);
             color: var(--c-text);
@@ -54,8 +54,8 @@
             pointer-events: none;
             opacity: 0.5;
         }
-        .hero-blob-1 { width: 500px; height: 500px; background: rgba(59,130,246,0.15); top: -80px; right: -100px; }
-        .hero-blob-2 { width: 400px; height: 400px; background: rgba(249,115,22,0.08); bottom: -60px; left: -60px; }
+        .hero-blob-1 { width: 500px; height: 500px; background: rgba(59,130,246,0.15); top: -80px; right: 0; }
+        .hero-blob-2 { width: 400px; height: 400px; background: rgba(249,115,22,0.08); bottom: -60px; left: 0; }
         .hero-blob-3 { width: 300px; height: 300px; background: rgba(147,197,253,0.2); top: 40%; left: 30%; }
 
         /* ————— Navbar ————— */
@@ -384,12 +384,8 @@
     {{-- ═══════════ NAVBAR ═══════════ --}}
     <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 px-3 sm:px-6 pt-3 sm:pt-4">
         <div class="nav-glass max-w-6xl mx-auto px-3.5 sm:px-6 h-14 flex items-center justify-between gap-3">
-            <a href="/" class="flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5 overflow-hidden" style="text-decoration:none">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="DigiKampus" class="h-7 max-w-[78px] shrink-0 object-contain sm:h-8 sm:max-w-[132px]" loading="eager">
-                <div class="flex min-w-0 flex-col leading-none sm:flex-row sm:items-baseline sm:gap-1">
-                    <span class="truncate" style="font-family:var(--font-display);font-weight:700;font-size:clamp(13px,3.4vw,15px);color:var(--c-text)">DigiKampus</span>
-                    <span class="mt-0.5 inline-flex w-fit shrink-0 rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-blue-500 sm:mt-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-[11px]" style="color:var(--c-text-light)">UT</span>
-                </div>
+            <a href="/" class="flex min-w-0 flex-1 items-center overflow-hidden" style="text-decoration:none">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="SALUT Logo" class="h-8 max-w-[132px] shrink-0 object-contain" loading="eager">
             </a>
             <div class="hidden md:flex items-center" style="gap:32px">
                 <a href="#fitur" style="font-size:14px;color:var(--c-text-muted);text-decoration:none;font-weight:500;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Fitur</a>
@@ -676,5 +672,3 @@
     </script>
 </body>
 </html>
-
-
