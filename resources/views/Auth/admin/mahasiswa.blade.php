@@ -134,13 +134,13 @@
                                 $initials = collect(explode(' ', $mhs['nama']))->take(2)->map(fn($w) => strtoupper(mb_substr($w, 0, 1)))->join('');
                                 $colors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-teal-500'];
                                 $bgColor = $colors[crc32($mhs['nama']) % count($colors)];
-                                $avatarFallback = '<div class="admin-profile-avatar w-10 h-10 rounded-full ' . $bgColor . ' flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">' . e($initials) . '</div>';
+                                $avatarFallback = '<div class="admin-profile-avatar admin-student-avatar w-10 h-10 rounded-full ' . $bgColor . ' flex items-center justify-center text-white text-sm font-bold leading-none ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">' . e($initials) . '</div>';
                             @endphp
                             <div class="flex items-center gap-3.5">
                                 @if($mhs['foto_url'])
-                                    <img src="{{ $mhs['foto_url'] }}" alt="{{ $mhs['nama'] }}" class="admin-profile-avatar w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" data-fallback="{{ $avatarFallback }}" onerror="this.outerHTML=this.dataset.fallback;">
+                                    <img src="{{ $mhs['foto_url'] }}" alt="{{ $mhs['nama'] }}" class="admin-profile-avatar admin-student-avatar w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" data-fallback="{{ $avatarFallback }}" onerror="this.outerHTML=this.dataset.fallback;">
                                 @else
-                                    <div class="admin-profile-avatar w-10 h-10 rounded-full {{ $bgColor }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                    <div class="admin-profile-avatar admin-student-avatar w-10 h-10 rounded-full {{ $bgColor }} flex items-center justify-center text-white text-sm font-bold leading-none ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}
                                     </div>
                                 @endif

@@ -678,6 +678,24 @@ section img {
         justify-content: flex-start;
     }
 
+    .admin-mobile-list .admin-profile-avatar:not(img) {
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+    }
+
+    .admin-mobile-list .admin-student-avatar {
+        width: 2.4rem !important;
+        height: 2.4rem !important;
+        min-width: 2.4rem !important;
+        min-height: 2.4rem !important;
+        aspect-ratio: 1 / 1;
+        flex: 0 0 auto;
+        padding: 0 !important;
+        border-radius: 9999px !important;
+        text-align: center;
+    }
+
     .admin-mobile-list .truncate {
         white-space: normal !important;
     }
