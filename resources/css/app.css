@@ -904,6 +904,220 @@ section img {
         background: rgb(55 65 81 / 0.55);
     }
 
+    .admin-toolbar-prodi {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .admin-toolbar-prodi .admin-toolbar-shell {
+        gap: 0.55rem !important;
+    }
+
+    .admin-toolbar-prodi .admin-toolbar-actions {
+        width: auto !important;
+    }
+
+    .admin-toolbar-prodi .admin-toolbar-actions button {
+        width: auto;
+        min-height: 2.35rem;
+        padding-inline: 0.85rem;
+    }
+
+    .admin-toolbar-prodi .admin-toolbar-filters {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0.5rem;
+        flex-direction: initial;
+    }
+
+    .admin-toolbar-prodi .admin-toolbar-search {
+        display: flex;
+        flex-direction: row;
+        gap: 0.45rem;
+        align-items: stretch;
+    }
+
+    .admin-toolbar-prodi .admin-toolbar-search button {
+        width: auto;
+        min-width: 4.25rem;
+        padding-inline: 0.75rem;
+    }
+
+    .admin-toolbar-prodi .admin-toolbar-search input,
+    .admin-toolbar-prodi .admin-toolbar-search button,
+    .admin-toolbar-prodi .admin-toolbar-filters select {
+        min-height: 2.4rem;
+    }
+
+    .admin-prodi-list {
+        border-spacing: 0 0.62rem;
+    }
+
+    .admin-prodi-list tbody tr {
+        position: relative;
+        padding: 0.78rem;
+        border-radius: 0.875rem;
+        overflow: visible;
+    }
+
+    .admin-prodi-list tbody td {
+        border-bottom: 0;
+        padding: 0 !important;
+    }
+
+    .admin-prodi-list tbody td::before {
+        display: none;
+    }
+
+    .admin-prodi-list tbody td > * {
+        max-width: none;
+    }
+
+    .admin-prodi-list .admin-prodi-code {
+        display: inline-flex;
+        width: auto;
+        align-items: center;
+    }
+
+    .admin-prodi-list .admin-prodi-code span {
+        border-radius: 9999px;
+        padding: 0.24rem 0.52rem;
+        font-size: 0.68rem;
+        line-height: 1.1;
+    }
+
+    .admin-prodi-list .admin-prodi-level {
+        position: absolute;
+        top: 0.72rem;
+        right: 0.78rem;
+        width: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .admin-prodi-list .admin-prodi-level span {
+        border-radius: 9999px;
+        padding: 0.22rem 0.55rem;
+        font-size: 0.68rem;
+        line-height: 1.1;
+    }
+
+    .admin-prodi-list .admin-prodi-main {
+        display: block;
+        margin-top: 0.62rem;
+    }
+
+    .admin-prodi-list .admin-prodi-main .flex {
+        justify-content: flex-start;
+        gap: 0.65rem;
+    }
+
+    .admin-prodi-icon {
+        width: 2.25rem !important;
+        height: 2.25rem !important;
+        min-width: 2.25rem !important;
+        min-height: 2.25rem !important;
+        aspect-ratio: 1 / 1;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+        text-align: center;
+    }
+
+    .admin-prodi-list .admin-prodi-title {
+        max-width: 100%;
+        font-size: 0.9rem;
+        line-height: 1.25;
+        white-space: normal !important;
+    }
+
+    .admin-prodi-list .admin-prodi-subtitle {
+        display: block;
+        margin-top: 0.12rem;
+        font-size: 0.74rem;
+        line-height: 1.25;
+    }
+
+    .admin-prodi-list .admin-prodi-faculty {
+        display: none;
+    }
+
+    .admin-prodi-list .admin-prodi-students {
+        display: block;
+        margin-top: 0.5rem;
+        color: rgb(100 116 139);
+        font-size: 0.76rem;
+        line-height: 1.3;
+    }
+
+    .admin-prodi-list .admin-prodi-students span {
+        font-size: inherit;
+        font-weight: 600;
+        color: inherit;
+    }
+
+    .admin-prodi-list .admin-prodi-student-label {
+        display: inline;
+    }
+
+    .dark .admin-prodi-list .admin-prodi-students {
+        color: rgb(148 163 184);
+    }
+
+    .admin-prodi-list .admin-prodi-action {
+        display: block;
+        margin-top: 0.62rem;
+    }
+
+    .admin-prodi-action-group {
+        justify-content: flex-start;
+        gap: 0.35rem;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    .admin-prodi-action-group button {
+        min-height: 2.2rem;
+        padding: 0.42rem 0.58rem !important;
+        border-radius: 0.65rem;
+        background: rgb(248 250 252);
+    }
+
+    .admin-prodi-action-text {
+        display: inline;
+    }
+
+    .dark .admin-prodi-action-group button {
+        background: rgb(55 65 81 / 0.55);
+    }
+
+    .admin-prodi-pagination {
+        padding: 0.78rem !important;
+        flex-direction: row;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    .admin-prodi-pagination p {
+        font-size: 0.72rem;
+        line-height: 1.25;
+    }
+
+    .admin-prodi-pagination .admin-responsive-actions {
+        flex-shrink: 0;
+    }
+
+    .admin-prodi-pagination .admin-responsive-actions a,
+    .admin-prodi-pagination .admin-responsive-actions button,
+    .admin-prodi-pagination .admin-responsive-actions span {
+        width: 1.9rem;
+        height: 1.9rem;
+        min-height: 1.9rem;
+    }
+
     .admin-toolbar-pengumuman {
         padding: 0.75rem;
         margin-bottom: 1rem;

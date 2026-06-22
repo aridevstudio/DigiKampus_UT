@@ -57,7 +57,7 @@
     </div>
 
     {{-- Actions Bar --}}
-    <form method="GET" action="{{ route('admin.prodi') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
+    <form method="GET" action="{{ route('admin.prodi') }}" class="admin-toolbar-responsive admin-toolbar-prodi bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
         <div class="admin-toolbar-shell">
             {{-- Buttons --}}
             <div class="admin-toolbar-actions flex flex-wrap gap-1.5">
@@ -99,7 +99,7 @@
                     <input type="text" name="search" value="{{ $search }}" placeholder="Cari prodi..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     <svg class="w-4 h-4 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-600 transition flex-shrink-0">
+                <button type="submit" class="admin-prodi-search-button inline-flex items-center justify-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-xl border border-blue-500 transition flex-shrink-0 shadow-sm shadow-blue-500/20">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     Cari
                 </button>
@@ -110,7 +110,7 @@
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list admin-prodi-list">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-700/30">
                         <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kode</th>
@@ -124,47 +124,52 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
                     @forelse($prodiPaginated as $prodi)
                     <tr class="hover:bg-blue-50/40 dark:hover:bg-gray-700/30 transition group">
-                        <td class="px-6 py-3.5">
+                        <td class="admin-prodi-code px-6 py-3.5" data-label="Kode">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs font-mono font-semibold text-blue-600 dark:text-blue-400">{{ $prodi->kode_jurusan }}</span>
                         </td>
-                        <td class="px-6 py-3.5">
+                        <td class="admin-prodi-main px-6 py-3.5" data-label="Nama Program Studi">
                             <div class="flex items-center gap-3">
                                 @php
                                     $colors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-teal-500'];
                                     $bgColor = $colors[crc32($prodi->nama_jurusan) % count($colors)];
                                     $initial = strtoupper(mb_substr($prodi->nama_jurusan, 0, 1));
                                 @endphp
-                                <div class="w-9 h-9 rounded-lg {{ $bgColor }} flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                                <div class="admin-prodi-icon w-9 h-9 rounded-lg {{ $bgColor }} flex items-center justify-center text-white text-xs font-bold leading-none shadow-sm flex-shrink-0">
                                     {{ $initial }}
                                 </div>
-                                <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $prodi->nama_jurusan }}</span>
+                                <div class="min-w-0">
+                                    <span class="admin-prodi-title block text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $prodi->nama_jurusan }}</span>
+                                    <span class="admin-prodi-subtitle hidden text-xs text-gray-500 dark:text-gray-400">{{ $prodi->fakultas }}</span>
+                                </div>
                             </div>
                         </td>
-                        <td class="px-6 py-3.5">
+                        <td class="admin-prodi-faculty px-6 py-3.5" data-label="Fakultas">
                             <div class="flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
                                 <span class="text-sm text-gray-700 dark:text-gray-300">{{ $prodi->fakultas }}</span>
                             </div>
                         </td>
-                        <td class="px-6 py-3.5 text-center">
+                        <td class="admin-prodi-level px-6 py-3.5 text-center" data-label="Jenjang">
                             <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 ring-1 ring-indigo-200 dark:ring-indigo-800/50">
                                 {{ $prodi->jenjang }}
                             </span>
                         </td>
-                        <td class="px-6 py-3.5 text-center">
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $prodi->mahasiswa_count }}</span>
+                        <td class="admin-prodi-students px-6 py-3.5 text-center" data-label="Mahasiswa">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $prodi->mahasiswa_count }}<span class="admin-prodi-student-label hidden"> Mahasiswa</span></span>
                         </td>
-                        <td class="px-6 py-3.5 text-center">
-                            <div class="inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/30 rounded-lg p-0.5">
-                                <button onclick="openEditModal({{ $prodi->id_jurusan }})" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-white dark:hover:bg-gray-600 rounded-md transition shadow-none hover:shadow-sm" title="Edit">
+                        <td class="admin-prodi-action px-6 py-3.5 text-center" data-label="Aksi">
+                            <div class="admin-prodi-action-group inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/30 rounded-lg p-0.5">
+                                <button onclick="openEditModal({{ $prodi->id_jurusan }})" class="inline-flex items-center gap-1.5 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-white dark:hover:bg-gray-600 rounded-md transition shadow-none hover:shadow-sm" title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
+                                    <span class="admin-prodi-action-text hidden text-xs font-semibold">Edit</span>
                                 </button>
-                                <button onclick="confirmDelete({{ $prodi->id_jurusan }}, '{{ addslashes($prodi->nama_jurusan) }}')" class="p-1.5 text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition shadow-none hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800/60" title="Hapus program studi">
+                                <button onclick="confirmDelete({{ $prodi->id_jurusan }}, '{{ addslashes($prodi->nama_jurusan) }}')" class="inline-flex items-center gap-1.5 p-1.5 text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition shadow-none hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800/60" title="Hapus program studi">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
+                                    <span class="admin-prodi-action-text hidden text-xs font-semibold">Hapus</span>
                                 </button>
                             </div>
                         </td>
@@ -190,7 +195,7 @@
 
         {{-- Pagination --}}
         @if($prodiPaginated->total() > 0)
-        <div class="px-6 py-3.5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between admin-responsive-pagination">
+        <div class="admin-prodi-pagination px-6 py-3.5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between admin-responsive-pagination">
             <p class="text-xs text-gray-500 dark:text-gray-400">
                 Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300">{{ $prodiPaginated->firstItem() ?? 0 }}-{{ $prodiPaginated->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ $prodiPaginated->total() }}</span> prodi
             </p>
