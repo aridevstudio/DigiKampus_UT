@@ -115,7 +115,7 @@
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list admin-lecturer-list">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-900/40">
                         <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -131,11 +131,11 @@
                     @forelse($dosenList as $index => $dosen)
                     <tr class="group hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors duration-150">
                         {{-- Row Number --}}
-                        <td class="px-5 py-4">
-                            <span class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ ($dosenPaginated->currentPage() - 1) * $dosenPaginated->perPage() + $index + 1 }}</span>
+                        <td class="admin-lecturer-no px-5 py-4" data-label="No">
+                            <span class="text-xs font-medium text-gray-400 dark:text-gray-500">#{{ ($dosenPaginated->currentPage() - 1) * $dosenPaginated->perPage() + $index + 1 }}</span>
                         </td>
                         {{-- Avatar + Name + Email (combined) --}}
-                        <td class="px-5 py-4">
+                        <td class="admin-lecturer-main px-5 py-4" data-label="Dosen">
                             @php
                                 $colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'];
                                 $colorClass = $colors[$dosen['id'] % count($colors)];
@@ -143,12 +143,12 @@
                             @endphp
                             <div class="flex items-center gap-3.5">
                                 @if($dosen['foto_url'])
-                                    <img src="{{ $dosen['foto_url'] }}" alt="{{ $dosen['nama'] }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
-                                    <div class="hidden w-10 h-10 rounded-full {{ $colorClass }} items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                    <img src="{{ $dosen['foto_url'] }}" alt="{{ $dosen['nama'] }}" class="admin-lecturer-avatar w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                                    <div class="admin-lecturer-avatar hidden w-10 h-10 rounded-full {{ $colorClass }} items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}
                                     </div>
                                 @else
-                                    <div class="w-10 h-10 rounded-full {{ $colorClass }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                    <div class="admin-lecturer-avatar w-10 h-10 rounded-full {{ $colorClass }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}
                                     </div>
                                 @endif
@@ -159,7 +159,7 @@
                             </div>
                         </td>
                         {{-- Nomor Induk --}}
-                        <td class="px-5 py-4">
+                        <td class="admin-lecturer-id px-5 py-4" data-label="Nomor Induk">
                             @if($dosen['nomor_induk'] && $dosen['nomor_induk'] !== '-')
                                 <span class="text-sm text-gray-700 dark:text-gray-300 font-mono">{{ $dosen['nomor_induk'] }}</span>
                             @else
@@ -167,7 +167,7 @@
                             @endif
                         </td>
                         {{-- Program Studi --}}
-                        <td class="px-5 py-4">
+                        <td class="admin-lecturer-program px-5 py-4" data-label="Program Studi">
                             @if($dosen['program_studi'] && $dosen['program_studi'] !== '-')
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/40">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
@@ -178,7 +178,7 @@
                             @endif
                         </td>
                         {{-- No. Telepon --}}
-                        <td class="px-5 py-4">
+                        <td class="admin-lecturer-phone px-5 py-4" data-label="No. Telepon">
                             @if($dosen['no_telepon'] && $dosen['no_telepon'] !== '-')
                                 <span class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
                                     <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
@@ -188,7 +188,7 @@
                                 <span class="text-xs text-gray-300 dark:text-gray-600 italic">Belum diisi</span>
                             @endif
                         </td>
-                        <td class="px-5 py-4 text-center">
+                        <td class="admin-lecturer-status px-5 py-4 text-center" data-label="Status">
                             @if($dosen['status'] === 'Aktif')
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700/40">
                                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
@@ -207,8 +207,8 @@
                             @endif
                         </td>
                         {{-- Actions --}}
-                        <td class="px-5 py-4 text-center">
-                            <div class="inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-0.5">
+                        <td class="admin-lecturer-action px-5 py-4 text-center" data-label="Aksi">
+                            <div class="admin-lecturer-action-group inline-flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-0.5">
                                 @if($dosen['status'] === 'Pending')
                                 <button onclick="confirmApprove({{ $dosen['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Setujui Dosen">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -686,6 +686,201 @@ section img {
         background: transparent !important;
     }
 
+    .admin-lecturer-list {
+        border-spacing: 0 0.6rem;
+    }
+
+    .admin-lecturer-list tbody tr {
+        position: relative;
+        padding: 0.78rem;
+        border-radius: 0.875rem;
+        overflow: visible;
+    }
+
+    .admin-lecturer-list tbody td {
+        border-bottom: 0;
+        padding: 0 !important;
+    }
+
+    .admin-lecturer-list tbody td::before {
+        display: none;
+    }
+
+    .admin-lecturer-list tbody td > * {
+        max-width: none;
+    }
+
+    .admin-lecturer-list .admin-lecturer-no {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        width: auto;
+        color: rgb(100 116 139);
+        font-size: 0.74rem;
+        line-height: 1;
+    }
+
+    .admin-lecturer-list .admin-lecturer-no span {
+        font-weight: 800;
+    }
+
+    .admin-lecturer-list .admin-lecturer-status {
+        position: absolute;
+        top: 0.62rem;
+        right: 0.78rem;
+        width: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .admin-lecturer-list .admin-lecturer-status > span {
+        max-width: 9.5rem;
+        border-radius: 9999px;
+        padding: 0.2rem 0.48rem;
+        font-size: 0.68rem;
+        line-height: 1.1;
+        white-space: normal;
+    }
+
+    .admin-lecturer-list .admin-lecturer-main {
+        display: block;
+        margin-top: 0.62rem;
+    }
+
+    .admin-lecturer-list .admin-lecturer-main .flex {
+        justify-content: flex-start;
+        gap: 0.65rem;
+    }
+
+    .admin-lecturer-avatar {
+        width: 2.35rem !important;
+        height: 2.35rem !important;
+        min-width: 2.35rem !important;
+        min-height: 2.35rem !important;
+        border-radius: 9999px !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+        text-align: center;
+    }
+
+    .admin-lecturer-avatar:not(img) {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .admin-lecturer-list .admin-lecturer-main p:first-child {
+        max-width: 100% !important;
+        font-size: 0.9rem;
+        line-height: 1.25;
+        white-space: normal !important;
+    }
+
+    .admin-lecturer-list .admin-lecturer-main p:last-child {
+        max-width: 100% !important;
+        margin-top: 0.1rem;
+        line-height: 1.25;
+        white-space: normal !important;
+    }
+
+    .admin-lecturer-list .admin-lecturer-id {
+        display: block;
+        margin-top: 0.62rem;
+        color: rgb(71 85 105);
+        font-size: 0.76rem;
+        line-height: 1.35;
+        word-break: break-word;
+    }
+
+    .admin-lecturer-list .admin-lecturer-id::before {
+        content: "Nomor Induk: ";
+        display: inline;
+        font-weight: 700;
+        color: rgb(100 116 139);
+    }
+
+    .dark .admin-lecturer-list .admin-lecturer-id::before {
+        color: rgb(148 163 184);
+    }
+
+    .dark .admin-lecturer-list .admin-lecturer-id {
+        color: rgb(203 213 225);
+    }
+
+    .admin-lecturer-list .admin-lecturer-id span {
+        font-size: inherit;
+    }
+
+    .admin-lecturer-list .admin-lecturer-program {
+        display: inline-flex;
+        width: auto;
+        max-width: 100%;
+        margin-top: 0.45rem;
+        margin-right: 0.35rem;
+        vertical-align: top;
+    }
+
+    .admin-lecturer-list .admin-lecturer-program span {
+        max-width: 100%;
+        border-radius: 9999px;
+        padding: 0.25rem 0.52rem;
+        font-size: 0.68rem;
+        line-height: 1.15;
+        white-space: normal;
+    }
+
+    .admin-lecturer-list .admin-lecturer-program svg {
+        width: 0.78rem;
+        height: 0.78rem;
+    }
+
+    .admin-lecturer-list .admin-lecturer-phone {
+        display: block;
+        margin-top: 0.42rem;
+        color: rgb(100 116 139);
+        font-size: 0.76rem;
+        line-height: 1.35;
+    }
+
+    .dark .admin-lecturer-list .admin-lecturer-phone {
+        color: rgb(148 163 184);
+    }
+
+    .admin-lecturer-list .admin-lecturer-phone span {
+        font-size: inherit;
+        color: inherit;
+    }
+
+    .admin-lecturer-list .admin-lecturer-action {
+        display: block;
+        margin-top: 0.62rem;
+    }
+
+    .admin-lecturer-action-group {
+        justify-content: flex-start;
+        gap: 0.35rem;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    .admin-lecturer-action-group > .w-px {
+        display: none;
+    }
+
+    .admin-lecturer-action-group button {
+        min-height: 2.25rem;
+        padding: 0.45rem 0.62rem !important;
+        border-radius: 0.65rem;
+        background: rgb(248 250 252);
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
+    .dark .admin-lecturer-action-group button {
+        background: rgb(55 65 81 / 0.55);
+    }
+
     .admin-toolbar-pengumuman {
         padding: 0.75rem;
         margin-bottom: 1rem;
