@@ -16,7 +16,7 @@
     </div>
 
     {{-- Actions Bar --}}
-    <form method="GET" action="{{ route('admin.pengumuman') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
+    <form method="GET" action="{{ route('admin.pengumuman') }}" class="admin-toolbar-responsive admin-toolbar-pengumuman bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6" x-data="{ isLoading: false }" @submit="isLoading = true">
         <div class="admin-toolbar-shell admin-toolbar-pengumuman-row">
             {{-- Buttons --}}
             <div class="admin-toolbar-actions flex flex-wrap gap-1.5">
@@ -92,7 +92,7 @@
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list text-sm">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list admin-news-list text-sm">
                 <thead>
                     <tr class="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-700/30">
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -107,27 +107,27 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
                     @forelse($newsList as $index => $news)
                     <tr class="hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-colors">
-                        <td class="px-6 py-4">
-                            <span class="text-gray-500 dark:text-gray-400 font-medium">{{ $newsList->firstItem() + $index }}</span>
+                        <td class="admin-news-no px-6 py-4" data-label="No">
+                            <span class="text-gray-500 dark:text-gray-400 font-medium">#{{ $newsList->firstItem() + $index }}</span>
                         </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
+                        <td class="admin-news-main px-6 py-4" data-label="Judul">
+                            <div class="flex min-w-0 items-start gap-3">
                                 @if($news->thumbnail)
-                                <img src="{{ asset('storage/' . $news->thumbnail) }}" alt="" class="w-10 h-10 rounded-lg object-cover flex-shrink-0">
+                                <img src="{{ asset('storage/' . $news->thumbnail) }}" alt="" class="admin-news-icon size-10 rounded-lg object-cover shrink-0">
                                 @else
-                                <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="admin-news-icon flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500 dark:bg-blue-500/10">
+                                    <svg class="block size-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                                     </svg>
                                 </div>
                                 @endif
-                                <div class="min-w-0">
-                                    <p class="font-semibold text-gray-800 dark:text-white truncate max-w-[140px] sm:max-w-[220px] lg:max-w-[300px]">{{ $news->judul }}</p>
-                                    <p class="text-xs text-gray-400 truncate max-w-[140px] sm:max-w-[220px] lg:max-w-[300px]">{{ Str::limit(strip_tags($news->konten), 60) }}</p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="admin-news-title font-semibold leading-snug text-gray-800 dark:text-white truncate max-w-[140px] sm:max-w-[220px] lg:max-w-[300px]">{{ $news->judul }}</p>
+                                    <p class="admin-news-desc mt-1 text-xs leading-relaxed text-gray-400 dark:text-gray-500 truncate max-w-[140px] sm:max-w-[220px] lg:max-w-[300px]">{{ Str::limit(strip_tags($news->konten), 70) }}</p>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="admin-news-chip admin-news-category px-6 py-4" data-label="Kategori">
                             @php
                                 $kategoriColors = [
                                     'umum' => 'bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300',
@@ -156,7 +156,7 @@
                                 {{ $kategoriLabels[$news->kategori] ?? ucfirst($news->kategori) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="admin-news-chip admin-news-target px-6 py-4" data-label="Target Prodi">
                             @php
                                 $targetProdi = data_get($news, 'target_prodi');
                                 $targetLabel = $targetProdi ? ($targetProdiOptions[$targetProdi] ?? Str::headline(str_replace('-', ' ', $targetProdi))) : 'Semua Prodi';
@@ -165,10 +165,10 @@
                                 {{ $targetLabel }}
                             </span>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="admin-news-date px-6 py-4" data-label="Tanggal Publish">
                             <span class="text-gray-600 dark:text-gray-300">{{ $news->tanggal_publish->format('d M Y, H:i') }}</span>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="admin-news-status px-6 py-4" data-label="Status">
                             @if($news->is_active)
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -181,19 +181,21 @@
                             </span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 text-center">
+                        <td class="admin-news-action px-6 py-4 text-center" data-label="Aksi">
                             <div class="flex items-center justify-center gap-1">
                                 <button type="button" onclick="openEditModal({{ $news->id_news }})"
-                                    class="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10 rounded-lg transition" title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="admin-news-action-button p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10 rounded-lg transition" title="Edit" aria-label="Edit pengumuman">
+                                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
+                                    <span class="admin-news-action-text">Edit</span>
                                 </button>
                                 <button type="button" onclick="openDeleteModal({{ $news->id_news }}, '{{ addslashes($news->judul) }}')"
-                                    class="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition" title="Hapus">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="admin-news-action-button p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition" title="Hapus" aria-label="Hapus pengumuman">
+                                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
+                                    <span class="admin-news-action-text">Hapus</span>
                                 </button>
                             </div>
                         </td>
@@ -577,6 +579,5 @@
 @endpush
 
 </x-layouts.admin>
-
 
 
