@@ -1,4 +1,10 @@
 <x-layouts.admin title="Manajemen Chat" active="chat">
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+
     <div
         x-data="adminChatManager()"
         x-init="init()"
@@ -58,7 +64,7 @@
 
         <div class="flex-1 min-h-0 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl overflow-hidden flex">
             <div
-                class="w-full lg:w-[360px] border-r border-gray-100 dark:border-gray-700 flex flex-col"
+                class="w-full min-w-0 lg:w-[360px] lg:flex-shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col"
                 :class="{ 'hidden lg:flex': activeConversationId, 'flex': !activeConversationId }"
             >
                 <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
@@ -107,7 +113,11 @@
                 </div>
             </div>
 
-            <div class="flex-1 min-w-0 flex flex-col">
+            <div
+                x-cloak
+                class="w-full min-w-0 flex-1 flex-col lg:flex"
+                :class="activeConversationId ? 'flex' : 'hidden lg:flex'"
+            >
                 <template x-if="!activeConversation">
                     <div class="flex-1 flex flex-col items-center justify-center text-center px-6">
                         <div class="w-20 h-20 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-4">
@@ -130,7 +140,7 @@
                                     </svg>
                                 </button>
                                 <div class="min-w-0">
-                                    <p class="font-semibold text-gray-900 dark:text-white truncate" x-text="`${activeConversation.student_name} • ${activeConversation.lecturer_name}`"></p>
+                                    <p class="font-semibold text-gray-900 dark:text-white truncate" x-text="`${activeConversation.student_name} - ${activeConversation.lecturer_name}`"></p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="`Terakhir aktif: ${formatDateTime(activeConversation.last_message_at)}`"></p>
                                 </div>
                             </div>
@@ -266,7 +276,9 @@
                 isLoadingConversations: false,
                 isLoadingMessages: false,
                 isSendingMessage: false,
+                isSplitView: false,
                 poller: null,
+                resizeHandler: null,
                 stats: {
                     total: 0,
                     active24h: 0,
@@ -279,6 +291,10 @@
                 },
 
                 init() {
+                    this.updateSplitView();
+                    this.resizeHandler = () => this.updateSplitView();
+                    window.addEventListener('resize', this.resizeHandler);
+
                     this.fetchConversations();
                     this.poller = setInterval(() => {
                         this.fetchConversations(false);
@@ -289,7 +305,15 @@
 
                     window.addEventListener('beforeunload', () => {
                         if (this.poller) clearInterval(this.poller);
+                        if (this.resizeHandler) window.removeEventListener('resize', this.resizeHandler);
                     });
+                },
+
+                updateSplitView() {
+                    this.isSplitView = window.matchMedia('(min-width: 1024px)').matches;
+                    if (this.isSplitView && !this.activeConversationId && this.filteredConversations.length > 0) {
+                        this.selectConversation(this.filteredConversations[0].id);
+                    }
                 },
 
                 async fetchConversations(showLoader = true) {
@@ -312,7 +336,7 @@
                     } finally {
                         this.recalculateStats();
                         this.applyFilters();
-                        if (!this.activeConversationId && this.filteredConversations.length > 0) {
+                        if (this.isSplitView && !this.activeConversationId && this.filteredConversations.length > 0) {
                             this.selectConversation(this.filteredConversations[0].id);
                         }
                         if (showLoader) this.isLoadingConversations = false;
