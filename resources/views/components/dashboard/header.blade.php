@@ -74,6 +74,10 @@ if ($userType === 'mahasiswa' && $user) {
                 alt="SALUT Logo" 
                 class="h-8 max-w-[132px] shrink-0 object-contain lg:hidden"
             >
+            <div class="hidden min-w-0 leading-none sm:block lg:hidden">
+                <div class="truncate text-sm font-bold text-gray-800 dark:text-gray-100">DigiKampus</div>
+                <div class="mt-0.5 inline-flex rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-blue-500 dark:bg-blue-500/10 dark:text-blue-300">UT</div>
+            </div>
         </div>
 
         {{-- Right Side --}}

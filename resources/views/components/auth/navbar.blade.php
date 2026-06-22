@@ -3,8 +3,12 @@
 {{-- Auth Page Navbar - Same style as landing page --}}
 <nav class="fixed top-0 left-0 right-0 z-50 px-3 sm:px-6 pt-3 sm:pt-4">
     <div class="nav-glass max-w-6xl mx-auto px-3.5 sm:px-6 h-14 flex items-center justify-between gap-3">
-        <a href="/" class="flex min-w-0 flex-1 items-center overflow-hidden" style="text-decoration:none">
+        <a href="/" class="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden" style="text-decoration:none">
             <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="SALUT Logo" class="h-8 max-w-[132px] shrink-0 object-contain" loading="eager">
+            <div class="brand-responsive-text min-w-0 flex-col leading-none sm:flex-row sm:items-baseline sm:gap-1">
+                <span class="truncate" style="font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:#1E293B">DigiKampus</span>
+                <span class="shrink-0 text-[11px] font-semibold leading-none text-slate-400">UT</span>
+            </div>
         </a>
         <div class="hidden sm:flex items-center" style="gap:24px">
             <a href="/" class="text-sm text-gray-500 hover:text-blue-500 transition-colors duration-200" style="text-decoration:none;font-weight:500">Beranda</a>
@@ -40,5 +44,13 @@
         border: 1px solid rgba(226,232,240,0.6);
         border-radius: 16px;
         box-shadow: 0 4px 30px rgba(0,0,0,0.04);
+    }
+    .brand-responsive-text {
+        display: none;
+    }
+    @media (min-width: 640px) {
+        .brand-responsive-text {
+            display: flex;
+        }
     }
 </style>
