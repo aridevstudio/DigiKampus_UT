@@ -140,13 +140,11 @@
                                 $colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'];
                                 $colorClass = $colors[$dosen['id'] % count($colors)];
                                 $initials = collect(explode(' ', $dosen['nama']))->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join('');
+                                $avatarFallback = '<div class="admin-profile-avatar admin-lecturer-avatar w-10 h-10 rounded-full ' . $colorClass . ' flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">' . e($initials) . '</div>';
                             @endphp
                             <div class="flex items-center gap-3.5">
                                 @if($dosen['foto_url'])
-                                    <img src="{{ $dosen['foto_url'] }}" alt="{{ $dosen['nama'] }}" class="admin-profile-avatar admin-lecturer-avatar w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
-                                    <div class="admin-profile-avatar admin-lecturer-avatar hidden w-10 h-10 rounded-full {{ $colorClass }} items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
-                                        {{ $initials }}
-                                    </div>
+                                    <img src="{{ $dosen['foto_url'] }}" alt="{{ $dosen['nama'] }}" class="admin-profile-avatar admin-lecturer-avatar w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" data-fallback="{{ $avatarFallback }}" onerror="this.outerHTML=this.dataset.fallback;">
                                 @else
                                     <div class="admin-profile-avatar admin-lecturer-avatar w-10 h-10 rounded-full {{ $colorClass }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}

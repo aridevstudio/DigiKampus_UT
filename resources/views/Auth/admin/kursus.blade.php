@@ -1935,9 +1935,8 @@
                 const joinedAt = escapeHtml(participant.tanggal_daftar || '-');
                 const initials = escapeHtml(getParticipantInitial(participant.name));
                 const fallbackAvatar = `<div class="admin-profile-avatar w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center text-sm font-bold">${initials}</div>`;
-                const hiddenFallbackAvatar = `<div class="admin-profile-avatar hidden w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white items-center justify-center text-sm font-bold">${initials}</div>`;
                 const avatar = participant.foto_url
-                    ? `<img src="${escapeHtml(participant.foto_url)}" alt="${name}" class="admin-profile-avatar w-10 h-10 rounded-full object-cover ring-1 ring-gray-200 dark:ring-gray-600" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">${hiddenFallbackAvatar}`
+                    ? `<img src="${escapeHtml(participant.foto_url)}" alt="${name}" class="admin-profile-avatar w-10 h-10 rounded-full object-cover ring-1 ring-gray-200 dark:ring-gray-600" data-fallback="${escapeHtml(fallbackAvatar)}" onerror="this.outerHTML=this.dataset.fallback;">`
                     : fallbackAvatar;
 
                 return `
