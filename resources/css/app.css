@@ -753,7 +753,7 @@ section img {
         gap: 0.65rem;
     }
 
-    .admin-lecturer-avatar {
+    .admin-profile-avatar {
         width: 2.35rem !important;
         height: 2.35rem !important;
         min-width: 2.35rem !important;
@@ -764,7 +764,12 @@ section img {
         text-align: center;
     }
 
-    .admin-lecturer-avatar:not(img) {
+    img.admin-profile-avatar {
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .admin-profile-avatar:not(img):not(.hidden) {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;

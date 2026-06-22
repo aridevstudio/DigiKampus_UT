@@ -137,12 +137,12 @@
                             @endphp
                             <div class="flex items-center gap-3.5">
                                 @if($mhs['foto_url'])
-                                    <img src="{{ $mhs['foto_url'] }}" alt="{{ $mhs['nama'] }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
-                                    <div class="hidden w-10 h-10 rounded-full {{ $bgColor }} items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                    <img src="{{ $mhs['foto_url'] }}" alt="{{ $mhs['nama'] }}" class="admin-profile-avatar w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                                    <div class="admin-profile-avatar hidden w-10 h-10 rounded-full {{ $bgColor }} items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}
                                     </div>
                                 @else
-                                    <div class="w-10 h-10 rounded-full {{ $bgColor }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
+                                    <div class="admin-profile-avatar w-10 h-10 rounded-full {{ $bgColor }} flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm flex-shrink-0">
                                         {{ $initials }}
                                     </div>
                                 @endif
