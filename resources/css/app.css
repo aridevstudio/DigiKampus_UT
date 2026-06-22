@@ -725,13 +725,13 @@ section img {
     }
 
     .admin-news-list {
-        border-spacing: 0 0.75rem;
+        border-spacing: 0 0.55rem;
     }
 
     .admin-news-list tbody tr {
         position: relative;
-        padding: 0.9rem;
-        border-radius: 1rem;
+        padding: 0.72rem 0.78rem 0.78rem;
+        border-radius: 0.875rem;
         overflow: visible;
     }
 
@@ -749,12 +749,14 @@ section img {
     }
 
     .admin-news-list .admin-news-no {
-        position: absolute;
-        top: 0.8rem;
-        left: 0.9rem;
+        position: relative;
+        top: auto;
+        left: auto;
         width: auto;
+        display: inline-flex;
+        align-items: center;
         color: rgb(100 116 139);
-        font-size: 0.76rem;
+        font-size: 0.74rem;
         line-height: 1;
     }
 
@@ -764,32 +766,47 @@ section img {
 
     .admin-news-list .admin-news-status {
         position: absolute;
-        top: 0.65rem;
-        right: 0.8rem;
+        top: 0.62rem;
+        right: 0.78rem;
         width: auto;
         display: inline-flex;
+        align-items: center;
         justify-content: flex-end;
+    }
+
+    .admin-news-list .admin-news-status span {
+        border-radius: 9999px;
+        padding: 0.2rem 0.45rem;
+        font-size: 0.68rem;
+        line-height: 1.1;
     }
 
     .admin-news-list .admin-news-main {
         display: block;
-        padding-top: 1.35rem !important;
-        padding-right: 0.1rem !important;
+        margin-top: 0.65rem;
+        padding-top: 0 !important;
+        padding-right: 0 !important;
     }
 
     .admin-news-list .admin-news-main .flex {
         justify-content: flex-start;
+        gap: 0.62rem;
     }
 
     .admin-news-icon {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        width: 2.15rem !important;
+        height: 2.15rem !important;
+        border-radius: 0.65rem !important;
     }
 
     .admin-news-icon svg {
         display: block;
         margin: auto;
+        width: 1rem !important;
+        height: 1rem !important;
     }
 
     .admin-news-title {
@@ -799,7 +816,7 @@ section img {
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
         white-space: normal !important;
-        font-size: 0.92rem;
+        font-size: 0.88rem;
     }
 
     .admin-news-desc {
@@ -810,6 +827,7 @@ section img {
         -webkit-line-clamp: 2;
         white-space: normal !important;
         color: rgb(100 116 139);
+        line-height: 1.3;
     }
 
     .dark .admin-news-desc {
@@ -820,21 +838,29 @@ section img {
         display: inline-flex;
         width: auto;
         max-width: 100%;
-        margin-top: 0.75rem;
-        margin-right: 0.35rem;
+        margin-top: 0.62rem;
+        margin-right: 0.25rem;
         vertical-align: top;
     }
 
     .admin-news-list .admin-news-chip span {
         max-width: 100%;
+        border-radius: 9999px;
+        padding: 0.22rem 0.48rem;
+        font-size: 0.68rem;
+        line-height: 1.1;
         white-space: normal;
+    }
+
+    .admin-news-list .admin-news-target {
+        margin-top: 0.62rem;
     }
 
     .admin-news-list .admin-news-date {
         display: block;
-        margin-top: 0.65rem;
+        margin-top: 0.42rem;
         color: rgb(100 116 139);
-        font-size: 0.76rem;
+        font-size: 0.73rem;
         line-height: 1.35;
     }
 
@@ -848,19 +874,19 @@ section img {
 
     .admin-news-list .admin-news-action {
         display: block;
-        margin-top: 0.85rem;
+        margin-top: 0.62rem;
     }
 
     .admin-news-list .admin-news-action > div {
-        justify-content: stretch;
-        gap: 0.5rem;
+        justify-content: flex-start;
+        gap: 0.38rem;
     }
 
     .admin-news-action-button {
-        min-height: 2.5rem;
-        flex: 1 1 0;
-        gap: 0.45rem;
-        border-radius: 0.75rem;
+        min-height: 2.25rem;
+        flex: 0 0 auto;
+        gap: 0.32rem;
+        border-radius: 0.65rem;
         font-weight: 700;
     }
 
@@ -868,6 +894,8 @@ section img {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        padding: 0.45rem 0.62rem !important;
+        font-size: 0.76rem;
     }
 
     .admin-news-list .admin-news-action-button:first-child {
