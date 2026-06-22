@@ -1118,6 +1118,291 @@ section img {
         min-height: 1.9rem;
     }
 
+    .admin-course-list {
+        border-spacing: 0 0.62rem;
+    }
+
+    .admin-course-list tbody tr {
+        position: relative;
+        padding: 0.78rem;
+        border-radius: 0.875rem;
+        overflow: visible;
+    }
+
+    .admin-course-list tbody td {
+        border-bottom: 0;
+        padding: 0 !important;
+    }
+
+    .admin-course-list tbody td::before {
+        display: none;
+    }
+
+    .admin-course-list tbody td > * {
+        max-width: none;
+    }
+
+    .admin-course-list .admin-course-no {
+        display: inline-flex;
+        width: auto;
+        align-items: center;
+        color: rgb(100 116 139);
+        font-size: 0.74rem;
+        line-height: 1;
+    }
+
+    .admin-course-list .admin-course-no span {
+        font-weight: 800;
+    }
+
+    .admin-course-list .admin-course-status {
+        position: absolute;
+        top: 0.62rem;
+        right: 0.78rem;
+        width: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .admin-course-list .admin-course-status-badge {
+        max-width: 9.75rem;
+        border-radius: 9999px;
+        padding: 0.2rem 0.48rem;
+        font-size: 0.68rem;
+        line-height: 1.1;
+        white-space: normal;
+    }
+
+    .admin-course-list .admin-course-main {
+        display: block;
+        margin-top: 0.62rem;
+    }
+
+    .admin-course-list .admin-course-main .flex {
+        justify-content: flex-start;
+        gap: 0.68rem;
+    }
+
+    .admin-course-thumb {
+        width: 2.75rem !important;
+        height: 2.75rem !important;
+        min-width: 2.75rem !important;
+        min-height: 2.75rem !important;
+        aspect-ratio: 1 / 1;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+    }
+
+    .admin-course-thumb svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    .admin-course-media > span {
+        width: 1.1rem !important;
+        height: 1.1rem !important;
+    }
+
+    .admin-course-list .admin-course-title {
+        max-width: 100% !important;
+        font-size: 0.92rem;
+        line-height: 1.25;
+        white-space: normal !important;
+    }
+
+    .admin-course-list .admin-course-code {
+        margin-top: 0.1rem;
+        font-size: 0.72rem;
+        line-height: 1.2;
+    }
+
+    .admin-course-list .admin-course-module {
+        margin-top: 0.12rem;
+        font-size: 0.7rem;
+        line-height: 1.2;
+    }
+
+    .admin-course-list .admin-course-teacher {
+        display: block;
+        margin-top: 0.58rem;
+    }
+
+    .admin-course-list .admin-course-teacher .flex {
+        justify-content: flex-start;
+        gap: 0.45rem;
+    }
+
+    .admin-course-teacher-avatar {
+        width: 1.65rem !important;
+        height: 1.65rem !important;
+        min-width: 1.65rem !important;
+        min-height: 1.65rem !important;
+        aspect-ratio: 1 / 1;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+        text-align: center;
+    }
+
+    .admin-course-teacher-avatar span {
+        line-height: 1;
+    }
+
+    .admin-course-list .admin-course-teacher-name {
+        max-width: 100% !important;
+        font-size: 0.78rem;
+        line-height: 1.25;
+        color: rgb(71 85 105);
+    }
+
+    .admin-course-list .admin-course-teacher-name::before {
+        content: "Pengajar: ";
+        font-weight: 700;
+        color: rgb(100 116 139);
+    }
+
+    .dark .admin-course-list .admin-course-teacher-name {
+        color: rgb(203 213 225);
+    }
+
+    .dark .admin-course-list .admin-course-teacher-name::before {
+        color: rgb(148 163 184);
+    }
+
+    .admin-course-list .admin-course-category {
+        display: inline-flex;
+        width: auto;
+        max-width: 100%;
+        margin-top: 0.5rem;
+        margin-right: 0.4rem;
+        vertical-align: middle;
+    }
+
+    .admin-course-list .admin-course-category-badge {
+        border-radius: 9999px;
+        padding: 0.24rem 0.52rem;
+        font-size: 0.68rem;
+        line-height: 1.15;
+        white-space: nowrap;
+    }
+
+    .admin-course-list .admin-course-category-badge svg {
+        width: 0.78rem;
+        height: 0.78rem;
+    }
+
+    .admin-course-list .admin-course-participants {
+        display: inline-flex;
+        width: auto;
+        max-width: 100%;
+        margin-top: 0.5rem;
+        margin-right: 0.4rem;
+        vertical-align: middle;
+    }
+
+    .admin-course-participants-button {
+        border-radius: 9999px;
+        padding: 0.24rem 0.52rem !important;
+        font-size: 0.68rem;
+        line-height: 1.15;
+    }
+
+    .admin-course-participants-button svg {
+        width: 0.78rem;
+        height: 0.78rem;
+    }
+
+    .admin-course-participants-button span {
+        font-size: inherit;
+    }
+
+    .admin-course-list .admin-course-participants-label {
+        display: inline;
+    }
+
+    .admin-course-list .admin-course-price {
+        display: block;
+        margin-top: 0.48rem;
+        color: rgb(15 23 42);
+        font-size: 0.86rem;
+        line-height: 1.25;
+        font-weight: 800;
+    }
+
+    .dark .admin-course-list .admin-course-price {
+        color: rgb(248 250 252);
+    }
+
+    .admin-course-list .admin-course-price > span:not(.inline-flex),
+    .admin-course-list .admin-course-price .admin-course-price-discount > span:first-child {
+        font-size: inherit;
+        font-weight: inherit;
+        color: inherit;
+    }
+
+    .admin-course-list .admin-course-price-discount {
+        align-items: flex-start;
+    }
+
+    .admin-course-list .admin-course-action {
+        display: block;
+        margin-top: 0.62rem;
+    }
+
+    .admin-course-action-group {
+        justify-content: flex-start;
+        gap: 0.35rem;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    .admin-course-action-group > .w-px {
+        display: none;
+    }
+
+    .admin-course-action-group button {
+        min-height: 2.2rem;
+        padding: 0.42rem 0.58rem !important;
+        border-radius: 0.65rem;
+        background: rgb(248 250 252);
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
+    .dark .admin-course-action-group button {
+        background: rgb(55 65 81 / 0.55);
+    }
+
+    .admin-course-pagination {
+        padding: 0.78rem !important;
+        flex-direction: row !important;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    .admin-course-pagination p {
+        font-size: 0.72rem;
+        line-height: 1.25;
+    }
+
+    .admin-course-pagination .admin-responsive-actions {
+        flex-shrink: 0;
+    }
+
+    .admin-course-pagination .admin-responsive-actions a,
+    .admin-course-pagination .admin-responsive-actions button,
+    .admin-course-pagination .admin-responsive-actions span {
+        width: 1.9rem;
+        height: 1.9rem;
+        min-height: 1.9rem;
+    }
+
     .admin-toolbar-pengumuman {
         padding: 0.75rem;
         margin-bottom: 1rem;

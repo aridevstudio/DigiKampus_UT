@@ -116,7 +116,7 @@
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list admin-course-list">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-900/40">
                         <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -133,23 +133,23 @@
                     @forelse($kursusList as $index => $kursus)
                     <tr class="group hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors duration-150">
                         {{-- No --}}
-                        <td class="px-5 py-4">
-                            <span class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ ($kursusPaginated->currentPage() - 1) * $kursusPaginated->perPage() + $index + 1 }}</span>
+                        <td class="admin-course-no px-5 py-4" data-label="No">
+                            <span class="text-xs font-medium text-gray-400 dark:text-gray-500">#{{ ($kursusPaginated->currentPage() - 1) * $kursusPaginated->perPage() + $index + 1 }}</span>
                         </td>
 
                         {{-- Kursus (Thumbnail + Nama + Kode) --}}
-                        <td class="px-5 py-4">
+                        <td class="admin-course-main px-5 py-4" data-label="Kursus">
                             <div class="flex items-center gap-3.5">
-                                <div class="flex-shrink-0 relative">
+                                <div class="admin-course-media flex-shrink-0 relative">
                                     @if($kursus['video_thumbnail'] ?? null)
-                                        <img src="{{ $kursus['video_thumbnail'] }}" alt="{{ $kursus['nama'] }}" class="w-14 h-14 rounded-xl object-cover ring-1 ring-gray-200 dark:ring-gray-600 shadow-sm">
+                                        <img src="{{ $kursus['video_thumbnail'] }}" alt="{{ $kursus['nama'] }}" class="admin-course-thumb w-14 h-14 rounded-xl object-cover ring-1 ring-gray-200 dark:ring-gray-600 shadow-sm">
                                         <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-sm" title="Video Preview">
                                             <svg class="w-3 h-3 text-white ml-px" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                         </span>
                                     @elseif($kursus['thumbnail'])
-                                        <img src="{{ asset('storage/' . $kursus['thumbnail']) }}" alt="{{ $kursus['nama'] }}" class="w-14 h-14 rounded-xl object-cover ring-1 ring-gray-200 dark:ring-gray-600 shadow-sm">
+                                        <img src="{{ asset('storage/' . $kursus['thumbnail']) }}" alt="{{ $kursus['nama'] }}" class="admin-course-thumb w-14 h-14 rounded-xl object-cover ring-1 ring-gray-200 dark:ring-gray-600 shadow-sm">
                                     @else
-                                        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 ring-1 ring-blue-200/50 dark:ring-blue-700/30 flex items-center justify-center shadow-sm">
+                                        <div class="admin-course-thumb w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 ring-1 ring-blue-200/50 dark:ring-blue-700/30 flex items-center justify-center shadow-sm">
                                             <svg class="w-6 h-6 text-blue-400 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                             </svg>
@@ -162,35 +162,36 @@
                                     @endif
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[240px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ $kursus['nama'] }}</p>
-                                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{{ $kursus['kode'] }}</p>
+                                    <p class="admin-course-title text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[240px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ $kursus['nama'] }}</p>
+                                    <p class="admin-course-code text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{{ $kursus['kode'] }}</p>
                                     @if(($kursus['module_count'] ?? 0) > 0)
-                                    <p class="text-[11px] sm:text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">{{ $kursus['module_count'] }} modul</p>
+                                    <p class="admin-course-module text-[11px] sm:text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">{{ $kursus['module_count'] }} modul</p>
                                     @endif
                                 </div>
                             </div>
                         </td>
 
                         {{-- Pengajar --}}
-                        <td class="px-5 py-4">
+                        <td class="admin-course-teacher px-5 py-4" data-label="Pengajar">
                             <div class="flex items-center gap-2.5">
-                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-sm">
+                                <div class="admin-course-teacher-avatar flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-sm">
                                     <span class="text-xs font-bold text-gray-600 dark:text-gray-300">{{ strtoupper(substr($kursus['dosen'] ?? 'N', 0, 1)) }}</span>
                                 </div>
-                                <span class="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[140px]">{{ $kursus['dosen'] ?? '-' }}</span>
+                                <span class="admin-course-teacher-name text-sm text-gray-700 dark:text-gray-300 truncate max-w-[140px]">{{ $kursus['dosen'] ?? '-' }}</span>
                             </div>
                         </td>
 
                         {{-- Peserta --}}
-                        <td class="px-5 py-4 text-center">
-                            <button type="button" onclick="openParticipantsModal({{ $kursus['id'] }})" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Lihat peserta {{ $kursus['nama'] }}">
+                        <td class="admin-course-participants px-5 py-4 text-center" data-label="Peserta">
+                            <button type="button" onclick="openParticipantsModal({{ $kursus['id'] }})" class="admin-course-participants-button inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Lihat peserta {{ $kursus['nama'] }}">
                                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                                 <span class="text-sm font-semibold">{{ number_format($kursus['enrollments_count']) }}</span>
+                                <span class="admin-course-participants-label hidden text-xs font-semibold">Peserta</span>
                             </button>
                         </td>
 
                         {{-- Kategori --}}
-                        <td class="px-5 py-4 text-center">
+                        <td class="admin-course-category px-5 py-4 text-center" data-label="Kategori">
                             @php
                                 $kategoriConfig = match($kursus['kategori'] ?? 'kursus') {
                                     'webinar' => ['bg' => 'bg-purple-50 dark:bg-purple-900/20', 'text' => 'text-purple-700 dark:text-purple-400', 'border' => 'border-purple-200 dark:border-purple-700/40', 'icon' => 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', 'label' => 'Webinar'],
@@ -199,7 +200,7 @@
                                     default => ['bg' => 'bg-gray-50 dark:bg-gray-700/30', 'text' => 'text-gray-600 dark:text-gray-400', 'border' => 'border-gray-200 dark:border-gray-600/40', 'icon' => 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'label' => ucfirst($kursus['kategori'] ?? 'kursus')],
                                 };
                             @endphp
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border {{ $kategoriConfig['bg'] }} {{ $kategoriConfig['text'] }} {{ $kategoriConfig['border'] }}">
+                            <span class="admin-course-category-badge inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border {{ $kategoriConfig['bg'] }} {{ $kategoriConfig['text'] }} {{ $kategoriConfig['border'] }}">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $kategoriConfig['icon'] }}" />
                                 </svg>
@@ -208,13 +209,13 @@
                         </td>
 
                         {{-- Harga --}}
-                        <td class="px-5 py-4 text-center">
+                        <td class="admin-course-price px-5 py-4 text-center" data-label="Harga">
                             @if(($kursus['harga'] ?? 0) > 0)
                                 @if(($kursus['diskon'] ?? 0) > 0)
                                     @php
                                         $hargaDiskon = $kursus['harga'] - ($kursus['harga'] * $kursus['diskon'] / 100);
                                     @endphp
-                                    <div class="flex flex-col items-center">
+                                    <div class="admin-course-price-discount flex flex-col items-center">
                                         <span class="text-sm font-bold text-gray-900 dark:text-white">Rp {{ number_format($hargaDiskon, 0, ',', '.') }}</span>
                                         <div class="flex items-center gap-1.5 mt-0.5">
                                             <span class="text-[10px] font-medium text-red-500 uppercase tracking-wider bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded">Diskon {{ $kursus['diskon'] }}%</span>
@@ -233,7 +234,7 @@
                         </td>
 
                         {{-- Status --}}
-                        <td class="px-5 py-4 text-center">
+                        <td class="admin-course-status px-5 py-4 text-center" data-label="Status">
                             @php
                                 $displayStatus = match (true) {
                                     ($kursus['approval_status'] ?? null) === 'pending' => 'pending',
@@ -249,15 +250,15 @@
                                 ];
                                 $sc = $statusConfig[$displayStatus] ?? $statusConfig['draft'];
                             @endphp
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border {{ $sc['bg'] }} {{ $sc['text'] }} {{ $sc['border'] }}">
+                            <span class="admin-course-status-badge inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border {{ $sc['bg'] }} {{ $sc['text'] }} {{ $sc['border'] }}">
                                 <span class="w-1.5 h-1.5 rounded-full {{ $sc['dot'] }} animate-pulse"></span>
                                 {{ $displayStatus === 'pending' ? 'Menunggu Persetujuan' : ($displayStatus === 'ditolak' ? 'Ditolak' : ucfirst($displayStatus)) }}
                             </span>
                         </td>
 
                         {{-- Aksi --}}
-                        <td class="px-5 py-4 text-center">
-                            <div class="inline-flex flex-wrap items-center justify-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-0.5">
+                        <td class="admin-course-action px-5 py-4 text-center" data-label="Aksi">
+                            <div class="admin-course-action-group inline-flex flex-wrap items-center justify-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-0.5">
                                 @if(($kursus['kategori'] ?? '') === 'webinar' && ($kursus['approval_status'] ?? '') === 'pending')
                                 <button onclick="approveWebinar({{ $kursus['id'] }})" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-all duration-150 shadow-none hover:shadow-sm" title="Setujui Webinar">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -310,7 +311,7 @@
         
         {{-- Pagination --}}
         @if($totalKursus > 0)
-        <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/20 admin-responsive-pagination">
+        <div class="admin-course-pagination px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/20 admin-responsive-pagination">
             <p class="text-sm text-gray-500 dark:text-gray-400">
                 Menampilkan <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $kursusPaginated->firstItem() ?? 0 }}</span>-<span class="font-semibold text-gray-700 dark:text-gray-300">{{ $kursusPaginated->lastItem() ?? 0 }}</span> dari <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $totalKursus }}</span> kursus
             </p>
