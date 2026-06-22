@@ -12,6 +12,212 @@
         data-certificate-delete-url='{{ route('admin.sertifikasi.certificates.delete', ['id' => ':id'], false) }}'
         class="space-y-7"
     >
+        <style>
+            .certificate-preview-card-header {
+                align-items: flex-start;
+                gap: 0.35rem;
+            }
+
+            .certificate-preview-meta {
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .certificate-preview-canvas {
+                container-type: inline-size;
+                --cert-nomor-size: 26;
+                --cert-nama-size: 42;
+                --cert-program-size: 18;
+                --cert-tanggal-size: 14;
+            }
+
+            .certificate-preview-text-group {
+                max-width: 86%;
+                overflow-wrap: anywhere;
+                word-break: normal;
+            }
+
+            .certificate-preview-label {
+                font-size: clamp(0.42rem, 1.95cqw, 0.72rem);
+                line-height: 1.1;
+                margin-bottom: clamp(0.02rem, 0.45cqw, 0.28rem);
+            }
+
+            #previewNomor {
+                font-size: clamp(0.62rem, calc(var(--cert-nomor-size) * 0.148cqw), 2.2rem);
+                line-height: 0.98;
+                overflow-wrap: anywhere;
+            }
+
+            #previewNama {
+                font-size: clamp(1rem, calc(var(--cert-nama-size) * 0.148cqw), 3.5rem);
+                line-height: 0.92;
+                overflow-wrap: anywhere;
+            }
+
+            #previewProgram {
+                font-size: clamp(0.72rem, calc(var(--cert-program-size) * 0.148cqw), 1.55rem);
+                line-height: 1.05;
+                overflow-wrap: anywhere;
+            }
+
+            #previewTanggal {
+                font-size: clamp(0.62rem, calc(var(--cert-tanggal-size) * 0.148cqw), 1.15rem);
+                line-height: 1.1;
+            }
+
+            .certificate-preview-canvas.certificate-exporting #previewNomor {
+                font-size: calc(var(--cert-nomor-size) * 1pt) !important;
+            }
+
+            .certificate-preview-canvas.certificate-exporting #previewNama {
+                font-size: calc(var(--cert-nama-size) * 1pt) !important;
+            }
+
+            .certificate-preview-canvas.certificate-exporting #previewProgram {
+                font-size: calc(var(--cert-program-size) * 1pt) !important;
+            }
+
+            .certificate-preview-canvas.certificate-exporting #previewTanggal {
+                font-size: calc(var(--cert-tanggal-size) * 1pt) !important;
+            }
+
+            @media (max-width: 639px) {
+                .certificate-preview-card {
+                    padding: 1rem;
+                }
+
+                .certificate-preview-card-header {
+                    flex-direction: column;
+                    margin-bottom: 0.75rem;
+                }
+
+                .certificate-preview-meta {
+                    font-size: 0.72rem;
+                    white-space: normal;
+                }
+
+                .certificate-preview-canvas {
+                    border-radius: 0.85rem;
+                }
+
+                .certificate-preview-canvas #certificateFrameOuter {
+                    inset: 0.42rem;
+                    border-width: 0.18rem;
+                }
+
+                .certificate-preview-canvas #certificateFrameInner {
+                    inset: 0.72rem;
+                }
+
+                .certificate-preview-list {
+                    min-width: 100% !important;
+                    border-spacing: 0 0.62rem;
+                }
+
+                .certificate-preview-list tbody tr {
+                    position: relative;
+                    padding: 0.78rem;
+                    border-radius: 0.875rem;
+                    overflow: visible;
+                }
+
+                .certificate-preview-list tbody td {
+                    border-bottom: 0;
+                    padding: 0 !important;
+                }
+
+                .certificate-preview-list tbody td::before {
+                    display: none;
+                }
+
+                .certificate-list-number {
+                    display: block;
+                    padding-right: 5.5rem !important;
+                    font-size: 0.75rem !important;
+                    line-height: 1.25;
+                    word-break: break-word;
+                }
+
+                .certificate-list-name {
+                    display: block;
+                    margin-top: 0.42rem;
+                    font-size: 0.9rem !important;
+                    font-weight: 700;
+                    line-height: 1.25;
+                }
+
+                .certificate-list-program {
+                    display: inline-flex;
+                    width: auto;
+                    max-width: 100%;
+                    margin-top: 0.32rem;
+                    margin-right: 0.35rem;
+                    vertical-align: middle;
+                }
+
+                .certificate-list-program > div {
+                    gap: 0.4rem;
+                }
+
+                .certificate-list-program-name,
+                .certificate-list-date {
+                    font-size: 0.76rem;
+                    line-height: 1.25;
+                    color: rgb(100 116 139);
+                }
+
+                .dark .certificate-list-program-name,
+                .dark .certificate-list-date {
+                    color: rgb(148 163 184);
+                }
+
+                .certificate-list-source {
+                    position: absolute;
+                    top: 0.78rem;
+                    right: 0.78rem;
+                    padding: 0.18rem 0.48rem;
+                    font-size: 0.62rem;
+                    line-height: 1.1;
+                }
+
+                .certificate-list-date-cell {
+                    display: inline-flex;
+                    width: auto;
+                    margin-top: 0.32rem;
+                    vertical-align: middle;
+                }
+
+                .certificate-list-date-cell::before {
+                    content: "-";
+                    display: inline;
+                    margin-right: 0.35rem;
+                    color: rgb(148 163 184);
+                    font-weight: 700;
+                }
+
+                .certificate-list-actions {
+                    display: block;
+                    margin-top: 0.68rem;
+                }
+
+                .certificate-list-action-group {
+                    justify-content: flex-start;
+                    gap: 0.35rem;
+                }
+
+                .certificate-list-action-group button {
+                    min-height: 2rem;
+                    padding: 0.42rem 0.55rem;
+                    border-radius: 0.62rem;
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                }
+            }
+        </style>
+
         <section class="relative overflow-hidden rounded-3xl border border-orange-100/70 bg-gradient-to-br from-orange-50 via-white to-sky-50 p-5 shadow-sm dark:border-gray-700 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 sm:p-6">
             <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-orange-200/40 blur-2xl dark:bg-orange-500/20"></div>
             <div class="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-sky-200/50 blur-2xl dark:bg-sky-500/20"></div>
@@ -74,37 +280,37 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <div class="xl:col-span-2 space-y-6">
-                <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl p-4 shadow-sm sm:p-5">
-                    <div class="flex items-center justify-between mb-3">
+                <div class="certificate-preview-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl p-4 shadow-sm sm:p-5">
+                    <div class="certificate-preview-card-header flex items-center justify-between mb-3">
                         <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Preview Sertifikat</h2>
-                        <span id="previewMeta" class="text-xs text-gray-500 dark:text-gray-400"></span>
+                        <span id="previewMeta" class="certificate-preview-meta text-xs text-gray-500 dark:text-gray-400"></span>
                     </div>
 
-                    <div id="certificateCanvas" class="relative w-full aspect-[297/210] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner bg-white">
+                    <div id="certificateCanvas" class="certificate-preview-canvas relative w-full aspect-[297/210] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner bg-white">
                         <div id="certificateBgLayer" class="absolute inset-0"></div>
                         <div id="certificateOverlayTint" class="absolute inset-0 bg-white/15"></div>
                         <div id="certificateFrameOuter" class="absolute inset-3 sm:inset-4 rounded-lg border-4 border-amber-300/90"></div>
                         <div id="certificateFrameInner" class="absolute inset-5 sm:inset-7 rounded-md border border-amber-400/80"></div>
 
                         <div class="absolute inset-0 text-gray-800">
-                            <div id="previewNomorGroup" class="absolute w-[72%] text-center" style="left: 50%; top: 24%; transform: translate(-50%, -50%);">
-                                <p id="previewNomorLabel" class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600">Nomor Sertifikat</p>
-                                <p id="previewNomor" class="font-semibold leading-tight text-gray-800" style="font-size: 26pt;">SRT-XXXX</p>
+                            <div id="previewNomorGroup" class="certificate-preview-text-group absolute w-[72%] text-center" style="left: 50%; top: 24%; transform: translate(-50%, -50%);">
+                                <p id="previewNomorLabel" class="certificate-preview-label uppercase tracking-[0.08em] text-gray-600">Nomor Sertifikat</p>
+                                <p id="previewNomor" class="font-semibold text-gray-800">SRT-XXXX</p>
                             </div>
 
-                            <div id="previewNamaGroup" class="absolute w-[80%] text-center" style="left: 50%; top: 43%; transform: translate(-50%, -50%);">
-                                <p id="previewNamaLabel" class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600 mb-1">Nama Peserta</p>
-                                <p id="previewNama" class="text-gray-900 leading-tight" style="font-family: 'Times New Roman', serif; font-size: 42pt; font-weight: 700;">Nama Peserta</p>
+                            <div id="previewNamaGroup" class="certificate-preview-text-group absolute w-[80%] text-center" style="left: 50%; top: 43%; transform: translate(-50%, -50%);">
+                                <p id="previewNamaLabel" class="certificate-preview-label uppercase tracking-[0.08em] text-gray-600">Nama Peserta</p>
+                                <p id="previewNama" class="text-gray-900" style="font-family: 'Times New Roman', serif; font-weight: 700;">Nama Peserta</p>
                             </div>
 
-                            <div id="previewProgramGroup" class="absolute w-[72%] text-center" style="left: 50%; top: 58%; transform: translate(-50%, -50%);">
-                                <p id="previewProgramLabel" class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600 mb-1">Program</p>
-                                <p id="previewProgram" class="font-semibold text-gray-800" style="font-size: 18pt;">Nama Program</p>
+                            <div id="previewProgramGroup" class="certificate-preview-text-group absolute w-[72%] text-center" style="left: 50%; top: 58%; transform: translate(-50%, -50%);">
+                                <p id="previewProgramLabel" class="certificate-preview-label uppercase tracking-[0.08em] text-gray-600">Program</p>
+                                <p id="previewProgram" class="font-semibold text-gray-800">Nama Program</p>
                             </div>
 
-                            <div id="previewTanggalGroup" class="absolute w-[60%] text-center" style="left: 50%; top: 72%; transform: translate(-50%, -50%);">
-                                <p id="previewTanggalLabel" class="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-gray-600">Tanggal</p>
-                                <p id="previewTanggal" class="mt-0.5 text-[11px] sm:text-sm font-medium">-</p>
+                            <div id="previewTanggalGroup" class="certificate-preview-text-group absolute w-[60%] text-center" style="left: 50%; top: 72%; transform: translate(-50%, -50%);">
+                                <p id="previewTanggalLabel" class="certificate-preview-label uppercase tracking-[0.08em] text-gray-600">Tanggal</p>
+                                <p id="previewTanggal" class="font-medium">-</p>
                             </div>
                         </div>
                     </div>
@@ -120,7 +326,7 @@
                     </div>
 
                     <div class="overflow-x-auto responsive-table">
-                        <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list min-w-[680px] lg:min-w-full">
+                        <table class="certificate-preview-list w-full responsive-data-table admin-desktop-table admin-mobile-list min-w-[680px] lg:min-w-full">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-gray-700/40 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                     <th class="text-left px-4 py-3">Nomor</th>
@@ -553,19 +759,19 @@
 
                 previewNomorGroup.style.left = `${nomor.x}%`;
                 previewNomorGroup.style.top = `${nomor.y}%`;
-                previewNomor.style.fontSize = `${nomor.size}pt`;
+                certificateCanvas.style.setProperty('--cert-nomor-size', nomor.size);
 
                 previewNamaGroup.style.left = `${nama.x}%`;
                 previewNamaGroup.style.top = `${nama.y}%`;
-                previewNama.style.fontSize = `${nama.size}pt`;
+                certificateCanvas.style.setProperty('--cert-nama-size', nama.size);
 
                 previewProgramGroup.style.left = `${program.x}%`;
                 previewProgramGroup.style.top = `${program.y}%`;
-                previewProgram.style.fontSize = `${program.size}pt`;
+                certificateCanvas.style.setProperty('--cert-program-size', program.size);
 
                 previewTanggalGroup.style.left = `${tanggal.x}%`;
                 previewTanggalGroup.style.top = `${tanggal.y}%`;
-                previewTanggal.style.fontSize = `${tanggal.size}pt`;
+                certificateCanvas.style.setProperty('--cert-tanggal-size', tanggal.size);
             }
 
             function syncSettingsForm() {
@@ -653,17 +859,17 @@
 
                 certificateTableBody.innerHTML = filtered.map((certificate) => `
                     <tr class="hover:bg-orange-50/40 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-4 py-3 text-sm font-mono text-gray-700 dark:text-gray-200">${certificate.nomor}</td>
-                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">${certificate.nama}</td>
-                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                        <td class="certificate-list-number px-4 py-3 text-sm font-mono text-gray-700 dark:text-gray-200" data-label="Nomor">${certificate.nomor}</td>
+                        <td class="certificate-list-name px-4 py-3 text-sm text-gray-700 dark:text-gray-200" data-label="Nama Peserta">${certificate.nama}</td>
+                        <td class="certificate-list-program px-4 py-3 text-sm text-gray-600 dark:text-gray-300" data-label="Program">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span>${certificate.program}</span>
-                                <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${certificate.source === 'auto' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}">${certificate.source === 'auto' ? 'Auto' : 'Manual'}</span>
+                                <span class="certificate-list-program-name">${certificate.program}</span>
+                                <span class="certificate-list-source inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${certificate.source === 'auto' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}">${certificate.source === 'auto' ? 'Auto' : 'Manual'}</span>
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${formatDateIndonesia(certificate.tanggal)}</td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center justify-center gap-1">
+                        <td class="certificate-list-date-cell px-4 py-3 text-sm text-gray-600 dark:text-gray-300" data-label="Tanggal"><span class="certificate-list-date">${formatDateIndonesia(certificate.tanggal)}</span></td>
+                        <td class="certificate-list-actions px-4 py-3" data-label="Aksi">
+                            <div class="certificate-list-action-group flex items-center justify-center gap-1">
                                 <button type="button" data-action="preview" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200">Preview</button>
                                 <button type="button" data-action="edit" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-sky-100 text-sky-700 hover:bg-sky-200">Edit</button>
                                 <button type="button" data-action="pdf" data-id="${certificate.id}" class="px-2.5 py-1 text-xs rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200">PDF</button>
@@ -776,6 +982,9 @@
                 const canvasNode = document.getElementById('certificateCanvas');
 
                 try {
+                    canvasNode.classList.add('certificate-exporting');
+                    await new Promise((resolve) => requestAnimationFrame(resolve));
+
                     const scale = Math.min(Math.max(window.devicePixelRatio || 1, 2), 4);
                     const canvas = await html2canvas(canvasNode, {
                         scale,
@@ -820,6 +1029,8 @@
                 } catch (error) {
                     console.error(error);
                     showErrorAlert('Gagal membuat PDF. Coba ulangi lagi.');
+                } finally {
+                    canvasNode.classList.remove('certificate-exporting');
                 }
             }
 
