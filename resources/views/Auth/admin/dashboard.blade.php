@@ -120,7 +120,7 @@
         </div>
 
         <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list text-sm">
+            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list admin-broadcast-list text-sm">
                 <thead>
                     <tr class="bg-gradient-to-r from-gray-50 to-gray-100/60 dark:from-gray-700/60 dark:to-gray-700/20">
                         <th class="px-4 sm:px-6 py-3 text-left text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
@@ -134,23 +134,25 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700/60">
                     @forelse($recentNews as $index => $news)
                     <tr class="hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-colors">
-                        <td class="px-4 sm:px-6 py-4">
+                        <td class="admin-broadcast-no px-4 sm:px-6 py-4" data-label="No">
+                            <span class="admin-broadcast-mobile-label">No</span>
                             <span class="font-medium text-gray-500 dark:text-gray-400">{{ $index + 1 }}</span>
                         </td>
-                        <td class="px-4 sm:px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="admin-broadcast-main px-4 sm:px-6 py-4" data-label="Judul">
+                            <div class="flex min-w-0 items-start gap-3">
+                                <div class="admin-broadcast-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-500 dark:bg-blue-500/10 sm:h-9 sm:w-9 sm:rounded-lg">
+                                    <svg class="block h-5 w-5 shrink-0 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                                     </svg>
                                 </div>
-                                <div class="min-w-0">
-                                    <p class="font-semibold text-gray-800 dark:text-white truncate max-w-[130px] sm:max-w-[220px] lg:max-w-[320px]">{{ $news->judul }}</p>
-                                    <p class="text-xs text-gray-400 truncate max-w-[130px] sm:max-w-[220px] lg:max-w-[320px]">{{ Str::limit(strip_tags($news->konten), 65) }}</p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="admin-broadcast-title font-semibold leading-snug text-gray-800 dark:text-white truncate max-w-[130px] sm:max-w-[220px] lg:max-w-[320px]">{{ $news->judul }}</p>
+                                    <p class="admin-broadcast-desc mt-1 text-xs leading-relaxed text-gray-400 dark:text-gray-500 truncate max-w-[130px] sm:max-w-[220px] lg:max-w-[320px]">{{ Str::limit(strip_tags($news->konten), 90) }}</p>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-4 sm:px-6 py-4">
+                        <td class="admin-broadcast-meta admin-broadcast-category px-4 sm:px-6 py-4" data-label="Kategori">
+                            <span class="admin-broadcast-mobile-label">Kategori</span>
                             @php
                                 $kategoriColors = [
                                     'umum' => 'bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300',
@@ -167,10 +169,12 @@
                                 {{ ucfirst($news->kategori ?? 'Umum') }}
                             </span>
                         </td>
-                        <td class="px-4 sm:px-6 py-4">
+                        <td class="admin-broadcast-meta px-4 sm:px-6 py-4" data-label="Tanggal Publish">
+                            <span class="admin-broadcast-mobile-label">Tanggal Publish</span>
                             <span class="text-gray-600 dark:text-gray-300">{{ $news->tanggal_publish->format('d M Y, H:i') }}</span>
                         </td>
-                        <td class="px-4 sm:px-6 py-4">
+                        <td class="admin-broadcast-meta px-4 sm:px-6 py-4" data-label="Status">
+                            <span class="admin-broadcast-mobile-label">Status</span>
                             @if($news->is_active)
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -183,13 +187,14 @@
                             </span>
                             @endif
                         </td>
-                        <td class="px-4 sm:px-6 py-4 text-center">
+                        <td class="admin-broadcast-action px-4 sm:px-6 py-4 text-center" data-label="Aksi">
                             <a href="{{ route('admin.pengumuman') }}"
-                                class="inline-flex items-center justify-center p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10 rounded-lg transition"
+                                class="inline-flex items-center justify-center gap-2 p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10 rounded-lg transition"
                                 title="Kelola Pengumuman">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
+                                <span class="admin-broadcast-action-text">Kelola</span>
                             </a>
                         </td>
                     </tr>
@@ -315,5 +320,3 @@ document.addEventListener('DOMContentLoaded', function() {
 @endpush
 
 </x-layouts.admin>
-
-
