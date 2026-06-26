@@ -285,25 +285,26 @@
     </div>
 
     {{-- Add Mahasiswa Modal --}}
-    <div id="addMahasiswaModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeAddModal()"></div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all my-auto">
-                <button onclick="closeAddModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-                
-                <form action="{{ route('admin.mahasiswa.store') }}" method="POST" enctype="multipart/form-data" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
-                    @csrf
-                    <input type="hidden" name="_modal" value="add">
-                    
-                    <div class="mb-4">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Mahasiswa</h3>
-                        <p class="text-sm text-blue-500">Isi informasi mahasiswa baru dengan lengkap.</p>
+    <div id="addMahasiswaModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-2.5 sm:p-4">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeAddModal()" aria-hidden="true"></div>
+        <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] my-auto overflow-hidden">
+            <form action="{{ route('admin.mahasiswa.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col min-h-0" x-data="{ isLoading: false }" @submit="isLoading = true">
+                @csrf
+                <input type="hidden" name="_modal" value="add">
+
+                <div class="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Tambah Mahasiswa</h3>
+                        <p class="text-xs sm:text-sm text-blue-500 mt-0.5">Isi informasi mahasiswa baru dengan lengkap.</p>
                     </div>
-                    
+                    <button type="button" onclick="closeAddModal()" class="shrink-0 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition" aria-label="Tutup">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 overscroll-contain">
                     {{-- Foto Profil --}}
                     <div class="mb-6">
                         <label class="block text-sm text-gray-600 dark:text-gray-400 mb-3">Foto Profil</label>
@@ -427,43 +428,44 @@
                         </div>
                     </div>
 
-                    {{-- Buttons --}}
-                    <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition" :disabled="isLoading">
-                            Batal
-                        </button>
-                        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed" :disabled="isLoading">
-                            <svg x-show="isLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                            <span x-text="isLoading ? 'Menyimpan...' : 'Simpan'"></span>
-                        </button>
-                    </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                    <button type="button" onclick="closeAddModal()" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition min-h-[44px]" :disabled="isLoading">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]" :disabled="isLoading">
+                        <svg x-show="isLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        <span x-text="isLoading ? 'Menyimpan...' : 'Simpan'"></span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
     {{-- Edit Mahasiswa Modal --}}
-    <div id="editMahasiswaModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeEditModal()"></div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all my-auto">
-                <button onclick="closeEditModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-                
-                <form id="editMahasiswaForm" method="POST" enctype="multipart/form-data" class="p-6" x-data="{ isLoading: false }" @submit="isLoading = true">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="_modal" value="edit">
-                    <input type="hidden" name="_id" id="edit_mhs_id" value="{{ old('_id') }}">
-                    
-                    <div class="mb-4">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Data Mahasiswa</h3>
-                        <p class="text-sm text-blue-500">Isi informasi mahasiswa baru dengan lengkap.</p>
+    <div id="editMahasiswaModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-2.5 sm:p-4">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeEditModal()" aria-hidden="true"></div>
+        <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] my-auto overflow-hidden">
+            <form id="editMahasiswaForm" method="POST" enctype="multipart/form-data" class="flex flex-col min-h-0" x-data="{ isLoading: false }" @submit="isLoading = true">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="_modal" value="edit">
+                <input type="hidden" name="_id" id="edit_mhs_id" value="{{ old('_id') }}">
+
+                <div class="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Edit Data Mahasiswa</h3>
+                        <p class="text-xs sm:text-sm text-blue-500 mt-0.5">Isi informasi mahasiswa baru dengan lengkap.</p>
                     </div>
-                    
+                    <button type="button" onclick="closeEditModal()" class="shrink-0 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition" aria-label="Tutup">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 overscroll-contain">
                     {{-- Foto Profil --}}
                     <div class="mb-6">
                         <label class="block text-sm text-gray-600 dark:text-gray-400 mb-3">Foto Profil</label>
@@ -599,67 +601,73 @@
                         </div>
                     </div>
 
-                    {{-- Buttons --}}
-                    <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition" :disabled="isLoading">
-                            Batal
-                        </button>
-                        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed" :disabled="isLoading">
-                            <svg x-show="isLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                            <span x-text="isLoading ? 'Menyimpan...' : 'Simpan'"></span>
-                        </button>
-                    </div>
+                </div>
+
+                <div class="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                    <button type="button" onclick="closeEditModal()" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition min-h-[44px]" :disabled="isLoading">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]" :disabled="isLoading">
+                        <svg x-show="isLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        <span x-text="isLoading ? 'Menyimpan...' : 'Simpan'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Delete Confirmation Modal --}}
+    <div id="deleteMahasiswaModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-2.5 sm:p-4">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeDeleteModal()" aria-hidden="true"></div>
+        <div class="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] my-auto overflow-hidden">
+            <div class="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
+                <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Hapus Mahasiswa?</h3>
+                <button type="button" onclick="closeDeleteModal()" class="shrink-0 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition" aria-label="Tutup">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-5 sm:py-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Data mahasiswa akan dihapus permanen dan tidak dapat dikembalikan.</p>
+            </div>
+            <div class="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col-reverse sm:flex-row sm:justify-center gap-2">
+                <button type="button" onclick="closeDeleteModal()" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition min-h-[44px]">
+                    Batal
+                </button>
+                <form id="deleteMahasiswaForm" method="POST" class="w-full sm:w-auto" x-data="{ isLoading: false }" @submit="isLoading = true">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]" :disabled="isLoading">
+                        <svg x-show="isLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        <span x-text="isLoading ? 'Menghapus...' : 'Hapus'"></span>
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 
-    {{-- Delete Confirmation Modal --}}
-    <div id="deleteMahasiswaModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeDeleteModal()"></div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6">
-                <div class="text-center">
-                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                        <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hapus Mahasiswa?</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Data mahasiswa akan dihapus permanen dan tidak dapat dikembalikan.</p>
-                    <div class="flex justify-center gap-3">
-                        <button onclick="closeDeleteModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">
-                            Batal
-                        </button>
-                        <form id="deleteMahasiswaForm" method="POST" class="inline" x-data="{ isLoading: false }" @submit="isLoading = true">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed" :disabled="isLoading">
-                                <svg x-show="isLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                                <span x-text="isLoading ? 'Menghapus...' : 'Hapus'"></span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     {{-- Import Excel Modal --}}
-    <div id="importModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeImportModal()"></div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6">
-                <button onclick="closeImportModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+    <div id="importModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-2.5 sm:p-4">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeImportModal()" aria-hidden="true"></div>
+        <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] my-auto overflow-hidden">
+            <div class="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Import Mahasiswa dari Excel</h3>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Upload file Excel (.xlsx) untuk mengimport data mahasiswa secara massal.</p>
+                </div>
+                <button type="button" onclick="closeImportModal()" class="shrink-0 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition" aria-label="Tutup">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-                
-                <div class="mb-4">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Import Mahasiswa dari Excel</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload file Excel (.xlsx) untuk mengimport data mahasiswa secara massal.</p>
-                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 overscroll-contain">
 
                 {{-- Step 1: Upload --}}
                 <div id="importStep1">
@@ -685,9 +693,9 @@
                         <p class="text-xs text-gray-400 mt-1">Maks 5MB. Format: .xlsx, .xls, .csv | Password default: Nomor Induk</p>
                     </div>
                     <div id="importUploadStatus" class="mb-4 hidden"></div>
-                    <div class="admin-responsive-modal-actions flex justify-end gap-3">
-                        <button type="button" onclick="closeImportModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">Batal</button>
-                        <button type="button" onclick="previewImportFile('mahasiswa')" id="previewBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">Preview</button>
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                        <button type="button" onclick="closeImportModal()" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition min-h-[44px]">Batal</button>
+                        <button type="button" onclick="previewImportFile('mahasiswa')" id="previewBtn" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition min-h-[44px]">Preview</button>
                     </div>
                 </div>
 
@@ -704,24 +712,23 @@
                             <option value="stop">Hentikan jika ada duplikat</option>
                         </select>
                     </div>
-                    <div class="flex justify-between gap-3">
-                        <button type="button" onclick="backToStep1()" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition">Kembali</button>
-                        <button type="button" onclick="confirmImportFile('mahasiswa')" id="confirmImportBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition">Konfirmasi Import</button>
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+                        <button type="button" onclick="backToStep1()" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium rounded-lg transition min-h-[44px]">Kembali</button>
+                        <button type="button" onclick="confirmImportFile('mahasiswa')" id="confirmImportBtn" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition min-h-[44px]">Konfirmasi Import</button>
                     </div>
                 </div>
 
                 {{-- Step 3: Result --}}
                 <div id="importStep3" class="hidden">
                     <div id="importResult" class="mb-4"></div>
-                    <div class="flex justify-end">
-                        <button type="button" onclick="closeImportModal(); location.reload();" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition">Selesai</button>
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                        <button type="button" onclick="closeImportModal(); location.reload();" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition min-h-[44px]">Selesai</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    
 
     
 
