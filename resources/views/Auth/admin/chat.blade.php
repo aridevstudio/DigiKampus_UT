@@ -132,9 +132,9 @@
 
                 <template x-if="activeConversation">
                     <div class="flex-1 min-h-0 flex flex-col">
-                        <div class="flex items-center justify-between gap-2 px-3 sm:px-4 py-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
+                        <div class="lg:hidden flex items-center justify-between gap-2 px-3 py-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
                             <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                                <button type="button" @click="activeConversationId = null; messages = []" class="lg:hidden p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center -ml-1 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg shrink-0" aria-label="Kembali ke daftar percakapan">
+                                <button type="button" @click="activeConversationId = null; messages = []" class="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center -ml-1 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg shrink-0" aria-label="Kembali ke daftar percakapan">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                     </svg>
@@ -208,6 +208,59 @@
                             </div>
                         </div>
 
+                        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hidden lg:flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <button type="button" @click="activeConversationId = null" class="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-gray-900 dark:text-white truncate" x-text="`${activeConversation.student_name} - ${activeConversation.lecturer_name}`"></p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="`Terakhir aktif: ${formatDateTime(activeConversation.last_message_at)}`"></p>
+                                </div>
+                            </div>
+                            <div class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:min-w-[280px]">
+                                <div class="flex items-center justify-start sm:justify-end">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold"
+                                          :class="badgeClass(activeConversation.status)"
+                                          x-text="badgeText(activeConversation.status)"></span>
+                                </div>
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                                    <button
+                                        type="button"
+                                        @click="deleteMessagesByRole('student')"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Hapus Chat Mahasiswa
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="deleteMessagesByRole('lecturer')"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200 dark:hover:bg-orange-500/20"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Hapus Chat Dosen
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="deleteActiveConversation()"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                                        </svg>
+                                        Hapus Percakapan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="admin-chat-messages" class="flex-1 overflow-y-auto px-4 py-4 bg-gray-50/60 dark:bg-gray-900/20 space-y-3">
                             <div x-show="isLoadingMessages" class="py-6 flex justify-center">
                                 <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -247,7 +300,7 @@
                             </template>
                         </div>
 
-                        <div class="px-3 sm:px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
+                        <div class="px-3 lg:px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
                             <form @submit.prevent="sendAdminMessage" class="space-y-2">
                                 <div class="flex flex-col sm:flex-row gap-2">
                                     <div class="flex-1">
