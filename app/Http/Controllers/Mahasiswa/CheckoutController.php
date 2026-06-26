@@ -418,6 +418,10 @@ class CheckoutController extends Controller
 
     private function validateBootcampTicketAvailability(int $courseId): array
     {
+        if (!Schema::hasColumn('bootcamps', 'linked_course_id')) {
+            return ['ok' => true, 'message' => null];
+        }
+
         $bootcamp = Bootcamp::query()
             ->where('linked_course_id', $courseId)
             ->first();
