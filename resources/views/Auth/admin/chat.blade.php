@@ -8,14 +8,14 @@
     <div
         x-data="adminChatManager()"
         x-init="init()"
-        class="h-[calc(100vh-96px)] flex flex-col gap-4"
+        class="h-[calc(100dvh-96px)] min-h-0 overflow-hidden lg:h-[calc(100vh-96px)] flex flex-col gap-4"
     >
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1" :class="{ 'hidden lg:flex': activeConversationId }">
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Manajemen Chat</h1>
             <p class="text-sm text-gray-500 dark:text-gray-400">Monitor percakapan mahasiswa-dosen, pantau aktivitas, dan moderasi pesan.</p>
         </div>
 
-        <div class="responsive-grid-stats">
+        <div class="responsive-grid-stats" :class="{ 'hidden lg:grid': activeConversationId }">
             <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl p-4">
                 <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Percakapan</p>
                 <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.total"></p>
@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl p-3 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl p-3 sm:p-4" :class="{ 'hidden lg:block': activeConversationId }">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div class="sm:col-span-2 relative">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +64,7 @@
 
         <div class="flex-1 min-h-0 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl overflow-hidden flex">
             <div
-                class="w-full min-w-0 lg:w-[360px] lg:flex-shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col"
+                class="w-full min-w-0 lg:w-[360px] lg:flex-shrink-0 lg:border-r border-gray-100 dark:border-gray-700 flex flex-col"
                 :class="{ 'hidden lg:flex': activeConversationId, 'flex': !activeConversationId }"
             >
                 <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
@@ -83,7 +83,7 @@
                     Tidak ada percakapan yang cocok dengan filter.
                 </div>
 
-                <div x-show="!isLoadingConversations && filteredConversations.length > 0" class="flex-1 overflow-y-auto">
+                <div x-show="!isLoadingConversations && filteredConversations.length > 0" class="flex-1 min-h-0 overflow-y-auto">
                     <template x-for="conv in filteredConversations" :key="conv.id">
                         <button
                             type="button"
@@ -132,55 +132,78 @@
 
                 <template x-if="activeConversation">
                     <div class="flex-1 min-h-0 flex flex-col">
-                        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <button type="button" @click="activeConversationId = null" class="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <div class="flex items-center justify-between gap-2 px-3 sm:px-4 py-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
+                            <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                <button type="button" @click="activeConversationId = null; messages = []" class="lg:hidden p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center -ml-1 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg shrink-0" aria-label="Kembali ke daftar percakapan">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                     </svg>
                                 </button>
-                                <div class="min-w-0">
-                                    <p class="font-semibold text-gray-900 dark:text-white truncate" x-text="`${activeConversation.student_name} - ${activeConversation.lecturer_name}`"></p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="`Terakhir aktif: ${formatDateTime(activeConversation.last_message_at)}`"></p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate" x-text="activeConversation.student_name"></p>
+                                    <p class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate" x-text="`Dosen: ${activeConversation.lecturer_name}`"></p>
                                 </div>
                             </div>
-                            <div class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:min-w-[280px]">
-                                <div class="flex items-center justify-start sm:justify-end">
-                                    <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold"
-                                          :class="badgeClass(activeConversation.status)"
-                                          x-text="badgeText(activeConversation.status)"></span>
-                                </div>
-                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                                <span class="hidden sm:inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold"
+                                      :class="badgeClass(activeConversation.status)"
+                                      x-text="badgeText(activeConversation.status)"></span>
+                                <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
                                     <button
                                         type="button"
-                                        @click="deleteMessagesByRole('student')"
-                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
+                                        @click="open = !open"
+                                        class="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition"
+                                        aria-haspopup="true"
+                                        :aria-expanded="open ? 'true' : 'false'"
+                                        aria-label="Menu aksi percakapan"
                                     >
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                         </svg>
-                                        Hapus Chat Mahasiswa
                                     </button>
-                                    <button
-                                        type="button"
-                                        @click="deleteMessagesByRole('lecturer')"
-                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200 dark:hover:bg-orange-500/20"
+                                    <div
+                                        x-show="open"
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 scale-95"
+                                        x-transition:enter-end="opacity-100 scale-100"
+                                        x-transition:leave="transition ease-in duration-75"
+                                        x-transition:leave-start="opacity-100 scale-100"
+                                        x-transition:leave-end="opacity-0 scale-95"
+                                        class="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 py-1.5 z-20 origin-top-right"
+                                        style="display: none;"
                                     >
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                        Hapus Chat Dosen
-                                    </button>
-                                    <button
-                                        type="button"
-                                        @click="deleteActiveConversation()"
-                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
-                                    >
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
-                                        </svg>
-                                        Hapus Percakapan
-                                    </button>
+                                        <button
+                                            type="button"
+                                            @click="open = false; deleteMessagesByRole('student')"
+                                            class="w-full text-left px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-500/10 flex items-center gap-2.5 transition"
+                                        >
+                                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Hapus Chat Mahasiswa
+                                        </button>
+                                        <button
+                                            type="button"
+                                            @click="open = false; deleteMessagesByRole('lecturer')"
+                                            class="w-full text-left px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 dark:text-orange-300 dark:hover:bg-orange-500/10 flex items-center gap-2.5 transition"
+                                        >
+                                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Hapus Chat Dosen
+                                        </button>
+                                        <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+                                        <button
+                                            type="button"
+                                            @click="open = false; deleteActiveConversation()"
+                                            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10 flex items-center gap-2.5 transition"
+                                        >
+                                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                                            </svg>
+                                            Hapus Percakapan
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -224,7 +247,7 @@
                             </template>
                         </div>
 
-                        <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                        <div class="px-3 sm:px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
                             <form @submit.prevent="sendAdminMessage" class="space-y-2">
                                 <div class="flex flex-col sm:flex-row gap-2">
                                     <div class="flex-1">
