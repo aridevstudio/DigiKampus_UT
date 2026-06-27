@@ -44,20 +44,20 @@
 </div>
 @endif
 
-<div class="mb-8 flex items-center justify-center gap-2 sm:gap-4 overflow-x-auto animate-fade-in-up">
-    <div class="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
-        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">1</div>
-        <span class="text-xs font-medium text-blue-600 dark:text-blue-400 sm:text-sm">Keranjang</span>
+<div class="mb-8 grid animate-fade-in-up grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-x-1 px-1 sm:mx-auto sm:max-w-xl sm:grid-cols-[auto_4rem_auto_4rem_auto] sm:gap-x-4 sm:px-6">
+    <div class="flex min-w-0 items-center gap-1 sm:gap-2">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">1</div>
+        <span class="truncate text-[11px] font-medium text-blue-600 dark:text-blue-400 sm:text-sm">Keranjang</span>
     </div>
-    <div class="h-0.5 w-8 flex-shrink-0 bg-gray-300 dark:bg-gray-600 sm:w-16"></div>
-    <div class="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
-        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-300 text-sm font-bold text-gray-500 dark:bg-gray-600 dark:text-gray-400">2</div>
-        <span class="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">Pembayaran</span>
+    <div class="h-0.5 min-w-[6px] bg-gray-300 dark:bg-gray-600"></div>
+    <div class="flex min-w-0 items-center gap-1 sm:gap-2">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-300 text-sm font-bold text-gray-500 dark:bg-gray-600 dark:text-gray-400">2</div>
+        <span class="truncate text-[11px] text-gray-500 dark:text-gray-400 sm:text-sm">Pembayaran</span>
     </div>
-    <div class="h-0.5 w-8 flex-shrink-0 bg-gray-300 dark:bg-gray-600 sm:w-16"></div>
-    <div class="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
-        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-300 text-sm font-bold text-gray-500 dark:bg-gray-600 dark:text-gray-400">3</div>
-        <span class="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">Selesai</span>
+    <div class="h-0.5 min-w-[6px] bg-gray-300 dark:bg-gray-600"></div>
+    <div class="flex min-w-0 items-center gap-1 sm:gap-2">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-300 text-sm font-bold text-gray-500 dark:bg-gray-600 dark:text-gray-400">3</div>
+        <span class="truncate text-[11px] text-gray-500 dark:text-gray-400 sm:text-sm">Selesai</span>
     </div>
 </div>
 
