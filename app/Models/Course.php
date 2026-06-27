@@ -39,6 +39,7 @@ class Course extends Model
         'durasi_satuan',
         'level',
         'sertifikat',
+        'certificate_template_id',
         'akses_publik',
         'diskon'
     ];
@@ -193,5 +194,13 @@ class Course extends Model
         $this->jumlah_ulasan = $ratings->count();
         $this->rating = $ratings->avg('rating') ?? 0;
         $this->save();
+    }
+
+    /**
+     * Get the certificate template associated with the course.
+     */
+    public function certificateTemplate()
+    {
+        return $this->belongsTo(CertificateTemplate::class, 'certificate_template_id', 'id');
     }
 }

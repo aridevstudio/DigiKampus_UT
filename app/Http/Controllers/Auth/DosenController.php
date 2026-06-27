@@ -1588,11 +1588,11 @@ class DosenController extends Controller
         $initialKategori = in_array($request->query('kategori'), $allowedKategori, true)
             ? $request->query('kategori')
             : 'kursus';
-        
         return view('Auth.dosen.buat-kursus', [
             'dosen' => $dosen,
             'jurusans' => $jurusans,
             'initialKategori' => $initialKategori,
+            'certificateTemplates' => \App\Models\CertificateTemplate::all(),
         ]);
     }
 
@@ -1685,9 +1685,10 @@ class DosenController extends Controller
         }]);
 
         $jurusans = \App\Models\Jurusan::all();
+        $certificateTemplates = \App\Models\CertificateTemplate::all();
         // $materials = $course->materials()->orderBy('urutan')->get(); // No longer needed as primary source?
         
-        return view('Auth.dosen.edit-kursus', compact('course', 'jurusans'));
+        return view('Auth.dosen.edit-kursus', compact('course', 'jurusans', 'certificateTemplates'));
     }
 
     private function dosenCourseRules(int $dosenId, ?int $courseId = null): array
@@ -1725,6 +1726,7 @@ class DosenController extends Controller
             'initial_modules.*.konten' => 'nullable|string',
             'initial_modules.*.video_url' => 'nullable|url|max:500',
             'initial_modules.*.durasi' => 'nullable|integer|min:0',
+            'certificate_template_id' => 'required|exists:certificate_templates,id',
         ];
     }
 
@@ -1820,6 +1822,7 @@ class DosenController extends Controller
             'estimasi_waktu' => $request->estimasi_waktu,
             'durasi_satuan' => $durasiSatuan,
             'sertifikat' => $request->boolean('sertifikat'),
+            'certificate_template_id' => $request->certificate_template_id,
             'akses_publik' => $request->boolean('akses_publik'),
             'diskon' => $request->diskon ?? 0,
             'youtube_playlist' => $request->youtube_playlist,

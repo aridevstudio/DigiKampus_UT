@@ -603,17 +603,19 @@
                                     </div>
                                 </div>
 
-                                {{-- Sertifikat Toggle --}}
+                                {{-- Sertifikat Select --}}
                                 <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                     <div>
                                         <h5 class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
-                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Wajib pilih template sertifikat</p>
                                     </div>
-                                    <input type="hidden" name="sertifikat" value="0">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" name="sertifikat" id="add_sertifikat" value="1" class="sr-only peer" {{ old('_modal') === 'add' && old('sertifikat') ? 'checked' : '' }}>
-                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                                    </label>
+                                    <input type="hidden" name="sertifikat" value="1">
+                                    <select name="certificate_template_id" required class="w-1/2 px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">-- Pilih Template --</option>
+                                        @foreach($certificateTemplates as $template)
+                                            <option value="{{ $template->id }}" {{ old('_modal') === 'add' && old('certificate_template_id') == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -865,13 +867,15 @@
                                 <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                     <div>
                                         <h5 class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Kehadiran</h5>
-                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Wajib pilih template sertifikat</p>
                                     </div>
-                                    <input type="hidden" name="sertifikat" value="0">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" name="sertifikat" value="1" class="sr-only peer" {{ old('_modal') === 'add_webinar' && old('sertifikat') ? 'checked' : '' }}>
-                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
-                                    </label>
+                                    <input type="hidden" name="sertifikat" value="1">
+                                    <select name="certificate_template_id" class="w-1/2 px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-900 dark:text-white focus:ring-1 focus:ring-purple-500 focus:border-transparent">
+                                        <option value="">-- Pilih Template --</option>
+                                        @foreach($certificateTemplates as $template)
+                                            <option value="{{ $template->id }}" {{ old('_modal') === 'add_webinar' && old('certificate_template_id') == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -1116,17 +1120,19 @@
                                     </div>
                                 </div>
 
-                                {{-- Sertifikat Toggle --}}
+                                {{-- Sertifikat Select --}}
                                 <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                     <div>
                                         <h5 id="edit_certificate_title" class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
-                                        <p id="edit_certificate_desc" class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
+                                        <p id="edit_certificate_desc" class="text-[10px] text-gray-500 dark:text-gray-400">Wajib pilih template sertifikat</p>
                                     </div>
-                                    <input type="hidden" name="sertifikat" value="0">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" id="edit_sertifikat" name="sertifikat" value="1" class="sr-only peer">
-                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                                    </label>
+                                    <input type="hidden" name="sertifikat" value="1">
+                                    <select name="certificate_template_id" id="edit_certificate_template_id" required class="w-1/2 px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">-- Pilih Template --</option>
+                                        @foreach($certificateTemplates as $template)
+                                            <option value="{{ $template->id }}">{{ $template->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -1134,7 +1140,7 @@
                         {{-- 4. Pricing & Akses Kursus --}}
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                                <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center">4</span>
+                                <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:bg-amber-400 text-xs font-bold flex items-center justify-center">4</span>
                                 <span id="edit_pricing_section_title">Pricing & Akses Kursus</span>
                             </h4>
                             
@@ -1365,7 +1371,7 @@
             'edit_id_dosen', 'edit_id_jurusan', 'edit_level', 'edit_estimasi_waktu', 'edit_durasi_satuan',
             'edit_kategori', 'edit_harga', 'edit_diskon', 'edit_tanggal_webinar', 'edit_jam_mulai_webinar',
             'edit_jam_selesai_webinar', 'edit_kuota_peserta', 'edit_youtube_playlist',
-            'edit_status_input', 'edit_tipe_input'
+            'edit_status_input', 'edit_tipe_input', 'edit_certificate_template_id'
         ];
         const editCheckboxIds = [
             'edit_status_toggle', 'edit_akses_publik', 'edit_sertifikat', 'edit_gratis_toggle'
@@ -1407,7 +1413,7 @@
                     statusTitle: 'Status Kursus',
                     statusDesc: 'Aktif atau simpan draft',
                     certificateTitle: 'Sertifikat Penyelesaian',
-                    certificateDesc: 'Berikan sertifikat setelah selesai',
+                    certificateDesc: 'Wajib pilih template sertifikat',
                     pricingTitle: 'Pricing & Akses Kursus',
                     categoryLabel: 'Kategori Kursus',
                     metaTitle: 'Playlist Kursus',
@@ -1432,7 +1438,7 @@
                     statusTitle: 'Status Webinar',
                     statusDesc: 'Draft atau siap tayang',
                     certificateTitle: 'Sertifikat Kehadiran',
-                    certificateDesc: 'Berikan sertifikat kepada peserta webinar',
+                    certificateDesc: 'Wajib pilih template sertifikat',
                     pricingTitle: 'Pricing & Akses Webinar',
                     categoryLabel: 'Kategori Konten',
                     metaTitle: 'Jadwal Webinar',
@@ -1457,7 +1463,7 @@
                     statusTitle: 'Status Tiket',
                     statusDesc: 'Draft, aktif, atau nonaktif',
                     certificateTitle: 'Dokumen Kehadiran',
-                    certificateDesc: 'Aktifkan jika peserta perlu bukti kehadiran',
+                    certificateDesc: 'Wajib pilih template sertifikat',
                     pricingTitle: 'Pricing & Akses Tiket',
                     categoryLabel: 'Kategori Konten',
                     metaTitle: 'Info Akses Tiket',
@@ -1641,7 +1647,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || '',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                         'Accept': 'application/json',
                     },
                     body: JSON.stringify({
@@ -2093,6 +2099,7 @@
                         document.getElementById('edit_youtube_playlist').value = data.youtube_playlist || '';
                         document.getElementById('edit_harga').value = data.harga || 0;
                         document.getElementById('edit_diskon').value = data.diskon || 0;
+                        document.getElementById('edit_certificate_template_id').value = data.certificate_template_id || '';
 
                         const statusToggle = document.getElementById('edit_status_toggle');
                         const statusInput = document.getElementById('edit_status_input');
@@ -2108,7 +2115,7 @@
                         gratisToggle.dispatchEvent(new Event('change'));
 
                         // Set akses_publik & sertifikat checkboxes
-                        document.getElementById('edit_akses_publik').checked = data.akses_publik !== false;
+                        document.getElementById('edit_akses_publik').checked = !!data.akses_publik;
                         document.getElementById('edit_sertifikat').checked = !!data.sertifikat;
 
                         const approvalNoteBox = document.getElementById('editApprovalNoteBox');

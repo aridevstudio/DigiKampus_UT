@@ -30,6 +30,7 @@ class Bootcamp extends Model
         'sales_opened_at',
         'published_at',
         'linked_course_id',
+        'certificate_template_id',
         'created_by',
     ];
 
@@ -56,5 +57,13 @@ class Bootcamp extends Model
     public function linkedCourse()
     {
         return $this->belongsTo(Course::class, 'linked_course_id', 'id_course');
+    }
+
+    /**
+     * Get the certificate template associated with the bootcamp.
+     */
+    public function certificateTemplate()
+    {
+        return $this->belongsTo(CertificateTemplate::class, 'certificate_template_id', 'id');
     }
 }

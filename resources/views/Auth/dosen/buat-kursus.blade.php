@@ -350,17 +350,19 @@
                                 </div>
                             </div>
 
-                            {{-- Sertifikat Toggle --}}
+                            {{-- Sertifikat Select --}}
                             <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30">
                                 <div>
                                     <h5 id="certificate-card-title" class="font-medium text-gray-900 dark:text-white text-xs">Sertifikat Penyelesaian</h5>
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-400">Berikan sertifikat setelah selesai</p>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400">Wajib pilih template sertifikat</p>
                                 </div>
-                                <input type="hidden" name="sertifikat" value="0">
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" name="sertifikat" value="1" class="sr-only peer">
-                                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                                </label>
+                                <input type="hidden" name="sertifikat" value="1">
+                                <select name="certificate_template_id" required class="w-1/2 px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">-- Pilih Template --</option>
+                                    @foreach($certificateTemplates as $template)
+                                        <option value="{{ $template->id }}" {{ old('certificate_template_id') == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>

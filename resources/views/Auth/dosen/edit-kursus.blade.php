@@ -141,6 +141,19 @@
                             @error('kategori')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
 
+                        {{-- Template Sertifikat --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Template Sertifikat</label>
+                            <input type="hidden" name="sertifikat" value="1">
+                            <select name="certificate_template_id" required class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Pilih Template Sertifikat</option>
+                                @foreach($certificateTemplates as $template)
+                                    <option value="{{ $template->id }}" {{ old('certificate_template_id', $course->certificate_template_id) == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('certificate_template_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 <span x-show="selectedKategori !== 'webinar'">URL Playlist YouTube (Opsional)</span>

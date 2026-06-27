@@ -540,6 +540,7 @@ class AdminController extends Controller
             'mentorRows' => $mentorRows,
             'availableMentors' => $availableMentors,
             'externalMentors' => $externalMentors,
+            'certificateTemplates' => \App\Models\CertificateTemplate::all(),
         ]);
     }
 
@@ -574,6 +575,7 @@ class AdminController extends Controller
             'start_time' => $validated['schedule_start_time'],
             'end_time' => $validated['schedule_end_time'] ?? null,
             'risk_note' => $this->cleanTextInput($validated['risk'] ?? ''),
+            'certificate_template_id' => $validated['certificate_template_id'],
             'created_by' => Auth::guard('admin')->id(),
         ]);
 
@@ -928,6 +930,7 @@ class AdminController extends Controller
             'external_expertise' => ['nullable', 'string', 'max:255'],
             'external_institution' => ['nullable', 'string', 'max:255'],
             'risk' => ['nullable', 'string', 'max:2000'],
+            'certificate_template_id' => ['required', 'exists:certificate_templates,id'],
         ]);
     }
 
@@ -2055,6 +2058,7 @@ class AdminController extends Controller
             'dosenList' => $dosenList,
             'webinarSpeakerList' => $dosenList,
             'jurusanList' => $jurusanList,
+            'certificateTemplates' => \App\Models\CertificateTemplate::all(),
             'nextKursusCode' => $this->generateNextCourseCode('KRS'),
             'nextWebinarCode' => $this->generateNextCourseCode('WEB'),
         ]);
@@ -5779,6 +5783,7 @@ class AdminController extends Controller
             'jam_mulai_webinar' => 'required_if:kategori,webinar|nullable|date_format:H:i',
             'jam_selesai_webinar' => 'required_if:kategori,webinar|nullable|date_format:H:i|after:jam_mulai_webinar',
             'kuota_peserta' => 'nullable|integer|min:1',
+            'certificate_template_id' => 'required|exists:certificate_templates,id',
         ];
     }
 
@@ -5829,6 +5834,7 @@ class AdminController extends Controller
             'durasi_satuan' => $durasiSatuan,
             'youtube_playlist' => $request->youtube_playlist,
             'sertifikat' => $request->boolean('sertifikat'),
+            'certificate_template_id' => $request->certificate_template_id,
             'akses_publik' => $request->boolean('akses_publik'),
             'tanggal_webinar' => $isWebinar ? $request->tanggal_webinar : null,
             'jam_mulai_webinar' => $isWebinar ? $request->jam_mulai_webinar : null,
