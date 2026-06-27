@@ -1,141 +1,144 @@
 <x-layouts.dashboard :active="'courses'">
 
 {{-- Breadcrumb --}}
-<div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6b7280; margin-bottom: 16px;">
-    <a href="{{ route('mahasiswa.courses') }}" style="color: #3b82f6; text-decoration: none;">Kursus</a>
-    <span>›</span>
-    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" style="color: #3b82f6; text-decoration: none;">{{ $course->nama_course }}</a>
-    <span>›</span>
-    <span style="color: #1f2937; font-weight: 500;">Tugas Akhir</span>
-</div>
+<nav aria-label="Breadcrumb" class="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 sm:mb-4 sm:gap-2 sm:text-sm">
+    <a href="{{ route('mahasiswa.courses') }}" class="text-blue-500 hover:underline">Kursus</a>
+    <span aria-hidden="true">›</span>
+    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" class="max-w-[8rem] truncate text-blue-500 hover:underline sm:max-w-[12rem]">{{ $course->nama_course }}</a>
+    <span aria-hidden="true">›</span>
+    <span class="font-medium text-gray-800 dark:text-gray-100">Tugas Akhir</span>
+</nav>
 
 {{-- Page Header --}}
-<div style="margin-bottom: 24px;">
-    <h1 style="font-size: 28px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Tugas Akhir</h1>
-    <p style="color: #6b7280;">Tugas akhir bersifat opsional untuk modul ini.</p>
+<div class="mb-4 sm:mb-6">
+    <h1 class="mb-1.5 text-xl font-bold leading-tight text-gray-800 dark:text-gray-100 sm:mb-2 sm:text-2xl">Tugas Akhir</h1>
+    <p class="text-xs leading-relaxed text-gray-500 dark:text-gray-400 sm:text-sm">Tugas akhir bersifat opsional untuk modul ini.</p>
 </div>
 
 {{-- Informasi Tugas Section --}}
-<div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e5e7eb; margin-bottom: 24px;">
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-        <div style="width: 40px; height: 40px; background: #dbeafe; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-            <svg style="width: 20px; height: 20px; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<section class="mb-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:mb-6 sm:p-6">
+    <div class="mb-4 flex items-center gap-3 sm:mb-5">
+        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/20 sm:h-10 sm:w-10">
+            <svg class="h-4 w-4 text-blue-500 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
         </div>
-        <h2 style="font-size: 20px; font-weight: 600; color: #1f2937;">Informasi Tugas</h2>
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Informasi Tugas</h2>
     </div>
-    
-    <div style="display: flex; gap: 32px; flex-wrap: wrap;">
+
+    <div class="flex flex-col gap-5 lg:flex-row lg:gap-8">
         {{-- Left: Description --}}
-        <div style="flex: 1; min-width: 300px;">
-            <h3 style="font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 12px;">{{ $assignment['title'] }}</h3>
-            <p style="color: #4b5563; line-height: 1.7; margin-bottom: 20px;">{{ $assignment['description'] }}</p>
-            
-            <h4 style="font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 12px;">Tujuan Pembelajaran</h4>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="min-w-0 flex-1">
+            <h3 class="mb-2 line-clamp-2 text-sm font-semibold leading-snug text-gray-800 dark:text-gray-100 sm:mb-3 sm:text-base">{{ $assignment['title'] }}</h3>
+            <p class="mb-4 text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:mb-5">{{ $assignment['description'] }}</p>
+
+            <h4 class="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-100 sm:mb-3 sm:text-sm">Tujuan Pembelajaran</h4>
+            <ul class="flex flex-col gap-2">
                 @foreach($assignment['learning_objectives'] as $objective)
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
-                    <span style="color: #4b5563; font-size: 14px;">{{ $objective }}</span>
-                </div>
+                <li class="flex items-start gap-2">
+                    <span class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-green-500"></span>
+                    <span class="text-xs text-gray-600 dark:text-gray-300 sm:text-sm">{{ $objective }}</span>
+                </li>
                 @endforeach
-            </div>
+            </ul>
         </div>
-        
+
         {{-- Right: Details --}}
-        <div style="width: 280px; display: flex; flex-direction: column; gap: 16px;">
-            {{-- Deadline & Weight --}}
-            <div style="display: flex; gap: 16px;">
-                <div style="flex: 1; background: #f8fafc; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <svg style="width: 16px; height: 16px; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="flex w-full flex-col gap-3 sm:gap-4 lg:w-72 lg:flex-shrink-0">
+            {{-- Deadline & Weight (stacked on tiny, side-by-side on bigger) --}}
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-1 xl:grid-cols-2">
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50 sm:p-4">
+                    <div class="mb-1.5 flex items-center gap-2 sm:mb-2">
+                        <svg class="h-3.5 w-3.5 text-blue-500 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <span style="font-size: 12px; color: #6b7280;">Tenggat Waktu</span>
+                        <span class="text-[10px] text-gray-500 dark:text-gray-400 sm:text-xs">Tenggat</span>
                     </div>
-                    <p style="font-size: 14px; font-weight: 600; color: #1f2937;">{{ $assignment['deadline']->format('d F Y') }}</p>
+                    <p class="line-clamp-1 text-xs font-semibold text-gray-800 dark:text-gray-100 sm:text-sm">{{ $assignment['deadline']->format('d F Y') }}</p>
                 </div>
-                <div style="flex: 1; background: #f8fafc; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <svg style="width: 16px; height: 16px; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50 sm:p-4">
+                    <div class="mb-1.5 flex items-center gap-2 sm:mb-2">
+                        <svg class="h-3.5 w-3.5 text-blue-500 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                         </svg>
-                        <span style="font-size: 12px; color: #6b7280;">Bobot Nilai</span>
+                        <span class="text-[10px] text-gray-500 dark:text-gray-400 sm:text-xs">Bobot</span>
                     </div>
-                    <p style="font-size: 14px; font-weight: 600; color: #1f2937;">{{ $assignment['weight'] }}%</p>
+                    <p class="text-xs font-semibold text-gray-800 dark:text-gray-100 sm:text-sm">{{ $assignment['weight'] }}%</p>
                 </div>
             </div>
-            
+
             {{-- Format & Size --}}
-            <div style="background: #f8fafc; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <svg style="width: 16px; height: 16px; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50 sm:p-4">
+                <div class="mb-1.5 flex items-center gap-2 sm:mb-2">
+                    <svg class="h-3.5 w-3.5 text-blue-500 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    <span style="font-size: 12px; color: #6b7280;">Format & Ukuran File</span>
+                    <span class="text-[10px] text-gray-500 dark:text-gray-400 sm:text-xs">Format & Ukuran</span>
                 </div>
-                <p style="font-size: 14px; color: #4b5563;">Format: {{ $assignment['format'] }}</p>
-                <p style="font-size: 14px; color: #4b5563;">Maksimal: {{ $assignment['max_size'] }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-300 sm:text-sm">Format: {{ $assignment['format'] }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-300 sm:text-sm">Maks: {{ $assignment['max_size'] }}</p>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 {{-- Instruksi Pengerjaan Section --}}
-<div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e5e7eb; margin-bottom: 24px;">
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-        <div style="width: 40px; height: 40px; background: #dbeafe; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-            <svg style="width: 20px; height: 20px; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<section class="mb-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:mb-6 sm:p-6">
+    <div class="mb-4 flex items-center gap-3 sm:mb-5">
+        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/20 sm:h-10 sm:w-10">
+            <svg class="h-4 w-4 text-blue-500 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
         </div>
-        <h2 style="font-size: 20px; font-weight: 600; color: #1f2937;">Instruksi Pengerjaan</h2>
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Instruksi Pengerjaan</h2>
     </div>
-    
-    <div style="display: flex; gap: 48px; flex-wrap: wrap;">
+
+    <div class="flex flex-col gap-5 lg:flex-row lg:gap-12">
         {{-- Steps --}}
-        <div style="flex: 1; min-width: 280px;">
-            <h4 style="font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 16px;">Langkah Pengerjaan</h4>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="min-w-0 flex-1">
+            <h4 class="mb-3 text-xs font-semibold text-gray-800 dark:text-gray-100 sm:mb-4 sm:text-sm">Langkah Pengerjaan</h4>
+            <ol class="flex flex-col gap-3">
                 @foreach($assignment['steps'] as $index => $step)
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                    <div style="width: 28px; height: 28px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0;">{{ $index + 1 }}</div>
-                    <span style="color: #4b5563; font-size: 14px; padding-top: 4px;">{{ $step }}</span>
-                </div>
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                    <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs font-semibold text-white">{{ $index + 1 }}</span>
+                    <span class="pt-0.5 text-xs text-gray-600 dark:text-gray-300 sm:text-sm">{{ $step }}</span>
+                </li>
                 @endforeach
-            </div>
+            </ol>
         </div>
-        
+
         {{-- Grading & Notes --}}
-        <div style="width: 320px;">
-            <h4 style="font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 16px;">Kriteria Penilaian</h4>
-            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+        <div class="w-full lg:w-80 lg:flex-shrink-0">
+            <h4 class="mb-3 text-xs font-semibold text-gray-800 dark:text-gray-100 sm:mb-4 sm:text-sm">Kriteria Penilaian</h4>
+            <div class="mb-4 flex flex-col gap-2 sm:mb-5">
                 @foreach($assignment['grading_criteria'] as $criteria)
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #4b5563; font-size: 14px;">{{ $criteria['name'] }}</span>
-                    <span style="color: #3b82f6; font-weight: 600; font-size: 14px;">{{ $criteria['percentage'] }}%</span>
+                <div class="flex items-center justify-between gap-3">
+                    <span class="min-w-0 truncate text-xs text-gray-600 dark:text-gray-300 sm:text-sm">{{ $criteria['name'] }}</span>
+                    <span class="flex-shrink-0 text-xs font-semibold text-blue-500 sm:text-sm">{{ $criteria['percentage'] }}%</span>
                 </div>
                 @endforeach
             </div>
-            
+
             {{-- Instructor Note --}}
-            <div style="background: #eff6ff; border-radius: 12px; padding: 16px; border-left: 4px solid #3b82f6;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <svg style="width: 16px; height: 16px; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="rounded-xl border-l-4 border-blue-500 bg-blue-50 p-3 dark:bg-blue-500/20 dark:border-blue-400 sm:p-4">
+                <div class="mb-1.5 flex items-center gap-2 sm:mb-2">
+                    <svg class="h-3.5 w-3.5 text-blue-500 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span style="font-size: 12px; font-weight: 600; color: #1e40af;">Catatan Dosen</span>
+                    <span class="text-[10px] font-semibold text-blue-700 dark:text-blue-300 sm:text-xs">Catatan Dosen</span>
                 </div>
-                <p style="color: #1e40af; font-size: 13px; line-height: 1.6;">{{ $assignment['instructor_note'] }}</p>
+                <p class="text-xs leading-relaxed text-blue-700 dark:text-blue-100 sm:text-sm">{{ $assignment['instructor_note'] }}</p>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 {{-- Submit Button --}}
-<a href="{{ route('mahasiswa.assignment-submission', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 16px; background: #3b82f6; color: white; border-radius: 12px; font-weight: 600; font-size: 16px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+<a href="{{ route('mahasiswa.assignment-submission', ['courseId' => $course->id_course, 'assignmentId' => $assignment['id']]) }}" class="mb-24 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-600 sm:mb-6 sm:py-3.5 sm:text-base">
     Halaman Submission
+    <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
 </a>
 
 </x-layouts.dashboard>

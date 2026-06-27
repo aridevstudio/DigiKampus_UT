@@ -71,8 +71,21 @@
     }
 @endphp
 
-{{-- Back Link & Title Row --}}
-<div class="flex flex-wrap items-center justify-between gap-4 mb-6 animate-fade-in-up">
+{{-- Mobile Slim Breadcrumb --}}
+@php
+    $mobileModulBreadcrumb = isset($currentModuleIndex) ? 'Modul ' . ($currentModuleIndex + 1) : 'Modul';
+    $mobileTypeBreadcrumb = $currentMaterial
+        ? (($currentMaterial['type'] ?? '') === 'tugas' ? 'Tugas Akhir' : ucfirst($currentMaterial['type'] ?? 'Materi'))
+        : 'Pilih Materi';
+@endphp
+<nav aria-label="Breadcrumb" class="mb-2 flex items-center gap-1.5 text-[11px] font-medium text-gray-500 dark:text-gray-400 sm:hidden">
+    <span>{{ $mobileModulBreadcrumb }}</span>
+    <span aria-hidden="true">&bull;</span>
+    <span class="text-gray-800 dark:text-gray-100">{{ $mobileTypeBreadcrumb }}</span>
+</nav>
+
+{{-- Back Link & Title Row (desktop only) --}}
+<div class="hidden flex-wrap items-center justify-between gap-4 mb-6 animate-fade-in-up sm:flex">
     <div class="flex items-center gap-4">
         <a href="{{ route('mahasiswa.courses') }}" class="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +97,7 @@
             Lihat Detail Kursus
         </a>
     </div>
-    
+
     {{-- Progress Badge --}}
     <div class="flex items-center gap-2 bg-white dark:bg-[#1f2937] px-4 py-2 rounded-xl border border-gray-100 dark:border-gray-700/50">
         <span class="text-sm text-gray-600 dark:text-gray-400">Progress Kursus</span>
@@ -299,11 +312,11 @@
     
     {{-- CENTER: Content Area --}}
     <div class="course-content-center flex-1 min-w-0">
-        <div class="space-y-4">
+        <div class="space-y-5 sm:space-y-4">
             {{-- Course Title --}}
-            <div>
-                <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $currentMaterial ? $currentMaterial['title'] : $course->nama_course }}</h1>
-                <p class="text-gray-500 dark:text-gray-400 text-sm">
+            <div class="mb-2 sm:mb-3">
+                <h1 class="line-clamp-2 text-lg font-bold leading-tight text-gray-800 dark:text-gray-100 sm:text-xl">{{ $currentMaterial ? $currentMaterial['title'] : $course->nama_course }}</h1>
+                <p class="mt-0.5 text-xs leading-snug text-gray-500 dark:text-gray-400 sm:text-sm">
                     @if($currentMaterial)
                     @php
                         $materialTypeLabel = [
@@ -313,7 +326,8 @@
                             'tugas' => 'Tugas',
                         ];
                     @endphp
-                    {{ $modules[$currentModuleIndex]['title'] ?? 'Materi' }} - {{ $materialTypeLabel[$currentMaterial['type']] ?? 'Materi' }}: {{ $currentMaterial['title'] }}
+                    <span class="hidden sm:inline">{{ $modules[$currentModuleIndex]['title'] ?? 'Materi' }} - {{ $materialTypeLabel[$currentMaterial['type']] ?? 'Materi' }}: {{ $currentMaterial['title'] }}</span>
+                    <span class="sm:hidden">{{ $materialTypeLabel[$currentMaterial['type']] ?? 'Materi' }}</span>
                     @else
                     Pilih materi untuk memulai
                     @endif
@@ -390,16 +404,16 @@
                             </div>
                         </div>
                     @elseif($currentMaterial['type'] == 'tugas')
-                         <div class="absolute inset-0 flex items-center justify-center bg-gray-800 p-6">
-                            <div class="max-w-md text-center">
-                                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
-                                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <div class="absolute inset-0 flex items-center justify-center bg-gray-800 p-3 sm:p-6">
+                            <div class="w-full max-w-md text-center">
+                                <div class="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-orange-500/20 text-orange-300 sm:mb-4 sm:h-14 sm:w-14">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                 </div>
-                                <h3 class="text-lg font-semibold text-white">Tugas Akhir Modul</h3>
-                                <p class="mt-2 text-sm text-gray-300">Materi ini berupa penugasan. Buka detail tugas untuk melihat instruksi lengkap dan upload jawaban.</p>
-                                <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $currentMaterial['id']]) }}" class="mt-4 inline-block rounded-lg bg-orange-500 px-6 py-2 font-medium text-white transition hover:bg-orange-600">Buka Detail Tugas</a>
+                                <h3 class="text-sm font-semibold leading-tight text-white sm:text-lg">Tugas Akhir Modul</h3>
+                                <p class="mt-0.5 line-clamp-3 text-xs leading-snug text-gray-300 sm:mt-2 sm:line-clamp-none sm:text-sm">Materi ini berupa penugasan. Buka detail tugas untuk melihat instruksi lengkap dan upload jawaban.</p>
+                                <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $currentMaterial['id']]) }}" class="mt-2 inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-orange-600 sm:mt-3 sm:px-6 sm:py-2 sm:text-sm">Buka Detail Tugas</a>
                             </div>
                         </div>
                     @else
@@ -449,26 +463,26 @@
             @endif
             
             {{-- Action Buttons --}}
-            <div class="flex flex-wrap items-center gap-3">
-                <form action="{{ route('mahasiswa.favorite.add') }}" method="POST">
+            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                <form action="{{ route('mahasiswa.favorite.add') }}" method="POST" class="w-full min-w-0">
                     @csrf
                     <input type="hidden" name="id_course" value="{{ $course->id_course }}">
-                    <button type="submit" class="flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-medium transition">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <button type="submit" aria-label="Tambahkan kursus ini ke favorit" class="flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl bg-rose-500 px-2 py-2 text-xs font-medium text-white transition hover:bg-rose-600 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm">
+                        <svg class="h-4 w-4 shrink-0 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
                         </svg>
-                        Tambahkan ke Favorit
+                        <span class="truncate">Tambahkan ke Favorit</span>
                     </button>
                 </form>
-                
+
                 @if($currentMaterial)
-                <form action="{{ route('mahasiswa.material.complete', $currentMaterial['id']) }}" method="POST">
+                <form action="{{ route('mahasiswa.material.complete', $currentMaterial['id']) }}" method="POST" class="w-full min-w-0">
                     @csrf
-                    <button type="submit" class="flex items-center gap-2 px-5 py-2.5 {{ $currentMaterial['is_completed'] ? 'bg-green-500' : 'bg-blue-500 hover:bg-blue-600' }} text-white rounded-xl font-medium transition">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <button type="submit" aria-label="Tandai materi ini selesai" class="flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-medium text-white transition sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm {{ $currentMaterial['is_completed'] ? 'bg-green-500' : 'bg-blue-500 hover:bg-blue-600' }}">
+                        <svg class="h-4 w-4 shrink-0 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                         </svg>
-                        Tandai Selesai
+                        <span class="truncate">Tandai Selesai</span>
                     </button>
                 </form>
                 @endif
@@ -476,57 +490,57 @@
 
             {{-- Certificate Status --}}
             @if($certificatePanelVisible)
-            <div id="course-certificate-panel" class="relative overflow-hidden rounded-[28px] border {{ $certificateEligible ? 'border-emerald-200/80 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/30 dark:via-gray-900 dark:to-teal-950/20' : 'border-amber-200/80 dark:border-amber-700/40 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20' }} p-5 sm:p-6">
+            <div id="course-certificate-panel" class="relative overflow-hidden rounded-[24px] border {{ $certificateEligible ? 'border-emerald-200/80 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/30 dark:via-gray-900 dark:to-teal-950/20' : 'border-amber-200/80 dark:border-amber-700/40 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20' }} p-4 sm:rounded-[28px] sm:p-6">
                 <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full {{ $certificateEligible ? 'bg-emerald-200/40 dark:bg-emerald-500/20' : 'bg-amber-200/50 dark:bg-amber-500/20' }} blur-3xl"></div>
                 <div class="absolute -left-10 bottom-0 h-24 w-24 rounded-full {{ $certificateEligible ? 'bg-teal-200/40 dark:bg-teal-500/10' : 'bg-orange-200/40 dark:bg-orange-500/10' }} blur-3xl"></div>
 
-                <div class="relative flex flex-col xl:flex-row gap-5 xl:items-center xl:justify-between">
-                    <div class="flex-1 space-y-4">
+                <div class="relative flex flex-col xl:flex-row gap-4 xl:items-center xl:justify-between xl:gap-5">
+                    <div class="flex-1 space-y-3 sm:space-y-4">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="inline-flex items-center rounded-full {{ $certificateEligible ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' }} px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]">
+                            <span class="inline-flex items-center rounded-full {{ $certificateEligible ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' }} px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] sm:px-3 sm:text-[11px] sm:tracking-[0.16em]">
                                 {{ $certificateEligible ? 'Sertifikat Aktif' : 'Status Sertifikat' }}
                             </span>
                             @if($certificateAutoDownload)
-                            <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                            <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300 sm:px-3 sm:text-[11px]">
                                 Siap Diunduh dari Notifikasi
                             </span>
                             @endif
                         </div>
 
                         <div>
-                            <h3 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">{{ $certificateStatusTitle }}</h3>
-                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ $certificateStatusMessage }}</p>
+                            <h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg sm:text-xl">{{ $certificateStatusTitle }}</h3>
+                            <p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">{{ $certificateStatusMessage }}</p>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div class="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Nomor Sertifikat</p>
-                                <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $issuedCertificateNumber ?: 'Akan dibuat otomatis' }}</p>
+                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                            <div class="rounded-xl border border-white/80 bg-white/80 px-3 py-2.5 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70 sm:rounded-2xl sm:px-4 sm:py-3">
+                                <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 sm:text-[11px] sm:tracking-[0.16em]">Nomor Sertifikat</p>
+                                <p class="mt-0.5 text-xs font-semibold text-gray-900 dark:text-white sm:mt-1 sm:text-sm">{{ $issuedCertificateNumber ?: 'Akan dibuat otomatis' }}</p>
                             </div>
-                            <div class="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Tanggal Terbit</p>
-                                <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $issuedCertificateDate }}</p>
+                            <div class="rounded-xl border border-white/80 bg-white/80 px-3 py-2.5 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70 sm:rounded-2xl sm:px-4 sm:py-3">
+                                <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 sm:text-[11px] sm:tracking-[0.16em]">Tanggal Terbit</p>
+                                <p class="mt-0.5 text-xs font-semibold text-gray-900 dark:text-white sm:mt-1 sm:text-sm">{{ $issuedCertificateDate }}</p>
                             </div>
-                            <div class="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Status</p>
-                                <p class="mt-1 text-sm font-semibold {{ $certificateEligible ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300' }}">{{ $certificateEligible ? 'Siap Download' : 'Belum Bisa Download' }}</p>
+                            <div class="rounded-xl border border-white/80 bg-white/80 px-3 py-2.5 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/70 sm:rounded-2xl sm:px-4 sm:py-3">
+                                <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 sm:text-[11px] sm:tracking-[0.16em]">Status</p>
+                                <p class="mt-0.5 text-xs font-semibold {{ $certificateEligible ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300' }} sm:mt-1 sm:text-sm">{{ $certificateEligible ? 'Siap Download' : 'Belum Bisa Download' }}</p>
                             </div>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
                             @if($certificateEligible)
                             <button type="button"
                                     onclick="downloadCourseCertificate(@js($course->nama_course), @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'), @js($issuedCertificateDate), @js($issuedCertificateNumber), @js($issuedCertificateTemplate))"
-                                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm hover:bg-emerald-700 sm:rounded-2xl sm:px-5 sm:py-3 sm:text-sm">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v10m0 0l-4-4m4 4l4-4M5 19h14" />
                                 </svg>
                                 Download Sertifikat
                             </button>
                             <button type="button"
                                     onclick="printCourseCertificate(@js($course->nama_course), @js(Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa'), @js($issuedCertificateDate), @js($issuedCertificateNumber), @js($issuedCertificateTemplate))"
-                                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border border-emerald-300 dark:border-emerald-600/70 text-emerald-700 dark:text-emerald-300 bg-white/70 dark:bg-emerald-900/10 hover:bg-white dark:hover:bg-emerald-900/25 text-sm font-semibold transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-white/70 px-4 py-2.5 text-xs font-semibold text-emerald-700 transition hover:bg-white dark:border-emerald-600/70 dark:bg-emerald-900/10 dark:text-emerald-300 dark:hover:bg-emerald-900/25 sm:rounded-2xl sm:px-5 sm:py-3 sm:text-sm">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V3h12v6m-9 12h6m-8 0h10a2 2 0 002-2v-5H5v5a2 2 0 002 2zM5 14H3a2 2 0 01-2-2v-3a2 2 0 012-2h18a2 2 0 012 2v3a2 2 0 01-2 2h-2" />
                                 </svg>
                                 Cetak Sertifikat
@@ -534,7 +548,7 @@
                             @else
                             <button type="button"
                                     disabled
-                                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gray-200 text-gray-500 text-sm font-semibold cursor-not-allowed dark:bg-gray-800 dark:text-gray-400">
+                                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-200 px-4 py-2.5 text-xs font-semibold text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 sm:rounded-2xl sm:px-5 sm:py-3 sm:text-sm">
                                 Download Sertifikat Belum Tersedia
                             </button>
                             @endif
@@ -751,7 +765,7 @@
     </div>
 </div>
 
-<div class="h-20"></div>
+<div class="h-28 sm:h-20"></div>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
