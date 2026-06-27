@@ -144,7 +144,7 @@
                                                 <button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">Buka Penjualan</button>
                                             </form>
                                         @endif
-                                        <form method="POST" action="{{ route('admin.bootcamp-tiket.delete', $program['id'], false) }}" onsubmit="return confirm('Hapus bootcamp/tiket ini? Data yang sudah punya peserta atau transaksi tidak bisa dihapus.');">
+                                        <form method="POST" action="{{ route('admin.bootcamp-tiket.delete', $program['id'], false) }}" onsubmit="return confirmDeleteProgram(event, this);">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50">Hapus</button>
@@ -258,6 +258,31 @@
     </div>
     @push('scripts')
         <script>
+            function confirmDeleteProgram(event, form) {
+                event.preventDefault();
+                if (window.Swal && typeof window.Swal.fire === 'function') {
+                    window.Swal.fire({
+                        title: 'Hapus program ini?',
+                        text: 'Data yang sudah punya peserta atau transaksi tidak bisa dihapus.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#e11d48',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                } else {
+                    if (confirm('Hapus bootcamp/tiket ini? Data yang sudah punya peserta atau transaksi tidak bisa dihapus.')) {
+                        form.submit();
+                    }
+                }
+                return false;
+            }
+
             document.addEventListener('DOMContentLoaded', () => {
                 const root = document.getElementById('bootcamp-ticket-page');
                 if (!root) return;
