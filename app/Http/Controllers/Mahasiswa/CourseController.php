@@ -194,6 +194,7 @@ class CourseController extends Controller
             'modules.materials' => fn ($query) => $query->orderBy('urutan'),
             'assignments' => fn ($query) => $query->orderBy('deadline'),
             'ratings.mahasiswa.profile',
+            'learningGoals',
         ])
             ->findOrFail($id);
         
@@ -342,6 +343,7 @@ class CourseController extends Controller
             'materials',
             'assignments',
             'instructorNotes' => fn ($query) => $query->where('is_active', true)->latest(),
+            'learningGoals',
         ])
             ->findOrFail($id);
         $courseId = $course->id_course;

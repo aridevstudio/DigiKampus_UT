@@ -19,6 +19,9 @@
             'durasi' => '',
         ],
     ]);
+    $learningGoals = old('learning_goals', [
+        ['judul_goal' => '', 'deskripsi' => ''],
+    ]);
 @endphp
 
 <x-layouts.dosen :title="$pageTitles[$defaultKategori] ?? 'Buat Kursus Baru'" active="buat-kursus">
@@ -314,6 +317,60 @@
                         </div>
                     </div>
 
+                    {{-- 2.5. Tujuan Pembelajaran --}}
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5" data-kategori-section="kursus" @class(['hidden' => $defaultKategori === 'webinar'])>
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center">2.5</span>
+                            Tujuan Pembelajaran
+                        </h4>
+
+                        <div class="space-y-4">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Kompetensi yang akan dicapai mahasiswa</p>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cantumkan 2-4 tujuan pembelajaran agar mahasiswa memahami hasil akhir kursus.</p>
+                                </div>
+                                <button type="button" id="addLearningGoalButton" data-add-learning-goal class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Tambah Tujuan
+                                </button>
+                            </div>
+
+                            <div id="learningGoalsContainer" class="space-y-3">
+                                @foreach ($learningGoals as $index => $goal)
+                                    <div class="learning-goal-card rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-800/60" data-learning-goal-card>
+                                        <div class="mb-3 flex items-start justify-between gap-3">
+                                            <div>
+                                                <h5 class="text-sm font-semibold text-gray-900 dark:text-white">Tujuan {{ $index + 1 }}</h5>
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Tulis singkat, mudah diingat, dan dapat diukur.</p>
+                                            </div>
+                                            <button type="button" class="remove-learning-goal inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-500 transition hover:bg-red-50" data-remove-learning-goal {{ count($learningGoals) === 1 ? 'disabled' : '' }}>
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Judul Tujuan <span class="text-red-400">*</span></label>
+                                                <input type="text" name="learning_goals[{{ $index }}][judul_goal]" data-course-only-field value="{{ is_array($goal) ? ($goal['judul_goal'] ?? '') : ($goal->judul_goal ?? '') }}" placeholder="Contoh: Memahami konsep OOP" class="w-full rounded-lg bg-white px-3 py-2 text-sm text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600">
+                                            </div>
+                                            <div>
+                                                <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Deskripsi (opsional)</label>
+                                                <textarea name="learning_goals[{{ $index }}][deskripsi]" data-course-only-field rows="2" placeholder="Mahasiswa mampu menjelaskan pilar OOP dan contoh implementasinya pada studi kasus sederhana." class="w-full rounded-lg bg-white px-3 py-2 text-sm text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600 resize-none">{{ is_array($goal) ? ($goal['deskripsi'] ?? '') : ($goal->deskripsi ?? '') }}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            @error('learning_goals')<p class="text-red-500 text-xs">{{ $message }}</p>@enderror
+                            @error('learning_goals.*.judul_goal')<p class="text-red-500 text-xs">Tujuan pembelajaran harus memiliki judul yang diisi.</p>@enderror
+                        </div>
+                    </div>
+
                     {{-- 3. Pengaturan Kursus --}}
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-5" :class="selectedKategori === 'webinar' ? 'border-purple-100 dark:border-purple-700/30' : ''">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
@@ -515,6 +572,8 @@
             const diskonInput = document.getElementById('diskon_input');
             const initialModulesContainer = document.getElementById('initialModulesContainer');
             const addInitialModuleButton = document.getElementById('addInitialModuleButton');
+            const learningGoalsContainer = document.getElementById('learningGoalsContainer');
+            const addLearningGoalButton = document.getElementById('addLearningGoalButton');
 
             const generateWebinarCode = () => {
                 const now = new Date();
@@ -818,6 +877,83 @@
                     initialModulesContainer.appendChild(card);
                     bindInitialModuleCardEvents(card);
                     renumberInitialModuleCards();
+                });
+            }
+
+            // Learning Goals: dynamic add/remove rows
+            const renumberLearningGoals = () => {
+                if (!learningGoalsContainer) return;
+                const cards = Array.from(learningGoalsContainer.querySelectorAll('[data-learning-goal-card]'));
+                cards.forEach((card, idx) => {
+                    const title = card.querySelector('h5');
+                    if (title) title.textContent = `Tujuan ${idx + 1}`;
+                    card.querySelectorAll('input, textarea').forEach((field) => {
+                        const name = field.getAttribute('name');
+                        if (!name) return;
+                        field.setAttribute('name', name.replace(/learning_goals\[\d+\]/, `learning_goals[${idx}]`));
+                    });
+                    const removeBtn = card.querySelector('[data-remove-learning-goal]');
+                    if (removeBtn) removeBtn.disabled = cards.length === 1;
+                });
+            };
+
+            const createLearningGoalCard = (index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'learning-goal-card rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-800/60';
+                wrapper.setAttribute('data-learning-goal-card', 'true');
+                wrapper.innerHTML = `
+                    <div class="mb-3 flex items-start justify-between gap-3">
+                        <div>
+                            <h5 class="text-sm font-semibold text-gray-900 dark:text-white">Tujuan ${index + 1}</h5>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Tulis singkat, mudah diingat, dan dapat diukur.</p>
+                        </div>
+                        <button type="button" class="remove-learning-goal inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-500 transition hover:bg-red-50" data-remove-learning-goal>
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Judul Tujuan <span class="text-red-400">*</span></label>
+                            <input type="text" name="learning_goals[${index}][judul_goal]" data-course-only-field class="w-full rounded-lg bg-white px-3 py-2 text-sm text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600" placeholder="Contoh: Memahami konsep OOP">
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Deskripsi (opsional)</label>
+                            <textarea name="learning_goals[${index}][deskripsi]" data-course-only-field rows="2" class="w-full rounded-lg bg-white px-3 py-2 text-sm text-gray-900 ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white dark:ring-gray-600 resize-none" placeholder="Mahasiswa mampu menjelaskan pilar OOP dan contoh implementasinya..."></textarea>
+                        </div>
+                    </div>
+                `;
+                return wrapper;
+            };
+
+            const bindLearningGoalCardEvents = (card) => {
+                if (!card) return;
+                const removeBtn = card.querySelector('[data-remove-learning-goal]');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => {
+                        const cards = learningGoalsContainer?.querySelectorAll('[data-learning-goal-card]') || [];
+                        if (cards.length <= 1) return;
+                        card.remove();
+                        renumberLearningGoals();
+                    });
+                }
+            };
+
+            if (learningGoalsContainer) {
+                learningGoalsContainer.querySelectorAll('[data-learning-goal-card]').forEach((card) => {
+                    bindLearningGoalCardEvents(card);
+                });
+                renumberLearningGoals();
+            }
+
+            if (addLearningGoalButton && learningGoalsContainer) {
+                addLearningGoalButton.addEventListener('click', () => {
+                    const nextIndex = learningGoalsContainer.querySelectorAll('[data-learning-goal-card]').length;
+                    const card = createLearningGoalCard(nextIndex);
+                    learningGoalsContainer.appendChild(card);
+                    bindLearningGoalCardEvents(card);
+                    renumberLearningGoals();
                 });
             }
 

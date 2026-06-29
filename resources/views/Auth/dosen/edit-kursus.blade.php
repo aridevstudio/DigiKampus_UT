@@ -82,6 +82,53 @@
                             @error('persyaratan')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
 
+                        {{-- Tujuan Pembelajaran --}}
+                        <div x-show="selectedKategori !== 'webinar'" x-cloak class="rounded-xl border border-emerald-200 dark:border-emerald-700/50 bg-emerald-50/40 dark:bg-emerald-900/10 p-4 space-y-3">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h5 class="text-sm font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        Tujuan Pembelajaran
+                                    </h5>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Kompetensi yang akan dicapai mahasiswa setelah menyelesaikan kursus.</p>
+                                </div>
+                                <button type="button" id="editAddLearningGoalButton" data-add-learning-goal class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-100">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                    Tambah Tujuan
+                                </button>
+                            </div>
+
+                            <div id="editLearningGoalsContainer" class="space-y-3">
+                                @php
+                                    $editGoalsPrefill = old('learning_goals');
+                                    if ($editGoalsPrefill === null) {
+                                        $editGoalsPrefill = ($course->relationLoaded('learningGoals') ? $course->learningGoals : $course->learningGoals()->orderBy('urutan')->get())
+                                            ->map(fn ($g) => ['judul_goal' => $g->judul_goal, 'deskripsi' => $g->deskripsi])
+                                            ->all();
+                                    }
+                                    if (empty($editGoalsPrefill)) {
+                                        $editGoalsPrefill = [['judul_goal' => '', 'deskripsi' => '']];
+                                    }
+                                @endphp
+                                @foreach ($editGoalsPrefill as $index => $goal)
+                                    <div class="learning-goal-card rounded-xl border border-emerald-100 dark:border-emerald-800/30 bg-white dark:bg-gray-800 p-3" data-learning-goal-card>
+                                        <div class="mb-2 flex items-center justify-between gap-2">
+                                            <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300" data-learning-goal-title>Tujuan {{ $index + 1 }}</span>
+                                            <button type="button" class="remove-learning-goal inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 text-red-500 transition hover:bg-red-50" data-remove-learning-goal {{ count($editGoalsPrefill) === 1 ? 'disabled' : '' }}>
+                                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <input type="text" name="learning_goals[{{ $index }}][judul_goal]" value="{{ is_array($goal) ? ($goal['judul_goal'] ?? '') : ($goal->judul_goal ?? '') }}" placeholder="Contoh: Memahami konsep OOP" class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                            <textarea name="learning_goals[{{ $index }}][deskripsi]" rows="2" placeholder="Deskripsi singkat..." class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none">{{ is_array($goal) ? ($goal['deskripsi'] ?? '') : ($goal->deskripsi ?? '') }}</textarea>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @error('learning_goals')<p class="text-red-500 text-xs">{{ $message }}</p>@enderror
+                            @error('learning_goals.*.judul_goal')<p class="text-red-500 text-xs">Tujuan pembelajaran harus memiliki judul yang diisi.</p>@enderror
+                        </div>
+
                         {{-- Baris 1: Jurusan/Prodi & Tingkat Kesulitan --}}
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -978,6 +1025,75 @@
             const tipe = document.getElementById('tipe').value;
             document.getElementById('hargaField').classList.toggle('hidden', tipe !== 'berbayar');
         }
+
+        // Learning Goals add/remove rows (Dosen edit form)
+        (function initLearningGoalsEditor() {
+            const container = document.getElementById('editLearningGoalsContainer');
+            const addBtn = document.getElementById('editAddLearningGoalButton');
+            if (!container || !addBtn) return;
+
+            const renumber = () => {
+                const cards = Array.from(container.querySelectorAll('[data-learning-goal-card]'));
+                cards.forEach((card, idx) => {
+                    const title = card.querySelector('[data-learning-goal-title]');
+                    if (title) title.textContent = `Tujuan ${idx + 1}`;
+                    card.querySelectorAll('input, textarea').forEach((field) => {
+                        const name = field.getAttribute('name');
+                        if (!name) return;
+                        field.setAttribute('name', name.replace(/learning_goals\[\d+\]/, `learning_goals[${idx}]`));
+                    });
+                    const removeBtn = card.querySelector('[data-remove-learning-goal]');
+                    if (removeBtn) removeBtn.disabled = cards.length === 1;
+                });
+            };
+
+            const createCard = (index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'learning-goal-card rounded-xl border border-emerald-100 dark:border-emerald-800/30 bg-white dark:bg-gray-800 p-3';
+                wrapper.setAttribute('data-learning-goal-card', 'true');
+                wrapper.innerHTML = `
+                    <div class="mb-2 flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300" data-learning-goal-title>Tujuan ${index + 1}</span>
+                        <button type="button" class="remove-learning-goal inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 text-red-500 transition hover:bg-red-50" data-remove-learning-goal>
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        <input type="text" name="learning_goals[${index}][judul_goal]" placeholder="Contoh: Memahami konsep OOP" class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                        <textarea name="learning_goals[${index}][deskripsi]" rows="2" placeholder="Deskripsi singkat..." class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"></textarea>
+                    </div>
+                `;
+                return wrapper;
+            };
+
+            addBtn.addEventListener('click', () => {
+                const nextIndex = container.querySelectorAll('[data-learning-goal-card]').length;
+                const card = createCard(nextIndex);
+                const removeBtn = card.querySelector('[data-remove-learning-goal]');
+                removeBtn.addEventListener('click', () => {
+                    const cards = container.querySelectorAll('[data-learning-goal-card]');
+                    if (cards.length <= 1) return;
+                    card.remove();
+                    renumber();
+                });
+                container.appendChild(card);
+                renumber();
+            });
+
+            container.querySelectorAll('[data-learning-goal-card]').forEach((card) => {
+                const removeBtn = card.querySelector('[data-remove-learning-goal]');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => {
+                        const cards = container.querySelectorAll('[data-learning-goal-card]');
+                        if (cards.length <= 1) return;
+                        card.remove();
+                        renumber();
+                    });
+                }
+            });
+
+            renumber();
+        })();
 
         // Initialize Sortable for Modules
         var modulesList = document.getElementById('modulesList');

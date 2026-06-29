@@ -231,6 +231,13 @@
     $certificateEligible = (bool) ($course->sertifikat ?? false)
         && $isEnrolled
         && (($enrollment->status ?? null) === 'selesai' || (int) ($enrollment->progress ?? 0) >= 100);
+
+    $learningGoals = $course->relationLoaded('learningGoals')
+        ? $course->learningGoals
+        : (method_exists($course, 'learningGoals') ? $course->learningGoals()->orderBy('urutan')->get() : collect());
+    $totalLearningGoals = $learningGoals ? $learningGoals->count() : 0;
+    $progressPercent = (int) ($enrollment->progress ?? 0);
+@endphp
     $issuedCertificateNumber = $issuedCertificate['number'] ?? null;
     $issuedCertificateDate = $issuedCertificate['issued_date'] ?? now()->format('d F Y');
     $issuedCertificateTemplate = $issuedCertificate['template'] ?? null;
@@ -355,6 +362,52 @@
                 </div>
             </div>
             
+            {{-- Tujuan Pembelajaran --}}
+            @if($totalLearningGoals > 0)
+            <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6">
+                <div class="flex items-start justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            {{ $tujuanLabel }}
+                        </h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kompetensi yang akan kamu capai setelah menyelesaikan kursus.</p>
+                    </div>
+                    <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-700/40 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        {{ $totalLearningGoals }} tujuan
+                    </span>
+                </div>
+                <ol class="space-y-3">
+                    @foreach($learningGoals as $goalIndex => $goal)
+                        @php
+                            $isAchieved = $isEnrolled && $progressPercent >= (int) round((($goalIndex + 1) / max($totalLearningGoals, 1)) * 100);
+                        @endphp
+                        <li class="flex items-start gap-3 p-3 rounded-xl border {{ $isAchieved ? 'border-emerald-200 dark:border-emerald-700/40 bg-emerald-50/60 dark:bg-emerald-500/5' : 'border-gray-200 dark:border-gray-700/50 bg-gray-50/60 dark:bg-gray-800/40' }}">
+                            <div class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold {{ $isAchieved ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }}">
+                                @if($isAchieved)
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                                @else
+                                    {{ $goalIndex + 1 }}
+                                @endif
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $goal->judul_goal }}</p>
+                                @if(!empty($goal->deskripsi))
+                                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">{{ $goal->deskripsi }}</p>
+                                @endif
+                                @if($isEnrolled && $isAchieved)
+                                    <span class="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                        Tercapai
+                                    </span>
+                                @endif
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
+            </div>
+            @endif
+
             {{-- Prasyarat --}}
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6">
                 <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">

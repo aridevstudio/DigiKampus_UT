@@ -593,6 +593,91 @@
             </div>
             @endif
 
+            {{-- Tujuan Pembelajaran (Learning Goals) dengan indikator achieved --}}
+            @if($course->learningGoals && $course->learningGoals->count() > 0)
+                @php
+                    $totalGoals = (int) $course->learningGoals->count();
+                    $safeProgress = (int) max(0, min(100, (int) ($progressPercent ?? 0)));
+                    $achievedCount = $totalGoals > 0 ? intdiv($safeProgress * $totalGoals, 100) : 0;
+                    $allGoalsAchieved = $totalGoals > 0 && $achievedCount >= $totalGoals;
+                    $goalProgressLabel = $totalGoals > 0
+                        ? "{$achievedCount}/{$totalGoals} tujuan tercapai"
+                        : 'Belum ada tujuan';
+                @endphp
+                <div class="relative overflow-hidden rounded-[24px] border {{ $allGoalsAchieved ? 'border-emerald-200/80 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/30 dark:via-gray-900 dark:to-teal-950/20' : 'border-blue-200/80 dark:border-blue-700/40 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-blue-950/30 dark:via-gray-900 dark:to-indigo-950/20' }} p-4 sm:rounded-[28px] sm:p-6">
+                    <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full {{ $allGoalsAchieved ? 'bg-emerald-200/40 dark:bg-emerald-500/20' : 'bg-blue-200/40 dark:bg-blue-500/20' }} blur-3xl"></div>
+                    <div class="absolute -left-10 bottom-0 h-24 w-24 rounded-full {{ $allGoalsAchieved ? 'bg-teal-200/40 dark:bg-teal-500/10' : 'bg-indigo-200/40 dark:bg-indigo-500/10' }} blur-3xl"></div>
+
+                    <div class="relative space-y-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg sm:text-xl">
+                                    Tujuan Pembelajaran
+                                </h3>
+                                <p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">
+                                    {{ $allGoalsAchieved
+                                        ? 'Selamat! Semua tujuan pembelajaran kursus ini sudah tercapai.'
+                                        : 'Selesaikan kursus untuk membuka pencapaian tiap tujuan pembelajaran berikut.' }}
+                                </p>
+                            </div>
+                            <span class="inline-flex items-center gap-2 rounded-full {{ $allGoalsAchieved ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300' }} px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] sm:tracking-[0.16em]">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full {{ $allGoalsAchieved ? 'bg-emerald-400 opacity-60' : 'bg-blue-400 opacity-60' }}"></span>
+                                    <span class="relative inline-flex h-2 w-2 rounded-full {{ $allGoalsAchieved ? 'bg-emerald-500' : 'bg-blue-500' }}"></span>
+                                </span>
+                                {{ $goalProgressLabel }}
+                            </span>
+                        </div>
+
+                        <div class="hidden h-2 w-full overflow-hidden rounded-full bg-white/70 shadow-inner sm:block dark:bg-gray-800/60">
+                            <div class="h-full rounded-full {{ $allGoalsAchieved ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500' }} transition-all" style="width: {{ $totalGoals > 0 ? ($achievedCount / $totalGoals) * 100 : 0 }}%"></div>
+                        </div>
+
+                        <ol class="space-y-2.5 sm:space-y-3">
+                            @foreach($course->learningGoals as $goalIndex => $goal)
+                                @php $isAchieved = $goalIndex < $achievedCount; @endphp
+                                <li class="relative flex items-start gap-3 rounded-2xl border {{ $isAchieved ? 'border-emerald-200/80 bg-white/85 dark:border-emerald-700/40 dark:bg-gray-900/60' : 'border-gray-200/80 bg-white/70 dark:border-gray-700/50 dark:bg-gray-900/40' }} p-3.5 shadow-sm transition sm:p-4">
+                                    <div class="relative mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center sm:h-10 sm:w-10">
+                                        <span class="absolute inset-0 rounded-full {{ $isAchieved ? 'bg-emerald-100 dark:bg-emerald-500/15' : 'bg-gray-100 dark:bg-gray-700/50' }}"></span>
+                                        @if($isAchieved)
+                                            <svg class="relative h-5 w-5 text-emerald-600 dark:text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        @else
+                                            <span class="relative text-xs font-semibold text-gray-500 sm:text-sm dark:text-gray-400">{{ $goalIndex + 1 }}</span>
+                                        @endif
+                                    </div>
+
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <h4 class="text-sm font-semibold leading-snug {{ $isAchieved ? 'text-emerald-700 dark:text-emerald-200' : 'text-gray-800 dark:text-gray-100' }} sm:text-base">
+                                                {{ $goal->judul_goal }}
+                                            </h4>
+                                            @if($isAchieved)
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                                    <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                    Tercapai
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-gray-700/60 dark:text-gray-300">
+                                                    <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    Dalam proses
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if($goal->deskripsi)
+                                            <p class="mt-1 text-xs leading-relaxed {{ $isAchieved ? 'text-emerald-700/80 dark:text-emerald-200/70' : 'text-gray-600 dark:text-gray-300' }} sm:text-sm">
+                                                {{ $goal->deskripsi }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ol>
+                    </div>
+                </div>
+            @endif
+
             {{-- Dropdown Pre-test / Kuis Modul Ini --}}
             @php
                 $currentModuleQuizLinks = collect($modules[$currentModuleIndex]['quizzes'] ?? []);

@@ -124,6 +124,20 @@ class Course extends Model
     }
 
     /**
+     * Get learning goals (Tujuan Pembelajaran) attached to this course.
+     *
+     * Learning goals are course-level competencies the student is expected
+     * to achieve after completing the course/bootcamp/webinar. Admin &
+     * Dosen can manage them via the course editor; the student views
+     * them on course-detail (preview) and on course-learn (achieved
+     * state when enrollment is selesai / progress 100%).
+     */
+    public function learningGoals()
+    {
+        return $this->hasMany(CourseLearningGoal::class, 'id_course', 'id_course')->orderBy('urutan');
+    }
+
+    /**
      * Scope to filter by tipe (pricing: gratis/berbayar).
      */
     public function scopeByTipe($query, string $tipe)

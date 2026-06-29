@@ -10,6 +10,7 @@ use App\Models\AutomaticCertificate;
 use App\Models\Category;
 use App\Models\CertificateTemplate;
 use App\Models\Course;
+use App\Models\CourseLearningGoal;
 use App\Models\DosenNotification;
 use App\Models\ExternalMentor;
 use App\Models\Jurusan;
@@ -1250,6 +1251,48 @@ class AdminController extends Controller
         return $course;
     }
 
+    /**
+     * Replace the learning goals attached to a course with the submitted set.
+     *
+     * Called from storeKursus / updateKursus. Drop empty judul_goal entries and
+     * auto-assign urutan based on the surviving array order.
+     */
+    private function syncAdminLearningGoals(Course $course, Request $request): void
+    {
+        if (!$request->has('learning_goals') && !$request->filled('learning_goals')) {
+            return;
+        }
+
+        $goals = $request->input('learning_goals', []);
+        if (!is_array($goals)) {
+            $goals = [];
+        }
+
+        $normalized = [];
+        foreach (array_values($goals) as $goal) {
+            $judul = trim((string) data_get($goal, 'judul_goal', ''));
+            if ($judul === '') {
+                continue;
+            }
+            $deskripsi = trim((string) data_get($goal, 'deskripsi', ''));
+            $normalized[] = [
+                'judul_goal' => $judul,
+                'deskripsi' => $deskripsi !== '' ? mb_substr($deskripsi, 0, 4000) : null,
+            ];
+        }
+
+        $course->learningGoals()->delete();
+
+        foreach (array_values($normalized) as $index => $goal) {
+            CourseLearningGoal::create([
+                'id_course' => $course->id_course,
+                'judul_goal' => $goal['judul_goal'],
+                'deskripsi' => $goal['deskripsi'],
+                'urutan' => $index + 1,
+            ]);
+        }
+    }
+
     private function closeLinkedBootcampCourse(Bootcamp $bootcamp): void
     {
         if (!$bootcamp->linked_course_id) {
@@ -2087,6 +2130,7 @@ class AdminController extends Controller
 
         $course = Course::create($this->buildAdminCoursePayload($request, $status, $thumbnailPath));
         $playlistSummary = $this->syncPlaylistForCourse($course, $request->youtube_playlist, $request->kategori);
+        $this->syncAdminLearningGoals($course, $request);
         $this->notifyMahasiswaAboutPublishedProgram($course, 'Admin');
 
         $label = $request->kategori === 'webinar' ? 'Webinar' : 'Kursus';
@@ -2176,10 +2220,24 @@ class AdminController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
         }
 
-        $kursus->update($this->buildAdminCoursePayload($request, $request->status, $thumbnailPath, $kursus));
-        $playlistSummary = $this->syncPlaylistForCourse($kursus->fresh(), $request->youtube_playlist, $request->kategori);
+        $playlistSummaryForMessage = function ($playlistSummary, $kursus) use ($request) {
+            $label = $request->kategori === 'webinar' ? 'Webinar' : 'Kursus';
+            $message = "{$label} berhasil diperbarui!";
+            if ($playlistSummary) {
+                $message .= ' ' . $playlistSummary;
+            }
+            return redirect()->route('admin.kursus')
+                ->with('success', $message);
+        };
 
-        $label = $request->kategori === 'webinar' ? 'Webinar' : 'Kursus';
+        $result = DB::transaction(function () use ($request, &$thumbnailPath, $kursus) {
+            $kursus->update($this->buildAdminCoursePayload($request, $request->status, $thumbnailPath, $kursus));
+            $playlistSummary = $this->syncPlaylistForCourse($kursus->fresh(), $request->youtube_playlist, $request->kategori);
+            $this->syncAdminLearningGoals($kursus, $request);
+            return $playlistSummary;
+        });
+
+        return $playlistSummaryForMessage($result, $kursus);
         $message = "{$label} berhasil diperbarui!";
         if ($playlistSummary) {
             $message .= ' ' . $playlistSummary;

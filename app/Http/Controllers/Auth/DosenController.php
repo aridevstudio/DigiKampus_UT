@@ -12,6 +12,7 @@ use App\Models\CourseDiscussion;
 use App\Models\CourseGradeRecord;
 use App\Models\CourseGradeSetting;
 use App\Models\CourseInstructorNote;
+use App\Models\CourseLearningGoal;
 use App\Models\CourseMaterial;
 use App\Models\CourseModule;
 use App\Models\DosenNotification;
@@ -1611,8 +1612,9 @@ class DosenController extends Controller
         }
 
         $initialMaterials = $this->normalizeInitialMaterials($request->input('initial_modules', []));
+        $learningGoals = $this->normalizeLearningGoals($request->input('learning_goals', []));
 
-        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath, $initialMaterials) {
+        $course = DB::transaction(function () use ($dosen, $request, $thumbnailPath, $initialMaterials, $learningGoals) {
             $course = \App\Models\Course::create(
                 $this->buildDosenCoursePayload($request, $dosen->id, $thumbnailPath)
             );
@@ -1639,6 +1641,10 @@ class DosenController extends Controller
                         'urutan' => $index + 1,
                     ]);
                 }
+            }
+
+            if (!empty($learningGoals)) {
+                $this->syncLearningGoals($course, $learningGoals);
             }
 
             return $course;
@@ -1676,13 +1682,13 @@ class DosenController extends Controller
             ->where('id_dosen', $dosen->id)
             ->with(['modules.materials' => function($q) {
                 $q->orderBy('urutan');
-            }])
+            }, 'learningGoals'])
             ->firstOrFail();
 
         $this->ensureMainModuleForLegacyCourse($course);
         $course->load(['modules.materials' => function($q) {
             $q->orderBy('urutan');
-        }]);
+        }, 'learningGoals']);
 
         $jurusans = \App\Models\Jurusan::all();
         $certificateTemplates = \App\Models\CertificateTemplate::all();
@@ -1727,6 +1733,9 @@ class DosenController extends Controller
             'initial_modules.*.video_url' => 'nullable|url|max:500',
             'initial_modules.*.durasi' => 'nullable|integer|min:0',
             'certificate_template_id' => 'required|exists:certificate_templates,id',
+            'learning_goals' => 'nullable|array',
+            'learning_goals.*.judul_goal' => 'nullable|string|max:255',
+            'learning_goals.*.deskripsi' => 'nullable|string|max:4000',
         ];
     }
 
@@ -1767,6 +1776,68 @@ class DosenController extends Controller
             ->filter()
             ->values()
             ->all();
+    }
+
+    /**
+     * Normalize and validate submitted learning goals payload.
+     *
+     * Each entry must have a non-empty judul_goal (otherwise dropped).
+     * urutan is auto-assigned based on array position.
+     */
+    private function normalizeLearningGoals(?array $goals): array
+    {
+        if (!is_array($goals)) {
+            return [];
+        }
+
+        return collect($goals)
+            ->map(function ($goal) {
+                $judul = trim((string) data_get($goal, 'judul_goal', ''));
+                $deskripsi = trim((string) data_get($goal, 'deskripsi', ''));
+
+                if ($judul === '') {
+                    return null;
+                }
+
+                if (mb_strlen($judul) > 255) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'learning_goals' => 'Judul tujuan pembelajaran maksimal 255 karakter.',
+                    ]);
+                }
+
+                return [
+                    'judul_goal' => $judul,
+                    'deskripsi' => $deskripsi !== '' ? mb_substr($deskripsi, 0, 4000) : null,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->map(function (array $goal, int $index) {
+                $goal['urutan'] = $index + 1;
+                return $goal;
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Replace the learning goals attached to a course with the submitted set.
+     *
+     * Called from storeCourse / updateCourse. Uses a transaction in the
+     * caller so a failure rolls back any in-progress course save.
+     */
+    private function syncLearningGoals(\App\Models\Course $course, array $goals): void
+    {
+        $course->learningGoals()->delete();
+
+        foreach ($goals as $goal) {
+            CourseLearningGoal::create([
+                'id_course' => $course->id_course,
+                'judul_goal' => $goal['judul_goal'],
+                'deskripsi' => $goal['deskripsi'],
+                'urutan' => $goal['urutan'],
+            ]);
+        }
     }
 
     private function buildDosenCoursePayload(Request $request, int $dosenId, ?string $thumbnailPath = null, ?Course $existingCourse = null): array
@@ -1955,9 +2026,18 @@ class DosenController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
         }
 
-        $course->update(
-            $this->buildDosenCoursePayload($request, $dosen->id, $thumbnailPath, $course)
-        );
+        $learningGoals = $this->normalizeLearningGoals($request->input('learning_goals', []));
+        $shouldSyncGoals = $request->has('learning_goals');
+
+        DB::transaction(function () use (&$course, $request, $dosen, $thumbnailPath, $learningGoals, $shouldSyncGoals) {
+            $course->update(
+                $this->buildDosenCoursePayload($request, $dosen->id, $thumbnailPath, $course)
+            );
+
+            if ($shouldSyncGoals) {
+                $this->syncLearningGoals($course, $learningGoals);
+            }
+        });
 
         if ($course->kategori === 'webinar' && $course->approval_status === 'pending') {
             AdminNotification::notifyAllAdmins(
