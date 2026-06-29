@@ -11,6 +11,19 @@
         'qris' => asset('assets/payment-methods/qris.svg'),
     ];
 
+    // Helper to detect per-item entity type (kursus vs bootcamp/tiket)
+    $itemEntityLabel = function ($course): string {
+        return ($course && strtolower((string) ($course->kategori ?? '')) === 'tiket') ? 'Bootcamp' : 'Kursus';
+    };
+    $itemEntityLower = function ($course): string {
+        return ($course && strtolower((string) ($course->kategori ?? '')) === 'tiket') ? 'bootcamp' : 'kursus';
+    };
+    $bootcampCount = $cartItems->filter(fn ($item) => strtolower((string) ($item->course->kategori ?? '')) === 'tiket')->count();
+    $courseCount = $cartItems->count() - $bootcampCount;
+    $subtotalItemLabel = $bootcampCount > 0 && $courseCount === 0
+        ? $bootcampCount . ' bootcamp'
+        : ($bootcampCount > 0 ? $cartItems->count() . ' item' : count($cartItems) . ' kursus');
+
     $voucherCatalog = $vouchers->mapWithKeys(function ($voucher) {
         $normalizedCode = strtoupper(trim((string) $voucher->code));
         $value = (float) $voucher->value;
@@ -81,7 +94,10 @@
                 <div class="flex gap-4">
                     <img src="{{ $courseImage }}" alt="{{ $course->nama_course }}" class="h-20 w-20 flex-shrink-0 rounded-xl object-cover">
                     <div class="min-w-0 flex-1">
-                        <h3 class="mb-1 font-bold text-gray-800 dark:text-gray-100">{{ $course->nama_course }}</h3>
+                        <div class="mb-1 flex items-center gap-2">
+                            <h3 class="font-bold text-gray-800 dark:text-gray-100">{{ $course->nama_course }}</h3>
+                            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-gray-700 dark:text-gray-300">{{ $itemEntityLabel($course) }}</span>
+                        </div>
                         <p class="mb-1 text-sm text-gray-500 dark:text-gray-400">Kode: {{ $course->kode_course }}</p>
                         <p class="text-xs text-gray-400 dark:text-gray-500">{{ $course->dosen->name ?? 'Instructor' }}</p>
                         <p class="mt-2 text-lg font-bold text-blue-600 dark:text-blue-400">
@@ -108,7 +124,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 <h3 class="mb-2 text-lg font-bold text-gray-800 dark:text-gray-100">Keranjang Kosong</h3>
-                <p class="mb-4 text-gray-500 dark:text-gray-400">Belum ada kursus di keranjang Anda</p>
+                <p class="mb-4 text-gray-500 dark:text-gray-400">Belum ada item di keranjang Anda</p>
                 <a href="{{ route('mahasiswa.get-courses') }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-6 py-2 text-sm font-medium text-white transition hover:bg-blue-600">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -158,7 +174,7 @@
 
             <div class="mb-4 space-y-3 border-b border-gray-200 pb-4 dark:border-gray-700/50">
                 <div class="flex justify-between text-sm">
-                    <span class="text-gray-600 dark:text-gray-400">Subtotal ({{ count($cartItems) }} kursus)</span>
+                    <span class="text-gray-600 dark:text-gray-400">Subtotal ({{ $subtotalItemLabel }})</span>
                     <span id="checkout-subtotal" class="text-gray-800 dark:text-gray-200">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                 </div>
                 <div id="voucher-discount-row" class="hidden justify-between text-sm">
@@ -251,7 +267,7 @@
             </div>
             @else
             <div class="py-4 text-center">
-                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Tambahkan kursus ke keranjang untuk melanjutkan pembayaran</p>
+                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Tambahkan item ke keranjang untuk melanjutkan pembayaran</p>
                 <a href="{{ route('mahasiswa.get-courses') }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-600">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

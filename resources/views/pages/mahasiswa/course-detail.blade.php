@@ -1,5 +1,26 @@
-<x-layouts.dashboard :active="'get-courses'">
+<x-layouts.dashboard :active="$isBootcamp ? 'bootcamp' : 'get-courses'">
 @php
+    $isBootcamp = ($context ?? 'course') === 'bootcamp';
+    $labelEntity = $isBootcamp ? 'Bootcamp' : 'Kursus';
+    $labelEntityLower = $isBootcamp ? 'bootcamp' : 'kursus';
+    $backRoute = $isBootcamp ? 'mahasiswa.bootcamp' : 'mahasiswa.get-courses';
+    $detailRoute = $isBootcamp ? 'mahasiswa.bootcamp-detail' : 'mahasiswa.course-detail';
+    $learnRoute = $isBootcamp ? 'mahasiswa.bootcamp-learn' : 'mahasiswa.course-learn';
+    $reviewRoute = $isBootcamp ? 'mahasiswa.bootcamp.review' : 'mahasiswa.course.review';
+    $tabContentLabel = $isBootcamp ? 'Materi Bootcamp' : 'Konten Kursus';
+    $tabPrasyaratLabel = $isBootcamp ? 'Persyaratan' : 'Prasyarat';
+    $sectionContentLabel = $isBootcamp ? 'Materi Bootcamp' : 'Konten Kursus';
+    $sectionContentFullLabel = $isBootcamp ? 'Materi Bootcamp Lengkap' : 'Konten Kursus Lengkap';
+    $sectionPrasyaratLabel = $isBootcamp ? 'Persyaratan Bootcamp' : 'Prasyarat';
+    $sectionPrasyaratDetailLabel = $isBootcamp ? 'Persyaratan Bootcamp' : 'Prasyarat Detail';
+    $sectionDeskripsiLabel = $isBootcamp ? 'Deskripsi Bootcamp' : 'Deskripsi Kursus';
+    $tujuanLabel = $isBootcamp ? 'Tujuan Bootcamp' : 'Tujuan Pembelajaran';
+    $enrollCtaText = $isBootcamp ? 'Daftar bootcamp untuk membuka semua materi pembelajaran' : 'Daftar kursus untuk membuka semua konten pembelajaran';
+    $enrollBtnText = $isBootcamp ? 'Daftar Sekarang' : 'Daftar Sekarang';
+    $reviewModalTitle = $isBootcamp ? 'Berikan Ulasan Bootcamp' : 'Berikan Ulasan Anda';
+    $reviewPlaceholder = $isBootcamp ? 'Apa yang Anda pelajari dari bootcamp ini? Bagaimana penyampaian materinya?' : 'Apa yang Anda pelajari dari kursus ini? Bagaimana penyampaian materinya?';
+    $watermarkLabel = $isBootcamp ? 'Private Bootcamp' : 'Private Course';
+
     $defaultImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop';
     $courseImage = $course->thumbnail ? asset('storage/' . $course->thumbnail) : $defaultImage;
 
@@ -218,7 +239,7 @@
 {{-- Page Header --}}
 <div class="mb-6 animate-fade-in-up">
     <div class="flex items-center gap-3 mb-2">
-        <a href="{{ route('mahasiswa.get-courses') }}" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
+        <a href="{{ route($backRoute) }}" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
             <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -236,10 +257,10 @@
         Ringkasan
     </button>
     <button onclick="showTab('konten')" data-tab="konten" class="tab-btn pb-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
-        Konten Kursus
+        {{ $tabContentLabel }}
     </button>
     <button onclick="showTab('prasyarat')" data-tab="prasyarat" class="tab-btn pb-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
-        Prasyarat
+        {{ $tabPrasyaratLabel }}
     </button>
     <button onclick="showTab('deskripsi')" data-tab="deskripsi" class="tab-btn pb-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap">
         Deskripsi
@@ -258,7 +279,7 @@
         <div id="tab-ringkasan" class="tab-content animate-fade-in-up">
             {{-- Konten Kursus --}}
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6">
-                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Konten Kursus</h2>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">{{ $sectionContentLabel }}</h2>
                 
                 <div class="space-y-3">
                     @foreach($modules as $moduleIndex => $module)
@@ -340,7 +361,7 @@
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    Prasyarat
+                    {{ $sectionPrasyaratLabel }}
                 </h2>
                 
                 <div class="space-y-2">
@@ -354,14 +375,14 @@
                         </span>
                     </div>
                     @empty
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada prasyarat.</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada persyaratan.</p>
                     @endforelse
                 </div>
             </div>
             
             {{-- Deskripsi Kursus --}}
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
-                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Deskripsi Kursus</h2>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">{{ $sectionDeskripsiLabel }}</h2>
                 
                 <div class="space-y-4">
                     {{-- Durasi --}}
@@ -392,7 +413,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div>
-                            <p class="font-medium text-gray-800 dark:text-gray-100 text-sm">Tujuan Pembelajaran</p>
+                            <p class="font-medium text-gray-800 dark:text-gray-100 text-sm">{{ $tujuanLabel }}</p>
                             <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $courseData['objectives'] }}</p>
                         </div>
                     </div>
@@ -404,7 +425,7 @@
         <div id="tab-konten" class="tab-content hidden">
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">Konten Kursus Lengkap</h2>
+                    <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ $sectionContentFullLabel }}</h2>
                     <span class="text-sm text-gray-500 dark:text-gray-400">{{ count($modules) }} Modul • {{ collect($modules)->sum('items') }} Item</span>
                 </div>
                 
@@ -505,9 +526,9 @@
                 
                 {{-- Enrollment CTA --}}
                 <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-center">
-                    <p class="text-sm text-blue-600 dark:text-blue-400 mb-3">Daftar kursus untuk membuka semua konten pembelajaran</p>
+                    <p class="text-sm text-blue-600 dark:text-blue-400 mb-3">{{ $enrollCtaText }}</p>
                     <button class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
-                        Daftar Sekarang
+                        {{ $enrollBtnText }}
                     </button>
                 </div>
             </div>
@@ -516,7 +537,7 @@
         {{-- Tab: Prasyarat --}}
         <div id="tab-prasyarat" class="tab-content hidden">
             <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6">
-                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Prasyarat Detail</h2>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">{{ $sectionPrasyaratDetailLabel }}</h2>
                 @forelse($prerequisites as $prereq)
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl mb-3">
                     <p class="font-medium text-gray-800 dark:text-gray-100">{{ $prereq['name'] }}</p>
@@ -526,7 +547,7 @@
                 </div>
                 @empty
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada prasyarat untuk kursus ini.</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada persyaratan untuk {{ $labelEntityLower }} ini.</p>
                 </div>
                 @endforelse
             </div>
@@ -682,7 +703,7 @@
                 
                 {{-- Buttons --}}
                 @if($isEnrolled)
-                    <a href="{{ route('mahasiswa.course-learn', $course->id_course) }}" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 mb-3">
+                    <a href="{{ route($learnRoute, $course->id_course) }}" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 mb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1135,11 +1156,11 @@
     <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" onclick="closeReviewModal()"></div>
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
         <div class="relative mx-3 sm:mx-0 bg-white dark:bg-[#1f2937] rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full max-h-[calc(100dvh-2rem)] overflow-y-auto">
-            <form action="{{ route('mahasiswa.course.review', $course->id_course) }}" method="POST">
+            <form action="{{ route($reviewRoute, $course->id_course) }}" method="POST">
                 @csrf
                 <div class="px-6 pt-6 pb-4">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Berikan Ulasan Anda</h3>
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $reviewModalTitle }}</h3>
                         <button type="button" onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
                             <span class="sr-only">Close</span>
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1167,7 +1188,7 @@
                         {{-- Review Text --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tuliskan pengalaman Anda</label>
-                            <textarea name="ulasan" rows="4" class="w-full bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 dark:text-gray-100" placeholder="Apa yang Anda pelajari dari kursus ini? Bagaimana penyampaian materinya?" required></textarea>
+                            <textarea name="ulasan" rows="4" class="w-full bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 dark:text-gray-100" placeholder="{{ $reviewPlaceholder }}" required></textarea>
                         </div>
                     </div>
                 </div>

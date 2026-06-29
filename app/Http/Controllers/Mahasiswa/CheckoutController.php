@@ -60,12 +60,17 @@ class CheckoutController extends Controller
         $user = Auth::guard('mahasiswa')->user();
         $courseId = (int) request('course_id');
 
+        $course = \App\Models\Course::find($courseId);
+        $isBootcamp = $course && strtolower((string) ($course->kategori ?? '')) === 'tiket';
+        $entityLabel = $isBootcamp ? 'Bootcamp' : 'Kursus';
+        $entityLabelLower = $isBootcamp ? 'bootcamp' : 'kursus';
+
         $exists = Cart::where('id_mahasiswa', $user->id)
             ->where('id_course', $courseId)
             ->exists();
 
         if ($exists) {
-            return back()->with('error', 'Kursus sudah ada di keranjang');
+            return back()->with('error', $entityLabel . ' sudah ada di keranjang');
         }
 
         $enrolled = Enrollment::where('id_mahasiswa', $user->id)
@@ -73,7 +78,7 @@ class CheckoutController extends Controller
             ->exists();
 
         if ($enrolled) {
-            return back()->with('error', 'Anda sudah terdaftar di kursus ini');
+            return back()->with('error', 'Anda sudah terdaftar di ' . $entityLabelLower . ' ini');
         }
 
         $bootcampCheck = $this->validateBootcampTicketAvailability($courseId);
@@ -86,7 +91,7 @@ class CheckoutController extends Controller
             'id_course' => $courseId,
         ]);
 
-        return redirect()->route('mahasiswa.checkout')->with('success', 'Kursus berhasil ditambahkan ke keranjang');
+        return redirect()->route('mahasiswa.checkout')->with('success', $entityLabel . ' berhasil ditambahkan ke keranjang');
     }
 
     /**

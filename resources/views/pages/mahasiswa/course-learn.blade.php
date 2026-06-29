@@ -1,5 +1,17 @@
-<x-layouts.dashboard :active="'courses'">
+<x-layouts.dashboard :active="($context ?? 'course') === 'bootcamp' ? 'bootcamp-saya' : 'courses'">
 @php
+    $isBootcamp = ($context ?? 'course') === 'bootcamp';
+    $labelEntity = $isBootcamp ? 'Bootcamp' : 'Kursus';
+    $labelEntityLower = $isBootcamp ? 'bootcamp' : 'kursus';
+    $backListRoute = $isBootcamp ? 'mahasiswa.bootcamp-saya' : 'mahasiswa.courses';
+    $detailRoute = $isBootcamp ? 'mahasiswa.bootcamp-detail' : 'mahasiswa.course-detail';
+    $learnRoute = $isBootcamp ? 'mahasiswa.bootcamp-learn' : 'mahasiswa.course-learn';
+    $moduleLabel = $isBootcamp ? 'Materi Bootcamp' : 'Modul Pembelajaran';
+    $progressLabel = $isBootcamp ? 'Progress Bootcamp' : 'Progress Kursus';
+    $backToListLabel = $isBootcamp ? 'Kembali ke Bootcamp Saya' : 'Kembali ke Daftar Kursus';
+    $detailLinkLabel = $isBootcamp ? 'Lihat Detail Bootcamp' : 'Lihat Detail Kursus';
+    $watermarkLabel = $isBootcamp ? 'Private Bootcamp' : 'Private Course';
+
     $extractYoutubeId = static function (?string $url): ?string {
         if (!$url) {
             return null;
@@ -87,20 +99,20 @@
 {{-- Back Link & Title Row (desktop only) --}}
 <div class="hidden flex-wrap items-center justify-between gap-4 mb-6 animate-fade-in-up sm:flex">
     <div class="flex items-center gap-4">
-        <a href="{{ route('mahasiswa.courses') }}" class="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium transition">
+        <a href="{{ route($backListRoute) }}" class="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Kembali ke Daftar Kursus
+            {{ $backToListLabel }}
         </a>
-        <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium transition border-l pl-4 border-gray-300 dark:border-gray-700 text-sm">
-            Lihat Detail Kursus
+        <a href="{{ route($detailRoute, $course->id_course) }}" class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium transition border-l pl-4 border-gray-300 dark:border-gray-700 text-sm">
+            {{ $detailLinkLabel }}
         </a>
     </div>
 
     {{-- Progress Badge --}}
     <div class="flex items-center gap-2 bg-white dark:bg-[#1f2937] px-4 py-2 rounded-xl border border-gray-100 dark:border-gray-700/50">
-        <span class="text-sm text-gray-600 dark:text-gray-400">Progress Kursus</span>
+        <span class="text-sm text-gray-600 dark:text-gray-400">{{ $progressLabel }}</span>
         <div class="w-16 sm:w-20 lg:w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div class="h-full bg-blue-500 rounded-full" style="width: {{ $progressPercent }}%"></div>
         </div>
@@ -114,7 +126,7 @@
     {{-- LEFT SIDEBAR: Module List --}}
     <div class="course-sidebar-left w-full lg:w-[250px] lg:min-w-[250px] lg:flex-shrink-0">
         <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sticky top-24">
-            <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-2">Modul Pembelajaran</h2>
+            <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-2">{{ $moduleLabel }}</h2>
             
             {{-- Progress Bar --}}
             <div class="flex items-center gap-2 mb-4">
@@ -160,7 +172,7 @@
                             {{-- Compact 4-Column Grid for >20 materials --}}
                             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-2 p-3">
                                 @foreach($module['materials'] as $index => $material)
-                                <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $material['id']]) }}" 
+                                <a href="{{ route($learnRoute, ['id' => $course->id_course, 'material' => $material['id']]) }}" 
                                    title="{{ $material['title'] }}"
                                    class="relative aspect-square flex flex-col items-center justify-center rounded-xl border transition-all hover:scale-105 {{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300' }}">
                                     
@@ -179,7 +191,7 @@
                         @else
                             {{-- Standard List View --}}
                             @foreach($module['materials'] as $material)
-                            <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $material['id']]) }}" 
+                            <a href="{{ route($learnRoute, ['id' => $course->id_course, 'material' => $material['id']]) }}" 
                                class="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition border-b border-gray-200 dark:border-gray-700/50 last:border-b-0 {{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'bg-blue-50 dark:bg-blue-500/10' : '' }}" style="{{ $currentMaterial && $currentMaterial['id'] == $material['id'] ? 'border-left: 4px solid #3b82f6;' : '' }}">
                                 
                                 {{-- Status Icon --}}
@@ -433,7 +445,7 @@
                 @endif
 
                 <div class="pointer-events-none absolute bottom-3 right-3 rounded-md bg-black/45 px-2 py-1 text-[10px] text-white/90 backdrop-blur-sm">
-                    Private Course • {{ Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa' }}
+                    {{ $watermarkLabel }} • {{ Auth::guard('mahasiswa')->user()->name ?? 'Mahasiswa' }}
                 </div>
 
                 <div id="video-private-overlay" class="absolute inset-0 hidden items-center justify-center bg-black/80 px-6 text-center">
@@ -446,7 +458,7 @@
 
             @if($currentMaterial && $currentMaterial['type'] == 'video' && count($courseVideoIds) > 1)
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $currentMaterial['id'], 'play' => 'pack']) }}"
+                <a href="{{ route($learnRoute, ['id' => $course->id_course, 'material' => $currentMaterial['id'], 'play' => 'pack']) }}"
                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition {{ $isPlaylistMode ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.868v4.264a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -454,7 +466,7 @@
                     </svg>
                     Putar 1 Paket Video
                 </a>
-                <a href="{{ route('mahasiswa.course-learn', ['id' => $course->id_course, 'material' => $currentMaterial['id']]) }}"
+                <a href="{{ route($learnRoute, ['id' => $course->id_course, 'material' => $currentMaterial['id']]) }}"
                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition {{ !$isPlaylistMode ? 'bg-gray-900 text-white dark:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300' }}">
                     Mode Single
                 </a>

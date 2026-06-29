@@ -49,9 +49,15 @@ Route::prefix('mahasiswa')
         // Courses
         Route::get('/courses', [CourseController::class, 'myCourses'])->name('mahasiswa.courses');
         Route::get('/get-courses', [CourseController::class, 'index'])->name('mahasiswa.get-courses');
-        Route::get('/bootcamp', [CourseController::class, 'bootcampCatalog'])->name('mahasiswa.bootcamp');
         Route::get('/course/{id}', [CourseController::class, 'show'])->name('mahasiswa.course-detail');
         Route::get('/course/{id}/learn', [CourseController::class, 'learn'])->name('mahasiswa.course-learn');
+
+        // Bootcamp (separated presentation layer, shares Course data)
+        Route::get('/bootcamp', [CourseController::class, 'bootcampCatalog'])->name('mahasiswa.bootcamp');
+        Route::get('/bootcamp/{id}', [CourseController::class, 'bootcampDetail'])->name('mahasiswa.bootcamp-detail');
+        Route::get('/bootcamp/{id}/learn', [CourseController::class, 'bootcampLearn'])->name('mahasiswa.bootcamp-learn');
+        Route::get('/bootcamp-saya', [CourseController::class, 'bootcampMy'])->name('mahasiswa.bootcamp-saya');
+        Route::post('/bootcamp/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.bootcamp.review');
         Route::post('/course/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.course.review');
         Route::post('/course/material/{id}/complete', [CourseController::class, 'completeMaterial'])->name('mahasiswa.material.complete');
         Route::get('/course/{courseId}/discussions', [CourseController::class, 'getDiscussions'])->name('mahasiswa.course-discussions.index');

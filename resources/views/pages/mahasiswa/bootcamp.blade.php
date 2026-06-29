@@ -2,6 +2,14 @@
 @php
     $defaultImage = 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=900&h=520&fit=crop';
     $searchQuery = $searchQuery ?? request('search');
+    $selectedFilter = $selectedFilter ?? 'semua';
+    $enrolledCourseIds = $enrolledCourseIds ?? [];
+
+    $filterTabs = [
+        ['key' => 'semua', 'label' => 'Semua'],
+        ['key' => 'available', 'label' => 'Belum Dibeli'],
+        ['key' => 'mine', 'label' => 'Bootcamp Saya'],
+    ];
 @endphp
 
 <div class="mb-6 rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-emerald-50 p-6 shadow-sm dark:border-gray-700/50 dark:from-[#172033] dark:via-[#1f2937] dark:to-[#12251f]">
@@ -14,11 +22,27 @@
             </p>
         </div>
         <form method="GET" action="{{ route('mahasiswa.bootcamp') }}" class="relative w-full lg:w-96">
+            @if($selectedFilter !== 'semua')
+                <input type="hidden" name="filter" value="{{ $selectedFilter }}">
+            @endif
             <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
             <input name="search" value="{{ $searchQuery }}" placeholder="Cari bootcamp atau event..." class="w-full rounded-2xl border border-white/70 bg-white/90 py-3 pl-12 pr-4 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-100 dark:focus:ring-blue-500/20">
         </form>
+    </div>
+
+    {{-- Filter Tabs --}}
+    <div class="mt-5 flex flex-wrap gap-2">
+        @foreach($filterTabs as $tab)
+            <a href="{{ route('mahasiswa.bootcamp', array_filter(['filter' => $tab['key'] !== 'semua' ? $tab['key'] : null, 'search' => $searchQuery])) }}"
+               class="rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] transition
+               {{ $selectedFilter === $tab['key']
+                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                   : 'border border-gray-200 bg-white text-gray-500 hover:border-blue-300 hover:text-blue-600 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-400 dark:hover:text-blue-300' }}">
+                {{ $tab['label'] }}
+            </a>
+        @endforeach
     </div>
 </div>
 
@@ -45,21 +69,26 @@
             $startTime = $course->jam_mulai_webinar ? substr((string) $course->jam_mulai_webinar, 0, 5) : null;
             $endTime = $course->jam_selesai_webinar ? substr((string) $course->jam_selesai_webinar, 0, 5) : null;
             $timeLabel = $startTime ? ($endTime ? $startTime . ' - ' . $endTime : $startTime) : 'Jam menyusul';
+            $isEnrolled = in_array($course->id_course, $enrolledCourseIds);
         @endphp
 
         <article class="group overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl dark:border-gray-700/50 dark:bg-[#1f2937]">
-            <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" class="block">
+            <a href="{{ route('mahasiswa.bootcamp-detail', $course->id_course) }}" class="block">
                 <div class="relative h-44 overflow-hidden bg-slate-900">
                     <img src="{{ $thumbnail }}" alt="{{ $course->nama_course }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='{{ $defaultImage }}'">
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/5 to-transparent"></div>
-                    <span class="absolute left-4 top-4 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white">Open</span>
+                    @if($isEnrolled)
+                        <span class="absolute left-4 top-4 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white">Terdaftar</span>
+                    @else
+                        <span class="absolute left-4 top-4 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white">Open</span>
+                    @endif
                     <span class="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-800">{{ $course->kode_course }}</span>
                 </div>
             </a>
 
             <div class="space-y-4 p-5">
                 <div>
-                    <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" class="line-clamp-2 text-lg font-bold text-gray-900 transition hover:text-blue-600 dark:text-gray-50 dark:hover:text-blue-300">
+                    <a href="{{ route('mahasiswa.bootcamp-detail', $course->id_course) }}" class="line-clamp-2 text-lg font-bold text-gray-900 transition hover:text-blue-600 dark:text-gray-50 dark:hover:text-blue-300">
                         {{ $course->nama_course }}
                     </a>
                     <p class="mt-2 line-clamp-2 text-sm leading-6 text-gray-500 dark:text-gray-400">{{ $course->deskripsi ?? 'Deskripsi program belum tersedia.' }}</p>
@@ -94,23 +123,43 @@
                         @endif
                     </div>
                     <div class="flex gap-2">
-                        <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" class="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">Detail</a>
-                        <form action="{{ route('mahasiswa.cart.add') }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="course_id" value="{{ $course->id_course }}">
-                            <button type="submit" class="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
-                                Beli
-                            </button>
-                        </form>
+                        <a href="{{ route('mahasiswa.bootcamp-detail', $course->id_course) }}" class="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">Detail</a>
+                        @if($isEnrolled)
+                            <a href="{{ route('mahasiswa.bootcamp-learn', $course->id_course) }}" class="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">
+                                Mulai
+                            </a>
+                        @else
+                            <form action="{{ route('mahasiswa.cart.add') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="course_id" value="{{ $course->id_course }}">
+                                <button type="submit" class="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+                                    Beli
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>
         </article>
     @empty
         <div class="col-span-full rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center dark:border-gray-700 dark:bg-[#1f2937]">
-            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">Belum ada bootcamp atau tiket aktif</p>
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Coba ubah kata kunci pencarian atau cek lagi setelah admin membuka penjualan.</p>
-            <a href="{{ route('mahasiswa.get-courses') }}" class="mt-5 inline-flex rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white">Kembali ke katalog kursus</a>
+            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">
+                @if($selectedFilter === 'mine')
+                    Anda belum terdaftar di bootcamp manapun
+                @elseif($selectedFilter === 'available')
+                    Tidak ada bootcamp baru yang tersedia
+                @else
+                    Belum ada bootcamp atau tiket aktif
+                @endif
+            </p>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                @if($selectedFilter === 'mine')
+                    Jelajahi katalog bootcamp untuk mulai belajar.
+                @else
+                    Coba ubah kata kunci pencarian atau cek lagi setelah admin membuka penjualan.
+                @endif
+            </p>
+            <a href="{{ route('mahasiswa.bootcamp') }}" class="mt-5 inline-flex rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white">Lihat semua bootcamp</a>
         </div>
     @endforelse
 </div>

@@ -6,6 +6,7 @@ $menuItems = [
     ['name' => 'Get Courses', 'icon' => 'grid', 'route' => 'mahasiswa.get-courses', 'key' => 'get-courses'],
     ['name' => 'Bootcamp', 'icon' => 'briefcase', 'route' => 'mahasiswa.bootcamp', 'key' => 'bootcamp'],
     ['name' => 'Courses', 'icon' => 'play', 'route' => 'mahasiswa.courses', 'key' => 'courses'],
+    ['name' => 'Bootcamp Saya', 'icon' => 'briefcase-check', 'route' => 'mahasiswa.bootcamp-saya', 'key' => 'bootcamp-saya'],
     ['name' => 'Favorites', 'icon' => 'heart', 'route' => 'mahasiswa.favorites', 'key' => 'favorites'],
     ['name' => 'Forum', 'icon' => 'chat-bubble', 'route' => 'mahasiswa.forum', 'key' => 'forum'],
     ['name' => 'Chat', 'icon' => 'message', 'route' => 'mahasiswa.chat', 'key' => 'chat'],
@@ -92,6 +93,11 @@ $userProfilePictureUrl = ($userProfilePicture && \Illuminate\Support\Facades\Sto
                             @case('briefcase')
                                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.1A2.25 2.25 0 0118 20.5H6a2.25 2.25 0 01-2.25-2.25v-4.1m16.5 0A2.25 2.25 0 0018 11.9H6a2.25 2.25 0 00-2.25 2.25m16.5 0v-2.9A2.25 2.25 0 0018 9H6a2.25 2.25 0 00-2.25 2.25v2.9M9 9V5.75A2.25 2.25 0 0111.25 3.5h1.5A2.25 2.25 0 0115 5.75V9" />
+                                </svg>
+                                @break
+                            @case('briefcase-check')
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 18v-2.25c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0012 12c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235V18m16.5 0v-2.25c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0012 12c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235V18M9 9V5.75A2.25 2.25 0 0111.25 3.5h1.5A2.25 2.25 0 0115 5.75V9" />
                                 </svg>
                                 @break
                             @case('play')

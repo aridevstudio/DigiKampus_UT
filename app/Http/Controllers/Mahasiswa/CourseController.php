@@ -88,6 +88,7 @@ class CourseController extends Controller
     public function bootcampCatalog()
     {
         $search = request('search');
+        $filter = request('filter', 'semua');
         $user = Auth::guard('mahasiswa')->user();
 
         $enrolledCourseIds = [];
@@ -103,7 +104,10 @@ class CourseController extends Controller
             ->aktif()
             ->where('kategori', 'tiket')
             ->search($search)
-            ->when(!empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
+            ->when($filter === 'mine' && !empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
+                return $query->whereIn('id_course', $enrolledCourseIds);
+            })
+            ->when($filter === 'available' && !empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
                 return $query->whereNotIn('id_course', $enrolledCourseIds);
             })
             ->orderByRaw('tanggal_webinar IS NULL, tanggal_webinar ASC')
@@ -113,13 +117,74 @@ class CourseController extends Controller
         return view('pages.mahasiswa.bootcamp', [
             'bootcampCourses' => $bootcampCourses,
             'searchQuery' => $search,
+            'selectedFilter' => $filter,
+            'enrolledCourseIds' => $enrolledCourseIds,
         ]);
+    }
+
+    /**
+     * Show bootcamp detail page (wraps show with bootcamp context).
+     */
+    public function bootcampDetail($id)
+    {
+        return $this->show($id, 'bootcamp');
+    }
+
+    /**
+     * Show bootcamp learning page (wraps learn with bootcamp context).
+     */
+    public function bootcampLearn($id)
+    {
+        return $this->learn($id, 'bootcamp');
+    }
+
+    /**
+     * Show user's enrolled bootcamps (Bootcamp Saya).
+     */
+    public function bootcampMy()
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        $sort = request('sort', 'terbaru');
+
+        $query = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->with(['course.dosen', 'course.jurusan'])
+            ->whereHas('course', function ($q) {
+                $q->where('kategori', 'tiket');
+            });
+
+        switch ($sort) {
+            case 'progress':
+                $query->orderBy('progress', 'desc');
+                break;
+            case 'nama':
+                $query->join('courses', 'enrollments.id_course', '=', 'courses.id_course')
+                      ->orderBy('courses.nama_course', 'asc')
+                      ->select('enrollments.*');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+
+        $enrollments = $query->paginate(4);
+
+        return view('pages.mahasiswa.bootcamp-saya', [
+            'enrollments' => $enrollments,
+            'selectedSort' => $sort,
+        ]);
+    }
+
+    /**
+     * Resolve the detail route name based on context.
+     */
+    private function detailRouteName(string $context): string
+    {
+        return $context === 'bootcamp' ? 'mahasiswa.bootcamp-detail' : 'mahasiswa.course-detail';
     }
 
     /**
      * Show course detail page
      */
-    public function show($id)
+    public function show($id, string $context = 'course')
     {
         $course = Course::with([
             'dosen',
@@ -166,6 +231,7 @@ class CourseController extends Controller
             'enrollment' => $enrollment,
             'isFavorited' => $isFavorited,
             'issuedCertificate' => $issuedCertificate,
+            'context' => $context,
         ]);
     }
 
@@ -263,8 +329,11 @@ class CourseController extends Controller
 
     /**
      * Show course learning page
+     *
+     * @param mixed $id
+     * @param string $context 'course' or 'bootcamp'
      */
-    public function learn($id)
+    public function learn($id, string $context = 'course')
     {
         $user = Auth::guard('mahasiswa')->user();
         
@@ -283,13 +352,13 @@ class CourseController extends Controller
             ->first();
         
         if (!$enrollment) {
-            return redirect()->route('mahasiswa.course-detail', $id)
-                ->with('error', 'Anda harus terdaftar untuk mengakses kursus ini');
+            return redirect()->route($this->detailRouteName($context), $id)
+                ->with('error', $context === 'bootcamp' ? 'Anda harus terdaftar untuk mengakses bootcamp ini' : 'Anda harus terdaftar untuk mengakses kursus ini');
         }
 
         if ($enrollment->status === 'pending') {
-            return redirect()->route('mahasiswa.course-detail', $id)
-                ->with('error', 'Kursus berbayar ini masih menunggu konfirmasi pembayaran dari admin.');
+            return redirect()->route($this->detailRouteName($context), $id)
+                ->with('error', $context === 'bootcamp' ? 'Bootcamp berbayar ini masih menunggu konfirmasi pembayaran dari admin.' : 'Kursus berbayar ini masih menunggu konfirmasi pembayaran dari admin.');
         }
 
         $courseModules = CourseModule::where('id_course', $courseId)
@@ -494,6 +563,7 @@ class CourseController extends Controller
             'completedMaterials' => $completedMaterials,
             'totalMaterials' => $totalMaterials,
             'issuedCertificate' => $issuedCertificate,
+            'context' => $context,
             'dosenNotes' => $course->instructorNotes->map(function (CourseInstructorNote $note) {
                 return [
                     'id' => $note->id_course_instructor_note,
@@ -1451,27 +1521,31 @@ class CourseController extends Controller
     public function submitCourseReview(Request $request, $courseId)
     {
         $user = Auth::guard('mahasiswa')->user();
-        
+
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'ulasan' => 'required|string|min:5',
         ]);
-        
+
+        $course = Course::find($courseId);
+        $isBootcamp = $course && strtolower((string) ($course->kategori ?? '')) === 'tiket';
+        $entityLabel = $isBootcamp ? 'bootcamp' : 'kursus';
+
         // Ensure student is enrolled
         $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
             ->where('id_course', $courseId)
             ->first();
             
         if (!$enrollment) {
-            return back()->with('error', 'Anda harus terdaftar di kursus ini untuk memberikan ulasan.');
+            return back()->with('error', 'Anda harus terdaftar di ' . $entityLabel . ' ini untuk memberikan ulasan.');
         }
 
         if ($enrollment->status === 'pending') {
-            return back()->with('error', 'Ulasan hanya bisa diberikan setelah pembayaran dikonfirmasi dan kursus aktif.');
+            return back()->with('error', 'Ulasan hanya bisa diberikan setelah pembayaran dikonfirmasi dan ' . $entityLabel . ' aktif.');
         }
         
         if ($enrollment->progress < 100) {
-            return back()->with('error', 'Anda harus menyelesaikan kursus terlebih dahulu untuk memberikan ulasan.');
+            return back()->with('error', 'Anda harus menyelesaikan ' . $entityLabel . ' terlebih dahulu untuk memberikan ulasan.');
         }
         
         $existingReview = CourseRating::where('id_course', $courseId)

@@ -4,6 +4,17 @@
     $status = $paymentTransaction->effective_transaction_status;
     $isSuccess = in_array($status, ['settlement', 'capture'], true);
     $isPending = $status === 'pending';
+
+    // Detect if all items in the transaction are bootcamps/tiket
+    $bootcampCount = $paymentTransaction->items->filter(fn ($item) =>
+        $item->course && strtolower((string) ($item->course->kategori ?? '')) === 'tiket'
+    )->count();
+    $isAllBootcamp = $paymentTransaction->items->count() > 0 && $bootcampCount === $paymentTransaction->items->count();
+    $labelEntity = $isAllBootcamp ? 'Bootcamp' : 'Kursus';
+    $labelEntityLower = $isAllBootcamp ? 'bootcamp' : 'kursus';
+    $successMessage = $isSuccess
+        ? 'Terima kasih, ' . $labelEntityLower . ' Anda sudah aktif dan siap dipelajari.'
+        : null;
 @endphp
 
 <div class="mb-8 flex items-center justify-center gap-4">
@@ -54,7 +65,7 @@
     </h1>
     <p class="text-gray-600 dark:text-gray-400">
         @if($isSuccess)
-            Terima kasih, kursus Anda sudah aktif dan siap dipelajari.
+            Terima kasih, {{ $labelEntityLower }} Anda sudah aktif dan siap dipelajari.
         @elseif($isPending)
             Silakan selesaikan pembayaran melalui Midtrans atau cek kembali status transaksi.
         @else
@@ -70,12 +81,12 @@
 
             <div class="space-y-4">
                 <div class="flex justify-between border-b border-gray-100 py-3 dark:border-gray-700/50">
-                    <span class="text-gray-600 dark:text-gray-400">Kursus</span>
+                    <span class="text-gray-600 dark:text-gray-400">{{ $labelEntity }}</span>
                     <span class="font-medium text-gray-800 dark:text-gray-100 text-right">
                         @if($paymentTransaction->items->count() > 1)
-                            {{ $paymentTransaction->items->count() }} kursus
+                            {{ $paymentTransaction->items->count() }} {{ $labelEntityLower }}
                         @else
-                            {{ $paymentTransaction->items->first()?->course_name ?? 'Kursus' }}
+                            {{ $paymentTransaction->items->first()?->course_name ?? $labelEntity }}
                         @endif
                     </span>
                 </div>
@@ -100,7 +111,7 @@
 
         <div class="flex flex-col gap-3 sm:flex-row">
             @if($isSuccess)
-            <a href="{{ route('mahasiswa.courses') }}" class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
+            <a href="{{ route($isAllBootcamp ? 'mahasiswa.bootcamp-saya' : 'mahasiswa.courses') }}" class="flex-1 rounded-xl bg-blue-500 py-3 text-center font-medium text-white transition hover:bg-blue-600">
                 Mulai Belajar Sekarang
             </a>
             @elseif($paymentTransaction->snap_token)
@@ -130,7 +141,7 @@
             <h3 class="mb-3 font-bold text-gray-800 dark:text-gray-100">Catatan</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">
                 @if($isSuccess)
-                    Kursus aktif otomatis setelah Midtrans mengirim status berhasil ke sistem.
+                    {{ $labelEntity }} aktif otomatis setelah Midtrans mengirim status berhasil ke sistem.
                 @elseif($isPending)
                     Jika status belum berubah, cek lagi beberapa saat atau buka detail transaksi untuk bayar ulang.
                 @else
