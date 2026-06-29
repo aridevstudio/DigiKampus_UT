@@ -75,7 +75,7 @@
         $certificateStatusTitle = 'Sertifikasi belum diaktifkan';
         $certificateStatusMessage = 'Course ini belum mengaktifkan sertifikasi otomatis dari dosen/admin, jadi tombol download belum bisa ditampilkan.';
     } elseif (!$courseCompletedForCertificate) {
-        $certificateStatusTitle = 'Selesaikan course untuk membuka sertifikat';
+        $certificateStatusTitle = 'Selesaikan ' . $labelEntityLower . ' untuk membuka sertifikat';
         $certificateStatusMessage = 'Progress harus 100% atau status enrollment sudah selesai sebelum sertifikat bisa diunduh.';
     } else {
         $certificateStatusTitle = 'Template sertifikat belum siap';
