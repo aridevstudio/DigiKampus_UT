@@ -6,6 +6,7 @@ use App\Http\Controllers\Mahasiswa\ProfileController;
 use App\Http\Controllers\Mahasiswa\CourseController;
 use App\Http\Controllers\Mahasiswa\ChatController;
 use App\Http\Controllers\Mahasiswa\CheckoutController;
+use App\Http\Controllers\Mahasiswa\LearningGoalController;
 use App\Http\Controllers\Mahasiswa\SupportController;
 use App\Http\Middleware\EnsureAuthenticatedMahasiswa;
 use App\Http\Middleware\RedirectIfAuthenticatedMahasiswa;
@@ -101,7 +102,7 @@ Route::prefix('mahasiswa')
         // Coming Soon Pages
         Route::view('/forum', 'pages.mahasiswa.coming-soon', ['active' => 'forum', 'title' => 'Forum'])->name('mahasiswa.forum');
         Route::view('/apps', 'pages.mahasiswa.coming-soon', ['active' => 'apps', 'title' => 'Apps'])->name('mahasiswa.apps');
-        Route::view('/learning-goals', 'pages.mahasiswa.coming-soon', ['active' => 'learning-goals', 'title' => 'Learning Goals'])->name('mahasiswa.learning-goals');
+        Route::get('/learning-goals', [LearningGoalController::class, 'index'])->name('mahasiswa.learning-goals');
         Route::get('/news', [DashboardController::class, 'news'])->name('mahasiswa.news');
         
         // Logout
