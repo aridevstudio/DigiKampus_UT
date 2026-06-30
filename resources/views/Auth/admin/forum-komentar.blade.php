@@ -18,34 +18,45 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4"><p class="text-2xl font-bold text-violet-600 dark:text-violet-400">{{ $totalReplies }}</p><p class="text-xs text-gray-500 dark:text-gray-400">Balasan Bersarang</p></div>
     </div>
 
-    <form method="GET" action="{{ route('admin.forum-komentar') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
-        <div class="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
-            <div class="admin-toolbar-filters grid grid-cols-2 gap-1.5">
+    <form method="GET" action="{{ route('admin.forum-komentar') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+            <!-- Status Filter -->
+            <div class="w-full sm:w-auto">
                 <div class="relative">
-                    <select name="topic" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                        <option value="">Semua Topik</option>
-                        @foreach($recentTopics as $topic)
-                            <option value="{{ $topic->id_forum_topic }}" {{ (string)$topicId === (string)$topic->id_forum_topic ? 'selected' : '' }}>{{ \Illuminate\Support\Str::limit($topic->judul, 40) }}</option>
-                        @endforeach
-                    </select>
-                    <svg class="w-4 h-4 absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </div>
-                <div class="relative">
-                    <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                    <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3.5 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="all" {{ $statusFilter === 'all' ? 'selected' : '' }}>Semua Status</option>
                         <option value="published" {{ $statusFilter === 'published' ? 'selected' : '' }}>Dipublikasikan</option>
                         <option value="hidden" {{ $statusFilter === 'hidden' ? 'selected' : '' }}>Disembunyikan</option>
                         <option value="deleted" {{ $statusFilter === 'deleted' ? 'selected' : '' }}>Dihapus</option>
                     </select>
-                    <svg class="w-4 h-4 absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </div>
             </div>
-            <div class="admin-toolbar-search flex gap-1.5 flex-1">
-                <div class="relative flex-1">
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari komentar..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400">
-                    <svg class="w-4 h-4 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+
+            <!-- Topik Filter -->
+            <div class="w-full sm:w-auto">
+                <div class="relative">
+                    <select name="topic" onchange="this.form.submit()" class="w-full appearance-none px-3.5 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Semua Topik</option>
+                        @foreach($recentTopics as $topic)
+                            <option value="{{ $topic->id_forum_topic }}" {{ (string)$topicId === (string)$topic->id_forum_topic ? 'selected' : '' }}>{{ \Illuminate\Support\Str::limit($topic->judul, 40) }}</option>
+                        @endforeach
+                    </select>
+                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </div>
-                <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-600 transition flex-shrink-0">
+            </div>
+
+            <!-- Search Filter -->
+            <div class="w-full sm:flex-1">
+                <div class="relative w-full">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari komentar..." class="w-full px-3.5 py-2.5 pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+            </div>
+
+            <!-- Cari Button -->
+            <div class="w-full sm:w-auto">
+                <button type="submit" class="w-full justify-center inline-flex items-center gap-1.5 px-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-600 transition">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     Cari
                 </button>
@@ -54,8 +65,9 @@
     </form>
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list">
+        <!-- Desktop Table view -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-700/30">
                         <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Komentar</th>
@@ -77,33 +89,33 @@
                         };
                     @endphp
                     <tr class="hover:bg-blue-50/40 dark:hover:bg-gray-700/30 transition">
-                        <td data-label="Komentar">
+                        <td class="px-6 py-4">
                             <div class="flex items-start gap-2">
                                 @if($komentar->parent_id)<svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4"/></svg>@endif
                                 <p class="text-sm text-gray-800 dark:text-gray-200 max-w-[420px]">{{ \Illuminate\Support\Str::limit((string) $komentar->isi, 140) }}</p>
                             </div>
                             <p class="text-[11px] text-gray-400 mt-1">{{ $komentar->created_at->diffForHumans() }}</p>
                         </td>
-                        <td data-label="Topik">
+                        <td class="px-6 py-4">
                             @if($komentar->topic)
                                 <span class="text-xs text-gray-700 dark:text-gray-300 font-medium truncate inline-block max-w-[220px] align-middle">{{ \Illuminate\Support\Str::limit($komentar->topic->judul, 36) }}</span>
                                 @if($komentar->topic->category)<br><span class="text-[10px] uppercase tracking-wide" style="color: {{ $komentar->topic->category->warna ?: '#3B82F6' }};">{{ $komentar->topic->category->nama }}</span>@endif
                             @else<span class="text-xs text-gray-400">Topik dihapus</span>@endif
                         </td>
-                        <td data-label="Author">
+                        <td class="px-6 py-4">
                             <span class="text-sm text-gray-700 dark:text-gray-300">{{ $komentar->author?->name ?? 'Anonim' }}</span>
                         </td>
-                        <td data-label="Tipe" class="text-center">
+                        <td class="px-6 py-4 text-center">
                             @if($komentar->parent_id)
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-50 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300 text-xs font-medium">Balasan</span>
                             @else
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 text-xs font-medium">Top-level</span>
                             @endif
                         </td>
-                        <td data-label="Status" class="text-center">
+                        <td class="px-6 py-4 text-center">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                         </td>
-                        <td data-label="Aksi" class="text-center">
+                        <td class="px-6 py-4 text-center">
                             <div class="inline-flex flex-wrap items-center gap-1 bg-gray-50 dark:bg-gray-700/30 rounded-lg p-0.5">
                                 @if($komentar->status !== 'published')
                                     <form method="POST" action="{{ route('admin.forum-komentar.status', $komentar->id_forum_comment) }}" class="inline">@csrf @method('PUT')<input type="hidden" name="status" value="published"><input type="hidden" name="return_to" value="admin.forum-komentar"><button class="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-white dark:hover:bg-gray-600 rounded-md transition" title="Publikasikan"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button></form>
@@ -122,10 +134,116 @@
             </table>
         </div>
 
+        <!-- Mobile Card List view -->
+        <div class="block md:hidden divide-y divide-gray-100 dark:divide-gray-700/50">
+            @forelse($komentarPaginated as $komentar)
+            @php
+                $statusBadge = match($komentar->status) {
+                    'published' => ['bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', 'Dipublikasikan'],
+                    'hidden' => ['bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400', 'Disembunyikan'],
+                    'deleted' => ['bg-red-50 text-red-700 dark:bg-red-500/20 dark:text-red-400', 'Dihapus'],
+                    default => ['bg-gray-100 text-gray-700', ucfirst($komentar->status)],
+                };
+            @endphp
+            <div class="p-5 space-y-3 bg-white dark:bg-gray-800">
+                <!-- Komentar -->
+                <div>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Komentar</span>
+                    <div class="mt-1.5">
+                        <div class="flex items-start gap-2">
+                            @if($komentar->parent_id)
+                                <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4"/></svg>
+                            @endif
+                            <p class="text-base font-semibold text-gray-900 dark:text-white leading-relaxed">{{ $komentar->isi }}</p>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1.5">{{ $komentar->created_at->diffForHumans() }}</p>
+                    </div>
+                </div>
+
+                <!-- Topik -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Topik</span>
+                    <div class="mt-1">
+                        @if($komentar->topic)
+                            <p class="text-xs text-gray-600 dark:text-gray-300 font-semibold leading-normal">{{ $komentar->topic->judul }}</p>
+                        @else
+                            <p class="text-xs text-gray-400 italic">Topik telah dihapus</p>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Kategori -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Kategori</span>
+                    <div class="mt-1">
+                        @if($komentar->topic && $komentar->topic->category)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 text-[10px] font-semibold uppercase tracking-wider" style="border-left: 3px solid {{ $komentar->topic->category->warna ?: '#3B82F6' }}">
+                                {{ $komentar->topic->category->nama }}
+                            </span>
+                        @else
+                            <span class="text-xs text-gray-400">-</span>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Author -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Author</span>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ $komentar->author?->name ?? 'Anonim' }}</p>
+                </div>
+
+                <!-- Tipe -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Tipe</span>
+                    <div class="mt-1">
+                        @if($komentar->parent_id)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-50 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300 text-xs font-medium">Balasan</span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 text-xs font-medium">Top-level</span>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Status</span>
+                    <div class="mt-1">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
+                    </div>
+                </div>
+
+                <!-- Aksi -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-3">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Aksi</span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if($komentar->status !== 'published')
+                            <form method="POST" action="{{ route('admin.forum-komentar.status', $komentar->id_forum_comment) }}" class="inline">@csrf @method('PUT')<input type="hidden" name="status" value="published"><input type="hidden" name="return_to" value="admin.forum-komentar"><button class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-emerald-600 bg-gray-50 hover:bg-emerald-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-xl border border-gray-200 dark:border-gray-700/50 transition shadow-sm" title="Publikasikan"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button></form>
+                        @endif
+                        @if($komentar->status === 'published')
+                            <form method="POST" action="{{ route('admin.forum-komentar.status', $komentar->id_forum_comment) }}" class="inline">@csrf @method('PUT')<input type="hidden" name="status" value="hidden"><input type="hidden" name="return_to" value="admin.forum-komentar"><button class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-xl border border-gray-200 dark:border-gray-700/50 transition shadow-sm" title="Sembunyikan"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m12.78 12.78l-3.29-3.29M3 3l18 18"/></svg></button></form>
+                        @endif
+                        <button onclick="confirmDeleteKomentar({{ $komentar->id_forum_comment }})" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-red-600 bg-gray-50 hover:bg-red-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-xl border border-gray-200 dark:border-gray-700/50 transition shadow-sm" title="Hapus permanen"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="p-10 text-center bg-white dark:bg-gray-800">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72A3.989 3.989 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                </div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tidak ada komentar</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Belum ada komentar yang cocok dengan filter saat ini.</p>
+            </div>
+            @endforelse
+        </div>
+
+        <!-- Pagination Footer -->
         @if($komentarPaginated->total() > 0)
-        <div class="px-6 py-3.5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between admin-responsive-pagination">
-            <p class="text-xs text-gray-500 dark:text-gray-400">Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300">{{ $komentarPaginated->firstItem() ?? 0 }}-{{ $komentarPaginated->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ $komentarPaginated->total() }}</span> komentar</p>
-            <div class="flex items-center gap-1 admin-responsive-actions">
+        <div class="px-6 py-4 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex flex-col gap-3 items-center md:flex-row md:justify-between">
+            <p class="text-xs text-gray-500 dark:text-gray-400 text-center md:text-left">
+                Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300">{{ $komentarPaginated->firstItem() ?? 0 }}-{{ $komentarPaginated->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ $komentarPaginated->total() }}</span> komentar
+            </p>
+            <div class="flex items-center gap-1 justify-center flex-wrap">
                 @if($komentarPaginated->onFirstPage())<button class="p-1.5 text-gray-300 dark:text-gray-600 rounded-lg cursor-not-allowed" disabled><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
                 @else<a href="{{ $komentarPaginated->previousPageUrl() }}" class="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-white dark:hover:bg-gray-700 rounded-lg transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></a>@endif
                 @for($i = 1; $i <= $komentarPaginated->lastPage(); $i++)

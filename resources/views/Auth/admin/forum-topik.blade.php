@@ -25,34 +25,45 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4"><p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $totalPinned }}</p><p class="text-xs text-gray-500 dark:text-gray-400">Pinned / Locked ({{ $totalLocked }})</p></div>
     </div>
 
-    <form method="GET" action="{{ route('admin.forum-topik') }}" class="admin-toolbar-responsive bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
-        <div class="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
-            <div class="admin-toolbar-filters grid grid-cols-2 gap-1.5">
+    <form method="GET" action="{{ route('admin.forum-topik') }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 mb-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+            <!-- Status Filter -->
+            <div class="w-full sm:w-auto">
                 <div class="relative">
-                    <select name="category" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                        <option value="">Semua Kategori</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat->id_forum_category }}" {{ (string)$categoryId === (string)$cat->id_forum_category ? 'selected' : '' }}>{{ $cat->nama }}{{ !$cat->is_active ? ' (nonaktif)' : '' }}</option>
-                        @endforeach
-                    </select>
-                    <svg class="w-4 h-4 absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </div>
-                <div class="relative">
-                    <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3 py-1.5 pr-8 sm:px-4 sm:py-2 sm:pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                    <select name="status" onchange="this.form.submit()" class="w-full appearance-none px-3.5 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="all" {{ $statusFilter === 'all' ? 'selected' : '' }}>Semua Status</option>
                         <option value="published" {{ $statusFilter === 'published' ? 'selected' : '' }}>Dipublikasikan</option>
                         <option value="hidden" {{ $statusFilter === 'hidden' ? 'selected' : '' }}>Disembunyikan</option>
                         <option value="deleted" {{ $statusFilter === 'deleted' ? 'selected' : '' }}>Dihapus</option>
                     </select>
-                    <svg class="w-4 h-4 absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </div>
             </div>
-            <div class="admin-toolbar-search flex gap-1.5 flex-1">
-                <div class="relative flex-1">
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari judul atau isi topik..." class="w-full px-3 py-1.5 pl-9 sm:px-4 sm:py-2 sm:pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400">
-                    <svg class="w-4 h-4 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+
+            <!-- Kategori Filter -->
+            <div class="w-full sm:w-auto">
+                <div class="relative">
+                    <select name="category" onchange="this.form.submit()" class="w-full appearance-none px-3.5 py-2.5 pr-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Semua Kategori</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id_forum_category }}" {{ (string)$categoryId === (string)$cat->id_forum_category ? 'selected' : '' }}>{{ $cat->nama }}{{ !$cat->is_active ? ' (nonaktif)' : '' }}</option>
+                        @endforeach
+                    </select>
+                    <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </div>
-                <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-600 transition flex-shrink-0">
+            </div>
+
+            <!-- Search Filter -->
+            <div class="w-full sm:flex-1">
+                <div class="relative w-full">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari judul atau isi topik..." class="w-full px-3.5 py-2.5 pl-10 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+            </div>
+
+            <!-- Cari Button -->
+            <div class="w-full sm:w-auto">
+                <button type="submit" class="w-full justify-center inline-flex items-center gap-1.5 px-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-600 transition">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     Cari
                 </button>
@@ -61,8 +72,9 @@
     </form>
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        <div class="overflow-x-auto responsive-table">
-            <table class="w-full responsive-data-table admin-desktop-table admin-mobile-list">
+        <!-- Desktop Table view -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
                 <thead>
                     <tr class="bg-gray-50/80 dark:bg-gray-700/30">
                         <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Topik</th>
@@ -84,7 +96,7 @@
                         };
                     @endphp
                     <tr class="hover:bg-blue-50/40 dark:hover:bg-gray-700/30 transition">
-                        <td data-label="Topik">
+                        <td class="px-6 py-4">
                             <div class="flex items-start gap-2">
                                 @if($topik->is_pinned)<span class="inline-flex w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-500/20 items-center justify-center text-amber-600 dark:text-amber-400" title="Pinned"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14M9 5v14l4-4 4 4V5"/></svg></span>@endif
                                 @if($topik->is_locked)<span class="inline-flex w-6 h-6 rounded-md bg-red-100 dark:bg-red-500/20 items-center justify-center text-red-600 dark:text-red-400" title="Locked"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V7a4 4 0 118 0v4M5 11h14v10H5V11z"/></svg></span>@endif
@@ -95,26 +107,26 @@
                                 </div>
                             </div>
                         </td>
-                        <td data-label="Kategori">
+                        <td class="px-6 py-4">
                             @if($topik->category)
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold" style="background-color: {{ $topik->category->warna ?: '#3B82F6' }}1A; color: {{ $topik->category->warna ?: '#3B82F6' }};">{{ $topik->category->nama }}</span>
                             @else
                                 <span class="text-xs text-gray-400">Tanpa kategori</span>
                             @endif
                         </td>
-                        <td data-label="Author">
+                        <td class="px-6 py-4">
                             <span class="text-sm text-gray-700 dark:text-gray-300">{{ $topik->author?->name ?? 'Anonim' }}</span>
                         </td>
-                        <td data-label="Statistik" class="text-center">
+                        <td class="px-6 py-4 text-center">
                             <div class="inline-flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
                                 <span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>{{ $topik->views }}</span>
                                 <span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72A3.989 3.989 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>{{ $topik->comments_count }}</span>
                             </div>
                         </td>
-                        <td data-label="Status" class="text-center">
+                        <td class="px-6 py-4 text-center">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                         </td>
-                        <td data-label="Aksi" class="text-center">
+                        <td class="px-6 py-4 text-center">
                             <div class="inline-flex flex-wrap items-center gap-1 bg-gray-50 dark:bg-gray-700/30 rounded-lg p-0.5">
                                 <form method="POST" action="{{ route('admin.forum-topik.pin', $topik->id_forum_topic) }}" class="inline">@csrf @method('PUT')<button class="p-1.5 {{ $topik->is_pinned ? 'text-amber-600' : 'text-gray-400 hover:text-amber-600' }} hover:bg-white dark:hover:bg-gray-600 rounded-md transition" title="{{ $topik->is_pinned ? 'Lepas Pin' : 'Pin Topik' }}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14M9 5v14l4-4 4 4V5"/></svg></button></form>
                                 <form method="POST" action="{{ route('admin.forum-topik.lock', $topik->id_forum_topic) }}" class="inline">@csrf @method('PUT')<button class="p-1.5 {{ $topik->is_locked ? 'text-red-600' : 'text-gray-400 hover:text-red-600' }} hover:bg-white dark:hover:bg-gray-600 rounded-md transition" title="{{ $topik->is_locked ? 'Buka Kunci' : 'Kunci Topik' }}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V7a4 4 0 118 0v4M5 11h14v10H5V11z"/></svg></button></form>
@@ -135,10 +147,109 @@
             </table>
         </div>
 
+        <!-- Mobile Card List view -->
+        <div class="block md:hidden divide-y divide-gray-100 dark:divide-gray-700/50">
+            @forelse($topikPaginated as $topik)
+            @php
+                $statusBadge = match($topik->status) {
+                    'published' => ['bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', 'Dipublikasikan'],
+                    'hidden' => ['bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400', 'Disembunyikan'],
+                    'deleted' => ['bg-red-50 text-red-700 dark:bg-red-500/20 dark:text-red-400', 'Dihapus'],
+                    default => ['bg-gray-100 text-gray-700', ucfirst($topik->status)],
+                };
+            @endphp
+            <div class="p-5 space-y-3 bg-white dark:bg-gray-800">
+                <!-- Topik -->
+                <div>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Topik</span>
+                    <div class="mt-1">
+                        <div class="flex flex-wrap items-center gap-1.5 mb-2">
+                            @if($topik->is_pinned)
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 text-[10px] font-semibold">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14M9 5v14l4-4 4 4V5"/></svg>Pinned
+                            </span>
+                            @endif
+                            @if($topik->is_locked)
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 text-red-700 dark:bg-red-500/20 dark:text-red-400 text-[10px] font-semibold">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V7a4 4 0 118 0v4M5 11h14v10H5V11z"/></svg>Locked
+                            </span>
+                            @endif
+                        </div>
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-komentar.topic') ? route('admin.forum-komentar.topic', $topik->id_forum_topic) : '#' }}" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 block leading-snug">{{ $topik->judul }}</a>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-3">{{ \Illuminate\Support\Str::limit(strip_tags((string) $topik->isi), 140) }}</p>
+                        <p class="text-[10px] text-gray-400 mt-1.5">Update terakhir: {{ optional($topik->last_activity_at)->diffForHumans() ?? $topik->updated_at?->diffForHumans() ?? '-' }}</p>
+                    </div>
+                </div>
+
+                <!-- Kategori -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Kategori</span>
+                    <div class="mt-1">
+                        @if($topik->category)
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold" style="background-color: {{ $topik->category->warna ?: '#3B82F6' }}1A; color: {{ $topik->category->warna ?: '#3B82F6' }};">{{ $topik->category->nama }}</span>
+                        @else
+                            <span class="text-xs text-gray-400">Tanpa kategori</span>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Author -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Author</span>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ $topik->author?->name ?? 'Anonim' }}</p>
+                </div>
+
+                <!-- Statistik -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Statistik</span>
+                    <div class="flex items-center gap-4 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <span class="inline-flex items-center gap-1.5"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> {{ $topik->views }}</span>
+                        <span class="inline-flex items-center gap-1.5"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72A3.989 3.989 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg> {{ $topik->comments_count }}</span>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-2.5">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Status</span>
+                    <div class="mt-1">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
+                    </div>
+                </div>
+
+                <!-- Aksi -->
+                <div class="border-t border-gray-50 dark:border-gray-700/50 pt-3">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Aksi</span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <form method="POST" action="{{ route('admin.forum-topik.pin', $topik->id_forum_topic) }}" class="inline">@csrf @method('PUT')<button class="w-10 h-10 flex items-center justify-center {{ $topik->is_pinned ? 'text-amber-600 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400' : 'text-gray-500 bg-gray-50 hover:bg-amber-50 dark:bg-gray-700 dark:text-gray-300' }} rounded-xl border border-gray-200 dark:border-gray-700/50 transition shadow-sm" title="{{ $topik->is_pinned ? 'Lepas Pin' : 'Pin Topik' }}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14M9 5v14l4-4 4 4V5"/></svg></button></form>
+                        <form method="POST" action="{{ route('admin.forum-topik.lock', $topik->id_forum_topic) }}" class="inline">@csrf @method('PUT')<button class="w-10 h-10 flex items-center justify-center {{ $topik->is_locked ? 'text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400' : 'text-gray-500 bg-gray-50 hover:bg-red-50 dark:bg-gray-700 dark:text-gray-300' }} rounded-xl border border-gray-200 dark:border-gray-700/50 transition shadow-sm" title="{{ $topik->is_locked ? 'Buka Kunci' : 'Kunci Topik' }}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V7a4 4 0 118 0v4M5 11h14v10H5V11z"/></svg></button></form>
+                        @if($topik->status !== 'published')
+                            <form method="POST" action="{{ route('admin.forum-topik.status', $topik->id_forum_topic) }}" class="inline">@csrf @method('PUT')<input type="hidden" name="status" value="published"><button class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-emerald-600 bg-gray-50 hover:bg-emerald-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-xl border border-gray-200 dark:border-gray-700/50 transition shadow-sm" title="Publikasikan"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button></form>
+                        @endif
+                        @if($topik->status === 'published')
+                            <form method="POST" action="{{ route('admin.forum-topik.status', $topik->id_forum_topic) }}" class="inline">@csrf @method('PUT')<input type="hidden" name="status" value="hidden"><button class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-xl border border-gray-200 dark:border-gray-700/50 transition shadow-sm" title="Sembunyikan"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m12.78 12.78l-3.29-3.29M3 3l18 18"/></svg></button></form>
+                        @endif
+                        <button onclick="confirmDeleteTopik({{ $topik->id_forum_topic }}, `{{ addslashes($topik->judul) }}`)" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-red-600 bg-gray-50 hover:bg-red-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-xl border border-gray-200 dark:border-gray-700/50 transition shadow-sm" title="Hapus permanen"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="p-10 text-center bg-white dark:bg-gray-800">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tidak ada topik</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Belum ada topik diskusi yang cocok dengan filter.</p>
+            </div>
+            @endforelse
+        </div>
+
+        <!-- Pagination Footer -->
         @if($topikPaginated->total() > 0)
-        <div class="px-6 py-3.5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between admin-responsive-pagination">
-            <p class="text-xs text-gray-500 dark:text-gray-400">Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300">{{ $topikPaginated->firstItem() ?? 0 }}-{{ $topikPaginated->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ $topikPaginated->total() }}</span> topik</p>
-            <div class="flex items-center gap-1 admin-responsive-actions">
+        <div class="px-6 py-4 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700/50 flex flex-col gap-3 items-center md:flex-row md:justify-between">
+            <p class="text-xs text-gray-500 dark:text-gray-400 text-center md:text-left">
+                Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300">{{ $topikPaginated->firstItem() ?? 0 }}-{{ $topikPaginated->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ $topikPaginated->total() }}</span> topik
+            </p>
+            <div class="flex items-center gap-1 justify-center flex-wrap">
                 @if($topikPaginated->onFirstPage())<button class="p-1.5 text-gray-300 dark:text-gray-600 rounded-lg cursor-not-allowed" disabled><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
                 @else<a href="{{ $topikPaginated->previousPageUrl() }}" class="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-white dark:hover:bg-gray-700 rounded-lg transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></a>@endif
                 @for($i = 1; $i <= $topikPaginated->lastPage(); $i++)
