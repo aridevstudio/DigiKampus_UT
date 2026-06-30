@@ -57,7 +57,9 @@
     $isPlaylistMode = request('play') === 'pack';
     $certificateEnabled = (bool) ($course->sertifikat ?? false);
     $courseCompletedForCertificate = (($enrollment->status ?? null) === 'selesai' || (int) ($progressPercent ?? 0) >= 100);
-    $certificateEligible = $certificateEnabled && $courseCompletedForCertificate && !empty($issuedCertificate);
+    // PM spec §7: sertifikat mensyaratkan tujuan pembelajaran tersedia.
+    $hasLearningGoals = (bool) ($course->learningGoals && $course->learningGoals->count() > 0);
+    $certificateEligible = $certificateEnabled && $courseCompletedForCertificate && !empty($issuedCertificate) && $hasLearningGoals;
     $issuedCertificateNumber = $issuedCertificate['number'] ?? null;
     $issuedCertificateDate = $issuedCertificate['issued_date'] ?? now()->format('d F Y');
     $issuedCertificateTemplate = $issuedCertificate['template'] ?? null;
@@ -77,6 +79,9 @@
     } elseif (!$courseCompletedForCertificate) {
         $certificateStatusTitle = 'Selesaikan ' . $labelEntityLower . ' untuk membuka sertifikat';
         $certificateStatusMessage = 'Progress harus 100% atau status enrollment sudah selesai sebelum sertifikat bisa diunduh.';
+    } elseif (!$hasLearningGoals) {
+        $certificateStatusTitle = 'Tambahkan tujuan pembelajaran untuk membuka sertifikat';
+        $certificateStatusMessage = 'Course ini belum memiliki tujuan pembelajaran yang dipublikasikan. Sertifikat baru tersedia setelah dosen/admin menambahkan tujuan pembelajaran untuk course ini.';
     } else {
         $certificateStatusTitle = 'Template sertifikat belum siap';
         $certificateStatusMessage = 'Sertifikasi course sudah aktif, tetapi blangko/template sertifikat admin belum valid atau belum tersedia.';
@@ -596,9 +601,17 @@
             {{-- Tujuan Pembelajaran (Learning Goals) dengan indikator achieved --}}
             @if($course->learningGoals && $course->learningGoals->count() > 0)
                 @php
+                    $tujuanLabel = $isBootcamp ? 'Tujuan Bootcamp' : 'Tujuan Pembelajaran';
+                    $tujuanSubject = $isBootcamp ? 'tujuan bootcamp' : 'tujuan pembelajaran';
                     $totalGoals = (int) $course->learningGoals->count();
                     $safeProgress = (int) max(0, min(100, (int) ($progressPercent ?? 0)));
-                    $achievedCount = $totalGoals > 0 ? intdiv($safeProgress * $totalGoals, 100) : 0;
+                    // PM spec §6: enrollment.status is the primary completion signal.
+                    // progress===100 is the legacy-data fallback so existing enrollments
+                    // whose status hasn't been re-synced still flip goals to achieved.
+                    $enrollmentCompleted = (($enrollment->status ?? null) === 'selesai') || $safeProgress >= 100;
+                    $achievedCount = $totalGoals > 0
+                        ? ($enrollmentCompleted ? $totalGoals : intdiv($safeProgress * $totalGoals, 100))
+                        : 0;
                     $allGoalsAchieved = $totalGoals > 0 && $achievedCount >= $totalGoals;
                     $goalProgressLabel = $totalGoals > 0
                         ? "{$achievedCount}/{$totalGoals} tujuan tercapai"
@@ -610,15 +623,13 @@
 
                     <div class="relative space-y-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg sm:text-xl">
-                                    Tujuan Pembelajaran
-                                </h3>
-                                <p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">
-                                    {{ $allGoalsAchieved
-                                        ? 'Selamat! Semua tujuan pembelajaran kursus ini sudah tercapai.'
-                                        : 'Selesaikan kursus untuk membuka pencapaian tiap tujuan pembelajaran berikut.' }}
-                                </p>
+                            <div>                                    <h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg sm:text-xl">
+                                        {{ $tujuanLabel }}
+                                    </h3>                                    <p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">
+                                        {{ $allGoalsAchieved
+                                            ? 'Selamat! Semua ' . $tujuanSubject . ' ini sudah tercapai.'
+                                            : 'Selesaikan ' . $labelEntityLower . ' untuk membuka pencapaian tiap ' . $tujuanSubject . ' berikut.' }}
+                                    </p>
                             </div>
                             <span class="inline-flex items-center gap-2 rounded-full {{ $allGoalsAchieved ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300' }} px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] sm:tracking-[0.16em]">
                                 <span class="relative flex h-2 w-2">

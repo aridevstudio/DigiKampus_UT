@@ -46,11 +46,17 @@ class LearningGoalController extends Controller
 
                 $totalGoals = (int) $goals->count();
                 $safeProgress = (int) max(0, min(100, (int) $enrollment->progress));
-                $achievedCount = $totalGoals > 0 ? intdiv($safeProgress * $totalGoals, 100) : 0;
+                // PM spec §6: enrollment.status is the primary completion signal.
+                // progress===100 is kept as a fallback so legacy data (where status
+                // hasn't been re-synced yet) still flips Learning Goals to achieved.
+                $enrollmentCompleted = ($enrollment->status ?? null) === 'selesai' || $safeProgress >= 100;
+                $achievedCount = $totalGoals > 0
+                    ? ($enrollmentCompleted ? $totalGoals : intdiv($safeProgress * $totalGoals, 100))
+                    : 0;
 
                 $isBootcamp = strtolower((string) ($course->kategori ?? '')) === 'tiket';
                 $statusBadge = match (true) {
-                    $enrollment->status === 'selesai' || $safeProgress >= 100 => 'selesai',
+                    $enrollmentCompleted => 'selesai',
                     $safeProgress === 0 => 'belum_mulai',
                     default => 'sedang_berjalan',
                 };

@@ -237,7 +237,14 @@
         : (method_exists($course, 'learningGoals') ? $course->learningGoals()->orderBy('urutan')->get() : collect());
     $totalLearningGoals = $learningGoals ? $learningGoals->count() : 0;
     $progressPercent = (int) ($enrollment->progress ?? 0);
-@endphp
+    // PM spec §6: enrollment.status is the primary completion signal (matches course-learn formula);
+    // progress===100 is a legacy-data fallback so existing enrollments whose status hasn't been
+    // re-synced still flip displayed goals to achieved on both pages.
+    $safeProgress = (int) max(0, min(100, $progressPercent));
+    $enrollmentCompleted = (($enrollment->status ?? null) === 'selesai') || $safeProgress >= 100;
+    $achievedCount = $totalLearningGoals > 0
+        ? ($enrollmentCompleted ? $totalLearningGoals : intdiv($safeProgress * $totalLearningGoals, 100))
+        : 0;
     $issuedCertificateNumber = $issuedCertificate['number'] ?? null;
     $issuedCertificateDate = $issuedCertificate['issued_date'] ?? now()->format('d F Y');
     $issuedCertificateTemplate = $issuedCertificate['template'] ?? null;
@@ -370,8 +377,7 @@
                         <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                             <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             {{ $tujuanLabel }}
-                        </h2>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kompetensi yang akan kamu capai setelah menyelesaikan kursus.</p>
+                        </h2>                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kompetensi yang akan kamu capai setelah menyelesaikan {{ $labelEntityLower }}.</p>
                     </div>
                     <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-700/40 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                         {{ $totalLearningGoals }} tujuan
@@ -380,7 +386,7 @@
                 <ol class="space-y-3">
                     @foreach($learningGoals as $goalIndex => $goal)
                         @php
-                            $isAchieved = $isEnrolled && $progressPercent >= (int) round((($goalIndex + 1) / max($totalLearningGoals, 1)) * 100);
+                            $isAchieved = $isEnrolled && $totalLearningGoals > 0 && $goalIndex < $achievedCount;
                         @endphp
                         <li class="flex items-start gap-3 p-3 rounded-xl border {{ $isAchieved ? 'border-emerald-200 dark:border-emerald-700/40 bg-emerald-50/60 dark:bg-emerald-500/5' : 'border-gray-200 dark:border-gray-700/50 bg-gray-50/60 dark:bg-gray-800/40' }}">
                             <div class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold {{ $isAchieved ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }}">
