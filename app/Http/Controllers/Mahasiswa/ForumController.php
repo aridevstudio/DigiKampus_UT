@@ -120,7 +120,7 @@ class ForumController extends Controller
 
     public function show(Request $request, string $slug)
     {
-        $topik = ForumTopic::with(['category:id_forum_category,nama,warna,slug', 'author:id,name,profile'])
+        $topik = ForumTopic::with(['category:id_forum_category,nama,warna,slug', 'author:id,name'])
             ->whereIn('status', ['published', 'hidden'])
             ->where('slug', $slug)
             ->firstOrFail();
@@ -128,8 +128,8 @@ class ForumController extends Controller
         $isLocked = (bool) $topik->is_locked;
 
         $komentars = ForumComment::with([
-            'author:id,name,profile',
-            'publishedReplies.author:id,name,profile',
+            'author:id,name',
+            'publishedReplies.author:id,name',
         ])
             ->where('topic_id', $topik->id_forum_topic)
             ->whereNull('parent_id')
