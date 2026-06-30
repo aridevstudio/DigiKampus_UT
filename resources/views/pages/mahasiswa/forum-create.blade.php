@@ -1,7 +1,7 @@
-<x-layouts.dashboard :active="'forum'">
 @php
     use Illuminate\Support\Str;
 @endphp
+<x-layouts.dashboard :active="'forum'">
 <div class="max-w-3xl mx-auto px-3 sm:px-4 lg:px-6 py-5 lg:py-8 space-y-5">
     <nav class="flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
         <a href="{{ route('mahasiswa.forum') }}" class="inline-flex items-center gap-1 hover:text-blue-500">

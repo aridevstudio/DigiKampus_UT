@@ -1,7 +1,7 @@
-<x-layouts.dashboard :active="'forum'">
 @php
     use Illuminate\Support\Str;
 @endphp
+<x-layouts.dashboard :active="'forum'">
 @push('head')
 <style>
     .forum-hero {

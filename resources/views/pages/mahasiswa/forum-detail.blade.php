@@ -1,6 +1,8 @@
-<x-layouts.dashboard :active="'forum'">
 @php
     use Illuminate\Support\Str;
+@endphp
+<x-layouts.dashboard :active="'forum'">
+@php
     $currentUserId = optional(Auth::guard('mahasiswa')->user())->id;
 @endphp
 <div class="max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-5 lg:py-8 space-y-4 lg:space-y-6">
