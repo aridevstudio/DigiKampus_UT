@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Auth\AdminController;
 use App\Http\Controllers\Auth\AdminContentApiController;
+use App\Http\Controllers\Auth\AdminForumCategoryController;
+use App\Http\Controllers\Auth\AdminForumCommentController;
+use App\Http\Controllers\Auth\AdminForumTopicController;
 use App\Http\Middleware\EnsureAuthenticatedAdmin;
 use App\Http\Middleware\RedirectIfAuthenticatedAdmin;
 use Illuminate\Support\Facades\Route;
@@ -180,4 +183,27 @@ Route::prefix('admin')
         Route::post('/import/{type}/preview', [AdminController::class, 'previewImport'])->name('admin.import.preview');
         Route::post('/import/{type}/confirm', [AdminController::class, 'confirmImport'])->name('admin.import.confirm');
         Route::get('/import/{type}/template', [AdminController::class, 'downloadTemplate'])->name('admin.import.template');
+
+        // Forum Management (Kategori, Topik moderasi, Moderasi Komentar)
+        Route::prefix('forum')->group(function () {
+            Route::get('/kategori', [AdminForumCategoryController::class, 'index'])->name('admin.forum-kategori');
+            Route::post('/kategori', [AdminForumCategoryController::class, 'store'])->name('admin.forum-kategori.store');
+            Route::get('/kategori/{id}', [AdminForumCategoryController::class, 'show'])->name('admin.forum-kategori.show');
+            Route::put('/kategori/{id}', [AdminForumCategoryController::class, 'update'])->name('admin.forum-kategori.update');
+            Route::put('/kategori/{id}/toggle', [AdminForumCategoryController::class, 'toggleActive'])->name('admin.forum-kategori.toggle');
+            Route::put('/kategori/reorder', [AdminForumCategoryController::class, 'reorder'])->name('admin.forum-kategori.reorder');
+            Route::delete('/kategori/{id}', [AdminForumCategoryController::class, 'destroy'])->name('admin.forum-kategori.destroy');
+
+            Route::get('/topik', [AdminForumTopicController::class, 'index'])->name('admin.forum-topik');
+            Route::get('/topik/{id}', [AdminForumTopicController::class, 'show'])->name('admin.forum-topik.show');
+            Route::put('/topik/{id}/pin', [AdminForumTopicController::class, 'togglePin'])->name('admin.forum-topik.pin');
+            Route::put('/topik/{id}/lock', [AdminForumTopicController::class, 'toggleLock'])->name('admin.forum-topik.lock');
+            Route::put('/topik/{id}/status', [AdminForumTopicController::class, 'setStatus'])->name('admin.forum-topik.status');
+            Route::delete('/topik/{id}', [AdminForumTopicController::class, 'destroy'])->name('admin.forum-topik.destroy');
+
+            Route::get('/komentar', [AdminForumCommentController::class, 'index'])->name('admin.forum-komentar');
+            Route::get('/topik/{topicId}/komentar', [AdminForumCommentController::class, 'showTopic'])->name('admin.forum-komentar.topic');
+            Route::put('/komentar/{id}/status', [AdminForumCommentController::class, 'setStatus'])->name('admin.forum-komentar.status');
+            Route::delete('/komentar/{id}', [AdminForumCommentController::class, 'destroy'])->name('admin.forum-komentar.destroy');
+        });
     });

@@ -293,6 +293,42 @@
                     <span class="font-medium">Pengumuman</span>
                 </a>
 
+                @php
+                    $forumManagementActive = in_array(($active ?? ''), ['forum-kategori', 'forum-topik', 'forum-komentar'], true) || request()->routeIs('admin.forum-kategori*') || request()->routeIs('admin.forum-topik*') || request()->routeIs('admin.forum-komentar*');
+                    $forumCategoryRoute = \Illuminate\Support\Facades\Route::has('admin.forum-kategori') ? route('admin.forum-kategori') : '#';
+                @endphp
+                <div x-data="{ open: {{ $forumManagementActive ? 'true' : 'false' }} }">
+                    <button type="button" @click="open = !open" title="Forum Management" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg {{ $forumManagementActive ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v3l-4-3H9a2 2 0 01-2-2v-1m10-9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v3l4-3h2a2 2 0 002-2V7z" />
+                        </svg>
+                        <span class="font-medium flex-1 text-left">Forum Management</span>
+                        <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-collapse class="mt-1 ml-4 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-3">
+                        <a href="{{ $forumCategoryRoute }}" title="Kategori Forum" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'forum-kategori' || request()->routeIs('admin.forum-kategori*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10H7V7zM3 11h4m10 0h4" />
+                            </svg>
+                            <span>Kategori</span>
+                        </a>
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-topik') ? route('admin.forum-topik') : '#' }}" title="Moderasi Topik" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'forum-topik' || request()->routeIs('admin.forum-topik*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01" />
+                            </svg>
+                            <span>Topik</span>
+                        </a>
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-komentar') ? route('admin.forum-komentar') : '#' }}" title="Moderasi Komentar" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'forum-komentar' || request()->routeIs('admin.forum-komentar*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72A3.989 3.989 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span>Moderasi</span>
+                        </a>
+                    </div>
+                </div>
+
                 <a href="{{ route('admin.support-tickets') }}" title="Tiket Support" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'support-tickets' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />

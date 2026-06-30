@@ -6,6 +6,7 @@ use App\Http\Controllers\Mahasiswa\ProfileController;
 use App\Http\Controllers\Mahasiswa\CourseController;
 use App\Http\Controllers\Mahasiswa\ChatController;
 use App\Http\Controllers\Mahasiswa\CheckoutController;
+use App\Http\Controllers\Mahasiswa\ForumController;
 use App\Http\Controllers\Mahasiswa\LearningGoalController;
 use App\Http\Controllers\Mahasiswa\SupportController;
 use App\Http\Middleware\EnsureAuthenticatedMahasiswa;
@@ -100,8 +101,16 @@ Route::prefix('mahasiswa')
         Route::get('/finance/transaction/{id}', [CheckoutController::class, 'transactionDetail'])->name('mahasiswa.transaction-detail');
         
         // Coming Soon Pages
-        Route::view('/forum', 'pages.mahasiswa.coming-soon', ['active' => 'forum', 'title' => 'Forum'])->name('mahasiswa.forum');
         Route::view('/apps', 'pages.mahasiswa.coming-soon', ['active' => 'apps', 'title' => 'Apps'])->name('mahasiswa.apps');
+
+        // Forum Komunitas (diskusi umum mahasiswa)
+        Route::prefix('forum')->group(function () {
+            Route::get('/', [ForumController::class, 'index'])->name('mahasiswa.forum');
+            Route::get('/create', [ForumController::class, 'create'])->name('mahasiswa.forum.create');
+            Route::post('/', [ForumController::class, 'store'])->name('mahasiswa.forum.store');
+            Route::get('/topic/{slug}', [ForumController::class, 'show'])->name('mahasiswa.forum.show');
+            Route::post('/topic/{slug}/comment', [ForumController::class, 'storeComment'])->name('mahasiswa.forum.comment.store');
+        });
         Route::get('/learning-goals', [LearningGoalController::class, 'index'])->name('mahasiswa.learning-goals');
         Route::get('/news', [DashboardController::class, 'news'])->name('mahasiswa.news');
         
