@@ -1,6 +1,6 @@
-<x-layouts.dashboard :active="($context ?? 'course') === 'bootcamp' ? 'bootcamp-saya' : 'courses'">
+<x-layouts.dashboard :active="$isBootcamp ? 'bootcamp-saya' : 'courses'">
 @php
-    $isBootcamp = ($context ?? 'course') === 'bootcamp';
+    $isBootcamp = strtolower((string) ($course->kategori ?? '')) === 'tiket';
     $labelEntity = $isBootcamp ? 'Bootcamp' : 'Kursus';
     $labelEntityLower = $isBootcamp ? 'bootcamp' : 'kursus';
     $backListRoute = $isBootcamp ? 'mahasiswa.bootcamp-saya' : 'mahasiswa.courses';

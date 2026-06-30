@@ -226,6 +226,8 @@ class CourseController extends Controller
                 ->exists();
         }
         
+        $isBootcamp = $this->isBootcamp($course);
+
         return view('pages.mahasiswa.course-detail', [
             'course' => $course,
             'isEnrolled' => $isEnrolled,
@@ -233,6 +235,7 @@ class CourseController extends Controller
             'isFavorited' => $isFavorited,
             'issuedCertificate' => $issuedCertificate,
             'context' => $context,
+            'isBootcamp' => $isBootcamp,
         ]);
     }
 
@@ -555,6 +558,8 @@ class CourseController extends Controller
         $progressPercent = (int) round((float) ($enrollment->progress ?? $progressPercent));
         $issuedCertificate = $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, $progressPercent);
         
+        $isBootcamp = $this->isBootcamp($course);
+
         return view('pages.mahasiswa.course-learn', [
             'course' => $course,
             'enrollment' => $enrollment,
@@ -566,6 +571,7 @@ class CourseController extends Controller
             'totalMaterials' => $totalMaterials,
             'issuedCertificate' => $issuedCertificate,
             'context' => $context,
+            'isBootcamp' => $isBootcamp,
             'dosenNotes' => $course->instructorNotes->map(function (CourseInstructorNote $note) {
                 return [
                     'id' => $note->id_course_instructor_note,
@@ -1530,7 +1536,7 @@ class CourseController extends Controller
         ]);
 
         $course = Course::find($courseId);
-        $isBootcamp = $course && strtolower((string) ($course->kategori ?? '')) === 'tiket';
+        $isBootcamp = $this->isBootcamp($course);
         $entityLabel = $isBootcamp ? 'bootcamp' : 'kursus';
 
         // Ensure student is enrolled
@@ -2499,5 +2505,19 @@ class CourseController extends Controller
             'tanggal_y' => 72.00,
             'tanggal_size' => 14,
         ];
+    }
+
+    /**
+     * Single source of truth for "is this course a bootcamp (tiket)?"
+     * Used by show(), learn(), and submitCourseReview() so the UI shape,
+     * route labels, and review-guard semantics never drift apart.
+     *
+     * If a future refactor moves this onto the Course model (e.g. an `is_bootcamp`
+     * accessor), update this helper AND the `@php` re-derivation inside
+     * course-detail.blade.php / course-learn.blade.php together.
+     */
+    private function isBootcamp(?Course $course): bool
+    {
+        return $course && strtolower((string) ($course->kategori ?? '')) === 'tiket';
     }
 }
