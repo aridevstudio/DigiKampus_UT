@@ -1,4 +1,4 @@
-<x-layouts.admin title="Kelola Kursus" active="kursus">
+﻿<x-layouts.admin title="Kelola Kursus" active="kursus">
     {{-- Page Header --}}
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Manajemen Kursus</h1>
@@ -2116,7 +2116,7 @@
 
                         // Set akses_publik & sertifikat checkboxes
                         document.getElementById('edit_akses_publik').checked = !!data.akses_publik;
-                        document.getElementById('edit_sertifikat').checked = !!data.sertifikat;
+                        (document.getElementById('edit_sertifikat')||{checked:false}).checked = !!data.sertifikat;
 
                         const approvalNoteBox = document.getElementById('editApprovalNoteBox');
                         if (approvalNoteBox) {
