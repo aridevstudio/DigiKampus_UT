@@ -1,10 +1,10 @@
 <x-layouts.dashboard :active="'apps'">
     @php
-        use App\Services\AppRegistryService;
-        use Illuminate\Support\Str;
         $user = Auth::guard('mahasiswa')->user();
         $userName = $user?->name ?? 'Mahasiswa';
-        $iconTheme = fn(string $icon) => app(AppRegistryService::class)->iconTheme($icon);
+        // FQN inline (tanpa `use`) — Blade compiler menolak `use` di dalam
+        // `@php` block ketika ada kode lain setelahnya.
+        $iconTheme = fn(string $icon) => app(\App\Services\AppRegistryService::class)->iconTheme($icon);
     @endphp
 
     <div class="space-y-6 sm:space-y-8" x-data="{ query: '' }">
@@ -92,9 +92,9 @@
 
                     <article
                         data-app-card
-                        data-app-name="{{ Str::lower($app->name) }}"
-                        data-app-desc="{{ Str::lower($desc) }}"
-                        x-show="!query || '{{ Str::lower($app->name) }}'.includes(query.toLowerCase()) || '{{ Str::lower($desc) }}'.includes(query.toLowerCase())"
+                        data-app-name="{{ \Illuminate\Support\Str::lower($app->name) }}"
+                        data-app-desc="{{ \Illuminate\Support\Str::lower($desc) }}"
+                        x-show="!query || '{{ \Illuminate\Support\Str::lower($app->name) }}'.includes(query.toLowerCase()) || '{{ \Illuminate\Support\Str::lower($desc) }}'.includes(query.toLowerCase())"
                         class="group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition dark:border-gray-700/50 dark:bg-gray-800
                             {{ $launchUrl ? 'hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md cursor-pointer dark:hover:border-blue-500/40' : 'cursor-not-allowed pointer-events-none opacity-70' }}"
                         @if(! $launchUrl) aria-disabled="true" @else role="link" tabindex="0" @endif

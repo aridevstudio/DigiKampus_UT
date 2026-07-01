@@ -1,8 +1,9 @@
 <x-layouts.admin :active="'apps'">
     @php
-        use App\Services\AppRegistryService;
         // Derive color dari icon via service — admin tidak atur color terpisah.
-        $iconTheme = fn(string $icon) => app(AppRegistryService::class)->iconTheme($icon);
+        // Pakai FQN inline (tanpa `use`) karena Blade compiler menolak
+        // `use` statement di dalam `@php` block jika ada kode lain setelahnya.
+        $iconTheme = fn(string $icon) => app(\App\Services\AppRegistryService::class)->iconTheme($icon);
     @endphp
 
     <div class="space-y-5 sm:space-y-6">
@@ -106,7 +107,7 @@
                                 </div>
                             </header>
 
-                            <p class="line-clamp-2 text-xs leading-relaxed text-gray-600 dark:text-gray-400">{{ Str::limit($app->description ?? '', 140) }}</p>
+                            <p class="line-clamp-2 text-xs leading-relaxed text-gray-600 dark:text-gray-400">{{ \Illuminate\Support\Str::limit($app->description ?? '', 140) }}</p>
 
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-[10px]">
                                 <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold {{ $isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' }}">
