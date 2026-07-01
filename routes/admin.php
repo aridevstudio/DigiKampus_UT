@@ -208,14 +208,20 @@ Route::prefix('admin')
             Route::delete('/komentar/{id}', [AdminForumCommentController::class, 'destroy'])->name('admin.forum-komentar.destroy');
         });
 
-        // Apps Management (Admin can edit display name / description / status / access; cannot add/remove apps)
+        // Apps Management — Admin punya CRUD penuh untuk tabel `apps`
+        // (sebelumnya hanya edit field terbatas pada tabel override).
+        // Sumber kebenaran tunggal: tabel `apps`. Tambah, edit, hapus, toggle aktif.
         Route::prefix('apps')->name('admin.apps.')->group(function () {
-            Route::get('/', [AdminAppsController::class, 'index'])->name('index');
-            Route::get('/{slug}/edit', [AdminAppsController::class, 'edit'])->name('edit')
+            Route::get('/',                  [AdminAppsController::class, 'index'])->name('index');
+            Route::get('/create',            [AdminAppsController::class, 'create'])->name('create');
+            Route::post('/',                 [AdminAppsController::class, 'store'])->name('store');
+            Route::get('/{slug}/edit',       [AdminAppsController::class, 'edit'])->name('edit')
                 ->where('slug', '[a-z0-9\-]+');
-            Route::put('/{slug}', [AdminAppsController::class, 'update'])->name('update')
+            Route::put('/{slug}',            [AdminAppsController::class, 'update'])->name('update')
                 ->where('slug', '[a-z0-9\-]+');
-            Route::put('/{slug}/toggle', [AdminAppsController::class, 'toggle'])->name('toggle')
+            Route::put('/{slug}/toggle',     [AdminAppsController::class, 'toggle'])->name('toggle')
+                ->where('slug', '[a-z0-9\-]+');
+            Route::delete('/{slug}',         [AdminAppsController::class, 'destroy'])->name('destroy')
                 ->where('slug', '[a-z0-9\-]+');
         });
     });

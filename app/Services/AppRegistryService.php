@@ -2,310 +2,236 @@
 
 namespace App\Services;
 
-use App\Models\AppRegistryOverride;
-use Illuminate\Support\Facades\Cache;
-use InvalidArgumentException;
+use App\Models\LauncherApp;
+use Illuminate\Support\Collection;
 
 /**
- * Hardcoded Apps Hub catalog — pure LAUNCHER implementation.
+ * Apps Hub registry — fully DB-driven.
  *
- * Per PM refactor (Apps menu = launcher, bukan embedded):
- *   - Setiap app adalah kartu yang ketika di-klik langsung membuka URL
- *     eksternal di tab baru (`target="_blank" rel="noopener noreferrer"`).
- *   - Tidak ada lagi integrated view, AI chat, embedded compiler, dll.
+ * SEBELUM refactor ini, daftar aplikasi di-hardcode di `CATALOG` dan admin
+ * hanya bisa override sebagian field. Sekarang:
+ *   - Sumber kebenaran tunggal: tabel `apps` (model `App\Models\LauncherApp`).
+ *   - Admin punya CRUD penuh via `App\Http\Controllers\Auth\AdminAppsController`.
+ *   - Service ini HANYA query + filter; tidak ada konstanta hardcoded untuk
+ *     daftar aplikasi.
  *
- * Developer-owned hardcoded list (developer boleh edit). Admin hanya boleh:
- *   - Activate/deactivate (`is_active` override)
- *   - Edit `display_name`, `description`, `access_roles`
- *   - Opsional: override `external_url` (untuk E-Library yang URL perpustakaan
- *     berubah-ubah). Override database lebih diutamakan dari catalog.
+ * Ikon dan theme color dikelola via konstanta `ICON_THEME` di sini (bukan
+ * catalog app). Konstanta ICON hanya untuk mapping visual theme — TIDAK
+ * menyimpan data app apapun.
  *
- * Adding new app:
- *   1. Tambahkan entry di `CATALOG` (slug → name/icon/color/url/category/...).
- *   2. Admin boleh override tampilannya via panel tanpa code change.
- *
- * Removing app:
- *   - Hapus entry dari `CATALOG`. Tidak ada lagi view per-app.
+ * Untuk developer menambahkan icon baru:
+ *   1. Tambahkan key di `ICON_THEME` (warna + key) di bawah.
+ *   2. Tambahkan SVG case di `resources/views/partials/apps/_icon.blade.php`.
+ *   3. Tambahkan key di `App\Models\LauncherApp::ALLOWED_ICONS`.
+ * Daftar APP sepenuhnya tanggung jawab admin via panel.
  */
 class AppRegistryService
 {
     /**
-     * Cache key bumped to _v2 after `external_url` column was added.
-     * Earlier _v1 entries (without `external_url`) still work, but bumping
-     * forces a one-time cache flush so the new shape is canonical.
-     */
-    public const CACHE_KEY = 'app_registry_overrides_v2';
-
-    /**
-     * Definition per entry:
-     *   - slug          : unique key (folder-safe, lowercase, hyphenated)
-     *   - display_name  : fallback label jika admin tidak override
-     *   - short_label   : ≤6 chars, badge di kartu
-     *   - description   : fallback copy kartu
-     *   - icon          : SVG key — sparkles|chip|github|code|video|palette|library
-     *   - color         : theme — violet|sky|slate|emerald|amber|rose|indigo
-     *   - category      : lihat CATEGORY_ORDER
-     *   - external_url  : URL tujuan (developer hardcode, admin opsional override)
-     */
-    public const CATALOG = [
-        'ai-assistant' => [
-            'slug' => 'ai-assistant',
-            'display_name' => 'AI Assistant',
-            'short_label' => 'AI',
-            'description' => 'Asisten AI ChatGPT untuk brainstorming, rangkuman materi, dan eksplorasi ide belajar di luar DigiKampus.',
-            'icon' => 'sparkles',
-            'color' => 'violet',
-            'category' => 'AI & Otomasi',
-            'external_url' => 'https://chatgpt.com/',
-        ],
-        'copilot' => [
-            'slug' => 'copilot',
-            'display_name' => 'Microsoft Copilot',
-            'short_label' => 'Copilot',
-            'description' => 'Asisten AI Microsoft untuk produktivitas — drafting, ringkasan dokumen, dan eksplorasi ide.',
-            'icon' => 'chip',
-            'color' => 'sky',
-            'category' => 'AI & Otomasi',
-            'external_url' => 'https://copilot.microsoft.com/',
-        ],
-        'teachable-machine' => [
-            'slug' => 'teachable-machine',
-            'display_name' => 'Google Teachable Machine',
-            'short_label' => 'TM',
-            'description' => 'Latih model machine learning tanpa menulis kode — klasifikasi gambar, suara, dan pose.',
-            'icon' => 'video',
-            'color' => 'amber',
-            'category' => 'AI & Otomasi',
-            'external_url' => 'https://teachablemachine.withgoogle.com/',
-        ],
-        'github' => [
-            'slug' => 'github',
-            'display_name' => 'GitHub',
-            'short_label' => 'Git',
-            'description' => 'Platform version control dan kolaborasi kode sumber terbuka untuk project pemrograman.',
-            'icon' => 'github',
-            'color' => 'slate',
-            'category' => 'Code & Build',
-            'external_url' => 'https://github.com/',
-        ],
-        'online-compiler' => [
-            'slug' => 'online-compiler',
-            'display_name' => 'Online Compiler',
-            'short_label' => 'Code',
-            'description' => 'Editor kode online untuk coba, jalankan, dan lihat output tanpa instalasi software tambahan.',
-            'icon' => 'code',
-            'color' => 'emerald',
-            'category' => 'Code & Build',
-            'external_url' => 'https://www.programiz.com/',
-        ],
-        'canva' => [
-            'slug' => 'canva',
-            'display_name' => 'Canva Education',
-            'short_label' => 'Canva',
-            'description' => 'Platform desain grafis untuk membuat presentasi, poster, infografis, dan tugas visual.',
-            'icon' => 'palette',
-            'color' => 'rose',
-            'category' => 'Design & Visual',
-            'external_url' => 'https://www.canva.com/education/',
-        ],
-        'e-library' => [
-            'slug' => 'e-library',
-            'display_name' => 'E-Library',
-            'short_label' => 'Books',
-            'description' => 'Akses cepat ke koleksi buku digital, jurnal, dan repository perpustakaan.',
-            'icon' => 'library',
-            'color' => 'indigo',
-            'category' => 'Research & Library',
-            // empty default — admin wajib isi via panel (field external_url).
-            'external_url' => null,
-        ],
-    ];
-
-    public const CATEGORY_ORDER = [
-        'AI & Otomasi' => 1,
-        'Code & Build' => 2,
-        'Design & Visual' => 3,
-        'Research & Library' => 4,
-    ];
-
-    /**
-     * Merged catalog dengan override diterapkan. Filter role + is_active
-     * tetap dilakukan di caller (AppsHubController) — service hanya merge.
+     * Daftar icon yang dikenali + theme warna untuk masing-masing.
      *
-     * @return array<string, array<string, mixed>>
+     * Hanya digunakan untuk rendering visual (Tailwind color class). Tidak
+     * ada business logic di sini. Tambah key baru = tambah juga case di
+     * view `_icon.blade.php` dan `LauncherApp::ALLOWED_ICONS`.
      */
-    public function all(): array
-    {
-        $overrides = $this->getOverrides();
-        $merged = [];
-        foreach (self::CATALOG as $slug => $entry) {
-            $merged[$slug] = $this->merge($entry, $overrides[$slug] ?? null);
-        }
-        return $merged;
-    }
+    public const ICON_THEME = [
+        'sparkles' => ['color' => 'violet', 'label' => 'AI / Sparkles'],
+        'chip'     => ['color' => 'sky',    'label' => 'Prosesor / Chip'],
+        'github'   => ['color' => 'slate',  'label' => 'GitHub / Code Hosting'],
+        'code'     => ['color' => 'emerald','label' => 'Source Code'],
+        'video'    => ['color' => 'amber',  'label' => 'Video / Multimedia'],
+        'palette'  => ['color' => 'rose',   'label' => 'Desain / Palette'],
+        'library'  => ['color' => 'indigo', 'label' => 'Library / Books'],
+        'globe'    => ['color' => 'teal',   'label' => 'Web / Umum'],
+    ];
 
-    public function get(string $slug): ?array
+    /** Daftar open_mode yang valid. List tunggal-sumber. */
+    public const OPEN_MODES = ['new_tab', 'same_tab'];
+
+    /**
+     * Daftar role yang valid untuk allowed_roles (termasuk special "all").
+     */
+    public const ROLES = ['mahasiswa', 'dosen', 'admin', 'all'];
+
+    /* -----------------------------------------------------------------
+     | READ: Untuk Mahasiswa Launcher
+     * -----------------------------------------------------------------*/
+
+    /**
+     * Daftar app AKTIF yang dapat diakses oleh user dengan role tertentu.
+     * Diurutkan alfabetis agar konsisten antar reload (mencegah UI "shuffle").
+     *
+     * Filter dilakukan di SQL: is_active=1 + allowed_roles match (atau "all").
+     *
+     * @return Collection<int, LauncherApp>
+     */
+    public function activeForUser(?string $userRole): Collection
     {
-        if (!isset(self::CATALOG[$slug])) {
-            return null;
-        }
-        return $this->merge(self::CATALOG[$slug], $this->getOverrides()[$slug] ?? null);
+        return LauncherApp::query()
+            ->active()
+            ->accessibleBy($userRole)
+            ->orderBy('name')
+            ->get();
     }
 
     /**
-     * Admin-facing list: catalog metadata + override fields + flag `_has_override`.
-     *
-     * @return array<string, array<string, mixed>>
+     * Cari satu app berdasarkan slug. Return null jika tidak ditemukan.
+     * Admin route pakai ini untuk edit / update / form binding.
      */
-    public function getAdminList(): array
+    public function findBySlug(string $slug): ?LauncherApp
     {
-        $overrides = $this->getOverrides();
+        return LauncherApp::query()->where('slug', $slug)->first();
+    }
+
+    /* -----------------------------------------------------------------
+     | WRITE: Untuk Admin Panel
+     * -----------------------------------------------------------------*/
+
+    /**
+     * Buat app baru. Slug di-trim + di-lowercase untuk konsistensi.
+     * Unique constraint di DB menjamin tidak ada duplikat — race-safe.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function create(array $data): LauncherApp
+    {
+        $payload = $this->normalizePayload($data);
+        return LauncherApp::query()->create($payload);
+    }
+
+    /**
+     * Update app existing. Slug TIDAK dapat diubah setelah create (immutable)
+     * untuk mencegah link rusak / cache invalidation issue. Caller (controller)
+     * bertanggung jawab untuk mengabaikan field `slug` di request sebelum
+     * memanggil method ini — untuk double-safety kita juga strip slug di sini.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function update(LauncherApp $app, array $data): LauncherApp
+    {
+        unset($data['slug']); // Hard guard — slug immutable.
+        $payload = $this->normalizePayload($data);
+
+        $app->fill($payload);
+        $app->save();
+        return $app;
+    }
+
+    /**
+     * Hapus app dari DB (hard delete).
+     */
+    public function delete(LauncherApp $app): bool
+    {
+        return (bool) $app->delete();
+    }
+
+    /**
+     * Toggle status aktif/nonaktif. Return app fresh.
+     */
+    public function toggleActive(LauncherApp $app): LauncherApp
+    {
+        $app->is_active = ! (bool) $app->is_active;
+        $app->save();
+        return $app;
+    }
+
+    /* -----------------------------------------------------------------
+     | Helpers
+     * -----------------------------------------------------------------*/
+
+    /**
+     * Tentukan warna (theme color) untuk sebuah icon key.
+     * Return "slate" sebagai fallback default jika icon tidak dikenali.
+     */
+    public function iconTheme(string $icon): string
+    {
+        return self::ICON_THEME[$icon]['color'] ?? 'slate';
+    }
+
+    /**
+     * Daftar key icon yang tersedia untuk UI select.
+     *
+     * @return array<string, string> map icon → label.
+     */
+    public function iconOptions(): array
+    {
         $out = [];
-        foreach (self::CATALOG as $slug => $entry) {
-            $merged = $entry;
-            $override = $overrides[$slug] ?? null;
-            // Admin-facing URL: kalau admin override terisi, pakai itu;
-            // kalau tidak, pakai fallback dari catalog (null untuk e-library
-            // yang BELUM diisi admin akan kelihatan empty di form).
-            $merged['display_name'] = $override && !empty($override['display_name']) ? $override['display_name'] : $entry['display_name'];
-            $merged['description']  = $override && !empty($override['description'])  ? $override['description']  : $entry['description'];
-            $merged['external_url'] = $override && !empty($override['external_url']) ? $override['external_url'] : ($entry['external_url'] ?? null);
-            $merged['is_active']    = $override ? (bool) ($override['is_active'] ?? true) : true;
-            $merged['access_roles'] = $override && !empty($override['access_roles'])
-                ? (array) $override['access_roles']
-                : ['mahasiswa'];
-            $merged['_has_override'] = (bool) $override;
-            $out[$slug] = $merged;
+        foreach (self::ICON_THEME as $key => $meta) {
+            $out[$key] = $meta['label'];
         }
         return $out;
     }
 
     /**
-     * Persist full override — dipanggil dari admin edit form.
-     * Field `external_url` adalah nullable admin override.
-     */
-    public function saveOverride(string $slug, array $data): void
-    {
-        $this->assertKnownSlug($slug);
-
-        $row = AppRegistryOverride::firstOrNew(['slug' => $slug]);
-        $row->fill([
-            'display_name' => $this->nullableString($data['display_name'] ?? null),
-            'description'  => $this->nullableString($data['description'] ?? null),
-            'external_url' => $this->nullableString($data['external_url'] ?? null),
-            'is_active'    => (bool) ($data['is_active'] ?? false),
-            'access_roles' => $this->normalizeRoles($data['access_roles'] ?? null),
-        ]);
-        $row->save();
-        Cache::forget(self::CACHE_KEY);
-    }
-
-    public function setEnabled(string $slug, bool $enabled): void
-    {
-        $this->assertKnownSlug($slug);
-        $row = AppRegistryOverride::firstOrNew(['slug' => $slug]);
-        $row->is_active = $enabled;
-        $row->save();
-        Cache::forget(self::CACHE_KEY);
-    }
-
-    /**
-     * Group merged catalog by category, ordered by CATEGORY_ORDER.
+     * Normalisasi payload sebelum create/update. Tanggung jawab:
+     *   - Trim string fields
+     *   - Slug → lowercase, ganti karakter invalid dengan '-'. Dipakai hanya
+     *     untuk CREATE — caller wajib strip slug dari $data sebelum invoke
+     *     method ini untuk UPDATE (lihat AppRegistryService::update()).
+     *   - allowed_roles → array (uniques, tidak kosong)
+     *   - open_mode → whitelist
+     *   - icon → whitelist
+     *   - is_active → boolean
      *
-     * @return array<string, array<int, array<string, mixed>>>
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
      */
-    public function getGroupedByCategory(): array
+    private function normalizePayload(array $data): array
     {
-        $items = $this->all();
-        $grouped = [];
-        foreach ($items as $slug => $entry) {
-            $cat = $entry['category'] ?? 'Lainnya';
-            $grouped[$cat][] = array_merge(['key' => $slug], $entry);
+        $payload = [];
+
+        // Name
+        $name = isset($data['name']) ? trim((string) $data['name']) : '';
+        $payload['name'] = $name;
+
+        // Slug (lowercase + dash). Hanya dipakai untuk CREATE.
+        if (isset($data['slug'])) {
+            $slug = strtolower(trim((string) $data['slug']));
+            $slug = preg_replace('/[^a-z0-9\-]+/', '-', $slug) ?? '';
+            $slug = trim($slug, '-');
+            $payload['slug'] = $slug !== '' ? $slug : \Illuminate\Support\Str::slug($name);
         }
-        uksort($grouped, function ($a, $b) {
-            $oa = self::CATEGORY_ORDER[$a] ?? 999;
-            $ob = self::CATEGORY_ORDER[$b] ?? 999;
-            return $oa <=> $ob;
-        });
-        return $grouped;
-    }
 
-    public function isKnownSlug(string $slug): bool
-    {
-        return isset(self::CATALOG[$slug]);
-    }
+        // Description (opsional)
+        $payload['description'] = isset($data['description']) && $data['description'] !== ''
+            ? trim((string) $data['description'])
+            : null;
 
-    public function clearCache(): void
-    {
-        Cache::forget(self::CACHE_KEY);
-    }
+        // URL (opsional) — boleh kosong, akan di-trim dan di-set null
+        $payload['url'] = isset($data['url']) && trim((string) $data['url']) !== ''
+            ? trim((string) $data['url'])
+            : null;
 
-    private function assertKnownSlug(string $slug): void
-    {
-        if (!isset(self::CATALOG[$slug])) {
-            throw new InvalidArgumentException("Unknown app slug: {$slug}");
+        // Icon — whitelist (fallback ke 'globe' jika invalid)
+        $icon = isset($data['icon']) ? (string) $data['icon'] : 'globe';
+        $payload['icon'] = in_array($icon, LauncherApp::ALLOWED_ICONS, true)
+            ? $icon
+            : 'globe';
+
+        // Open mode — whitelist (fallback ke 'new_tab' jika invalid)
+        $openMode = isset($data['open_mode']) ? (string) $data['open_mode'] : 'new_tab';
+        $payload['open_mode'] = in_array($openMode, self::OPEN_MODES, true)
+            ? $openMode
+            : 'new_tab';
+
+        // Allowed roles — array unik, default ['mahasiswa'] jika kosong
+        $roles = $data['allowed_roles'] ?? ['mahasiswa'];
+        if (! is_array($roles)) {
+            $roles = ['mahasiswa'];
         }
-    }
-
-    private function getOverrides(): array
-    {
-        return Cache::rememberForever(self::CACHE_KEY, function () {
-            return AppRegistryOverride::query()->get()->keyBy('slug')->map(function ($row) {
-                return [
-                    'slug'         => $row->slug,
-                    'display_name' => $row->display_name,
-                    'description'  => $row->description,
-                    'external_url' => $row->external_url,
-                    'is_active'    => (bool) $row->is_active,
-                    'access_roles' => $row->access_roles,
-                    'updated_at'   => optional($row->updated_at)->toIso8601String(),
-                ];
-            })->all();
-        });
-    }
-
-    /**
-     * Precedence: override (admin) > catalog (developer hardcode) > null.
-     * Caller wajib cek `.external_url` truthiness sebelum dipakai sebagai href.
-     */
-    private function merge(array $catalog, ?array $override): array
-    {
-        $entry = $catalog;
-        $entry['is_active'] = $override ? (bool) ($override['is_active'] ?? true) : true;
-        $entry['access_roles'] = $override && !empty($override['access_roles'])
-            ? (array) $override['access_roles']
-            : ['mahasiswa'];
-
-        $entry['display_name'] = ($override && !empty($override['display_name']))
-            ? $override['display_name']
-            : $catalog['display_name'];
-        $entry['description'] = ($override && !empty($override['description']))
-            ? $override['description']
-            : $catalog['description'];
-        $entry['external_url'] = ($override && !empty($override['external_url']))
-            ? $override['external_url']
-            : ($catalog['external_url'] ?? null);
-
-        $entry['_has_override'] = (bool) $override;
-        return $entry;
-    }
-
-    private function nullableString(mixed $value): ?string
-    {
-        if ($value === null) {
-            return null;
+        $roles = array_values(array_unique(array_filter($roles, fn ($r) =>
+            is_string($r) && in_array($r, self::ROLES, true))));
+        if (in_array('all', $roles, true)) {
+            // Jika "all" dipilih, set ke wildcard saja (abaikan role spesifik lain).
+            $roles = ['all'];
         }
-        $value = trim((string) $value);
-        return $value === '' ? null : $value;
-    }
+        $payload['allowed_roles'] = empty($roles) ? ['mahasiswa'] : $roles;
 
-    private function normalizeRoles(mixed $roles): array
-    {
-        if (!is_array($roles)) {
-            return ['mahasiswa'];
-        }
-        $allowed = ['mahasiswa', 'dosen', 'admin'];
-        $normalized = array_values(array_intersect($roles, $allowed));
-        return empty($normalized) ? ['mahasiswa'] : $normalized;
+        // is_active — cast ke boolean
+        $payload['is_active'] = array_key_exists('is_active', $data)
+            ? filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN)
+            : true;
+
+        return $payload;
     }
 }

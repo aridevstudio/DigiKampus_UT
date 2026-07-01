@@ -1,16 +1,14 @@
 <x-layouts.admin :active="'apps'">
     @php
-        $name = old('name', $app->name ?? '');
-        $description = old('description', $app->description ?? '');
-        $url = old('url', $app->url ?? '');
-        $icon = old('icon', $app->icon ?? 'globe');
-        $openMode = old('open_mode', $app->open_mode ?? 'new_tab');
-        $isActive = (bool) old('is_active', $app->is_active ?? false);
-        $allowedRoles = old('allowed_roles', $app->allowed_roles ?? ['mahasiswa']);
+        $name = old('name', '');
+        $slug = old('slug', '');
+        $description = old('description', '');
+        $url = old('url', '');
+        $icon = old('icon', 'globe');
+        $openMode = old('open_mode', 'new_tab');
+        $isActive = (bool) old('is_active', true);
+        $allowedRoles = old('allowed_roles', ['mahasiswa']);
         if (! is_array($allowedRoles)) $allowedRoles = [$allowedRoles];
-        $slug = $app->slug;
-        $urlTrimmed = trim((string) $url);
-        $urlValidHttp = $urlTrimmed !== '' && (str_starts_with(\Str::lower($urlTrimmed), 'http://') || str_starts_with(\Str::lower($urlTrimmed), 'https://'));
     @endphp
 
     <div class="space-y-5 sm:space-y-6">
@@ -22,36 +20,18 @@
                     <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     <a href="{{ route('admin.apps.index') }}" class="hover:text-blue-500">Apps Management</a>
                     <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    <span class="font-semibold text-gray-900 dark:text-white">{{ $name }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">Tambah Aplikasi</span>
                 </nav>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Edit Aplikasi</h1>
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                    <span class="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 font-mono text-[11px] font-semibold text-gray-700 dark:bg-gray-700/50 dark:text-gray-200" title="Slug tidak dapat diubah">
-                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
-                        slug: {{ $slug }}
-                    </span>
-                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide
-                        {{ $isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300' }}">
-                        {{ $isActive ? 'Aktif' : 'Nonaktif' }}
-                    </span>
-                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" title="Mode buka URL saat kartu diklik">
-                        {{ $openMode === 'new_tab' ? 'Tab Baru' : 'Tab Saat Ini' }}
-                    </span>
-                </div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Tambah Aplikasi Baru</h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Daftarkan launcher aplikasi baru. Setelah disimpan, slug tidak dapat diubah.
+                </p>
             </div>
             <a href="{{ route('admin.apps.index') }}" class="inline-flex items-center gap-1.5 self-start rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700/50">
                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 Kembali
             </a>
         </header>
-
-        <div class="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-800/40 dark:bg-blue-950/30">
-            <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <div class="text-sm">
-                <p class="font-semibold text-blue-900 dark:text-blue-200">Slug tidak dapat diubah</p>
-                <p class="mt-0.5 text-xs text-blue-800 dark:text-blue-300 sm:text-sm">Slug adalah identitas permanen aplikasi. Jika perlu mengubah slug, hapus aplikasi lalu buat ulang dengan slug baru.</p>
-            </div>
-        </div>
 
         @if($errors->any())
             <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-200">
@@ -66,30 +46,69 @@
 
         <style>[x-cloak]{display:none!important}</style>
 
-        <form action="{{ route('admin.apps.update', ['slug' => $slug]) }}" method="POST" class="space-y-5" data-aos="fade-up" data-aos-delay="100"
+        <form
+            action="{{ route('admin.apps.store') }}"
+            method="POST"
+            class="space-y-5"
             x-data="{
                 descLength: {{ strlen((string) $description) }},
-                urlValue: @js($url),
                 updateDesc(ev) { this.descLength = (ev.target.value || '').length; },
-                updateUrl(ev) { this.urlValue = ev.target.value || ''; },
             }"
+            data-aos="fade-up"
+            data-aos-delay="100"
         >
             @csrf
-            @method('PUT')
 
-            {{-- Name --}}
+            {{-- Name + Slug --}}
             <section class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800 sm:p-6">
-                <label for="name" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Nama Aplikasi <span class="text-rose-600">*</span></label>
-                <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Nama tampilan yang muncul di kartu launcher mahasiswa.</p>
-                <input type="text" id="name" name="name" value="{{ $name }}" maxlength="120" required class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-                @error('name')<p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>@enderror
+                <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    <div>
+                        <label for="name" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Nama Aplikasi <span class="text-rose-600">*</span></label>
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Nama tampilan yang muncul di kartu mahasiswa.</p>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            value="{{ $name }}"
+                            maxlength="120"
+                            required
+                            placeholder="Contoh: Microsoft Copilot"
+                            class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                        >
+                        @error('name')<p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="slug" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Slug <span class="text-rose-600">*</span></label>
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Identifier URL-safe (huruf kecil, angka, tanda hubung). <strong>Tidak dapat diubah setelah disimpan.</strong></p>
+                        <input
+                            type="text"
+                            id="slug"
+                            name="slug"
+                            value="{{ $slug }}"
+                            maxlength="64"
+                            required
+                            pattern="[a-z0-9\-]+"
+                            placeholder="contoh: ms-copilot"
+                            class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-800 placeholder-gray-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                        >
+                        @error('slug')<p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>@enderror
+                    </div>
+                </div>
             </section>
 
             {{-- Description --}}
             <section class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700/50 dark:bg-gray-800 sm:p-6">
                 <label for="description" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Deskripsi</label>
-                <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Maks 2000 karakter.</p>
-                <textarea id="description" name="description" rows="3" maxlength="2000" @input="updateDesc($event)" class="block w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">{{ $description }}</textarea>
+                <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Deskripsi singkat yang muncul di kartu aplikasi. Maks 2000 karakter.</p>
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="3"
+                    maxlength="2000"
+                    placeholder="Jelaskan kegunaan aplikasi untuk mahasiswa…"
+                    @input="updateDesc($event)"
+                    class="block w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                >{{ $description }}</textarea>
                 <p class="mt-1 text-right text-[11px] text-gray-500 dark:text-gray-500"><span x-text="descLength"></span>/2000</p>
             </section>
 
@@ -98,20 +117,27 @@
                 <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
                     <div class="lg:col-span-2">
                         <label for="url" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">URL Tujuan <span class="ml-1 inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-700 dark:text-gray-300">Opsional</span></label>
-                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Format: protokol <code>https://</code> atau <code>http://</code>.</p>
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <input type="url" id="url" name="url" value="{{ $url }}" maxlength="2048" placeholder="https://contoh-aplikasi.ac.id/" @input="updateUrl($event)" autocomplete="off" spellcheck="false" class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-800 placeholder-gray-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-                            <button type="button" x-show="urlValue && urlValue.length > 0" x-cloak @click="window.open(urlValue, '_blank', 'noopener,noreferrer')" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700/50">
-                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                Tes URL
-                            </button>
-                        </div>
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">URL eksternal yang dibuka saat mahasiswa klik kartu. Kosongkan jika belum tersedia.</p>
+                        <input
+                            type="url"
+                            id="url"
+                            name="url"
+                            value="{{ $url }}"
+                            maxlength="2048"
+                            placeholder="https://contoh-aplikasi.ac.id/"
+                            class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-800 placeholder-gray-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                        >
                         @error('url')<p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label for="icon" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Icon <span class="text-rose-600">*</span></label>
-                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Theme color mengikuti icon.</p>
-                        <select id="icon" name="icon" required class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Theme color otomatis mengikuti icon.</p>
+                        <select
+                            id="icon"
+                            name="icon"
+                            required
+                            class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                        >
                             @foreach($iconOptions as $key => $label)
                                 <option value="{{ $key }}" {{ $icon === $key ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
@@ -165,7 +191,7 @@
                     </div>
                     <div>
                         <p class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">Status</p>
-                        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Nonaktif = kartu disembunyikan dari semua user.</p>
+                        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Nonaktif = kartu tidak tampil ke user.</p>
                         <label class="inline-flex cursor-pointer items-center gap-3">
                             <input type="checkbox" name="is_active" value="1" class="peer sr-only" {{ $isActive ? 'checked' : '' }}>
                             <span class="relative h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-emerald-500 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500/30 dark:bg-gray-700"></span>
@@ -180,7 +206,7 @@
                 <a href="{{ route('admin.apps.index') }}" class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700/50">Batal</a>
                 <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    Simpan Perubahan
+                    Simpan Aplikasi
                 </button>
             </div>
         </form>
