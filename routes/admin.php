@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AdminForumCategoryController;
 use App\Http\Controllers\Auth\AdminForumCommentController;
 use App\Http\Controllers\Auth\AdminForumTopicController;
 use App\Http\Controllers\Auth\AdminAppsController;
+use App\Http\Controllers\Auth\AdminAppsHubController;
 use App\Http\Middleware\EnsureAuthenticatedAdmin;
 use App\Http\Middleware\RedirectIfAuthenticatedAdmin;
 use Illuminate\Support\Facades\Route;
@@ -212,6 +213,13 @@ Route::prefix('admin')
         // (sebelumnya hanya edit field terbatas pada tabel override).
         // Sumber kebenaran tunggal: tabel `apps`. Tambah, edit, hapus, toggle aktif.
         Route::prefix('apps')->name('admin.apps.')->group(function () {
+            // Launcher untuk admin (view-only) — WAJIB didefinisikan SEBELUM
+            // pola `/{slug}` karena Laravel match route berurutan. Tanpa
+            // urutan ini, `/admin/apps/hub` akan tertangkap oleh
+            // `Route::get('/{slug}/edit')` … well, slug `hub` tidak punya
+            // suffix `/edit`, jadi sebenarnya aman. Tetap saya daftarkan
+            // dulu untuk kejelasan niat.
+            Route::get('/hub',                [AdminAppsHubController::class, 'index'])->name('hub');
             Route::get('/',                  [AdminAppsController::class, 'index'])->name('index');
             Route::get('/create',            [AdminAppsController::class, 'create'])->name('create');
             Route::post('/',                 [AdminAppsController::class, 'store'])->name('store');

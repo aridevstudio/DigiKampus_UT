@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\DosenController;
+use App\Http\Controllers\Auth\DosenAppsHubController;
 use App\Http\Controllers\Auth\DosenContentApiController;
 use App\Http\Controllers\Dosen\SupportController;
 use App\Http\Middleware\EnsureAuthenticatedDosen;
@@ -134,6 +135,11 @@ Route::prefix('dosen')
         // ----------------------------------------------------------------------
         Route::view('/pesan', 'Auth.dosen.pesan')->name('dosen.pesan');
         Route::post('/support/ask', [SupportController::class, 'ask'])->name('dosen.support.ask');
+
+        // ----------------------------------------------------------------------
+        // Apps Hub Launcher (hanya view — service sudah memfilter role='dosen')
+        // ----------------------------------------------------------------------
+        Route::get('/apps', [DosenAppsHubController::class, 'index'])->name('dosen.apps');
         
         // ----------------------------------------------------------------------
         // Notifications (JSON endpoints for header dropdown)

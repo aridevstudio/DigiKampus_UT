@@ -343,6 +343,12 @@
                         </svg>
                     </button>
                     <div x-show="open" x-collapse class="mt-1 ml-4 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-3">
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.hub') ? route('admin.apps.hub') : '#' }}" title="Apps Launcher (kartu aplikasi untuk admin)" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ (($active ?? '') == 'apps-hub') || request()->routeIs('admin.apps.hub') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
+                            </svg>
+                            <span>Apps Hub</span>
+                        </a>
                         <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.index') ? route('admin.apps.index') : '#' }}" title="Daftar Aplikasi" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'apps' || request()->routeIs('admin.apps.*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
