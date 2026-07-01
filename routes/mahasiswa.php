@@ -8,6 +8,7 @@ use App\Http\Controllers\Mahasiswa\ChatController;
 use App\Http\Controllers\Mahasiswa\CheckoutController;
 use App\Http\Controllers\Mahasiswa\ForumController;
 use App\Http\Controllers\Mahasiswa\LearningGoalController;
+use App\Http\Controllers\Mahasiswa\AppsHubController;
 use App\Http\Controllers\Mahasiswa\SupportController;
 use App\Http\Middleware\EnsureAuthenticatedMahasiswa;
 use App\Http\Middleware\RedirectIfAuthenticatedMahasiswa;
@@ -100,8 +101,9 @@ Route::prefix('mahasiswa')
         Route::get('/finance', [CheckoutController::class, 'finance'])->name('mahasiswa.finance');
         Route::get('/finance/transaction/{id}', [CheckoutController::class, 'transactionDetail'])->name('mahasiswa.transaction-detail');
         
-        // Coming Soon Pages
-        Route::view('/apps', 'pages.mahasiswa.coming-soon', ['active' => 'apps', 'title' => 'Apps'])->name('mahasiswa.apps');
+        // Apps Hub Launcher — kartu di /apps titik ke URL eksternal di tab baru.
+        // Tidak ada lagi endpoint /apps/{slug} atau REST chat; cukup halaman index.
+        Route::get('/apps', [AppsHubController::class, 'index'])->name('mahasiswa.apps');
 
         // Forum Komunitas (diskusi umum mahasiswa)
         Route::prefix('forum')->group(function () {

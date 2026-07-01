@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AdminContentApiController;
 use App\Http\Controllers\Auth\AdminForumCategoryController;
 use App\Http\Controllers\Auth\AdminForumCommentController;
 use App\Http\Controllers\Auth\AdminForumTopicController;
+use App\Http\Controllers\Auth\AdminAppsController;
 use App\Http\Middleware\EnsureAuthenticatedAdmin;
 use App\Http\Middleware\RedirectIfAuthenticatedAdmin;
 use Illuminate\Support\Facades\Route;
@@ -205,5 +206,16 @@ Route::prefix('admin')
             Route::get('/topik/{topicId}/komentar', [AdminForumCommentController::class, 'showTopic'])->name('admin.forum-komentar.topic');
             Route::put('/komentar/{id}/status', [AdminForumCommentController::class, 'setStatus'])->name('admin.forum-komentar.status');
             Route::delete('/komentar/{id}', [AdminForumCommentController::class, 'destroy'])->name('admin.forum-komentar.destroy');
+        });
+
+        // Apps Management (Admin can edit display name / description / status / access; cannot add/remove apps)
+        Route::prefix('apps')->name('admin.apps.')->group(function () {
+            Route::get('/', [AdminAppsController::class, 'index'])->name('index');
+            Route::get('/{slug}/edit', [AdminAppsController::class, 'edit'])->name('edit')
+                ->where('slug', '[a-z0-9\-]+');
+            Route::put('/{slug}', [AdminAppsController::class, 'update'])->name('update')
+                ->where('slug', '[a-z0-9\-]+');
+            Route::put('/{slug}/toggle', [AdminAppsController::class, 'toggle'])->name('toggle')
+                ->where('slug', '[a-z0-9\-]+');
         });
     });

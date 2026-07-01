@@ -1,6 +1,3 @@
-@php
-    use Illuminate\Support\Str;
-@endphp
 <x-layouts.dashboard :active="'forum'">
 @php
     $currentUserId = optional(Auth::guard('mahasiswa')->user())->id;
@@ -46,7 +43,7 @@
             <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-snug">{{ $topik->judul }}</h1>
             <div class="flex items-center gap-3 mt-4">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                    {{ Str::upper(Str::substr($topik->author?->name ?? 'U', 0, 1)) }}
+                    {{ \Str::upper(\Str::substr($topik->author?->name ?? 'U', 0, 1)) }}
                 </div>
                 <div class="min-w-0">
                     <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $topik->author?->name ?? 'Anonim' }}</p>
@@ -70,7 +67,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-4 sm:p-5">
                 <div class="flex items-start gap-3">
                     <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                        {{ Str::upper(Str::substr($komentar->author?->name ?? 'U', 0, 1)) }}
+                        {{ \Str::upper(\Str::substr($komentar->author?->name ?? 'U', 0, 1)) }}
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -85,7 +82,7 @@
                                 @foreach($komentar->publishedReplies as $reply)
                                     <div class="flex items-start gap-3">
                                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                                            {{ Str::upper(Str::substr($reply->author?->name ?? 'U', 0, 1)) }}
+                                            {{ \Str::upper(\Str::substr($reply->author?->name ?? 'U', 0, 1)) }}
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center gap-2 flex-wrap">

@@ -329,6 +329,29 @@
                     </div>
                 </div>
 
+                @php
+                    $appsManagementActive = in_array(($active ?? ''), ['apps'], true) || request()->routeIs('admin.apps.*');
+                @endphp
+                <div x-data="{ open: {{ $appsManagementActive ? 'true' : 'false' }} }">
+                    <button type="button" @click="open = !open" title="Apps Management" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg {{ $appsManagementActive ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                        </svg>
+                        <span class="font-medium flex-1 text-left">Apps Management</span>
+                        <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="open" x-collapse class="mt-1 ml-4 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-3">
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.index') ? route('admin.apps.index') : '#' }}" title="Daftar Aplikasi" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'apps' || request()->routeIs('admin.apps.*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                            </svg>
+                            <span>Daftar Aplikasi</span>
+                        </a>
+                    </div>
+                </div>
+
                 <a href="{{ route('admin.support-tickets') }}" title="Tiket Support" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'support-tickets' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
