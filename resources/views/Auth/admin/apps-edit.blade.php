@@ -8,6 +8,11 @@
         $isActive = (bool) old('is_active', $app->is_active ?? false);
         $allowedRoles = old('allowed_roles', $app->allowed_roles ?? ['mahasiswa']);
         if (! is_array($allowedRoles)) $allowedRoles = [$allowedRoles];
+        // View-only normalization: bila 'all' tersimpan, tampilkan 4 kotak
+        // sebagai terceklis (admin tidak perlu klik 3 role satu-satu).
+        $allowedRolesNormalized = in_array('all', $allowedRoles, true)
+            ? ['mahasiswa', 'dosen', 'admin', 'all']
+            : array_values(array_intersect($allowedRoles, ['mahasiswa', 'dosen', 'admin']));
         $slug = $app->slug;
         $urlTrimmed = trim((string) $url);
         $urlValidHttp = $urlTrimmed !== '' && (str_starts_with(\Str::lower($urlTrimmed), 'http://') || str_starts_with(\Str::lower($urlTrimmed), 'https://'));
@@ -72,6 +77,20 @@
                 urlValue: @js($url),
                 updateDesc(ev) { this.descLength = (ev.target.value || '').length; },
                 updateUrl(ev) { this.urlValue = ev.target.value || ''; },
+                checkedRoles: @js($allowedRolesNormalized),
+                isChecked(role) { return this.checkedRoles.includes(role); },
+                toggle(role, newChecked) {
+                    const set = new Set(this.checkedRoles);
+                    if (newChecked) set.add(role); else set.delete(role);
+                    if (role === 'all') {
+                        if (newChecked) ['mahasiswa', 'dosen', 'admin', 'all'].forEach(r => set.add(r));
+                        else ['mahasiswa', 'dosen', 'admin', 'all'].forEach(r => set.delete(r));
+                    } else {
+                        const allThreePresent = ['mahasiswa', 'dosen', 'admin'].every(r => set.has(r));
+                        if (allThreePresent) set.add('all'); else set.delete('all');
+                    }
+                    this.checkedRoles = Array.from(set);
+                },
             }"
         >
             @csrf
@@ -151,13 +170,13 @@
                         <p class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">Hak Akses <span class="text-rose-600">*</span></p>
                         <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Pilih minimal satu role. Pilih "Semua" jika aplikasi untuk seluruh pengguna.</p>
                         <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                            @foreach (['mahasiswa' => ['color' => 'emerald', 'label' => 'Mahasiswa'],
-                                        'dosen' => ['color' => 'sky', 'label' => 'Dosen'],
-                                        'admin' => ['color' => 'amber', 'label' => 'Admin'],
-                                        'all' => ['color' => 'slate', 'label' => 'Semua']] as $role => $meta)
-                                <label class="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition hover:border-blue-300 {{ in_array($role, $allowedRoles, true) ? 'border-blue-400 bg-blue-50/40 dark:border-blue-500/50 dark:bg-blue-900/10' : 'border-gray-200 dark:border-gray-700' }}">
-                                    <input type="checkbox" name="allowed_roles[]" value="{{ $role }}" class="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500" {{ in_array($role, $allowedRoles, true) ? 'checked' : '' }}>
-                                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $meta['label'] }}</span>
+                            @foreach (['mahasiswa' => 'Mahasiswa', 'dosen' => 'Dosen', 'admin' => 'Admin', 'all' => 'Semua'] as $role => $label)
+                                <label class="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition hover:border-blue-300"
+                                       :class="isChecked('{{ $role }}') ? 'border-blue-400 bg-blue-50/40 dark:border-blue-500/50 dark:bg-blue-900/10' : 'border-gray-200 dark:border-gray-700'">
+                                    <input type="checkbox" name="allowed_roles[]" value="{{ $role }}" class="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                                           :checked="isChecked('{{ $role }}')"
+                                           @change="toggle('{{ $role }}', $event.target.checked)">
+                                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $label }}</span>
                                 </label>
                             @endforeach
                         </div>
