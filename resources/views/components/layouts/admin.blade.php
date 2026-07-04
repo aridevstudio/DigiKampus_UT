@@ -37,54 +37,107 @@
 
         #admin-layout-main {
             min-width: 0;
-            transition: margin-left 0.3s ease;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #sidebar {
-            transition: transform 0.3s ease, width 0.3s ease;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #sidebar nav {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+        }
+        #sidebar nav::-webkit-scrollbar {
+            width: 4px;
+        }
+        #sidebar nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #sidebar nav::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.3);
+            border-radius: 20px;
         }
 
         @media (min-width: 1024px) {
             body.admin-sidebar-collapsed #sidebar {
-                width: 5.25rem;
+                width: 72px;
             }
 
             body.admin-sidebar-collapsed #admin-layout-main {
-                margin-left: 5.25rem;
+                margin-left: 72px;
             }
 
             body.admin-sidebar-collapsed #sidebar .sidebar-logo-wrap {
                 justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
             }
 
             body.admin-sidebar-collapsed #sidebar .sidebar-logo-image {
-                height: 2rem;
+                height: 1.75rem;
+                width: 1.75rem;
+                object-fit: contain;
             }
 
             body.admin-sidebar-collapsed #sidebar .sidebar-user-wrap {
                 justify-content: center;
+                padding: 0;
             }
 
             body.admin-sidebar-collapsed #sidebar .sidebar-user-meta,
-            body.admin-sidebar-collapsed #sidebar nav a > span:last-child {
-                width: 0;
-                opacity: 0;
-                overflow: hidden;
-                pointer-events: none;
+            body.admin-sidebar-collapsed #sidebar .sidebar-text,
+            body.admin-sidebar-collapsed #sidebar .sidebar-arrow,
+            body.admin-sidebar-collapsed #sidebar .submenu-container {
+                display: none !important;
+                opacity: 0 !important;
+                width: 0 !important;
+                overflow: hidden !important;
             }
 
             body.admin-sidebar-collapsed #sidebar nav {
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
             }
 
-            body.admin-sidebar-collapsed #sidebar nav a {
+            body.admin-sidebar-collapsed #sidebar nav a,
+            body.admin-sidebar-collapsed #sidebar nav button {
                 justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding-left: 0;
+                padding-right: 0;
+                width: 100%;
+                height: 48px;
             }
+
+            /* Tooltip visible only in collapsed mode on hover */
+            body.admin-sidebar-collapsed #sidebar .sidebar-tooltip {
+                display: block !important;
+            }
+        }
+
+        /* Tooltip styling */
+        .sidebar-tooltip {
+            display: none;
+            position: absolute;
+            left: 100%;
+            margin-left: 12px;
+            padding: 8px 12px;
+            background-color: #1f2937;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-8px);
+            transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            white-space: nowrap;
+        }
+        .sidebar-item:hover .sidebar-tooltip {
+            opacity: 1;
+            transform: translateX(0);
         }
 
         #admin-main-content .admin-data-table {
@@ -200,14 +253,14 @@
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
         {{-- Admin Sidebar --}}
-        <aside id="sidebar" class="fixed inset-y-0 left-0 flex w-64 flex-col overflow-hidden bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 flex w-[280px] flex-col overflow-hidden bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
             {{-- Logo --}}
-            <div class="sidebar-logo-wrap h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700 transition-all duration-300">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="SALUT" class="sidebar-logo-image h-10 object-contain transition-all duration-300">
+            <div class="sidebar-logo-wrap h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700 transition-all duration-300">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="SALUT" class="sidebar-logo-image h-9 w-auto object-contain transition-all duration-300">
             </div>
             
             {{-- User Info --}}
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="p-5 border-b border-gray-200 dark:border-gray-700">
                 @php
                     $adminUser = Auth::guard('admin')->user();
                     $adminPhoto = $adminUser?->profile?->foto_profile;
@@ -221,175 +274,180 @@
                             {{ substr($adminName, 0, 1) }}
                         </div>
                     @endif
-                    <div class="sidebar-user-meta transition-all duration-300">
-                        <p class="font-medium text-gray-800 dark:text-gray-100">{{ $adminName }}</p>
-                        <p class="text-xs text-gray-500">Admin</p>
+                    <div class="sidebar-user-meta transition-all duration-300 min-w-0">
+                        <p class="font-bold text-sm text-gray-800 dark:text-gray-100 truncate">{{ $adminName }}</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 font-semibold">Admin</p>
                     </div>
                 </div>
             </div>
             
             {{-- Nav Links --}}
             <nav class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-2">
-                <a href="{{ route('admin.dashboard') }}" title="Dashboard" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dashboard' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                <a href="{{ route('admin.dashboard') }}" aria-current="{{ ($active ?? '') == 'dashboard' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'dashboard' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
-                    <span class="font-medium">Dashboard</span>
+                    <span class="sidebar-text font-medium text-sm">Dashboard</span>
+                    <span class="sidebar-tooltip">Dashboard</span>
                 </a>
                 
-                <a href="{{ route('admin.dosen') }}" title="Kelola Dosen" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dosen' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                <a href="{{ route('admin.dosen') }}" aria-current="{{ ($active ?? '') == 'dosen' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'dosen' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    <span class="font-medium">Kelola Dosen</span>
+                    <span class="sidebar-text font-medium text-sm">Kelola Dosen</span>
+                    <span class="sidebar-tooltip">Kelola Dosen</span>
                 </a>
                 
-                <a href="{{ route('admin.mahasiswa') }}" title="Kelola Mahasiswa" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'mahasiswa' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <a href="{{ route('admin.mahasiswa') }}" aria-current="{{ ($active ?? '') == 'mahasiswa' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'mahasiswa' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    <span class="font-medium">Kelola Mahasiswa</span>
+                    <span class="sidebar-text font-medium text-sm">Kelola Mahasiswa</span>
+                    <span class="sidebar-tooltip">Kelola Mahasiswa</span>
                 </a>
                 
-                <a href="{{ route('admin.kursus') }}" title="Kelola Kursus" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'kursus' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                <a href="{{ route('admin.kursus') }}" aria-current="{{ ($active ?? '') == 'kursus' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'kursus' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
-                    <span class="font-medium">Kelola Kursus</span>
+                    <span class="sidebar-text font-medium text-sm">Kelola Kursus</span>
+                    <span class="sidebar-tooltip">Kelola Kursus</span>
                 </a>
 
-                <a href="{{ route('admin.bootcamp-tiket') }}" title="Bootcamp & Tiket" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'bootcamp' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8V6a4 4 0 10-8 0v2m-3 3h14l-1 8a2 2 0 01-2 2H8a2 2 0 01-2-2l-1-8zm5 4h4" />
+                <a href="{{ route('admin.bootcamp-tiket') }}" aria-current="{{ ($active ?? '') == 'bootcamp' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'bootcamp' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 8V6a4 4 0 10-8 0v2m-3 3h14l-1 8a2 2 0 01-2 2H8a2 2 0 01-2-2l-1-8zm5 4h4" />
                     </svg>
-                    <span class="font-medium">Bootcamp & Tiket</span>
+                    <span class="sidebar-text font-medium text-sm">Bootcamp & Tiket</span>
+                    <span class="sidebar-tooltip">Bootcamp & Tiket</span>
                 </a>
                 
-                <a href="{{ route('admin.prodi') }}" title="Kelola Prodi" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'prodi' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <a href="{{ route('admin.prodi') }}" aria-current="{{ ($active ?? '') == 'prodi' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'prodi' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <span class="font-medium">Kelola Prodi</span>
+                    <span class="sidebar-text font-medium text-sm">Kelola Prodi</span>
+                    <span class="sidebar-tooltip">Kelola Prodi</span>
                 </a>
 
-                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.kategori') ? route('admin.kategori') : '#' }}" title="Kelola Kategori" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10H7V7zm-4 4h4m10 0h4M11 3v4m0 10v4" />
+                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.kategori') ? route('admin.kategori') : '#' }}" aria-current="{{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h10v10H7V7zm-4 4h4m10 0h4M11 3v4m0 10v4" />
                     </svg>
-                    <span class="font-medium">Kelola Kategori</span>
+                    <span class="sidebar-text font-medium text-sm">Kelola Kategori</span>
+                    <span class="sidebar-tooltip">Kelola Kategori</span>
                 </a>
 
-                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.sertifikasi') ? route('admin.sertifikasi') : '#' }}" title="Sertifikasi Otomatis" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.591 21 9c0-1.042-.133-2.052-.382-3.016z" />
+                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.sertifikasi') ? route('admin.sertifikasi') : '#' }}" aria-current="{{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.591 21 9c0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
-                    <span class="font-medium">Sertifikasi Otomatis</span>
+                    <span class="sidebar-text font-medium text-sm">Sertifikasi Otomatis</span>
+                    <span class="sidebar-tooltip">Sertifikasi Otomatis</span>
                 </a>
                 
-                <a href="{{ route('admin.pengumuman') }}" title="Pengumuman" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'pengumuman' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                <a href="{{ route('admin.pengumuman') }}" aria-current="{{ ($active ?? '') == 'pengumuman' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'pengumuman' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                     </svg>
-                    <span class="font-medium">Pengumuman</span>
+                    <span class="sidebar-text font-medium text-sm">Pengumuman</span>
+                    <span class="sidebar-tooltip">Pengumuman</span>
                 </a>
 
                 @php
                     $forumManagementActive = in_array(($active ?? ''), ['forum-kategori', 'forum-topik', 'forum-komentar'], true) || request()->routeIs('admin.forum-kategori*') || request()->routeIs('admin.forum-topik*') || request()->routeIs('admin.forum-komentar*');
                     $forumCategoryRoute = \Illuminate\Support\Facades\Route::has('admin.forum-kategori') ? route('admin.forum-kategori') : '#';
                 @endphp
-                <div x-data="{ open: {{ $forumManagementActive ? 'true' : 'false' }} }">
-                    <button type="button" @click="open = !open" title="Forum Management" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg {{ $forumManagementActive ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v3l-4-3H9a2 2 0 01-2-2v-1m10-9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v3l4-3h2a2 2 0 002-2V7z" />
+                <div x-data="{ open: {{ $forumManagementActive ? 'true' : 'false' }} }" class="space-y-1">
+                    <button type="button" @click="open = !open" aria-expanded="open" class="sidebar-item group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl {{ $forumManagementActive ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v3l-4-3H9a2 2 0 01-2-2v-1m10-9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v3l4-3h2a2 2 0 002-2V7z" />
                         </svg>
-                        <span class="font-medium flex-1 text-left">Forum Management</span>
-                        <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        <span class="sidebar-text font-medium text-sm flex-1 text-left">Forum Management</span>
+                        <svg class="sidebar-arrow w-4 h-4 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
+                        <span class="sidebar-tooltip">Forum Management</span>
                     </button>
-                    <div x-show="open" x-collapse class="mt-1 ml-4 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-3">
-                        <a href="{{ $forumCategoryRoute }}" title="Kategori Forum" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'forum-kategori' || request()->routeIs('admin.forum-kategori*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
-                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10H7V7zM3 11h4m10 0h4" />
-                            </svg>
+                    <div x-show="open" x-collapse class="submenu-container mt-1 ml-6 border-l-2 border-slate-100 dark:border-slate-700/80 pl-4 space-y-1">
+                        <a href="{{ $forumCategoryRoute }}" aria-current="{{ ($active ?? '') == 'forum-kategori' ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ ($active ?? '') == 'forum-kategori' || request()->routeIs('admin.forum-kategori*') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Kategori</span>
                         </a>
-                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-topik') ? route('admin.forum-topik') : '#' }}" title="Moderasi Topik" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'forum-topik' || request()->routeIs('admin.forum-topik*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
-                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01" />
-                            </svg>
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-topik') ? route('admin.forum-topik') : '#' }}" aria-current="{{ ($active ?? '') == 'forum-topik' ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ ($active ?? '') == 'forum-topik' || request()->routeIs('admin.forum-topik*') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Topik</span>
                         </a>
-                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-komentar') ? route('admin.forum-komentar') : '#' }}" title="Moderasi Komentar" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'forum-komentar' || request()->routeIs('admin.forum-komentar*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
-                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72A3.989 3.989 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-komentar') ? route('admin.forum-komentar') : '#' }}" aria-current="{{ ($active ?? '') == 'forum-komentar' ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ ($active ?? '') == 'forum-komentar' || request()->routeIs('admin.forum-komentar*') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Moderasi</span>
                         </a>
                     </div>
                 </div>
 
                 @php
-                    $appsManagementActive = in_array(($active ?? ''), ['apps'], true) || request()->routeIs('admin.apps.*');
+                    $appsManagementActive = in_array(($active ?? ''), ['apps', 'apps-hub'], true) || request()->routeIs('admin.apps.*');
                 @endphp
-                <div x-data="{ open: {{ $appsManagementActive ? 'true' : 'false' }} }">
-                    <button type="button" @click="open = !open" title="Apps Management" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg {{ $appsManagementActive ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
+                <div x-data="{ open: {{ $appsManagementActive ? 'true' : 'false' }} }" class="space-y-1">
+                    <button type="button" @click="open = !open" aria-expanded="open" class="sidebar-item group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl {{ $appsManagementActive ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                         </svg>
-                        <span class="font-medium flex-1 text-left">Apps Management</span>
-                        <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span class="sidebar-text font-medium text-sm flex-1 text-left">Apps Management</span>
+                        <svg class="sidebar-arrow w-4 h-4 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
+                        <span class="sidebar-tooltip">Apps Management</span>
                     </button>
-                    <div x-show="open" x-collapse class="mt-1 ml-4 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-3">
-                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.hub') ? route('admin.apps.hub') : '#' }}" title="Apps Launcher (kartu aplikasi untuk admin)" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ (($active ?? '') == 'apps-hub') || request()->routeIs('admin.apps.hub') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
-                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
-                            </svg>
+                    <div x-show="open" x-collapse class="submenu-container mt-1 ml-6 border-l-2 border-slate-100 dark:border-slate-700/80 pl-4 space-y-1">
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.hub') ? route('admin.apps.hub') : '#' }}" aria-current="{{ (($active ?? '') == 'apps-hub') || request()->routeIs('admin.apps.hub') ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ (($active ?? '') == 'apps-hub') || request()->routeIs('admin.apps.hub') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Apps Hub</span>
                         </a>
-                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.index') ? route('admin.apps.index') : '#' }}" title="Daftar Aplikasi" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition {{ ($active ?? '') == 'apps' || request()->routeIs('admin.apps.*') ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
-                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                            </svg>
+                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.index') ? route('admin.apps.index') : '#' }}" aria-current="{{ ($active ?? '') == 'apps' ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ ($active ?? '') == 'apps' || request()->routeIs('admin.apps.index*') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Daftar Aplikasi</span>
                         </a>
                     </div>
                 </div>
 
-                <a href="{{ route('admin.support-tickets') }}" title="Tiket Support" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'support-tickets' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                <a href="{{ route('admin.support-tickets') }}" aria-current="{{ ($active ?? '') == 'support-tickets' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'support-tickets' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
-                    <span class="font-medium">Tiket Support</span>
+                    <span class="sidebar-text font-medium text-sm">Tiket Support</span>
+                    <span class="sidebar-tooltip">Tiket Support</span>
                 </a>
 
-                <a href="{{ route('admin.chat') }}" title="Manajemen Chat" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'chat' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.963 9.963 0 01-4.518-1.078L3 20l1.149-3.064A7.963 7.963 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                <a href="{{ route('admin.chat') }}" aria-current="{{ ($active ?? '') == 'chat' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'chat' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.963 9.963 0 01-4.518-1.078L3 20l1.149-3.064A7.963 7.963 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
-                    <span class="font-medium">Manajemen Chat</span>
+                    <span class="sidebar-text font-medium text-sm">Manajemen Chat</span>
+                    <span class="sidebar-tooltip">Manajemen Chat</span>
                 </a>
 
-                <a href="{{ route('admin.voucher') }}" title="Voucher" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'voucher' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 010 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 010-4V7a2 2 0 00-2-2H5z" />
+                <a href="{{ route('admin.voucher') }}" aria-current="{{ ($active ?? '') == 'voucher' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'voucher' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 010 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 010-4V7a2 2 0 00-2-2H5z" />
                     </svg>
-                    <span class="font-medium">Voucher</span>
+                    <span class="sidebar-text font-medium text-sm">Voucher</span>
+                    <span class="sidebar-tooltip">Voucher</span>
                 </a>
 
-                <a href="{{ route('admin.finance-report') }}" title="Finance Report" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'finance-report' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 13l3-3 3 2 4-5" />
+                <a href="{{ route('admin.finance-report') }}" aria-current="{{ ($active ?? '') == 'finance-report' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'finance-report' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 13l3-3 3 2 4-5" />
                     </svg>
-                    <span class="font-medium">Finance Report</span>
+                    <span class="sidebar-text font-medium text-sm">Finance Report</span>
+                    <span class="sidebar-tooltip">Finance Report</span>
                 </a>
             </nav>
         </aside>
 
         {{-- Main Content --}}
-        <div id="admin-layout-main" class="flex-1 flex flex-col lg:ml-64">
+        <div id="admin-layout-main" class="flex-1 flex flex-col lg:ml-[280px]">
             {{-- Header --}}
             <header class="sticky top-0 z-30 bg-white dark:bg-[#1f2937] border-b border-gray-100 dark:border-gray-700/50 px-3 sm:px-6 py-3">
                 <div class="flex items-center justify-between gap-3">

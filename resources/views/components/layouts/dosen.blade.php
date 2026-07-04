@@ -36,54 +36,105 @@
 
         #dosen-layout-main {
             min-width: 0;
-            transition: margin-left 0.3s ease;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #sidebar {
-            transition: transform 0.3s ease, width 0.3s ease;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #sidebar nav {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+        }
+        #sidebar nav::-webkit-scrollbar {
+            width: 4px;
+        }
+        #sidebar nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #sidebar nav::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.3);
+            border-radius: 20px;
         }
 
         @media (min-width: 1024px) {
             body.dosen-sidebar-collapsed #sidebar {
-                width: 5.25rem;
+                width: 72px;
             }
 
             body.dosen-sidebar-collapsed #dosen-layout-main {
-                margin-left: 5.25rem;
+                margin-left: 72px;
             }
 
             body.dosen-sidebar-collapsed #sidebar .sidebar-logo-wrap {
                 justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
             }
 
             body.dosen-sidebar-collapsed #sidebar .sidebar-logo-image {
-                height: 2rem;
+                height: 1.75rem;
+                width: 1.75rem;
+                object-fit: contain;
             }
 
             body.dosen-sidebar-collapsed #sidebar .sidebar-user-wrap {
                 justify-content: center;
+                padding: 0;
             }
 
             body.dosen-sidebar-collapsed #sidebar .sidebar-user-meta,
-            body.dosen-sidebar-collapsed #sidebar nav a > span:last-child {
-                width: 0;
-                opacity: 0;
-                overflow: hidden;
-                pointer-events: none;
+            body.dosen-sidebar-collapsed #sidebar .sidebar-text,
+            body.dosen-sidebar-collapsed #sidebar .sidebar-arrow {
+                display: none !important;
+                opacity: 0 !important;
+                width: 0 !important;
+                overflow: hidden !important;
             }
 
             body.dosen-sidebar-collapsed #sidebar nav {
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
             }
 
             body.dosen-sidebar-collapsed #sidebar nav a {
                 justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding-left: 0;
+                padding-right: 0;
+                width: 100%;
+                height: 48px;
             }
+
+            /* Tooltip visible only in collapsed mode on hover */
+            body.dosen-sidebar-collapsed #sidebar .sidebar-tooltip {
+                display: block !important;
+            }
+        }
+
+        /* Tooltip styling */
+        .sidebar-tooltip {
+            display: none;
+            position: absolute;
+            left: 100%;
+            margin-left: 12px;
+            padding: 8px 12px;
+            background-color: #1f2937;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-8px);
+            transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            white-space: nowrap;
+        }
+        .sidebar-item:hover .sidebar-tooltip {
+            opacity: 1;
+            transform: translateX(0);
         }
 
         #dosen-main-content .dosen-data-table {
@@ -266,14 +317,14 @@
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
         {{-- Dosen Sidebar --}}
-        <aside id="sidebar" class="fixed inset-y-0 left-0 flex w-64 flex-col overflow-hidden bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 flex w-[280px] flex-col overflow-hidden bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
             {{-- Logo --}}
-            <div class="sidebar-logo-wrap h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700 transition-all duration-300">
-                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="SALUT" class="sidebar-logo-image h-10 object-contain transition-all duration-300">
+            <div class="sidebar-logo-wrap h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700 transition-all duration-300">
+                <img src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" alt="SALUT" class="sidebar-logo-image h-9 w-auto object-contain transition-all duration-300">
             </div>
             
             {{-- User Info --}}
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="p-5 border-b border-gray-200 dark:border-gray-700">
                 <div class="sidebar-user-wrap flex items-center gap-3 transition-all duration-300">
                     @php
                         $dosenUser = Auth::guard('dosen')->user();
@@ -286,77 +337,84 @@
                             : null;
                     @endphp
                     @if($dosenPhotoUrl)
-                        <img src="{{ $dosenPhotoUrl }}" alt="Profile" class="w-10 h-10 rounded-full object-cover" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
-                        <div class="hidden w-10 h-10 rounded-full bg-blue-500 items-center justify-center text-white font-bold">
+                        <img src="{{ $dosenPhotoUrl }}" alt="Profile" class="w-10 h-10 rounded-full object-cover flex-shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                        <div class="hidden w-10 h-10 rounded-full bg-blue-500 items-center justify-center text-white font-bold flex-shrink-0">
                             {{ substr(Auth::guard('dosen')->user()->name ?? 'D', 0, 1) }}
                         </div>
                     @else
-                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold flex-shrink-0">
                             {{ substr(Auth::guard('dosen')->user()->name ?? 'D', 0, 1) }}
                         </div>
                     @endif
-                    <div class="sidebar-user-meta transition-all duration-300">
-                        <p class="font-medium text-gray-800 dark:text-gray-100">{{ Auth::guard('dosen')->user()->name ?? 'Dosen' }}</p>
-                        <p class="text-xs text-gray-500">Dosen</p>
+                    <div class="sidebar-user-meta transition-all duration-300 min-w-0">
+                        <p class="font-bold text-sm text-gray-800 dark:text-gray-100 truncate">{{ Auth::guard('dosen')->user()->name ?? 'Dosen' }}</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 font-semibold">Dosen</p>
                     </div>
                 </div>
             </div>
             
             {{-- Nav Links --}}
             <nav class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-2">
-                <a href="{{ route('dosen.dashboard') }}" title="Dashboard" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'dashboard' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                <a href="{{ route('dosen.dashboard') }}" aria-current="{{ ($active ?? '') == 'dashboard' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'dashboard' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
-                    <span class="font-medium">Dashboard</span>
+                    <span class="sidebar-text font-medium text-sm">Dashboard</span>
+                    <span class="sidebar-tooltip">Dashboard</span>
                 </a>
                 
-                <a href="{{ route('dosen.kursus') }}" title="Kursus Saya" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'kursus-saya' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                <a href="{{ route('dosen.kursus') }}" aria-current="{{ ($active ?? '') == 'kursus-saya' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'kursus-saya' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
-                    <span class="font-medium">Kursus Saya</span>
+                    <span class="sidebar-text font-medium text-sm">Kursus Saya</span>
+                    <span class="sidebar-tooltip">Kursus Saya</span>
                 </a>
 
-                <a href="{{ route('dosen.bootcamp') }}" title="Bootcamp Saya" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'bootcamp' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8V6a4 4 0 10-8 0v2m-3 3h14l-1 8a2 2 0 01-2 2H8a2 2 0 01-2-2l-1-8zm5 4h4" />
+                <a href="{{ route('dosen.bootcamp') }}" aria-current="{{ ($active ?? '') == 'bootcamp' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'bootcamp' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 8V6a4 4 0 10-8 0v2m-3 3h14l-1 8a2 2 0 01-2 2H8a2 2 0 01-2-2l-1-8zm5 4h4" />
                     </svg>
-                    <span class="font-medium">Bootcamp Saya</span>
+                    <span class="sidebar-text font-medium text-sm">Bootcamp Saya</span>
+                    <span class="sidebar-tooltip">Bootcamp Saya</span>
                 </a>
                 
-                <a href="{{ route('dosen.progres') }}" title="Progres Mahasiswa" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'progres' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <a href="{{ route('dosen.progres') }}" aria-current="{{ ($active ?? '') == 'progres' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'progres' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    <span class="font-medium">Progres Mahasiswa</span>
+                    <span class="sidebar-text font-medium text-sm">Progres Mahasiswa</span>
+                    <span class="sidebar-tooltip">Progres Mahasiswa</span>
                 </a>
 
-                <a href="{{ route('dosen.nilai') }}" title="Mengelola Nilai" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'nilai' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6V7m3 10v-3m4 6H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z" />
+                <a href="{{ route('dosen.nilai') }}" aria-current="{{ ($active ?? '') == 'nilai' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'nilai' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-6m3 6V7m3 10v-3m4 6H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z" />
                     </svg>
-                    <span class="font-medium">Mengelola Nilai</span>
+                    <span class="sidebar-text font-medium text-sm">Mengelola Nilai</span>
+                    <span class="sidebar-tooltip">Mengelola Nilai</span>
                 </a>
                 
-                <a href="{{ route('dosen.pesan') }}" title="Pesan" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'pesan' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                <a href="{{ route('dosen.pesan') }}" aria-current="{{ ($active ?? '') == 'pesan' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'pesan' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
-                    <span class="font-medium">Pesan</span>
+                    <span class="sidebar-text font-medium text-sm">Pesan</span>
+                    <span class="sidebar-tooltip">Pesan</span>
                 </a>
 
-                <a href="{{ route('dosen.apps') }}" title="Apps Hub" class="flex items-center gap-3 px-4 py-2.5 rounded-lg {{ ($active ?? '') == 'apps' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }} transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                <a href="{{ route('dosen.apps') }}" aria-current="{{ ($active ?? '') == 'apps' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'apps' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
-                    <span class="font-medium">Apps</span>
+                    <span class="sidebar-text font-medium text-sm">Apps</span>
+                    <span class="sidebar-tooltip">Apps</span>
                 </a>
             </nav>
         </aside>
 
         {{-- Main Content --}}
-        <div id="dosen-layout-main" class="flex-1 flex flex-col lg:ml-64">
+        <div id="dosen-layout-main" class="flex-1 flex flex-col lg:ml-[280px]">
             {{-- Header --}}
             <header class="sticky top-0 z-30 bg-white dark:bg-[#1f2937] border-b border-gray-100 dark:border-gray-700/50 px-3 sm:px-6 py-3">
                 <div class="flex items-center justify-between gap-3">
