@@ -60,6 +60,7 @@ Route::prefix('mahasiswa')
         Route::get('/bootcamp/{id}', [CourseController::class, 'bootcampDetail'])->name('mahasiswa.bootcamp-detail');
         Route::get('/bootcamp/{id}/learn', [CourseController::class, 'bootcampLearn'])->name('mahasiswa.bootcamp-learn');
         Route::get('/bootcamp-saya', [CourseController::class, 'bootcampMy'])->name('mahasiswa.bootcamp-saya');
+        Route::post('/bootcamp/{id}/forum/topic', [CourseController::class, 'storeBootcampForumTopic'])->name('mahasiswa.bootcamp.forum.topic.store');
         Route::post('/bootcamp/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.bootcamp.review');
         Route::post('/course/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.course.review');
         Route::post('/course/material/{id}/complete', [CourseController::class, 'completeMaterial'])->name('mahasiswa.material.complete');

@@ -127,6 +127,39 @@ class CourseController extends Controller
      */
     public function bootcampDetail($id)
     {
+        $course = Course::with([
+            'dosen',
+            'jurusan',
+            'materials' => fn ($query) => $query->orderBy('urutan'),
+            'modules' => fn ($query) => $query->orderBy('urutan'),
+            'modules.materials' => fn ($query) => $query->orderBy('urutan'),
+            'assignments' => fn ($query) => $query->orderBy('deadline'),
+            'ratings.mahasiswa.profile',
+            'learningGoals',
+            'instructorNotes' => fn ($query) => $query->where('is_active', true)->latest(),
+        ])->findOrFail($id);
+
+        $user = Auth::guard('mahasiswa')->user();
+        $isEnrolled = false;
+        $enrollment = null;
+
+        if ($user) {
+            $enrollment = $course->enrollments()
+                ->where('id_mahasiswa', $user->id)
+                ->first();
+            $isEnrolled = $enrollment !== null;
+        }
+
+        if ($isEnrolled && $enrollment && in_array($enrollment->status, ['aktif', 'selesai', 'in_progress'], true)) {
+            // Trigger assignment reminders on-demand
+            $this->checkAndSendAssignmentReminders($user, $course);
+            
+            // Build tab dataset
+            $data = $this->prepareBootcampDashboardData($user, $course, $enrollment);
+            
+            return view('pages.mahasiswa.bootcamp-detail', $data);
+        }
+
         return $this->show($id, 'bootcamp');
     }
 
@@ -2516,6 +2549,527 @@ class CourseController extends Controller
      * accessor), update this helper AND the `@php` re-derivation inside
      * course-detail.blade.php / course-learn.blade.php together.
      */
+    private function prepareBootcampDashboardData($user, Course $course, $enrollment): array
+    {
+        // 1. Gather all course materials
+        $materials = $course->materials()->orderBy('urutan')->get();
+        $totalMaterials = $materials->count();
+        
+        // 2. Load all module structures
+        $courseModules = CourseModule::where('id_course', $course->id_course)
+            ->orderBy('urutan')
+            ->get();
+            
+        // Get completed materials list for the user
+        $completedMaterialsIds = \App\Models\MaterialProgress::where('id_mahasiswa', $user->id)
+            ->whereIn('id_material', $materials->pluck('id_material'))
+            ->where('is_completed', true)
+            ->pluck('id_material')
+            ->toArray();
+            
+        // 3. Quiz attempt stats
+        $quizzes = Quiz::where('id_course', $course->id_course)
+            ->where('is_active', true)
+            ->orderBy('urutan')
+            ->get();
+            
+        $completedQuizAttempts = QuizAttempt::where('id_mahasiswa', $user->id)
+            ->where('status', 'selesai')
+            ->whereIn('id_quiz', $quizzes->pluck('id_quiz'))
+            ->get()
+            ->groupBy('id_quiz');
+            
+        // 4. Assignments
+        $assignments = $course->materials()
+            ->whereIn('tipe', ['tugas', 'assignment', 'tugas_akhir'])
+            ->orderBy('urutan')
+            ->get();
+            
+        $submissions = AssignmentSubmission::where('id_mahasiswa', $user->id)
+            ->where('id_course', $course->id_course)
+            ->get()
+            ->keyBy('id_material');
+            
+        // 5. Final Project heuristic
+        $finalProjectMaterial = null;
+        foreach ($assignments as $assignment) {
+            $title = Str::lower(trim((string) $assignment->judul_material));
+            if (Str::contains($title, ['tugas akhir', 'final', 'project akhir', 'ujian akhir'])) {
+                $finalProjectMaterial = $assignment;
+                break;
+            }
+        }
+        
+        // Determine bootcamp module progression mode
+        // course id % 3: 0 -> sequential, 1 -> scheduled, 2 -> open
+        $moduleMode = 'sequential';
+        if ($course->id_course % 3 === 1) {
+            $moduleMode = 'scheduled';
+        } elseif ($course->id_course % 3 === 2) {
+            $moduleMode = 'open';
+        }
+        
+        // Build modules data with locked/completed status
+        $modulesData = [];
+        $previousModuleCompleted = true;
+        $enrollmentDate = $enrollment->created_at ?? now();
+        
+        $totalMandatoryActivities = 0;
+        $completedMandatoryActivities = 0;
+        
+        foreach ($courseModules as $index => $module) {
+            $moduleNum = $module->id_module;
+            $moduleMaterials = $materials->where('id_module', $moduleNum);
+            $moduleQuizzes = $quizzes->where('id_module', $moduleNum);
+            
+            // Exclude final project assignment from normal module prerequisites if it's the final project module
+            $isFinalProjectInModule = $finalProjectMaterial && ($finalProjectMaterial->id_module == $moduleNum);
+            
+            $moduleMaterialsCount = $moduleMaterials->count();
+            $completedModuleMaterialsCount = $moduleMaterials->whereIn('id_material', $completedMaterialsIds)->count();
+            
+            $moduleQuizzesCount = $moduleQuizzes->count();
+            $completedQuizzesCount = 0;
+            foreach ($moduleQuizzes as $quiz) {
+                if ($completedQuizAttempts->has($quiz->id_quiz)) {
+                    $completedQuizzesCount++;
+                }
+            }
+            
+            $totalMandatoryActivities += $moduleMaterialsCount + $moduleQuizzesCount;
+            $completedMandatoryActivities += $completedModuleMaterialsCount + $completedQuizzesCount;
+            
+            // Check status
+            $status = 'Available';
+            $lockReason = null;
+            
+            if ($moduleMode === 'sequential' && !$previousModuleCompleted) {
+                $status = 'Locked';
+                $lockReason = 'Modul sebelumnya belum selesai.';
+            } elseif ($moduleMode === 'scheduled') {
+                $daysOffset = $index * 7; // 1 week per module
+                $releaseDate = $enrollmentDate->copy()->addDays($daysOffset);
+                if (now()->lessThan($releaseDate)) {
+                    $status = 'Locked';
+                    $lockReason = 'Modul akan dirilis pada tanggal ' . $releaseDate->format('d M Y') . '.';
+                }
+            }
+            
+            if ($status !== 'Locked') {
+                $totalItems = $moduleMaterialsCount + $moduleQuizzesCount;
+                $completedItems = $completedModuleMaterialsCount + $completedQuizzesCount;
+                
+                if ($completedItems === $totalItems && $totalItems > 0) {
+                    $status = 'Completed';
+                } elseif ($completedItems > 0) {
+                    $status = 'In Progress';
+                }
+            }
+            
+            // Update sequential tracker for NEXT module
+            $isThisModuleFinished = ($status === 'Completed');
+            // If the module only contains the final project and it is locked, don't count it for previous module completion yet
+            if ($isFinalProjectInModule) {
+                $isThisModuleFinished = true;
+            }
+            $previousModuleCompleted = $isThisModuleFinished;
+            
+            $modulesData[$moduleNum] = [
+                'id' => $moduleNum,
+                'title' => $module->judul_module ?: 'Modul ' . ($index + 1),
+                'description' => $module->deskripsi,
+                'status' => $status,
+                'lock_reason' => $lockReason,
+                'materials' => $moduleMaterials->map(function ($mat) use ($completedMaterialsIds) {
+                    return [
+                        'id' => $mat->id_material,
+                        'title' => $mat->judul_material ?: 'Materi',
+                        'type' => $this->normalizeMaterialType($mat->tipe),
+                        'content' => $mat->konten,
+                        'video_url' => $mat->video_url,
+                        'lampiran_path' => $mat->lampiran_path,
+                        'sumber_referensi' => $mat->sumber_referensi,
+                        'is_completed' => in_array($mat->id_material, $completedMaterialsIds),
+                    ];
+                }),
+                'quizzes' => $moduleQuizzes,
+                'completed_count' => $completedModuleMaterialsCount + $completedQuizzesCount,
+                'total_count' => $moduleMaterialsCount + $moduleQuizzesCount,
+            ];
+        }
+        
+        // 6. Assignments Tab Data
+        $assignmentsData = [];
+        $assignmentCount = 0;
+        $completedAssignmentsCount = 0;
+        
+        foreach ($assignments as $mat) {
+            // Skip final project if we treat it separately
+            if ($finalProjectMaterial && $mat->id_material == $finalProjectMaterial->id_material) {
+                continue;
+            }
+            
+            $payload = $this->parseAssignmentPayload($mat->konten);
+            $deadline = $this->parseAssignmentDeadline($payload['deadline'] ?? null);
+            $submission = $submissions->get($mat->id_material);
+            
+            $assignmentCount++;
+            if ($submission && in_array($submission->status, ['submitted', 'approved', 'reviewed'], true)) {
+                $completedAssignmentsCount++;
+            }
+            
+            $status = 'Belum Dikerjakan';
+            if ($submission) {
+                if ($submission->status === 'draft') {
+                    $status = 'Draft';
+                } elseif ($submission->status === 'submitted') {
+                    $status = 'Menunggu Review';
+                } elseif ($submission->status === 'revision' || $submission->status === 'perlu_revisi') {
+                    $status = 'Perlu Revisi';
+                } elseif ($submission->status === 'approved' || $submission->status === 'reviewed') {
+                    $status = 'Disetujui';
+                }
+                
+                if ($submission->submitted_at && $submission->submitted_at->greaterThan($deadline)) {
+                    $status .= ' (Terlambat)';
+                }
+            } else {
+                if (now()->greaterThan($deadline)) {
+                    $status = 'Terlambat';
+                }
+            }
+            
+            $assignmentsData[] = [
+                'material_id' => $mat->id_material,
+                'title' => $mat->judul_material ?: 'Tugas',
+                'description' => $payload['deskripsi'] ?? $mat->konten,
+                'instructions' => $payload['instruksi'] ?? 'Ikuti petunjuk pengerjaan yang diberikan.',
+                'deadline' => $deadline,
+                'countdown' => now()->lessThan($deadline) ? now()->diffForHumans($deadline, true) : 'Tenggat Waktu Lewat',
+                'submission' => $submission,
+                'status' => $status,
+                'allow_late' => (bool) ($payload['late_submission'] ?? $payload['allow_late'] ?? true),
+                'lampiran_path' => $mat->lampiran_path,
+            ];
+        }
+        
+        // Include assignments & final project in the total progress calculation
+        $totalMandatoryActivities += $assignmentCount;
+        $completedMandatoryActivities += $completedAssignmentsCount;
+        
+        if ($finalProjectMaterial) {
+            $totalMandatoryActivities++;
+            $fpSubmission = $submissions->get($finalProjectMaterial->id_material);
+            if ($fpSubmission && ($fpSubmission->status === 'approved' || $fpSubmission->status === 'reviewed')) {
+                $completedMandatoryActivities++;
+            }
+        }
+        
+        $progressPercent = $totalMandatoryActivities > 0 
+            ? round(($completedMandatoryActivities / $totalMandatoryActivities) * 100) 
+            : 0;
+            
+        // Sync progress back to enrollment
+        $enrollment->update([
+            'progress' => $progressPercent,
+            'status' => $progressPercent >= 100 ? 'selesai' : 'aktif',
+        ]);
+        
+        // 7. Live Classes
+        $liveClasses = [];
+        if ($course->tanggal_webinar) {
+            $startStr = $course->tanggal_webinar->format('Y-m-d') . ' ' . ($course->jam_mulai_webinar ?: '08:00:00');
+            $endStr = $course->tanggal_webinar->format('Y-m-d') . ' ' . ($course->jam_selesai_webinar ?: '17:00:00');
+            $startTime = Carbon::parse($startStr);
+            $endTime = Carbon::parse($endStr);
+            
+            $isActive = now()->greaterThanOrEqualTo($startTime->copy()->subMinutes(15)) 
+                && now()->lessThanOrEqualTo($endTime);
+                
+            $recordingUrl = now()->greaterThan($endTime) ? 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' : null;
+            
+            $liveClasses[] = [
+                'title' => 'Sesi Utama: ' . $course->nama_course,
+                'mentor' => $course->dosen?->name ?: 'Mentor Utama',
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'link' => 'https://zoom.us/j/9998887771',
+                'is_active' => $isActive,
+                'countdown' => now()->lessThan($startTime) ? now()->diffForHumans($startTime, true) : 'Kelas Dimulai',
+                'recording_url' => $recordingUrl,
+            ];
+        }
+        
+        foreach ($courseModules as $index => $module) {
+            $startTime = $enrollmentDate->copy()->addDays(($index * 7) + 2)->hour(19)->minute(0)->second(0);
+            $endTime = $startTime->copy()->addHours(2);
+            $isActive = now()->greaterThanOrEqualTo($startTime->copy()->subMinutes(15)) 
+                && now()->lessThanOrEqualTo($endTime);
+            $recordingUrl = now()->greaterThan($endTime) ? 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' : null;
+            
+            $liveClasses[] = [
+                'title' => 'Live Q&A: ' . ($module->judul_module ?: 'Modul ' . ($index + 1)),
+                'mentor' => $course->dosen?->name ?: 'Mentor Utama',
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'link' => 'https://meet.google.com/abc-defg-hij',
+                'is_active' => $isActive,
+                'countdown' => now()->lessThan($startTime) ? now()->diffForHumans($startTime, true) : 'Kelas Dimulai',
+                'recording_url' => $recordingUrl,
+            ];
+        }
+        
+        // 8. Quizzes Tab Data
+        $quizzesData = [];
+        foreach ($quizzes as $quiz) {
+            $quizAttempts = QuizAttempt::where('id_mahasiswa', $user->id)
+                ->where('id_quiz', $quiz->id_quiz)
+                ->orderByDesc('skor')
+                ->get();
+                
+            $attemptsCount = $quizAttempts->count();
+            $bestScore = $quizAttempts->max('skor') ?? 0;
+            
+            $status = 'Belum Mulai';
+            if ($attemptsCount > 0) {
+                $status = $bestScore >= ($quiz->passing_score ?? 70) ? 'Lulus' : 'Gagal';
+            }
+            
+            $quizzesData[] = [
+                'id_quiz' => $quiz->id_quiz,
+                'title' => $quiz->judul ?: 'Kuis Modul',
+                'description' => $quiz->deskripsi ?: 'Uji pemahaman Anda terhadap modul ini.',
+                'duration' => $quiz->durasi_menit ?: 30,
+                'question_count' => QuizQuestion::where('id_quiz', $quiz->id_quiz)->count(),
+                'status' => $status,
+                'score' => $bestScore,
+                'attempts' => $attemptsCount,
+                'passing_score' => $quiz->passing_score ?? 70,
+            ];
+        }
+        
+        // 9. Forum diskus khusus bootcamp
+        $forumTopics = ForumTopic::where('status', 'published')
+            ->where('judul', 'like', '[Bootcamp #' . $course->id_course . ']%')
+            ->withCount(['publishedComments'])
+            ->orderByDesc('last_activity_at')
+            ->get();
+            
+        // 10. Announcements
+        $announcements = CourseInstructorNote::where('id_course', $course->id_course)
+            ->where('is_active', true)
+            ->with('dosen')
+            ->latest()
+            ->get();
+            
+        // 11. Final Project
+        $finalProjectData = null;
+        $prerequisitesMet = true;
+        
+        foreach ($modulesData as $modId => $mod) {
+            if ($finalProjectMaterial && $finalProjectMaterial->id_module == $modId) {
+                continue;
+            }
+            if ($mod['status'] !== 'Completed') {
+                $prerequisitesMet = false;
+            }
+        }
+        
+        if ($finalProjectMaterial) {
+            $fpSubmission = $submissions->get($finalProjectMaterial->id_material);
+            $fpStatus = 'Belum Mulai';
+            if ($fpSubmission) {
+                if ($fpSubmission->status === 'draft') {
+                    $fpStatus = 'Draft';
+                } elseif ($fpSubmission->status === 'submitted') {
+                    $fpStatus = 'Submitted';
+                } elseif ($fpSubmission->status === 'revision' || $fpSubmission->status === 'perlu_revisi') {
+                    $fpStatus = 'Revisi';
+                } elseif ($fpSubmission->status === 'approved' || $fpSubmission->status === 'reviewed') {
+                    $fpStatus = 'Lulus';
+                }
+            }
+            
+            $finalProjectData = [
+                'material_id' => $finalProjectMaterial->id_material,
+                'title' => $finalProjectMaterial->judul_material ?: 'Proyek Akhir',
+                'description' => $finalProjectMaterial->konten ?: 'Selesaikan Proyek Akhir untuk kelulusan Bootcamp.',
+                'status' => $fpStatus,
+                'submission' => $fpSubmission,
+                'prerequisites_met' => $prerequisitesMet,
+            ];
+        }
+        
+        // 12. Certificate Eligibility Checklist
+        $certificateChecklist = [
+            'modules_completed' => $completedMandatoryActivities >= ($totalMandatoryActivities - ($finalProjectMaterial ? 1 : 0)),
+            'assignments_completed' => $completedAssignmentsCount >= $assignmentCount,
+            'final_project_passed' => $finalProjectData ? ($finalProjectData['status'] === 'Lulus') : true,
+            'score_met' => true,
+        ];
+        
+        $avgQuizScore = 0;
+        if (!empty($quizzesData)) {
+            $totalQuizScores = 0;
+            foreach ($quizzesData as $quizData) {
+                $totalQuizScores += $quizData['score'];
+            }
+            $avgQuizScore = $totalQuizScores / count($quizzesData);
+            if ($avgQuizScore < 70) {
+                $certificateChecklist['score_met'] = false;
+            }
+        }
+        
+        $certificateEligible = !in_array(false, $certificateChecklist, true);
+        
+        $issuedCertificate = null;
+        if ($certificateEligible) {
+            $issuedCertificate = $this->issueCertificateForEnrollmentIfEligible(
+                $user,
+                $course,
+                $enrollment,
+                $progressPercent
+            );
+        }
+        
+        $latestAnnouncement = $announcements->first();
+        
+        $closestDeadline = null;
+        foreach ($assignmentsData as $aData) {
+            if ($aData['status'] === 'Belum Dikerjakan' && ($closestDeadline === null || $aData['deadline']->lessThan($closestDeadline))) {
+                $closestDeadline = $aData['deadline'];
+            }
+        }
+        
+        $nextLiveClass = null;
+        foreach ($liveClasses as $lc) {
+            if (now()->lessThan($lc['start_time']) && ($nextLiveClass === null || $lc['start_time']->lessThan($nextLiveClass['start_time']))) {
+                $nextLiveClass = $lc;
+            }
+        }
+        
+        $lastOpenedModule = reset($modulesData) ?: null;
+        foreach ($modulesData as $mod) {
+            if ($mod['status'] === 'In Progress') {
+                $lastOpenedModule = $mod;
+                break;
+            }
+        }
+        
+        return [
+            'course' => $course,
+            'enrollment' => $enrollment,
+            'modules' => $modulesData,
+            'assignments' => $assignmentsData,
+            'liveClasses' => $liveClasses,
+            'quizzes' => $quizzesData,
+            'forumTopics' => $forumTopics,
+            'announcements' => $announcements,
+            'finalProject' => $finalProjectData,
+            'certificateChecklist' => $certificateChecklist,
+            'certificateEligible' => $certificateEligible,
+            'issuedCertificate' => $issuedCertificate,
+            'progressPercent' => $progressPercent,
+            'avgQuizScore' => $avgQuizScore,
+            'dashboardStats' => [
+                'next_class' => $nextLiveClass,
+                'latest_announcement' => $latestAnnouncement,
+                'closest_deadline' => $closestDeadline,
+                'last_module' => $lastOpenedModule,
+            ],
+            'moduleMode' => $moduleMode,
+        ];
+    }
+    
+    private function checkAndSendAssignmentReminders($user, $course): void
+    {
+        foreach ($course->materials as $material) {
+            $type = match ($material->tipe) {
+                'tugas', 'assignment', 'tugas_akhir' => 'tugas',
+                default => null,
+            };
+            if ($type !== 'tugas') {
+                continue;
+            }
+            $payload = $this->parseAssignmentPayload($material->konten);
+            if (empty($payload)) {
+                continue;
+            }
+            
+            $deadline = $this->parseAssignmentDeadline($payload['deadline'] ?? null);
+            
+            $hasSubmitted = AssignmentSubmission::where('id_material', $material->id_material)
+                ->where('id_mahasiswa', $user->id)
+                ->exists();
+                
+            if ($hasSubmitted) {
+                continue;
+            }
+            
+            $now = now();
+            $hoursDiff = $now->diffInHours($deadline, false);
+            
+            $reminderType = null;
+            if ($hoursDiff > 48 && $hoursDiff <= 72) {
+                $reminderType = 'H-3';
+            } elseif ($hoursDiff > 12 && $hoursDiff <= 24) {
+                $reminderType = 'H-1';
+            } elseif ($hoursDiff > 0 && $hoursDiff <= 12) {
+                $reminderType = 'Hari H';
+            }
+            
+            if ($reminderType) {
+                $notifTitle = "Reminder {$reminderType}: " . ($material->judul_material ?: 'Tugas');
+                $alreadyNotified = Notification::where('id_mahasiswa', $user->id)
+                    ->where('judul', $notifTitle)
+                    ->exists();
+                    
+                if (!$alreadyNotified) {
+                    Notification::notifyMahasiswa(
+                        $user->id,
+                        $notifTitle,
+                        "Tugas \"" . ($material->judul_material ?: 'Tugas') . "\" pada Bootcamp \"" . $course->nama_course . "\" mendekati deadline. Segera selesaikan!",
+                        'kursus_pembelajaran',
+                        'bell',
+                        '#F59E0B'
+                    );
+                }
+            }
+        }
+    }
+
+    public function storeBootcampForumTopic(Request $request, $id)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        if (!$user) {
+            return redirect()->route('mahasiswa.login');
+        }
+
+        $course = Course::findOrFail($id);
+
+        $data = $request->validate([
+            'judul' => ['required', 'string', 'max:200'],
+            'isi' => ['required', 'string', 'min:5', 'max:8000'],
+        ]);
+
+        $category = \App\Models\ForumCategory::where('is_active', true)->first();
+        $categoryId = $category ? $category->id_forum_category : 1;
+
+        $prefixedTitle = '[Bootcamp #' . $course->id_course . '] ' . trim((string) $data['judul']);
+
+        \App\Models\ForumTopic::create([
+            'category_id' => $categoryId,
+            'user_id' => $user->id,
+            'judul' => $prefixedTitle,
+            'isi' => trim((string) $data['isi']),
+            'status' => 'published',
+            'last_activity_at' => now(),
+        ]);
+
+        return redirect()->to(route('mahasiswa.bootcamp-detail', ['id' => $course->id_course]) . '?tab=forum')
+            ->with('success', 'Diskusi baru berhasil ditambahkan pada Forum Bootcamp ini.');
+    }
+
     private function isBootcamp(?Course $course): bool
     {
         return $course && strtolower((string) ($course->kategori ?? '')) === 'tiket';

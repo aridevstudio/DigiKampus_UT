@@ -32,6 +32,7 @@ class ForumController extends Controller
             ->with(['category:id_forum_category,nama,warna,slug', 'author:id,name'])
             ->withCount(['publishedComments']);
         $query->whereIn('status', ['published']);
+        $query->where('judul', 'not like', '[Bootcamp #%');
         if ($onlyPinned) {
             $query->where('is_pinned', true);
         }
