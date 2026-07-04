@@ -3382,8 +3382,4 @@ class CourseController extends Controller
             ->with('success', 'Diskusi baru berhasil ditambahkan pada Forum Bootcamp ini.');
     }
 
-    private function isBootcamp(?Course $course): bool
-    {
-        return $course && strtolower((string) ($course->kategori ?? '')) === 'tiket';
-    }
 }
