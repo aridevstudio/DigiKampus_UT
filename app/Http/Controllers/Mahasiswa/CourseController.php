@@ -14,6 +14,7 @@ use App\Models\CourseDiscussion;
 use App\Models\CourseInstructorNote;
 use App\Models\CourseMaterial;
 use App\Models\Assignment;
+use App\Models\BootcampLiveClassAttendance;
 use App\Models\Notification;
 use App\Models\Quiz;
 use App\Models\QuizAnswer;
@@ -1324,6 +1325,38 @@ class CourseController extends Controller
             ], 422);
         }
 
+        // SECURITY: server-side deadline + final-project gating.
+        // Frontend may hide the form, but a raw POST can still bypass it.
+        $assignmentPayload = $this->parseAssignmentPayload($assignmentMaterial->konten);
+
+        // Fail-closed: if the JSON has no deadline AND no final-project flag,
+        // the admin mis-configured this material. Reject instead of falling
+        // back to the default 7-day window that parseAssignmentDeadline
+        // would otherwise produce.
+        if (empty($assignmentPayload['deadline']) && empty($assignmentPayload['is_final_project'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Konfigurasi tugas tidak valid (tidak ada deadline atau final project). Hubungi admin.',
+            ], 422);
+        }
+
+        $assignmentDeadline = $this->parseAssignmentDeadline($assignmentPayload['deadline'] ?? null);
+        $allowAfterDeadline = (bool) ($assignmentPayload['allow_after_deadline'] ?? false);
+
+        if (now()->greaterThan($assignmentDeadline) && !$allowAfterDeadline) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tenggat waktu pengumpulan tugas telah berakhir (' . $assignmentDeadline->format('d M Y, H:i') . ').',
+            ], 403);
+        }
+
+        if (!empty($assignmentPayload['is_final_project']) && !$this->areFinalProjectPrerequisitesMet((int) $courseId, (int) $user->id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Prasyarat pengerjaan proyek akhir belum terpenuhi (modul/kuis/kehadiran live class).',
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'file' => 'required|file|max:10240|mimes:pdf,docx,doc,zip',
             'catatan' => 'nullable|string|max:2000',
@@ -2174,6 +2207,285 @@ class CourseController extends Controller
             ->where('id_course', $courseId)
             ->accessible()
             ->exists();
+    }
+
+    /**
+     * Single source of truth: is this Course object a bootcamp (tiket)?
+     * Re-derives in many blade templates; keep in sync if you refactor.
+     */
+    private function isBootcamp(?Course $course): bool
+    {
+        return $course !== null
+            && strtolower((string) ($course->kategori ?? '')) === 'tiket';
+    }
+
+    /**
+     * Strict final-project prerequisite gate (server-enforced — UI may also
+     * hide the upload form, but a raw POST to submitAssignment() must not be
+     * able to bypass this).
+     *
+     * Returns true only if:
+     *  - all material progresses complete for this course
+     *  - all non-final assignment materials have a submission (any status)
+     *  - all active quizzes for the course have a completed attempt passing passing_score
+     *  - all live-class sessions for the course are attendance-verified
+     *
+     * Read-only helpers; safe to call repeatedly in dashboard renders.
+     */
+    private function areFinalProjectPrerequisitesMet(int $courseId, int $mahasiswaId): bool
+    {
+        $course = Course::find($courseId);
+        if (!$course) {
+            return false;
+        }
+
+        // 1) Semua materi CourseMaterial wajib complete
+        $totalMaterials = $course->materials()->count();
+        if ($totalMaterials === 0) {
+            return false;
+        }
+        $completedMaterials = \App\Models\MaterialProgress::where('id_mahasiswa', $mahasiswaId)
+            ->whereIn('id_material', $course->materials()->pluck('id_material'))
+            ->where('is_completed', true)
+            ->count();
+        if ($completedMaterials < $totalMaterials) {
+            return false;
+        }
+
+        // 2) Semua kuis GRADED wajib lulus (exclude pretest yang hanya untuk placement).
+        $quizzes = Quiz::where('id_course', $courseId)
+            ->where('is_active', true)
+            ->where('is_pretest', false)
+            ->get();
+        foreach ($quizzes as $quiz) {
+            $bestAttempt = QuizAttempt::where('id_quiz', $quiz->id_quiz)
+                ->where('id_mahasiswa', $mahasiswaId)
+                ->where('status', 'selesai')
+                ->orderByDesc('persentase')
+                ->orderByDesc('waktu_selesai')
+                ->first();
+            $score = $bestAttempt ? (float) $bestAttempt->persentase : 0.0;
+            $passing = (int) ($quiz->passing_score ?? 0);
+            if ($score < $passing) {
+                return false;
+            }
+        }
+
+        // 3) Semua attendance live-class untuk course ini wajib 'verified'
+        //    (menggunakan multi-session check via session_key set di dashboard).
+        $liveClassSessionKeys = $this->collectLiveClassSessionKeys($course);
+        if (!empty($liveClassSessionKeys)) {
+            $verifiedKeys = BootcampLiveClassAttendance::where('id_user', $mahasiswaId)
+                ->where('id_course', $courseId)
+                ->whereIn('session_key', $liveClassSessionKeys)
+                ->where('status', BootcampLiveClassAttendance::STATUS_VERIFIED)
+                ->pluck('session_key')
+                ->all();
+            $missing = array_diff($liveClassSessionKeys, $verifiedKeys);
+            if (!empty($missing)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Compute the set of `session_key` strings currently exposed by the
+     * bootcamp live class dashboard for a given course. Used by
+     * `areFinalProjectPrerequisitesMet` and by the dashboard data
+     * pre-fetch in `prepareBootcampDashboardData` to keep keys in sync.
+     */
+    private function collectLiveClassSessionKeys(Course $course): array
+    {
+        if (!$this->isBootcamp($course)) {
+            return [];
+        }
+
+        $keys = [];
+
+        if ($course->tanggal_webinar) {
+            $keys[] = 'primary';
+        }
+
+        $modules = CourseModule::where('id_course', $course->id_course)
+            ->orderBy('urutan')
+            ->get();
+
+        $start = $course->tanggal_webinar
+            ? \Illuminate\Support\Carbon::parse($course->tanggal_webinar->format('Y-m-d') . ' ' . ($course->jam_mulai_webinar ?: '08:00:00'))
+            : null;
+
+        $index = 0;
+        foreach ($modules as $module) {
+            $slot = $start?->copy()->addMinutes(90 * $index);
+            if (!$slot) {
+                break;
+            }
+            $keys[] = 'qa_' . (int) $module->id_module . '_' . $slot->format('Y-m-d\TH:i');
+            $index++;
+        }
+
+        return $keys;
+    }
+
+    /**
+     * Upload attendance proof for a single live-class session.
+     * Server-side enforced:
+     *   - enrollment valid & active
+     *   - course is a bootcamp (kategori='tiket')
+     *   - session_key belongs to this course
+     *   - the session end_time has already passed
+     *   - file upload is image/pdf only
+     *
+     * Upsert semantics: one row per (user, course, session_key).
+     */
+    public function storeLiveClassAttendance(Request $request, int $courseId): \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        $user = auth('mahasiswa')->user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->first();
+        if (!$enrollment || !in_array($enrollment->status, ['aktif', 'in_progress', 'selesai'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak terdaftar aktif pada bootcamp ini.',
+            ], 403);
+        }
+
+        $course = Course::find($courseId);
+        if (!$course || !$this->isBootcamp($course)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Halaman ini hanya untuk bootcamp (kategori tiket).',
+            ], 404);
+        }
+
+        $sessionKey = trim((string) $request->input('session_key', ''));
+        $validKeys = $this->collectLiveClassSessionKeys($course);
+        if (!in_array($sessionKey, $validKeys, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sesi live class tidak dikenali.',
+            ], 422);
+        }
+
+        // Server-enforced timing — cannot upload before the class ends.
+        $sessionEnded = $this->resolveLiveClassEndTime($course, $sessionKey);
+        if ($sessionEnded === null || now()->lessThan($sessionEnded)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bukti kehadiran baru dapat diunggah setelah sesi live class berakhir.',
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'proof_file' => 'required|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
+            'catatan' => 'nullable|string|max:1000',
+        ], [
+            'proof_file.required' => 'Pilih file bukti kehadiran terlebih dahulu.',
+            'proof_file.mimes' => 'Format bukti harus JPG, PNG, WEBP, atau PDF.',
+            'proof_file.max' => 'Ukuran bukti kehadiran maksimal 5 MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $file = $request->file('proof_file');
+        $fileName = 'att_' . $courseId . '_' . $user->id . '_' . substr(sha1($sessionKey), 0, 8) . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $filePath = $file->storeAs('attendance', $fileName, 'public');
+
+        // SECURITY: jangan izinkan re-upload setelah bukti terverifikasi;
+        // kalau dibiarkan, final-project gate akan bisa dibalik ke pending.
+        $existing = BootcampLiveClassAttendance::where('id_user', $user->id)
+            ->where('id_course', $courseId)
+            ->where('session_key', $sessionKey)
+            ->first();
+        if ($existing && $existing->isVerified()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bukti kehadiran sudah terverifikasi dan tidak dapat diganti.',
+            ], 403);
+        }
+
+        // Upsert: if rejected previously, allow re-submit by replacing row.
+        $attendance = $existing;
+
+        if ($attendance?->proof_file) {
+            Storage::disk('public')->delete($attendance->proof_file);
+        }
+
+        BootcampLiveClassAttendance::updateOrCreate(
+            [
+                'id_user' => $user->id,
+                'id_course' => $courseId,
+                'session_key' => $sessionKey,
+            ],
+            [
+                'proof_file' => $filePath,
+                'catatan_mahasiswa' => $request->string('catatan')->trim()->value() ?: null,
+                'status' => BootcampLiveClassAttendance::STATUS_PENDING,
+                'catatan_reviewer' => null,
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+            ]
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bukti kehadiran berhasil diunggah. Menunggu verifikasi mentor/admin.',
+            ]);
+        }
+
+        return back()->with('success', 'Bukti kehadiran berhasil diunggah. Menunggu verifikasi.');
+    }
+
+    /**
+     * Resolve the end timestamp (Carbon) for a given session_key.
+     * Returns null if the key is unknown (caller must reject).
+     */
+    private function resolveLiveClassEndTime(Course $course, string $sessionKey): ?\Illuminate\Support\Carbon
+    {
+        if (!$course->tanggal_webinar) {
+            return null;
+        }
+
+        $sessionEnd = \Illuminate\Support\Carbon::parse(
+            $course->tanggal_webinar->format('Y-m-d') . ' ' . ($course->jam_selesai_webinar ?: '17:00:00')
+        );
+
+        if ($sessionKey === 'primary') {
+            return $sessionEnd;
+        }
+
+        // qa_<module_id>_<start_iso>
+        if (preg_match('/^qa_(\d+)_(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})$/', $sessionKey, $m) === 1) {
+            $moduleId = (int) $m[1];
+            $module = CourseModule::where('id_course', $course->id_course)
+                ->where('id_module', $moduleId)
+                ->first();
+            if (!$module) {
+                return null;
+            }
+            try {
+                $start = \Illuminate\Support\Carbon::parse($m[2]);
+            } catch (\Throwable) {
+                return null;
+            }
+            return $start->copy()->addMinutes(90);
+        }
+
+        return null;
     }
 
     private function formatDiscussionComment(CourseDiscussion $comment): array

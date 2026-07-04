@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
 use App\Models\Bootcamp;
+use App\Models\BootcampLiveClassAttendance;
 use App\Models\BootcampMentor;
 use App\Models\AutomaticCertificate;
 use App\Models\Category;
@@ -395,6 +396,136 @@ class AdminController extends Controller
             'recentNews' => $recentNews,
             'unreadNotifCount' => $unreadNotifCount,
         ]);
+    }
+
+    /**
+     * Review queue pending attendance proofs for all bootcamp live-class
+     * sessions. Filterable by status + free-text search.
+     */
+    public function showLiveClassAttendanceQueue(Request $request)
+    {
+        $status = (string) $request->input('status', BootcampLiveClassAttendance::STATUS_PENDING);
+        if (!in_array($status, [
+            BootcampLiveClassAttendance::STATUS_PENDING,
+            BootcampLiveClassAttendance::STATUS_VERIFIED,
+            BootcampLiveClassAttendance::STATUS_REJECTED,
+        ], true)) {
+            $status = BootcampLiveClassAttendance::STATUS_PENDING;
+        }
+
+        $query = BootcampLiveClassAttendance::with(['user', 'course', 'reviewer'])
+            ->orderByRaw("FIELD(status, 'pending','verified','rejected')")
+            ->orderByDesc('created_at');
+
+        if ($status !== '') {
+            $query->where('status', $status);
+        }
+
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+            $query->where(function ($q) use ($like) {
+                $q->whereHas('user', fn ($sub) => $sub->where('name', 'like', $like)->orWhere('email', 'like', $like))
+                    ->orWhereHas('course', fn ($sub) => $sub->where('nama_course', 'like', $like))
+                    ->orWhere('session_key', 'like', $like);
+            });
+        }
+
+        $counts = [
+            'pending' => (clone $query)->where('status', BootcampLiveClassAttendance::STATUS_PENDING)->count(),
+            'verified' => (clone $query)->where('status', BootcampLiveClassAttendance::STATUS_VERIFIED)->count(),
+            'rejected' => (clone $query)->where('status', BootcampLiveClassAttendance::STATUS_REJECTED)->count(),
+        ];
+
+        // Counts above share the search predicate; compute prompt totals separately
+        // so the badges reflect unfiltered status totals (more useful for ops).
+        $totals = [
+            BootcampLiveClassAttendance::STATUS_PENDING => BootcampLiveClassAttendance::where('status', BootcampLiveClassAttendance::STATUS_PENDING)->count(),
+            BootcampLiveClassAttendance::STATUS_VERIFIED => BootcampLiveClassAttendance::where('status', BootcampLiveClassAttendance::STATUS_VERIFIED)->count(),
+            BootcampLiveClassAttendance::STATUS_REJECTED => BootcampLiveClassAttendance::where('status', BootcampLiveClassAttendance::STATUS_REJECTED)->count(),
+        ];
+
+        $attendances = $query->paginate(15)->appends($request->only(['status', 'search']));
+
+        return view('Auth.admin.bootcamp-attendance', [
+            'attendances' => $attendances,
+            'pendingCount' => $totals[BootcampLiveClassAttendance::STATUS_PENDING],
+            'verifiedCount' => $totals[BootcampLiveClassAttendance::STATUS_VERIFIED],
+            'rejectedCount' => $totals[BootcampLiveClassAttendance::STATUS_REJECTED],
+            'selectedStatus' => $status,
+            'searchQuery' => $search,
+        ]);
+    }
+
+    /**
+     * Approve an attendance proof and lock it down (cannot be re-uploaded).
+     */
+    public function verifyLiveClassAttendance(int $id)
+    {
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $attendance = BootcampLiveClassAttendance::findOrFail($id);
+
+        if ($attendance->isVerified()) {
+            return back()->with('info', 'Bukti kehadiran sudah diverifikasi sebelumnya.');
+        }
+
+        $attendance->forceFill([
+            'status' => BootcampLiveClassAttendance::STATUS_VERIFIED,
+            'reviewed_by' => $admin?->id,
+            'reviewed_at' => now(),
+            'catatan_reviewer' => null,
+        ])->save();
+
+        \App\Models\Notification::notifyMahasiswa(
+            (int) $attendance->id_user,
+            'Bukti Kehadiran Diverifikasi',
+            'Bukti kehadiran live class Anda untuk course "' . optional($attendance->course)->nama_course . '" telah diverifikasi.',
+            'kursus_pembelajaran',
+            'attendance',
+            '#10B981'
+        );
+
+        return back()->with('success', 'Bukti kehadiran ditandai diverifikasi.');
+    }
+
+    /**
+     * Reject an attendance proof. Catatan_reviewer wajib (sudah divalidasi di UI prompt,
+     * tapi kalau dipanggil langsung gunakan default fallback yang aman).
+     */
+    public function rejectLiveClassAttendance(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'catatan' => ['required', 'string', 'min:3', 'max:1000'],
+        ], [
+            'catatan.required' => 'Alasan penolakan wajib diisi agar mahasiswa tahu apa yang harus direvisi.',
+            'catatan.min' => 'Alasan penolakan minimal 3 karakter.',
+            'catatan.max' => 'Alasan penolakan maksimal 1000 karakter.',
+        ]);
+
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $attendance = BootcampLiveClassAttendance::findOrFail($id);
+
+        if ($attendance->isVerified()) {
+            return back()->with('error', 'Bukti yang sudah diverifikasi tidak dapat ditolak. Hubungi mahasiswa untuk re-upload.');
+        }
+
+        $attendance->forceFill([
+            'status' => BootcampLiveClassAttendance::STATUS_REJECTED,
+            'reviewed_by' => $admin?->id,
+            'reviewed_at' => now(),
+            'catatan_reviewer' => $validated['catatan'],
+        ])->save();
+
+        \App\Models\Notification::notifyMahasiswa(
+            (int) $attendance->id_user,
+            'Bukti Kehadiran Ditolak',
+            'Bukti kehadiran live class Anda untuk course "' . optional($attendance->course)->nama_course . '" perlu direvisi. Alasan: ' . $validated['catatan'],
+            'kursus_pembelajaran',
+            'attendance',
+            '#F43F5E'
+        );
+
+        return back()->with('success', 'Bukti kehadiran ditandai ditolak. Mahasiswa akan menerima notifikasi.');
     }
 
     public function showBootcampTiket()

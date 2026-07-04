@@ -481,38 +481,104 @@
                 </div>
 
                 <div class="space-y-4">
-                    @foreach($liveClasses as $lc)
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div class="space-y-2">
-                                <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">{{ $lc['title'] }}</h4>
-                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        {{ $lc['start_time']->format('d M Y, H:i') }} - {{ $lc['end_time']->format('H:i') }} WIB
-                                    </span>
-                                    <span>•</span>
-                                    <span>Mentor: {{ $lc['mentor'] }}</span>
+                    @foreach($liveClasses as $idx => $lc)
+                        @php
+                            $sessionKey = $lc['session_key'] ?? null;
+                            $attendance = $sessionKey ? ($liveClassAttendances[$sessionKey] ?? null) : null;
+                            $attendanceStatus = $attendance?->status;
+                        @endphp
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex flex-col gap-6">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div class="space-y-2">
+                                    <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">{{ $lc['title'] }}</h4>
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            {{ $lc['start_time']->format('d M Y, H:i') }} - {{ $lc['end_time']->format('H:i') }} WIB
+                                        </span>
+                                        <span>•</span>
+                                        <span>Mentor: {{ $lc['mentor'] }}</span>
+                                    </div>
+                                    <span class="text-xs text-blue-500 font-bold block">{{ $lc['countdown'] }}</span>
                                 </div>
-                                <span class="text-xs text-blue-500 font-bold block">{{ $lc['countdown'] }}</span>
-                            </div>
-                            
-                            <div class="flex flex-wrap items-center gap-3">
-                                @if($lc['is_active'])
-                                    <a href="{{ $lc['link'] }}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-medium text-xs px-6 py-3 rounded-xl transition shadow-lg shadow-green-500/15">
-                                        Join Sesi Live
-                                    </a>
-                                @else
-                                    <button disabled class="bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 font-medium text-xs px-6 py-3 rounded-xl cursor-not-allowed">
-                                        Join Sesi Live
-                                    </button>
-                                @endif
+                                
+                                <div class="flex flex-wrap items-center gap-3">
+                                    @if(!empty($lc['can_join_now']))
+                                        <a href="{{ $lc['link'] }}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-medium text-xs px-6 py-3 rounded-xl transition shadow-lg shadow-green-500/15">
+                                            Join Sesi Live
+                                        </a>
+                                    @else
+                                        <button disabled class="bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 font-medium text-xs px-6 py-3 rounded-xl cursor-not-allowed">
+                                            Join Sesi Live
+                                        </button>
+                                    @endif
 
-                                @if($lc['recording_url'])
-                                    <a href="{{ $lc['recording_url'] }}" target="_blank" class="border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 font-medium text-xs px-6 py-3 rounded-xl transition">
-                                        Lihat Rekaman
-                                    </a>
-                                @endif
+                                    @if(!empty($lc['recording_url']))
+                                        <a href="{{ $lc['recording_url'] }}" target="_blank" class="border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 font-medium text-xs px-6 py-3 rounded-xl transition">
+                                            Lihat Rekaman
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
+
+                            @if(!empty($lc['is_ended']))
+                                <div class="border-t border-gray-100 dark:border-gray-700/50 pt-4 space-y-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <h5 class="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            Bukti Kehadiran
+                                        </h5>
+                                        @if($attendanceStatus === 'verified')
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Terverifikasi
+                                            </span>
+                                        @elseif($attendanceStatus === 'pending')
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Menunggu Review
+                                            </span>
+                                        @elseif($attendanceStatus === 'rejected')
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Ditolak — perlu re-upload
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-50 text-gray-600 border border-gray-200">
+                                                Belum Diunggah
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    @if($attendance)
+                                        @if($attendance->proof_file)
+                                            <a href="{{ asset('storage/' . $attendance->proof_file) }}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                Lihat bukti yang diunggah
+                                            </a>
+                                        @endif
+                                        @if($attendance->catatan_reviewer)
+                                            <p class="text-xs text-gray-600 dark:text-gray-300 italic">Catatan reviewer: "{{ $attendance->catatan_reviewer }}"</p>
+                                        @endif
+                                    @endif
+
+                                    @if($attendanceStatus !== 'verified')
+                                        <form method="POST" action="{{ route('mahasiswa.bootcamp.attendance.store', ['id' => $course->id_course]) }}" enctype="multipart/form-data" class="space-y-3">
+                                            @csrf
+                                            <input type="hidden" name="session_key" value="{{ $sessionKey }}">
+                                            <div class="border-2 border-dashed border-gray-200 dark:border-gray-700 p-4 rounded-2xl text-center space-y-2">
+                                                <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.pdf" required class="mx-auto block text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                                <p class="text-[10px] text-gray-400">Format: JPG, PNG, WEBP, atau PDF (Maks 5 MB)</p>
+                                            </div>
+                                            <textarea name="catatan" rows="2" placeholder="Catatan untuk reviewer (opsional)..." class="w-full text-xs border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"></textarea>
+                                            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition shadow-lg shadow-blue-500/15">
+                                                {{ $attendanceStatus === 'rejected' ? 'Unggah Ulang Bukti' : 'Kirim Bukti Kehadiran' }}
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            @else
+                                <p class="border-t border-gray-100 dark:border-gray-700/50 pt-4 text-xs text-gray-400">
+                                    Bukti kehadiran akan tersedia untuk diunggah setelah sesi live class berakhir.
+                                </p>
+                            @endif
                         </div>
                     @endforeach
                 </div>
