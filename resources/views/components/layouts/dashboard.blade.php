@@ -179,53 +179,166 @@
 
         #mhs-layout-main {
             min-width: 0;
-            transition: margin-left 0.3s ease;
+            transition: margin-left 0.3s ease-in-out;
         }
 
         #sidebar {
-            transition: transform 0.3s ease, width 0.3s ease;
+            width: 16rem;
+            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out, background-color 0.3s ease-in-out, border-color 0.3s ease-in-out;
         }
 
+        #sidebar nav a > span.sidebar-label {
+            max-width: 200px;
+            opacity: 1;
+            display: inline-block;
+            transition: max-width 0.3s ease-in-out, opacity 0.2s ease-in-out, margin 0.3s ease-in-out;
+        }
+
+        #sidebar .sidebar-user-meta {
+            max-width: 150px;
+            opacity: 1;
+            transition: max-width 0.3s ease-in-out, opacity 0.2s ease-in-out, margin 0.3s ease-in-out;
+        }
+
+        /* --- Collapsed State Styles (Desktop Collapsed or Tablet Default) --- */
+        
+        /* Tablet default collapse (768px to 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            #sidebar {
+                width: 5rem !important;
+            }
+            #mhs-layout-main {
+                margin-left: 5rem !important;
+            }
+            #sidebar .sidebar-logo-wrap {
+                justify-content: center !important;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            #sidebar .sidebar-logo-image {
+                height: 2rem !important;
+            }
+            #sidebar .sidebar-user-wrap {
+                justify-content: center !important;
+            }
+            #sidebar .sidebar-user-meta,
+            #sidebar nav a > span.sidebar-label {
+                max-width: 0 !important;
+                opacity: 0 !important;
+                overflow: hidden !important;
+                pointer-events: none !important;
+                margin-left: 0 !important;
+            }
+            #sidebar nav {
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            #sidebar nav a {
+                justify-content: center !important;
+                width: 3rem !important; /* w-12 (48px) */
+                height: 3rem !important; /* h-12 (48px) */
+                padding: 0 !important;
+                border-radius: 1rem !important; /* rounded-2xl (16px) */
+            }
+            
+            /* CSS Tooltip for Collapsed Sidebar */
+            #sidebar nav a {
+                position: relative;
+            }
+            #sidebar nav a::after {
+                content: attr(data-tooltip);
+                position: absolute;
+                left: 100%;
+                top: 50%;
+                transform: translateY(-50%) translateX(10px);
+                background: #1f2937;
+                color: #fff;
+                padding: 0.375rem 0.625rem;
+                border-radius: 0.375rem;
+                font-size: 0.75rem;
+                font-weight: 500;
+                white-space: nowrap;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.2s ease-in-out;
+                z-index: 50;
+                pointer-events: none;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            #sidebar nav a:hover::after {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(-50%) translateX(15px);
+            }
+        }
+
+        /* Desktop collapsed (min-width: 1024px) */
         @media (min-width: 1024px) {
             body.mhs-sidebar-collapsed #sidebar {
-                width: 5.25rem;
+                width: 5rem !important;
             }
-
             body.mhs-sidebar-collapsed #mhs-layout-main {
-                margin-left: 5.25rem;
+                margin-left: 5rem !important;
             }
-
             body.mhs-sidebar-collapsed #sidebar .sidebar-logo-wrap {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                justify-content: center !important;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
             }
-
             body.mhs-sidebar-collapsed #sidebar .sidebar-logo-image {
-                height: 2rem;
+                height: 2rem !important;
             }
-
             body.mhs-sidebar-collapsed #sidebar .sidebar-user-wrap {
-                justify-content: center;
+                justify-content: center !important;
             }
-
             body.mhs-sidebar-collapsed #sidebar .sidebar-user-meta,
-            body.mhs-sidebar-collapsed #sidebar nav a > span:last-child {
-                width: 0;
-                opacity: 0;
-                overflow: hidden;
-                pointer-events: none;
+            body.mhs-sidebar-collapsed #sidebar nav a > span.sidebar-label {
+                max-width: 0 !important;
+                opacity: 0 !important;
+                overflow: hidden !important;
+                pointer-events: none !important;
+                margin-left: 0 !important;
             }
-
             body.mhs-sidebar-collapsed #sidebar nav {
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            body.mhs-sidebar-collapsed #sidebar nav a {
+                justify-content: center !important;
+                width: 3rem !important; /* w-12 (48px) */
+                height: 3rem !important; /* h-12 (48px) */
+                padding: 0 !important;
+                border-radius: 1rem !important; /* rounded-2xl (16px) */
             }
 
+            /* CSS Tooltip for Collapsed Sidebar */
             body.mhs-sidebar-collapsed #sidebar nav a {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                position: relative;
+            }
+            body.mhs-sidebar-collapsed #sidebar nav a::after {
+                content: attr(data-tooltip);
+                position: absolute;
+                left: 100%;
+                top: 50%;
+                transform: translateY(-50%) translateX(10px);
+                background: #1f2937;
+                color: #fff;
+                padding: 0.375rem 0.625rem;
+                border-radius: 0.375rem;
+                font-size: 0.75rem;
+                font-weight: 500;
+                white-space: nowrap;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.2s ease-in-out;
+                z-index: 50;
+                pointer-events: none;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            body.mhs-sidebar-collapsed #sidebar nav a:hover::after {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(-50%) translateX(15px);
             }
         }
 
@@ -395,13 +508,13 @@
 <body class="bg-gray-50 dark:bg-[#111827]">
     <div class="flex min-h-screen">
         {{-- Mobile Overlay --}}
-        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 lg:hidden hidden" onclick="toggleSidebar()"></div>
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 md:hidden hidden" onclick="toggleSidebar()"></div>
 
         {{-- Sidebar --}}
         <x-dashboard.sidebar :active="$active ?? 'home'" />
 
         {{-- Main Content --}}
-        <div id="mhs-layout-main" class="flex-1 flex flex-col lg:ml-64">
+        <div id="mhs-layout-main" class="flex-1 flex flex-col md:ml-20 lg:ml-64">
             {{-- Header --}}
             <x-dashboard.header />
 

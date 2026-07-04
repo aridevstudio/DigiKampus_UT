@@ -53,7 +53,7 @@ if ($userType === 'mahasiswa' && $user) {
         {{-- Left Side: Hamburger Menu (mobile) --}}
         <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             {{-- Hamburger Menu Button --}}
-            <button onclick="toggleSidebar()" class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
+            <button onclick="toggleSidebar()" class="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                 </svg>
@@ -72,9 +72,9 @@ if ($userType === 'mahasiswa' && $user) {
             <img 
                 src="{{ asset('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png') }}?v={{ @filemtime(public_path('assets/image/dashboard/Logo Salut Cendikia Sukabumi.png')) }}" 
                 alt="SALUT Logo" 
-                class="h-8 max-w-[132px] shrink-0 object-contain lg:hidden"
+                class="h-8 max-w-[132px] shrink-0 object-contain md:hidden"
             >
-            <div class="hidden min-w-0 leading-none sm:block lg:hidden">
+            <div class="hidden min-w-0 leading-none sm:block md:hidden">
                 <div class="truncate text-sm font-bold text-gray-800 dark:text-gray-100">DigiKampus</div>
                 <div class="mt-0.5 inline-flex rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-blue-500 dark:bg-blue-500/10 dark:text-blue-300">UT</div>
             </div>
