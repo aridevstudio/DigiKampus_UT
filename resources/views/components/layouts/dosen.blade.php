@@ -354,48 +354,72 @@
             </div>
             
             {{-- Nav Links --}}
+            @php
+                // Sumber tunggal active state untuk seluruh nav.
+                // Digunakan IDENTIK oleh mode expanded & collapsed — konsisten tanpa cabang styling terpisah.
+                $navActive = [
+                    'dashboard'   => request()->routeIs('dosen.dashboard'),
+                    'kursus-saya' => request()->routeIs('dosen.kursus')
+                                       || request()->routeIs('dosen.kursus.*')
+                                       || request()->routeIs('dosen.module.*')
+                                       || request()->routeIs('dosen.material.*')
+                                       || request()->routeIs('dosen.course-discussions.*'),
+                    'bootcamp'    => request()->routeIs('dosen.bootcamp')
+                                       || request()->routeIs('dosen.bootcamp.*'),
+                    'progres'     => request()->routeIs('dosen.progres'),
+                    'nilai'       => request()->routeIs('dosen.nilai')
+                                       || request()->routeIs('dosen.nilai.*'),
+                    'pesan'       => request()->routeIs('dosen.pesan'),
+                    'apps'        => request()->routeIs('dosen.apps'),
+                ];
+
+                // Class reusable (DRY) untuk active vs idle state.
+                $navItemBase   = 'sidebar-item group relative flex items-center px-4 py-3 rounded-xl transition-all duration-300 ease-in-out';
+                $navItemActive = 'bg-blue-500 text-white shadow-sm shadow-blue-500/30 font-semibold';
+                $navItemIdle   = 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white';
+            @endphp
             <nav class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-2">
-                <a href="{{ route('dosen.dashboard') }}" aria-current="{{ ($active ?? '') == 'dashboard' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'dashboard' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <a href="{{ route('dosen.dashboard') }}" title="Dashboard" @if($navActive['dashboard']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['dashboard'] ? $navItemActive : $navItemIdle }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
-                    <span class="sidebar-text font-medium text-sm">Dashboard</span>
+                    <span class="sidebar-text ml-3 font-medium text-sm">Dashboard</span>
                     <span class="sidebar-tooltip">Dashboard</span>
                 </a>
                 
-                <a href="{{ route('dosen.kursus') }}" aria-current="{{ ($active ?? '') == 'kursus-saya' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'kursus-saya' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <a href="{{ route('dosen.kursus') }}" title="Kursus Saya" @if($navActive['kursus-saya']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['kursus-saya'] ? $navItemActive : $navItemIdle }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
-                    <span class="sidebar-text font-medium text-sm">Kursus Saya</span>
+                    <span class="sidebar-text ml-3 font-medium text-sm">Kursus Saya</span>
                     <span class="sidebar-tooltip">Kursus Saya</span>
                 </a>
 
-                <a href="{{ route('dosen.bootcamp') }}" aria-current="{{ ($active ?? '') == 'bootcamp' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'bootcamp' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <a href="{{ route('dosen.bootcamp') }}" title="Bootcamp Saya" @if($navActive['bootcamp']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['bootcamp'] ? $navItemActive : $navItemIdle }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 8V6a4 4 0 10-8 0v2m-3 3h14l-1 8a2 2 0 01-2 2H8a2 2 0 01-2-2l-1-8zm5 4h4" />
                     </svg>
-                    <span class="sidebar-text font-medium text-sm">Bootcamp Saya</span>
+                    <span class="sidebar-text ml-3 font-medium text-sm">Bootcamp Saya</span>
                     <span class="sidebar-tooltip">Bootcamp Saya</span>
                 </a>
-                
-                <a href="{{ route('dosen.progres') }}" aria-current="{{ ($active ?? '') == 'progres' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'progres' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <a href="{{ route('dosen.progres') }}" title="Progres Mahasiswa" @if($navActive['progres']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['progres'] ? $navItemActive : $navItemIdle }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    <span class="sidebar-text font-medium text-sm">Progres Mahasiswa</span>
+                    <span class="sidebar-text ml-3 font-medium text-sm">Progres Mahasiswa</span>
                     <span class="sidebar-tooltip">Progres Mahasiswa</span>
                 </a>
 
-                <a href="{{ route('dosen.nilai') }}" aria-current="{{ ($active ?? '') == 'nilai' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'nilai' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('dosen.nilai') }}" title="Mengelola Nilai" @if($navActive['nilai']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['nilai'] ? $navItemActive : $navItemIdle }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-6m3 6V7m3 10v-3m4 6H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z" />
                     </svg>
-                    <span class="sidebar-text font-medium text-sm">Mengelola Nilai</span>
+                    <span class="sidebar-text ml-3 font-medium text-sm">Mengelola Nilai</span>
                     <span class="sidebar-tooltip">Mengelola Nilai</span>
                 </a>
                 
-                <a href="{{ route('dosen.pesan') }}" aria-current="{{ ($active ?? '') == 'pesan' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'pesan' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('dosen.pesan') }}" title="Pesan" @if($navActive['pesan']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['pesan'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
@@ -403,7 +427,7 @@
                     <span class="sidebar-tooltip">Pesan</span>
                 </a>
 
-                <a href="{{ route('dosen.apps') }}" aria-current="{{ ($active ?? '') == 'apps' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'apps' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('dosen.apps') }}" title="Apps" @if($navActive['apps']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['apps'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>

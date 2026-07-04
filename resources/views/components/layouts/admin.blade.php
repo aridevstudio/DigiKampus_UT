@@ -282,8 +282,69 @@
             </div>
             
             {{-- Nav Links --}}
+            @php
+                // Sumber tunggal active state (route-based) — IDENTIK untuk mode expanded & collapsed.
+                // Menggunakan @if($navActive['key']) aria-current="page" (omit saat tidak aktif, sesuai WAI-ARIA).
+                $navActive = [
+                    'dashboard'         => request()->routeIs('admin.dashboard'),
+                    'dosen'             => request()->routeIs('admin.dosen')
+                                          || request()->routeIs('admin.dosen.*'),
+                    'mahasiswa'         => request()->routeIs('admin.mahasiswa')
+                                          || request()->routeIs('admin.mahasiswa.*'),
+                    'kursus'            => request()->routeIs('admin.kursus')
+                                          || request()->routeIs('admin.kursus.*'),
+                    'bootcamp'          => request()->routeIs('admin.bootcamp-tiket')
+                                          || request()->routeIs('admin.bootcamp-tiket.*'),
+                    'prodi'             => request()->routeIs('admin.prodi')
+                                          || request()->routeIs('admin.prodi.*'),
+                    'kategori'          => request()->routeIs('admin.kategori')
+                                          || request()->routeIs('admin.kategori.*'),
+                    'sertifikasi'       => request()->routeIs('admin.sertifikasi')
+                                          || request()->routeIs('admin.sertifikasi.*'),
+                    'pengumuman'        => request()->routeIs('admin.pengumuman')
+                                          || request()->routeIs('admin.pengumuman.*'),
+                    'forum-management'  => request()->routeIs('admin.forum-kategori*')
+                                          || request()->routeIs('admin.forum-topik*')
+                                          || request()->routeIs('admin.forum-komentar*'),
+                    'forum-kategori'    => request()->routeIs('admin.forum-kategori*'),
+                    'forum-topik'       => request()->routeIs('admin.forum-topik*'),
+                    'forum-komentar'    => request()->routeIs('admin.forum-komentar*'),
+                    'apps-management'   => request()->routeIs('admin.apps.hub')
+                                          || request()->routeIs('admin.apps.*'),
+                    'apps-hub'          => request()->routeIs('admin.apps.hub'),
+                    'apps'              => request()->routeIs('admin.apps.index')
+                                          || request()->routeIs('admin.apps.index*')
+                                          || request()->routeIs('admin.apps.edit*')
+                                          || request()->routeIs('admin.apps.update*')
+                                          || request()->routeIs('admin.apps.toggle*'),
+                    'support-tickets'   => request()->routeIs('admin.support-tickets')
+                                          || request()->routeIs('admin.support-tickets.*'),
+                    'chat'              => request()->routeIs('admin.chat'),
+                    'voucher'           => request()->routeIs('admin.voucher'),
+                    'finance-report'    => request()->routeIs('admin.finance-report'),
+                ];
+
+                $forumManagementOpen = $navActive['forum-management'];
+                $appsManagementOpen  = $navActive['apps-management'];
+
+                $navItemBase    = 'sidebar-item group relative flex items-center px-4 py-3 rounded-xl transition-all duration-300 ease-in-out';
+                $navItemActive  = 'bg-blue-500 text-white shadow-sm shadow-blue-500/30 font-semibold';
+                $navItemIdle    = 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white';
+
+                $subItemActive  = 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold';
+                $subItemIdle    = 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white';
+                $subItemClasses = 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition';
+
+                $kategoriRoute       = \Illuminate\Support\Facades\Route::has('admin.kategori')       ? route('admin.kategori')       : '#';
+                $sertifikasiRoute    = \Illuminate\Support\Facades\Route::has('admin.sertifikasi')    ? route('admin.sertifikasi')    : '#';
+                $forumKategoriRoute  = \Illuminate\Support\Facades\Route::has('admin.forum-kategori') ? route('admin.forum-kategori') : '#';
+                $forumTopikRoute     = \Illuminate\Support\Facades\Route::has('admin.forum-topik')    ? route('admin.forum-topik')    : '#';
+                $forumKomentarRoute  = \Illuminate\Support\Facades\Route::has('admin.forum-komentar') ? route('admin.forum-komentar') : '#';
+                $appsHubRoute        = \Illuminate\Support\Facades\Route::has('admin.apps.hub')       ? route('admin.apps.hub')       : '#';
+                $appsIndexRoute      = \Illuminate\Support\Facades\Route::has('admin.apps.index')     ? route('admin.apps.index')     : '#';
+            @endphp
             <nav class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-2">
-                <a href="{{ route('admin.dashboard') }}" aria-current="{{ ($active ?? '') == 'dashboard' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'dashboard' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.dashboard') }}" title="Dashboard" @if($navActive['dashboard']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['dashboard'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
@@ -291,7 +352,7 @@
                     <span class="sidebar-tooltip">Dashboard</span>
                 </a>
                 
-                <a href="{{ route('admin.dosen') }}" aria-current="{{ ($active ?? '') == 'dosen' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'dosen' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.dosen') }}" title="Kelola Dosen" @if($navActive['dosen']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['dosen'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -299,7 +360,7 @@
                     <span class="sidebar-tooltip">Kelola Dosen</span>
                 </a>
                 
-                <a href="{{ route('admin.mahasiswa') }}" aria-current="{{ ($active ?? '') == 'mahasiswa' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'mahasiswa' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.mahasiswa') }}" title="Kelola Mahasiswa" @if($navActive['mahasiswa']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['mahasiswa'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
@@ -307,7 +368,7 @@
                     <span class="sidebar-tooltip">Kelola Mahasiswa</span>
                 </a>
                 
-                <a href="{{ route('admin.kursus') }}" aria-current="{{ ($active ?? '') == 'kursus' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'kursus' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.kursus') }}" title="Kelola Kursus" @if($navActive['kursus']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['kursus'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
@@ -315,7 +376,7 @@
                     <span class="sidebar-tooltip">Kelola Kursus</span>
                 </a>
 
-                <a href="{{ route('admin.bootcamp-tiket') }}" aria-current="{{ ($active ?? '') == 'bootcamp' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'bootcamp' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.bootcamp-tiket') }}" title="Bootcamp & Tiket" @if($navActive['bootcamp']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['bootcamp'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 8V6a4 4 0 10-8 0v2m-3 3h14l-1 8a2 2 0 01-2 2H8a2 2 0 01-2-2l-1-8zm5 4h4" />
                     </svg>
@@ -323,7 +384,7 @@
                     <span class="sidebar-tooltip">Bootcamp & Tiket</span>
                 </a>
                 
-                <a href="{{ route('admin.prodi') }}" aria-current="{{ ($active ?? '') == 'prodi' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'prodi' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.prodi') }}" title="Kelola Prodi" @if($navActive['prodi']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['prodi'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
@@ -331,7 +392,7 @@
                     <span class="sidebar-tooltip">Kelola Prodi</span>
                 </a>
 
-                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.kategori') ? route('admin.kategori') : '#' }}" aria-current="{{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ (($active ?? '') == 'kategori' || request()->routeIs('admin.kategori')) ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ $kategoriRoute }}" title="Kelola Kategori" @if($navActive['kategori'] && $kategoriRoute !== '#') aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['kategori'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h10v10H7V7zm-4 4h4m10 0h4M11 3v4m0 10v4" />
                     </svg>
@@ -339,7 +400,7 @@
                     <span class="sidebar-tooltip">Kelola Kategori</span>
                 </a>
 
-                <a href="{{ \Illuminate\Support\Facades\Route::has('admin.sertifikasi') ? route('admin.sertifikasi') : '#' }}" aria-current="{{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ (($active ?? '') == 'sertifikasi' || request()->routeIs('admin.sertifikasi')) ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ $sertifikasiRoute }}" title="Sertifikasi Otomatis" @if($navActive['sertifikasi'] && $sertifikasiRoute !== '#') aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['sertifikasi'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.591 21 9c0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
@@ -347,7 +408,7 @@
                     <span class="sidebar-tooltip">Sertifikasi Otomatis</span>
                 </a>
                 
-                <a href="{{ route('admin.pengumuman') }}" aria-current="{{ ($active ?? '') == 'pengumuman' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'pengumuman' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.pengumuman') }}" title="Pengumuman" @if($navActive['pengumuman']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['pengumuman'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                     </svg>
@@ -355,12 +416,8 @@
                     <span class="sidebar-tooltip">Pengumuman</span>
                 </a>
 
-                @php
-                    $forumManagementActive = in_array(($active ?? ''), ['forum-kategori', 'forum-topik', 'forum-komentar'], true) || request()->routeIs('admin.forum-kategori*') || request()->routeIs('admin.forum-topik*') || request()->routeIs('admin.forum-komentar*');
-                    $forumCategoryRoute = \Illuminate\Support\Facades\Route::has('admin.forum-kategori') ? route('admin.forum-kategori') : '#';
-                @endphp
-                <div x-data="{ open: {{ $forumManagementActive ? 'true' : 'false' }} }" class="space-y-1">
-                    <button type="button" @click="open = !open" aria-expanded="open" class="sidebar-item group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl {{ $forumManagementActive ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <div x-data="{ open: {{ $forumManagementOpen ? 'true' : 'false' }} }" class="space-y-1">
+                    <button type="button" @click="open = !open" :aria-expanded="open.toString()" title="Forum Management" class="{{ $navItemBase }} w-full justify-between {{ $navActive['forum-management'] ? $navItemActive : $navItemIdle }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v3l-4-3H9a2 2 0 01-2-2v-1m10-9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v3l4-3h2a2 2 0 002-2V7z" />
                         </svg>
@@ -371,26 +428,23 @@
                         <span class="sidebar-tooltip">Forum Management</span>
                     </button>
                     <div x-show="open" x-collapse class="submenu-container mt-1 ml-6 border-l-2 border-slate-100 dark:border-slate-700/80 pl-4 space-y-1">
-                        <a href="{{ $forumCategoryRoute }}" aria-current="{{ ($active ?? '') == 'forum-kategori' ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ ($active ?? '') == 'forum-kategori' || request()->routeIs('admin.forum-kategori*') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                        <a href="{{ $forumKategoriRoute }}" title="Kategori" @if($navActive['forum-kategori'] && $forumKategoriRoute !== '#') aria-current="page" @endif class="{{ $subItemClasses }} {{ $navActive['forum-kategori'] ? $subItemActive : $subItemIdle }}">
                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Kategori</span>
                         </a>
-                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-topik') ? route('admin.forum-topik') : '#' }}" aria-current="{{ ($active ?? '') == 'forum-topik' ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ ($active ?? '') == 'forum-topik' || request()->routeIs('admin.forum-topik*') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                        <a href="{{ $forumTopikRoute }}" title="Topik" @if($navActive['forum-topik'] && $forumTopikRoute !== '#') aria-current="page" @endif class="{{ $subItemClasses }} {{ $navActive['forum-topik'] ? $subItemActive : $subItemIdle }}">
                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Topik</span>
                         </a>
-                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.forum-komentar') ? route('admin.forum-komentar') : '#' }}" aria-current="{{ ($active ?? '') == 'forum-komentar' ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ ($active ?? '') == 'forum-komentar' || request()->routeIs('admin.forum-komentar*') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                        <a href="{{ $forumKomentarRoute }}" title="Moderasi" @if($navActive['forum-komentar'] && $forumKomentarRoute !== '#') aria-current="page" @endif class="{{ $subItemClasses }} {{ $navActive['forum-komentar'] ? $subItemActive : $subItemIdle }}">
                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Moderasi</span>
                         </a>
                     </div>
                 </div>
 
-                @php
-                    $appsManagementActive = in_array(($active ?? ''), ['apps', 'apps-hub'], true) || request()->routeIs('admin.apps.*');
-                @endphp
-                <div x-data="{ open: {{ $appsManagementActive ? 'true' : 'false' }} }" class="space-y-1">
-                    <button type="button" @click="open = !open" aria-expanded="open" class="sidebar-item group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl {{ $appsManagementActive ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <div x-data="{ open: {{ $appsManagementOpen ? 'true' : 'false' }} }" class="space-y-1">
+                    <button type="button" @click="open = !open" :aria-expanded="open.toString()" title="Apps Management" class="{{ $navItemBase }} w-full justify-between {{ $navActive['apps-management'] ? $navItemActive : $navItemIdle }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                         </svg>
@@ -401,18 +455,18 @@
                         <span class="sidebar-tooltip">Apps Management</span>
                     </button>
                     <div x-show="open" x-collapse class="submenu-container mt-1 ml-6 border-l-2 border-slate-100 dark:border-slate-700/80 pl-4 space-y-1">
-                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.hub') ? route('admin.apps.hub') : '#' }}" aria-current="{{ (($active ?? '') == 'apps-hub') || request()->routeIs('admin.apps.hub') ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ (($active ?? '') == 'apps-hub') || request()->routeIs('admin.apps.hub') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                        <a href="{{ $appsHubRoute }}" title="Apps Hub" @if($navActive['apps-hub'] && $appsHubRoute !== '#') aria-current="page" @endif class="{{ $subItemClasses }} {{ $navActive['apps-hub'] ? $subItemActive : $subItemIdle }}">
                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Apps Hub</span>
                         </a>
-                        <a href="{{ \Illuminate\Support\Facades\Route::has('admin.apps.index') ? route('admin.apps.index') : '#' }}" aria-current="{{ ($active ?? '') == 'apps' ? 'page' : 'false' }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ ($active ?? '') == 'apps' || request()->routeIs('admin.apps.index*') ? 'text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/5 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 hover:text-gray-900 dark:hover:text-white' }}">
+                        <a href="{{ $appsIndexRoute }}" title="Daftar Aplikasi" @if($navActive['apps'] && $appsIndexRoute !== '#') aria-current="page" @endif class="{{ $subItemClasses }} {{ $navActive['apps'] ? $subItemActive : $subItemIdle }}">
                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                             <span>Daftar Aplikasi</span>
                         </a>
                     </div>
                 </div>
 
-                <a href="{{ route('admin.support-tickets') }}" aria-current="{{ ($active ?? '') == 'support-tickets' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'support-tickets' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.support-tickets') }}" title="Tiket Support" @if($navActive['support-tickets']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['support-tickets'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
@@ -420,7 +474,7 @@
                     <span class="sidebar-tooltip">Tiket Support</span>
                 </a>
 
-                <a href="{{ route('admin.chat') }}" aria-current="{{ ($active ?? '') == 'chat' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'chat' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.chat') }}" title="Manajemen Chat" @if($navActive['chat']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['chat'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.963 9.963 0 01-4.518-1.078L3 20l1.149-3.064A7.963 7.963 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
@@ -428,7 +482,7 @@
                     <span class="sidebar-tooltip">Manajemen Chat</span>
                 </a>
 
-                <a href="{{ route('admin.voucher') }}" aria-current="{{ ($active ?? '') == 'voucher' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'voucher' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.voucher') }}" title="Voucher" @if($navActive['voucher']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['voucher'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 010 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 010-4V7a2 2 0 00-2-2H5z" />
                     </svg>
@@ -436,7 +490,7 @@
                     <span class="sidebar-tooltip">Voucher</span>
                 </a>
 
-                <a href="{{ route('admin.finance-report') }}" aria-current="{{ ($active ?? '') == 'finance-report' ? 'page' : 'false' }}" class="sidebar-item group relative flex items-center gap-3 px-4 py-3 rounded-xl {{ ($active ?? '') == 'finance-report' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }} transition">
+                <a href="{{ route('admin.finance-report') }}" title="Finance Report" @if($navActive['finance-report']) aria-current="page" @endif class="{{ $navItemBase }} {{ $navActive['finance-report'] ? $navItemActive : $navItemIdle }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 13l3-3 3 2 4-5" />
                     </svg>
