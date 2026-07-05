@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\Exceptions\Bootcamp\BootcampFlowException;
 use App\Http\Controllers\Controller;
 use App\Models\AutomaticCertificate;
 use App\Models\AssignmentSubmission;
@@ -20,6 +21,9 @@ use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\QuizAttempt;
 use App\Models\QuizQuestion;
+use App\Models\User;
+use App\Services\BootcampFlowService;
+use App\Support\Bootcamp\BootcampTransition;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +35,11 @@ use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
+    /**
+     * Single source of truth for ALL bootcamp gating decisions.
+     * Constructor-injected via Laravel container auto-resolution.
+     */
+    public function __construct(protected BootcampFlowService $bootcampFlow) {}
     /**
      * Show get courses page (course catalog)
      */
@@ -623,9 +632,20 @@ class CourseController extends Controller
     public function completeMaterial($id)
     {
         $user = Auth::guard('mahasiswa')->user();
-        
+
         $material = CourseMaterial::findOrFail($id);
-        
+
+        // R1/B-1 fix: route through BootcampFlowService. Backdoor bypass of
+        // tugas/kuis materials via this endpoint is now closed.
+        // BootcampFlowException is rendered to 403 JSON / back()->error by
+        // the renderer registered in bootstrap/app.php.
+        $this->bootcampFlow->assert(
+            $user,
+            Course::find($material->id_course),
+            BootcampTransition::COMPLETE_MATERIAL,
+            ['material' => $material],
+        );
+
         // Check enrollment
         $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
             ->where('id_course', $material->id_course)
@@ -1325,37 +1345,17 @@ class CourseController extends Controller
             ], 422);
         }
 
-        // SECURITY: server-side deadline + final-project gating.
-        // Frontend may hide the form, but a raw POST can still bypass it.
+        // R2 refactor: server-side deadline + final-project gating moved to
+        // BootcampFlowService::assertSubmitAssignment (single source of truth).
+        // BootcampFlowException is rendered to 4xx JSON / back()->error by
+        // the renderer registered in bootstrap/app.php.
         $assignmentPayload = $this->parseAssignmentPayload($assignmentMaterial->konten);
-
-        // Fail-closed: if the JSON has no deadline AND no final-project flag,
-        // the admin mis-configured this material. Reject instead of falling
-        // back to the default 7-day window that parseAssignmentDeadline
-        // would otherwise produce.
-        if (empty($assignmentPayload['deadline']) && empty($assignmentPayload['is_final_project'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Konfigurasi tugas tidak valid (tidak ada deadline atau final project). Hubungi admin.',
-            ], 422);
-        }
-
-        $assignmentDeadline = $this->parseAssignmentDeadline($assignmentPayload['deadline'] ?? null);
-        $allowAfterDeadline = (bool) ($assignmentPayload['allow_after_deadline'] ?? false);
-
-        if (now()->greaterThan($assignmentDeadline) && !$allowAfterDeadline) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tenggat waktu pengumpulan tugas telah berakhir (' . $assignmentDeadline->format('d M Y, H:i') . ').',
-            ], 403);
-        }
-
-        if (!empty($assignmentPayload['is_final_project']) && !$this->areFinalProjectPrerequisitesMet((int) $courseId, (int) $user->id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Prasyarat pengerjaan proyek akhir belum terpenuhi (modul/kuis/kehadiran live class).',
-            ], 403);
-        }
+        $this->bootcampFlow->assert(
+            $user,
+            Course::find((int) $courseId),
+            BootcampTransition::SUBMIT_ASSIGNMENT,
+            ['material' => $assignmentMaterial, 'payload' => $assignmentPayload],
+        );
 
         $validator = Validator::make($request->all(), [
             'file' => 'required|file|max:10240|mimes:pdf,docx,doc,zip',
@@ -2232,68 +2232,10 @@ class CourseController extends Controller
      *
      * Read-only helpers; safe to call repeatedly in dashboard renders.
      */
-    private function areFinalProjectPrerequisitesMet(int $courseId, int $mahasiswaId): bool
-    {
-        $course = Course::find($courseId);
-        if (!$course) {
-            return false;
-        }
-
-        // 1) Semua materi CourseMaterial wajib complete
-        $totalMaterials = $course->materials()->count();
-        if ($totalMaterials === 0) {
-            return false;
-        }
-        $completedMaterials = \App\Models\MaterialProgress::where('id_mahasiswa', $mahasiswaId)
-            ->whereIn('id_material', $course->materials()->pluck('id_material'))
-            ->where('is_completed', true)
-            ->count();
-        if ($completedMaterials < $totalMaterials) {
-            return false;
-        }
-
-        // 2) Semua kuis GRADED wajib lulus (exclude pretest yang hanya untuk placement).
-        $quizzes = Quiz::where('id_course', $courseId)
-            ->where('is_active', true)
-            ->where('is_pretest', false)
-            ->get();
-        foreach ($quizzes as $quiz) {
-            $bestAttempt = QuizAttempt::where('id_quiz', $quiz->id_quiz)
-                ->where('id_mahasiswa', $mahasiswaId)
-                ->where('status', 'selesai')
-                ->orderByDesc('persentase')
-                ->orderByDesc('waktu_selesai')
-                ->first();
-            $score = $bestAttempt ? (float) $bestAttempt->persentase : 0.0;
-            $passing = (int) ($quiz->passing_score ?? 0);
-            if ($score < $passing) {
-                return false;
-            }
-        }
-
-        // 3) Semua attendance live-class untuk course ini wajib 'verified'
-        //    (menggunakan multi-session check via session_key set di dashboard).
-        $liveClassSessionKeys = $this->collectLiveClassSessionKeys($course);
-        if (!empty($liveClassSessionKeys)) {
-            $verifiedKeys = BootcampLiveClassAttendance::where('id_user', $mahasiswaId)
-                ->where('id_course', $courseId)
-                ->whereIn('session_key', $liveClassSessionKeys)
-                ->where('status', BootcampLiveClassAttendance::STATUS_VERIFIED)
-                ->pluck('session_key')
-                ->all();
-            $missing = array_diff($liveClassSessionKeys, $verifiedKeys);
-            if (!empty($missing)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /**
      * Compute the set of `session_key` strings currently exposed by the
      * bootcamp live class dashboard for a given course. Used by
-     * `areFinalProjectPrerequisitesMet` and by the dashboard data
+     * `finalProjectGate` and by the dashboard data
      * pre-fetch in `prepareBootcampDashboardData` to keep keys in sync.
      */
     private function collectLiveClassSessionKeys(Course $course): array
@@ -2347,41 +2289,18 @@ class CourseController extends Controller
             abort(401);
         }
 
-        $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
-            ->where('id_course', $courseId)
-            ->first();
-        if (!$enrollment || !in_array($enrollment->status, ['aktif', 'in_progress', 'selesai'], true)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak terdaftar aktif pada bootcamp ini.',
-            ], 403);
-        }
-
+        // R5 refactor: 5 inline gating checks (enrollment/bootcamp/session-key/
+        // time-window/verified-guard) consolidated into
+        // BootcampFlowService::assertUploadAttendance. BootcampFlowException
+        // is rendered to 4xx JSON / back()->error by bootstrap/app.php.
         $course = Course::find($courseId);
-        if (!$course || !$this->isBootcamp($course)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Halaman ini hanya untuk bootcamp (kategori tiket).',
-            ], 404);
-        }
-
         $sessionKey = trim((string) $request->input('session_key', ''));
-        $validKeys = $this->collectLiveClassSessionKeys($course);
-        if (!in_array($sessionKey, $validKeys, true)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sesi live class tidak dikenali.',
-            ], 422);
-        }
-
-        // Server-enforced timing — cannot upload before the class ends.
-        $sessionEnded = $this->resolveLiveClassEndTime($course, $sessionKey);
-        if ($sessionEnded === null || now()->lessThan($sessionEnded)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bukti kehadiran baru dapat diunggah setelah sesi live class berakhir.',
-            ], 403);
-        }
+        $this->bootcampFlow->assert(
+            $user,
+            $course,
+            BootcampTransition::UPLOAD_ATTENDANCE,
+            ['session_key' => $sessionKey],
+        );
 
         $validator = Validator::make($request->all(), [
             'proof_file' => 'required|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',

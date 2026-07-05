@@ -37,5 +37,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\App\Exceptions\Bootcamp\BootcampFlowException $e, $request) {
+            // JSON shape kept backwards-compatible with existing inline 4xx
+            // responses so front-end toast/alert code keeps working.
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], $e->httpStatus);
+            }
+            return back()->with('error', $e->getMessage());
+        });
     })->create();

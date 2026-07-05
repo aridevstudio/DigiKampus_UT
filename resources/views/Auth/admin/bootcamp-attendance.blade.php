@@ -81,7 +81,8 @@
                             </td>
                             <td class="px-4 py-3 align-top">
                                 <p class="font-medium text-gray-900 dark:text-white">{{ $row->course?->nama_course ?? 'Course #' . $row->id_course }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ $row->session_key }}</p>
+                                <p class="text-xs text-gray-700 dark:text-gray-200 font-medium">{{ $row->humanSessionLabel() }}</p>
+                                <p class="text-[10px] text-gray-400 font-mono">{{ $row->session_key }}</p>
                             </td>
                             <td class="px-4 py-3 align-top">
                                 @if($proofUrl)
