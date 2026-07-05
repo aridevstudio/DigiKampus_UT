@@ -5,49 +5,69 @@ namespace App\Support\Bootcamp;
 /**
  * Mode akses event bootcamp-style.
  *
- *   ONLINE   → wajib memiliki link Zoom / Meet
- *   ONSITE   → wajib memiliki lokasi_event + kapasitas
- *   HYBRID   → kombinasi keduanya (link meeting + lokasi)
+ * USER-FACING SEMANTICS (binary, per spec 2026-07-15):
+ *   ONLINE  → wajib memiliki link meeting (online_link / link_zoom / youtube_playlist)
+ *   OFFLINE → wajib memiliki lokasi_event + kapasitas_maksimal
+ *
+ * INTERNAL CASES (kept for match-safety with existing call sites):
+ *   ONSITE  → @deprecated, legacy data; semantically OFFLINE
+ *   HYBRID  → @deprecated, legacy data; semantically OFFLINE
+ *
+ * Helper methods {@see isOnlineLike()} dan {@see isOfflineLike()} adalah
+ * cara yang aman untuk branch tanpa enumerasi semua case — gunakan ini
+ * daripada match langsung ketika yang dibutuhkan hanya "online-ish" vs
+ * "offline-ish".
+ *
+ * Legacy values 'onsite' dan 'hybrid' di-collapse ke OFFLINE oleh
+ * {@see fromNullable()} sehingga data lama tidak rusak saat UI/Service
+ * membaca mode_event.
  */
 enum AccessMode: string
 {
-    case ONLINE = 'online';
-    case ONSITE = 'onsite';
-    case HYBRID = 'hybrid';
+    case ONLINE  = 'online';
+    case OFFLINE = 'offline';
+    case ONSITE  = 'onsite'; // @deprecated — collapsed to OFFLINE for user semantics
+    case HYBRID  = 'hybrid'; // @deprecated — collapsed to OFFLINE for user semantics
 
     public function label(): string
     {
         return match ($this) {
-            self::ONLINE => 'Online',
-            self::ONSITE => 'Onsite',
-            self::HYBRID => 'Hybrid',
+            self::ONLINE           => 'Online',
+            self::OFFLINE, self::ONSITE, self::HYBRID => 'Offline',
         };
     }
 
-    /** Apakah mode ini memerlukan link meeting per sesi? */
+    public function isOnlineLike(): bool
+    {
+        return $this === self::ONLINE;
+    }
+
+    public function isOfflineLike(): bool
+    {
+        return in_array($this, [self::OFFLINE, self::ONSITE, self::HYBRID], true);
+    }
+
+    /** Apakah mode ini memerlukan link meeting? */
     public function requiresMeetingLink(): bool
     {
-        return match ($this) {
-            self::ONLINE, self::HYBRID => true,
-            self::ONSITE => false,
-        };
+        return $this->isOnlineLike();
     }
 
     /** Apakah mode ini memerlukan alamat lokasi? */
     public function requiresLocation(): bool
     {
-        return match ($this) {
-            self::ONSITE, self::HYBRID => true,
-            self::ONLINE => false,
-        };
+        return $this->isOfflineLike();
     }
 
+    /**
+     * Lookup helper tolerant — null / invalid / legacy (onsite, hybrid) → OFFLINE;
+     * 'online' / 'offline' / semua nilai lain → ONLINE.
+     */
     public static function fromNullable(?string $value): self
     {
         return match ($value) {
-            'onsite' => self::ONSITE,
-            'hybrid' => self::HYBRID,
-            default   => self::ONLINE,
+            'offline', 'onsite', 'hybrid' => self::OFFLINE,
+            default => self::ONLINE,
         };
     }
 }

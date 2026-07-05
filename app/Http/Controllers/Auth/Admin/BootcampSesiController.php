@@ -91,9 +91,8 @@ class BootcampSesiController extends Controller
     {
         $course = Course::findOrFail($courseId);
         $type = BootcampType::fromNullable($course->tipe_event ?? 'bootcamp');
-        $mode = AccessMode::fromNullable($course->mode_event ?? 'online');
 
-        $validated = $this->validateSesiPayload($request, null, $type, $mode);
+        $validated = $this->validateSesiPayload($request, null, $type);
 
         $materiFilePath = $this->handleMateriUpload($request, 'materi_file', $course->id_course);
 
@@ -105,6 +104,10 @@ class BootcampSesiController extends Controller
             'tanggal_sesi'   => $validated['tanggal_sesi'],
             'jam_mulai'      => $validated['jam_mulai'],
             'jam_selesai'    => $validated['jam_selesai'] ?? null,
+            'mode_event'     => $validated['mode_event'],
+            'lokasi_event'   => $validated['lokasi_event'] ?? null,
+            'peta_event'     => $validated['peta_event'] ?? null,
+            'kapasitas_sesi' => $validated['kapasitas_sesi'] ?? null,
             'link_zoom'      => $validated['link_zoom'] ?? null,
             'link_meet'      => $validated['link_meet'] ?? null,
             'link_rekaman'   => $validated['link_rekaman'] ?? null,
@@ -128,9 +131,8 @@ class BootcampSesiController extends Controller
             ->where('id_bootcamp_session', $sesiId)
             ->firstOrFail();
         $type = BootcampType::fromNullable($course->tipe_event ?? 'bootcamp');
-        $mode = AccessMode::fromNullable($course->mode_event ?? 'online');
 
-        $validated = $this->validateSesiPayload($request, $sesi, $type, $mode);
+        $validated = $this->validateSesiPayload($request, $sesi, $type);
         $materiFilePath = $this->handleMateriUpload(
             $request,
             'materi_file',
@@ -143,6 +145,10 @@ class BootcampSesiController extends Controller
             'tanggal_sesi'   => $validated['tanggal_sesi'],
             'jam_mulai'      => $validated['jam_mulai'],
             'jam_selesai'    => $validated['jam_selesai'] ?? null,
+            'mode_event'     => $validated['mode_event'],
+            'lokasi_event'   => $validated['lokasi_event'] ?? null,
+            'peta_event'     => $validated['peta_event'] ?? null,
+            'kapasitas_sesi' => $validated['kapasitas_sesi'] ?? null,
             'link_zoom'      => $validated['link_zoom'] ?? null,
             'link_meet'      => $validated['link_meet'] ?? null,
             'link_rekaman'   => $validated['link_rekaman'] ?? null,
@@ -218,34 +224,90 @@ class BootcampSesiController extends Controller
     // HELPERS
     // ─────────────────────────────────────────────────────────────────────
 
-    private function validateSesiPayload(Request $request, ?BootcampSession $existing, BootcampType $type, AccessMode $mode): array
+    /**
+     * Validate per-sesi payload dengan PER-SESI mode_event enforcement.
+     *
+     * Mode_event yang dipakai adalah dari REQUEST (per-sesi), bukan dari
+     * course.mode_event. Auto-null rules: kalau mode_event=offline, link
+     * meeting di-clear; kalau mode_event=online, lokasi_event/peta_event/
+     * kapasitas_sesi di-clear. Mixed data ditolak.
+     */
+    private function validateSesiPayload(Request $request, ?BootcampSession $existing, BootcampType $type): array
     {
+        $mode = $request->input('mode_event', 'online');
+
         $rules = [
             'judul_sesi'     => ['required', 'string', 'max:120'],
             'tanggal_sesi'   => ['required', 'date'],
             'jam_mulai'      => ['required', 'date_format:H:i'],
             'jam_selesai'    => ['nullable', 'date_format:H:i', 'after:jam_mulai'],
-            'link_zoom'      => ['nullable', 'string', 'max:500', 'url'],
-            'link_meet'      => ['nullable', 'string', 'max:500', 'url'],
+            'mode_event'     => ['required', 'in:online,offline'],
+            'lokasi_event'   => ['nullable', 'string', 'max:255', 'required_if:mode_event,offline'],
+            'peta_event'     => ['nullable', 'string', 'max:500', 'url'],
+            'kapasitas_sesi' => ['nullable', 'integer', 'min:1', 'max:100000', 'required_if:mode_event,offline'],
             'link_rekaman'   => ['nullable', 'string', 'max:500', 'url'],
             'materi_url'     => ['nullable', 'string', 'max:500', 'url'],
             'materi_file'    => ['nullable', 'file', 'mimes:pdf,zip,ppt,pptx,doc,docx', 'max:51200'],
             'deskripsi_sesi' => ['nullable', 'string', 'max:5000'],
         ];
 
-        // Tipe yang rencananya butuh meeting link per sesi
-        if ($type->requiresLiveClassLink() && !$mode->equals(AccessMode::ONSITE)) {
+        if ($mode === 'online') {
+            // Sesi online WAJIB punya minimal satu meeting link.
             $rules['link_zoom'] = ['required_without:link_meet', 'nullable', 'string', 'max:500', 'url'];
+            $rules['link_meet'] = ['nullable', 'string', 'max:500', 'url'];
+        } else {
+            // Sesi offline: lokasi + kapasitas sudah required_if di atas.
+            // Link meeting harus kosong (mixed data → reject).
+            $rules['link_zoom'] = ['nullable', 'string', 'max:500', 'url', 'prohibits:link_meet'];
+            $rules['link_meet'] = ['nullable', 'string', 'max:500', 'url'];
         }
 
-        return $request->validate($rules, [
+        $messages = [
             'judul_sesi.required' => 'Judul sesi wajib diisi.',
             'tanggal_sesi.required' => 'Tanggal sesi wajib diisi.',
             'jam_mulai.required' => 'Jam mulai wajib diisi.',
             'jam_selesai.after' => 'Jam selesai harus setelah jam mulai.',
-            'link_zoom.required_without' => 'Link Zoom atau Google Meet wajib diisi untuk event ini.',
+            'mode_event.required' => 'Mode event sesi wajib dipilih (online/offline).',
+            'mode_event.in' => 'Mode event harus bernilai online atau offline.',
+            'lokasi_event.required_if' => 'Lokasi wajib diisi untuk sesi offline.',
+            'kapasitas_sesi.required_if' => 'Kapasitas sesi wajib diisi untuk sesi offline.',
+            'link_zoom.required_without' => 'Link Zoom atau Google Meet wajib diisi untuk sesi online.',
+            'link_zoom.prohibits' => 'Sesi offline tidak boleh memiliki link meeting.',
             'materi_file.max' => 'Ukuran materi maksimal 50MB.',
-        ]);
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        // Hard rejection of mixed data (defense in depth — also caught by 'prohibits' rule).
+        if ($mode === 'offline') {
+            $hasZoom = !empty($validated['link_zoom']);
+            $hasMeet = !empty($validated['link_meet']);
+            if ($hasZoom || $hasMeet) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'link_zoom' => 'Sesi offline tidak boleh memiliki link meeting (Zoom/Meet). Kosongkan field meeting link.',
+                ]);
+            }
+        } else {
+            $hasLokasi = !empty($validated['lokasi_event']);
+            $hasKapasitas = !empty($validated['kapasitas_sesi']);
+            if ($hasLokasi || $hasKapasitas) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'lokasi_event' => 'Sesi online tidak boleh memiliki lokasi/kapasitas. Kosongkan field lokasi.',
+                ]);
+            }
+        }
+
+        // Auto-null the irrelevant fields after validation so DB stays clean.
+        if ($mode === 'offline') {
+            $validated['link_zoom'] = null;
+            $validated['link_meet'] = null;
+        } else {
+            $validated['lokasi_event'] = null;
+            $validated['peta_event'] = null;
+            $validated['kapasitas_sesi'] = null;
+        }
+
+        return $validated;
     }
 
     private function handleMateriUpload(Request $request, string $field, int $courseId, ?string $oldPath = null): ?string

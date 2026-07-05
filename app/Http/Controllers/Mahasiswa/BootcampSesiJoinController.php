@@ -45,6 +45,12 @@ class BootcampSesiJoinController extends Controller
             return back()->with('error', 'Anda tidak terdaftar aktif pada bootcamp ini.');
         }
 
+        // Gate 1.5 — sesi OFFLINE tidak punya join URL. Tampilkan info lokasi saja.
+        if ($sesi->isOffline()) {
+            $lokasi = $sesi->effectiveLocation() ?: 'lokasi akan diinformasikan oleh admin';
+            return back()->with('error', "Sesi ini bersifat Offline di {$lokasi}. Kehadiran akan dicatat oleh admin di lokasi, atau gunakan form Unggah Bukti Kehadiran setelah sesi berakhir.");
+        }
+
         // Gate 2 — sesi masih dalam rentang live, ATAU baru lewat (late-join default 15 menit)
         $now = now();
         $lateJoinAllowance = (int) config('bootcamp.late_join_minutes', 15);

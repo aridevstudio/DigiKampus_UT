@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use App\Support\Bootcamp\AccessMode;
 
 /**
  * Sesi individual untuk event bootcamp-style (multi/single session).
@@ -33,6 +34,10 @@ class BootcampSession extends Model
         'tanggal_sesi',
         'jam_mulai',
         'jam_selesai',
+        'mode_event',
+        'lokasi_event',
+        'peta_event',
+        'kapasitas_sesi',
         'link_zoom',
         'link_meet',
         'link_rekaman',
@@ -47,6 +52,7 @@ class BootcampSession extends Model
         'tanggal_sesi' => 'date',
         'urutan' => 'integer',
         'is_active' => 'boolean',
+        'kapasitas_sesi' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -111,10 +117,63 @@ class BootcampSession extends Model
     /**
      * Sumber URL canonical untuk tombol JOIN.
      * Preferensi: Zoom dulu, fallback ke Meet.
+     *
+     * Auto-null ketika sesi ini mode_event=offline untuk mencegah
+     * "join URL" tersimpan di sesi offline (mixed data).
      */
     public function joinUrl(): ?string
     {
+        if ($this->isOffline()) {
+            return null;
+        }
         return $this->link_zoom ?: $this->link_meet;
+    }
+
+    /**
+     * Access mode (online/offline) untuk sesi ini. Per-sesi overrides
+     * course-level setting. Default 'online' untuk backward compat.
+     */
+    public function accessMode(): AccessMode
+    {
+        return AccessMode::fromNullable($this->mode_event);
+    }
+
+    public function isOnline(): bool
+    {
+        return $this->accessMode()->isOnlineLike();
+    }
+
+    public function isOffline(): bool
+    {
+        return $this->accessMode()->isOfflineLike();
+    }
+
+    /**
+     * Effective location info untuk UI peserta (khusus offline).
+     */
+    public function effectiveLocation(): ?string
+    {
+        if ($this->isOnline()) {
+            return null;
+        }
+        return $this->lokasi_event;
+    }
+
+    public function effectiveMapLink(): ?string
+    {
+        if ($this->isOnline()) {
+            return null;
+        }
+        return $this->peta_event;
+    }
+
+    public function effectiveCapacity(): ?int
+    {
+        if ($this->isOnline()) {
+            return null;
+        }
+        $val = $this->kapasitas_sesi;
+        return $val !== null ? (int) $val : null;
     }
 
     public function materiUrl(): ?string

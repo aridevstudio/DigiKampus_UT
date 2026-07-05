@@ -545,6 +545,10 @@
                                 $sesiRecording = $sesi->link_rekaman;
                                 $sesiMateriUrl = $sesi->materi_url ?: (!empty($sesi->materi_file) ? asset('storage/' . $sesi->materi_file) : null);
                                 $sesiIsLegacy = false;
+                                $sesiIsOffline = $sesi->isOffline();
+                                $sesiLokasi = $sesi->lokasi_event;
+                                $sesiPeta = $sesi->peta_event;
+                                $sesiKapasitas = $sesi->kapasitas_sesi;
                             } else {
                                 // stdClass virtual fallback (legacy primary)
                                 $sesiId = (int) ($sesi->id_bootcamp_session ?? 0);
@@ -557,6 +561,11 @@
                                 $sesiRecording = $sesi->link_rekaman ?? null;
                                 $sesiMateriUrl = $sesi->materi_url ?? null;
                                 $sesiIsLegacy = true;
+                                // Legacy virtual stdClass has no mode_event; default to course.mode_event.
+                                $sesiIsOffline = in_array(($course->mode_event ?? 'online'), ['offline', 'onsite', 'hybrid'], true);
+                                $sesiLokasi = $course->lokasi_event;
+                                $sesiPeta = $course->peta_event;
+                                $sesiKapasitas = $course->kapasitas_maksimal;
                             }
                             $now = \Illuminate\Support\Carbon::now();
                             $sesiStatus = ($now->lessThan($sesiStart)) ? 'upcoming'
@@ -570,6 +579,11 @@
                             <div class="flex items-start justify-between gap-3">
                                 <div class="space-y-1 min-w-0">
                                     <div class="flex items-center gap-2 flex-wrap">
+                                        @if($sesiIsOffline)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Offline</span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Online</span>
+                                        @endif
                                         @if($sesiStatus === 'live')
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white">
                                             <span class="w-1.5 h-1.5 rounded-full bg-white"></span>Live
@@ -590,33 +604,57 @@
                             </div>
 
                             <div class="flex flex-wrap items-center gap-2">
-                                @php $joinUrl = $sesiLinkZoom ?: $sesiLinkMeet; @endphp
-                                @if($isJoinable && $joinUrl)
-                                    @if($sesiId > 0 && !$sesiIsLegacy)
-                                    <form method="POST" action="{{ route('mahasiswa.bootcamp.sesi.join', ['courseId' => $course->id_course, 'sesiId' => $sesiId]) }}" class="inline-block">
-                                        @csrf
-                                        <button type="submit" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition shadow-lg shadow-rose-500/20 inline-flex items-center gap-2">
+                                @if($sesiIsOffline)
+                                    {{-- OFFLINE: tampilkan lokasi + maps + check-in info, BUKAN join button --}}
+                                    <div class="w-full space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+                                        <div class="flex items-start gap-3">
+                                            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Lokasi Sesi</p>
+                                                <p class="text-sm font-bold text-amber-900">{{ $sesiLokasi ?: 'Lokasi belum ditentukan' }}</p>
+                                                @if($sesiPeta)
+                                                    <a href="{{ $sesiPeta }}" target="_blank" rel="noopener" class="text-xs text-blue-600 hover:underline font-semibold">↗ Buka di Google Maps</a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start gap-3 border-t border-amber-200/70 pt-3">
+                                            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                            <div>
+                                                <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Kapasitas</p>
+                                                <p class="text-sm font-bold text-amber-900">{{ $sesiKapasitas ? $sesiKapasitas . ' slot tersedia' : 'Tidak dibatasi' }}</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-[11px] text-amber-700 italic">Sesi offline: check-in kehadiran akan dicatat oleh admin di lokasi.</p>
+                                    </div>
+                                @else
+                                    @php $joinUrl = $sesiLinkZoom ?: $sesiLinkMeet; @endphp
+                                    @if($isJoinable && $joinUrl)
+                                        @if($sesiId > 0 && !$sesiIsLegacy)
+                                        <form method="POST" action="{{ route('mahasiswa.bootcamp.sesi.join', ['courseId' => $course->id_course, 'sesiId' => $sesiId]) }}" class="inline-block">
+                                            @csrf
+                                            <button type="submit" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition shadow-lg shadow-rose-500/20 inline-flex items-center gap-2">
+                                                <span class="relative flex h-2 w-2">
+                                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                                </span>
+                                                {{ $sesiStatus === 'live' ? 'Join Live Class' : 'Join Sesi (Belum Dimulai)' }}
+                                            </button>
+                                        </form>
+                                        @else
+                                        <a href="{{ $joinUrl }}" target="_blank" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition shadow-lg shadow-rose-500/20 inline-flex items-center gap-2">
                                             <span class="relative flex h-2 w-2">
                                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                                                 <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                                             </span>
-                                            {{ $sesiStatus === 'live' ? 'Join Live Class' : 'Join Sesi (Belum Dimulai)' }}
-                                        </button>
-                                    </form>
+                                            Join Sesi Live
+                                        </a>
+                                        @endif
                                     @else
-                                    <a href="{{ $joinUrl }}" target="_blank" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition shadow-lg shadow-rose-500/20 inline-flex items-center gap-2">
-                                        <span class="relative flex h-2 w-2">
-                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                                        </span>
-                                        Join Sesi Live
-                                    </a>
+                                        <button disabled class="bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 font-medium text-xs px-5 py-2.5 rounded-xl cursor-not-allowed">
+                                            @if($sesiStatus === 'upcoming')Join Sesi (Belum Dimuka)
+                                            @elseif(!$joinUrl)Join Sesi (Tanpa Link)@else Join Closed @endif
+                                        </button>
                                     @endif
-                                @else
-                                    <button disabled class="bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 font-medium text-xs px-5 py-2.5 rounded-xl cursor-not-allowed">
-                                        @if($sesiStatus === 'upcoming')Join Sesi (Belum Dimuka)
-                                        @elseif(!$joinUrl)Join Sesi (Tanpa Link)@else Join Closed @endif
-                                    </button>
                                 @endif
 
                                 @if($sesiRecording)

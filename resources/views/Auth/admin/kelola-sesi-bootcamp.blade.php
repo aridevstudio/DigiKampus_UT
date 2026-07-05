@@ -72,7 +72,13 @@
                     $endAt = $sesi->end_at;
                 @endphp
                 <article class="sesi-row flex flex-col gap-4 border-b border-slate-200 p-5 last:border-0 lg:flex-row lg:items-center lg:justify-between"
-                    data-sesi-id="{{ $sesi->id_bootcamp_session }}">
+                    data-sesi-id="{{ $sesi->id_bootcamp_session }}"
+                    data-mode-event="{{ $sesi->mode_event ?? 'online' }}"
+                    data-link-zoom="{{ $sesi->link_zoom ?? '' }}"
+                    data-link-meet="{{ $sesi->link_meet ?? '' }}"
+                    data-lokasi-event="{{ $sesi->lokasi_event ?? '' }}"
+                    data-peta-event="{{ $sesi->peta_event ?? '' }}"
+                    data-kapasitas-sesi="{{ $sesi->kapasitas_sesi ?? '' }}">
                     <div class="flex items-start gap-4">
                         <span class="mt-1 cursor-grab text-slate-300" title="Drag untuk reorder">⋮⋮</span>
                         <div class="space-y-1">
@@ -90,11 +96,19 @@
                                 WIB
                             </p>
                             <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500">
+                                @if ($sesi->isOffline())
+                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-200">Offline</span>
+                                @else
+                                    <span class="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 border border-blue-200">Online</span>
+                                @endif
                                 @if ($sesi->link_zoom)
                                     <span class="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 border border-blue-200">Zoom</span>
                                 @endif
                                 @if ($sesi->link_meet)
                                     <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700 border border-emerald-200">Google Meet</span>
+                                @endif
+                                @if ($sesi->lokasi_event)
+                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-200">Lokasi</span>
                                 @endif
                                 @if ($sesi->materi_file || $sesi->materi_url)
                                     <span class="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-200">Materi</span>
@@ -225,14 +239,48 @@
                             <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Jam Selesai (opsional)</span>
                             <input name="jam_selesai" type="time" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
                         </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Zoom</span>
-                            <input name="link_zoom" type="url" maxlength="500" placeholder="https://zoom.us/j/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Google Meet (alternatif)</span>
-                            <input name="link_meet" type="url" maxlength="500" placeholder="https://meet.google.com/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                        </label>
+
+                        {{-- Mode Event dropdown — drives dynamic field rendering below --}}
+                        <div class="sm:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <span class="block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mode Sesi</span>
+                                    <p class="mt-1 text-xs text-slate-500" id="mode-event-helper">Sesi akan menggunakan Zoom/Google Meet (link meeting wajib).</p>
+                                </div>
+                                <select name="mode_event" id="mode_event_select" required class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800">
+                                    <option value="online">Online</option>
+                                    <option value="offline">Offline</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- Online fields --}}
+                        <div id="online_fields" class="contents">
+                            <label class="block">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Zoom</span>
+                                <input name="link_zoom" type="url" maxlength="500" placeholder="https://zoom.us/j/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </label>
+                            <label class="block">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Google Meet (alternatif)</span>
+                                <input name="link_meet" type="url" maxlength="500" placeholder="https://meet.google.com/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </label>
+                        </div>
+
+                        {{-- Offline fields — hidden by default, shown when mode=offline --}}
+                        <div id="offline_fields" class="contents hidden">
+                            <label class="block">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Lokasi Event</span>
+                                <input name="lokasi_event" type="text" maxlength="255" placeholder="Gedung Rektorat Lt. 5, Jakarta" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </label>
+                            <label class="block">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Kapasitas Sesi</span>
+                                <input name="kapasitas_sesi" type="number" min="1" max="100000" placeholder="40" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </label>
+                            <label class="block sm:col-span-2">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Peta (opsional)</span>
+                                <input name="peta_event" type="url" maxlength="500" placeholder="https://maps.app.goo.gl/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </label>
+                        </div>
                         <label class="block sm:col-span-2">
                             <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Rekaman (opsional)</span>
                             <input name="link_rekaman" type="url" maxlength="500" placeholder="https://drive.google.com/file/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
@@ -305,6 +353,41 @@
                     input.value = String(id);
                     return input;
                 };
+
+                // Mode Event dynamic field visibility toggle
+                const modeSelect = document.getElementById('mode_event_select');
+                const onlineFields = document.getElementById('online_fields');
+                const offlineFields = document.getElementById('offline_fields');
+                const modeHelper = document.getElementById('mode-event-helper');
+                const sesiForm = document.getElementById('sesiForm'); // hoisted so setFieldMode can use it from any caller
+                const setFieldMode = (mode) => {
+                    if (!modeSelect) return;
+                    if (mode === 'offline') {
+                        onlineFields?.classList.add('hidden');
+                        offlineFields?.classList.remove('hidden');
+                        if (modeHelper) modeHelper.textContent = 'Sesi dilakukan di lokasi fisik (lokasi + kapasitas + maps).';
+                        // Clear online-only fields to prevent mixed data on submit
+                        const lz = sesiForm?.querySelector('[name="link_zoom"]');
+                        const lm = sesiForm?.querySelector('[name="link_meet"]');
+                        if (lz) lz.value = '';
+                        if (lm) lm.value = '';
+                    } else {
+                        onlineFields?.classList.remove('hidden');
+                        offlineFields?.classList.add('hidden');
+                        if (modeHelper) modeHelper.textContent = 'Sesi akan menggunakan Zoom/Google Meet (link meeting wajib).';
+                        // Clear offline-only fields to prevent mixed data on submit
+                        const lok = sesiForm?.querySelector('[name="lokasi_event"]');
+                        const pet = sesiForm?.querySelector('[name="peta_event"]');
+                        const kap = sesiForm?.querySelector('[name="kapasitas_sesi"]');
+                        if (lok) lok.value = '';
+                        if (pet) pet.value = '';
+                        if (kap) kap.value = '';
+                    }
+                };
+                if (modeSelect) {
+                    modeSelect.addEventListener('change', (e) => setFieldMode(e.target.value));
+                }
+
                 sesiRows.forEach((button) => {
                     button.addEventListener('click', () => {
                         const id = button.dataset.editSesi;
@@ -338,8 +421,32 @@
                             form.querySelector('[name="jam_mulai"]').value = timeMatch[1];
                             if (timeMatch[2]) form.querySelector('[name="jam_selesai"]').value = timeMatch[2];
                         }
+
+                        // Pre-populate per-sesi mode_event + dependent fields
+                        const mode = row?.dataset.modeEvent || 'online';
+                        if (modeSelect) modeSelect.value = mode;
+                        const lz = form.querySelector('[name="link_zoom"]');
+                        const lm = form.querySelector('[name="link_meet"]');
+                        if (lz) lz.value = row?.dataset.linkZoom || '';
+                        if (lm) lm.value = row?.dataset.linkMeet || '';
+                        const lok = form.querySelector('[name="lokasi_event"]');
+                        const pet = form.querySelector('[name="peta_event"]');
+                        const kap = form.querySelector('[name="kapasitas_sesi"]');
+                        if (lok) lok.value = row?.dataset.lokasiEvent || '';
+                        if (pet) pet.value = row?.dataset.petaEvent || '';
+                        if (kap) kap.value = row?.dataset.kapasitasSesi || '';
+
+                        setFieldMode(mode);
                         openModal('new-sesi');
                     });
+                });
+
+                // When opening the modal in "Tambah Sesi" mode, reset to online default
+                document.querySelector('[data-modal-open="new-sesi"]')?.addEventListener('click', () => {
+                    setTimeout(() => {
+                        if (modeSelect) modeSelect.value = 'online';
+                        setFieldMode('online');
+                    }, 0);
                 });
             });
         </script>

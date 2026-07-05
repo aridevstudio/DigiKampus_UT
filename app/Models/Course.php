@@ -21,6 +21,7 @@ class Course extends Model
         'id_jurusan',
         'thumbnail',
         'youtube_playlist',
+        'online_link',
         'status',
         'approval_status',
         'approval_notes',

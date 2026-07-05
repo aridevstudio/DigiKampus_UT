@@ -302,6 +302,21 @@ class BootcampFlowService
                 403,
             );
         }
+        // Gate: per-sesi mode_event check. Sesi offline tidak punya join URL —
+        // kehadiran dicatat onsite oleh admin, BUKAN lewat tombol JOIN ONLINE.
+        $sesiId = (int) ($ctx['sesi_id'] ?? 0);
+        if ($sesiId > 0) {
+            $sesi = BootcampSession::where('id_course', $course->id_course)
+                ->where('id_bootcamp_session', $sesiId)
+                ->first();
+            if ($sesi && $sesi->isOffline()) {
+                throw BootcampFlowException::forTransition(
+                    BootcampTransition::JOIN_LIVE_CLASS,
+                    'Sesi ini bersifat Offline. Kehadiran akan dicatat langsung di lokasi, atau gunakan form Unggah Bukti Kehadiran setelah sesi berakhir.',
+                    422,
+                );
+            }
+        }
         // Time window: mirror capabilities() — reject join after session ends.
         if ($course->tanggal_webinar === null) {
             throw BootcampFlowException::forTransition(
@@ -883,6 +898,15 @@ class BootcampFlowService
 
             $window = $this->attendanceWindow($sesi, $now);
 
+            // Per-sesi mode_event + location info (overrides course-level for this sesi).
+            $modeEvent = $isReal
+                ? ($sesi->mode_event ?? 'online')
+                : ($course->mode_event ?? 'online');
+            $lokasiEvent = $isReal ? $sesi->lokasi_event : $course->lokasi_event;
+            $petaEvent = $isReal ? $sesi->peta_event : $course->peta_event;
+            $kapasitasSesi = $isReal ? $sesi->kapasitas_sesi : $course->kapasitas_maksimal;
+            $isOfflineSesi = in_array($modeEvent, ['offline', 'onsite', 'hybrid'], true);
+
             $out[] = [
                 'urutan' => $isReal ? (int) ($sesi->urutan ?? $i) : $i,
                 'session_key' => $key,
@@ -895,6 +919,11 @@ class BootcampFlowService
                 'attendance' => $attendance,
                 'feedback' => $feedback,
                 'window' => $window,
+                'mode_event' => $modeEvent,
+                'is_offline_sesi' => $isOfflineSesi,
+                'lokasi_event' => $lokasiEvent,
+                'peta_event' => $petaEvent,
+                'kapasitas_sesi' => $kapasitasSesi,
             ];
         }
 
