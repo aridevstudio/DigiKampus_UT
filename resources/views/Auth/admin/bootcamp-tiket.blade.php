@@ -130,6 +130,7 @@
                                     <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Operasi</p>
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         <button type="button" data-modal-open="batch" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Kelola Batch</button>
+                                        <a href="{{ route('admin.bootcamp.sesi.show', ['courseId' => $program['id']], false) }}" class="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Kelola Sesi</a>
                                         <button type="button" data-modal-open="mentor" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">Assign Mentor</button>
                                         @if (in_array($program['status_key'] ?? 'draft', ['open_registration', 'published'], true))
                                             <form method="POST" action="{{ route('admin.bootcamp-tiket.sales.close', $program['id'], false) }}">

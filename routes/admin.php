@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\AdminForumCommentController;
 use App\Http\Controllers\Auth\AdminForumTopicController;
 use App\Http\Controllers\Auth\AdminAppsController;
 use App\Http\Controllers\Auth\AdminAppsHubController;
+use App\Http\Controllers\Auth\Admin\BootcampSesiController;
 use App\Http\Middleware\EnsureAuthenticatedAdmin;
 use App\Http\Middleware\RedirectIfAuthenticatedAdmin;
 use Illuminate\Support\Facades\Route;
@@ -146,6 +147,15 @@ Route::prefix('admin')
         Route::put('/bootcamp-tiket/{id}/batch', [AdminController::class, 'updateBootcampBatch'])->name('admin.bootcamp-tiket.batch.update');
         Route::post('/bootcamp-tiket/{id}/assign-mentor', [AdminController::class, 'assignBootcampMentor'])->name('admin.bootcamp-tiket.mentor.assign');
         Route::delete('/bootcamp-tiket/{id}', [AdminController::class, 'deleteBootcamp'])->name('admin.bootcamp-tiket.delete');
+
+        // Sesi bootcamp management (CRUD + reorder per course)
+        Route::get('/bootcamp/{courseId}/sesi', [BootcampSesiController::class, 'show'])->name('admin.bootcamp.sesi.show');
+        Route::put('/bootcamp/{courseId}/sesi/course-settings', [BootcampSesiController::class, 'updateCourseSettings'])->name('admin.bootcamp.sesi.course-settings');
+        Route::post('/bootcamp/{courseId}/sesi', [BootcampSesiController::class, 'store'])->name('admin.bootcamp.sesi.store');
+        Route::put('/bootcamp/{courseId}/sesi/{sesiId}', [BootcampSesiController::class, 'update'])->name('admin.bootcamp.sesi.update');
+        Route::delete('/bootcamp/{courseId}/sesi/{sesiId}', [BootcampSesiController::class, 'destroy'])->name('admin.bootcamp.sesi.destroy');
+        Route::put('/bootcamp/{courseId}/sesi/{sesiId}/toggle', [BootcampSesiController::class, 'toggleActive'])->name('admin.bootcamp.sesi.toggle');
+        Route::post('/bootcamp/{courseId}/sesi/reorder', [BootcampSesiController::class, 'reorder'])->name('admin.bootcamp.sesi.reorder');
 
         // Frontend-only pages
         Route::get('/sertifikasi', [AdminController::class, 'showSertifikasi'])->name('admin.sertifikasi');

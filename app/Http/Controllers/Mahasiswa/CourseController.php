@@ -163,10 +163,43 @@ class CourseController extends Controller
         if ($isEnrolled && $enrollment && in_array($enrollment->status, ['aktif', 'selesai', 'in_progress'], true)) {
             // Trigger assignment reminders on-demand
             $this->checkAndSendAssignmentReminders($user, $course);
-            
+
             // Build tab dataset
             $data = $this->prepareBootcampDashboardData($user, $course, $enrollment);
-            
+
+            // Inject session-based bootcamp engine data: live-class sesi list,
+            // per-sesi attendance map (already in $liveClassAttendances $data), and
+            // capability snapshot for badge/CTA rendering. Single source of truth
+            // stays in BootcampFlowService; this controller only projects it.
+            $data['sesiList'] = $this->bootcampFlow->resolveActiveSesi($course);
+
+            // Backward-compat fallback: if course has no real sesi rows AND legacy
+            // liveClassAttendances only carries 'primary', still expose primary
+            // virtual entry so blade keeps rendering legacy single-session until
+            // admin migrates data via Kelola Sesi UI.
+            if (empty($data['sesiList']) && !empty($course->tanggal_webinar)) {
+                // resolveActiveSesi already returns the virtual primary for legacy
+                // courses, so the conditional above is defensive only.
+                $data['sesiList'] = $this->bootcampFlow->resolveActiveSesi($course);
+            }
+
+            // Per-sesi attendance lookup map keyed by session_key (sesi_<id> | primary | qa_*).
+            $sesiIdByKey = [];
+            foreach ($data['sesiList'] as $sesi) {
+                $key = $sesi instanceof \App\Models\BootcampSession
+                    ? $sesi->sessionKey()
+                    : (string) ($sesi->session_key ?? '');
+                if ($key !== '') {
+                    $sesiIdByKey[$key] = $sesi;
+                }
+            }
+            $data['sesiIdByKey'] = $sesiIdByKey;
+
+            $data['capabilities'] = $this->bootcampFlow->capabilities($user, $course);
+
+            // Experience-layer projection: timeline (used by Overview tab + Live Class feedback lookup)
+            $data['sesiTimeline'] = $this->bootcampFlow->learningJourneyTimeline($user, $course);
+
             return view('pages.mahasiswa.bootcamp-detail', $data);
         }
 

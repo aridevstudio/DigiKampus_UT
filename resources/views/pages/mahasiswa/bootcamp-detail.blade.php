@@ -227,6 +227,36 @@
                 </div>
                 @endif
 
+                {{-- Learning Journey Timeline (simplified: 3 states) --}}
+                @if(!empty($sesiTimeline) && is_array($sesiTimeline))
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
+                    <h3 class="text-base font-bold text-gray-800 dark:text-gray-100 mb-4">Perjalanan Sesi</h3>
+                    <div class="space-y-3">
+                        @foreach($sesiTimeline as $node)
+                        <div class="flex items-center gap-3">
+                            @if($node['state'] === 'live')
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center">
+                                    <span class="w-2 h-2 bg-white rounded-full"></span>
+                                </span>
+                            @elseif($node['state'] === 'upcoming')
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600 text-gray-400 flex items-center justify-center text-[10px] font-bold">{{ $node['urutan'] }}</span>
+                            @elseif(($node['attendance']['status'] ?? '') === 'verified')
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                                </span>
+                            @else
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600 text-gray-400 flex items-center justify-center text-[10px] font-bold">{{ $node['urutan'] }}</span>
+                            @endif
+                            <div class="flex-1 min-w-0 flex items-center justify-between gap-3">
+                                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{{ $node['judul_sesi'] }}</span>
+                                <span class="text-xs text-gray-400 flex-shrink-0">{{ $node['start_at']->format('d M, H:i') }}</span>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
                 {{-- Mentor Card --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="md:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm space-y-4">
@@ -473,115 +503,203 @@
                 </div>
             </div>
 
-            {{-- 4. LIVE CLASS TAB --}}
+            {{-- 4. LIVE CLASS TAB — sesi-based with BootcampSession model + legacy fallback --}}
             <div x-show="activeTab === 'live-class'" class="space-y-6 animate-fade-in">
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">Live Class / Sesi Online</h3>
-                    <p class="text-xs text-gray-400 mt-1">Interaksi tatap muka langsung bersama mentor lewat media Zoom / Meet.</p>
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">Daftar Sesi Live Class</h3>
+                            <p class="text-xs text-gray-400 mt-1">Interaksi tatap muka dengan mentor lewat Zoom / Meet per sesi.</p>
+                        </div>
+                        @php
+                            $sesiCount = isset($sesiList) ? count($sesiList) : 0;
+                            $attendedCount = isset($capabilities) ? $capabilities->canAccessFinalProject ? $sesiCount : 0 : 0;
+                        @endphp
+                        @if($sesiCount > 0)
+                        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
+                            {{ $sesiCount }} sesi aktif
+                        </span>
+                        @endif
+                    </div>
                 </div>
 
+                @if(empty($sesiList))
+                <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm text-center space-y-2">
+                    <svg class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">Belum ada sesi live class</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">Dosen/admin belum menambahkan jadwal live class untuk bootcamp ini. Pantau terus halaman ini atau hubungi mentor untuk info lebih lanjut.</p>
+                </div>
+                @else
                 <div class="space-y-4">
-                    @foreach($liveClasses as $idx => $lc)
+                    @foreach($sesiList as $sesi)
                         @php
-                            $sessionKey = $lc['session_key'] ?? null;
-                            $attendance = $sessionKey ? ($liveClassAttendances[$sessionKey] ?? null) : null;
+                            // Normalize session_key + BootcampSession-model fields OR legacy stdClass virtual fields
+                            if ($sesi instanceof \App\Models\BootcampSession) {
+                                $sesiId = $sesi->id_bootcamp_session;
+                                $sesiKey = $sesi->sessionKey();
+                                $sesiTitle = $sesi->judul_sesi;
+                                $sesiStart = $sesi->start_at;
+                                $sesiEnd = $sesi->end_at;
+                                $sesiLinkZoom = $sesi->link_zoom;
+                                $sesiLinkMeet = $sesi->link_meet;
+                                $sesiRecording = $sesi->link_rekaman;
+                                $sesiMateriUrl = $sesi->materi_url ?: (!empty($sesi->materi_file) ? asset('storage/' . $sesi->materi_file) : null);
+                                $sesiIsLegacy = false;
+                            } else {
+                                // stdClass virtual fallback (legacy primary)
+                                $sesiId = (int) ($sesi->id_bootcamp_session ?? 0);
+                                $sesiKey = (string) ($sesi->session_key ?? 'primary');
+                                $sesiTitle = (string) ($sesi->judul_sesi ?? 'Sesi Utama');
+                                $sesiStart = ($sesi->getStartAtAttribute)();
+                                $sesiEnd = ($sesi->getEndAtAttribute)();
+                                $sesiLinkZoom = $sesi->link_zoom ?? null;
+                                $sesiLinkMeet = $sesi->link_meet ?? null;
+                                $sesiRecording = $sesi->link_rekaman ?? null;
+                                $sesiMateriUrl = $sesi->materi_url ?? null;
+                                $sesiIsLegacy = true;
+                            }
+                            $now = \Illuminate\Support\Carbon::now();
+                            $sesiStatus = ($now->lessThan($sesiStart)) ? 'upcoming'
+                                : (($now->lessThanOrEqualTo($sesiEnd)) ? 'live' : 'ended');
+                            $isJoinable = ($sesiStatus === 'live')
+                                || ($sesiStatus === 'ended' && $now->lessThanOrEqualTo($sesiEnd->copy()->addMinutes(30)));
+                            $attendance = $liveClassAttendances[$sesiKey] ?? null;
                             $attendanceStatus = $attendance?->status;
                         @endphp
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex flex-col gap-6">
-                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                <div class="space-y-2">
-                                    <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">{{ $lc['title'] }}</h4>
-                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
-                                        <span class="flex items-center gap-1">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                            {{ $lc['start_time']->format('d M Y, H:i') }} - {{ $lc['end_time']->format('H:i') }} WIB
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex flex-col gap-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="space-y-1 min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        @if($sesiStatus === 'live')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-white"></span>Live
                                         </span>
-                                        <span>•</span>
-                                        <span>Mentor: {{ $lc['mentor'] }}</span>
+                                        @elseif($sesiStatus === 'upcoming')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                            Akan Datang
+                                        </span>
+                                        @else
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400">
+                                            Selesai
+                                        </span>
+                                        @endif
                                     </div>
-                                    <span class="text-xs text-blue-500 font-bold block">{{ $lc['countdown'] }}</span>
-                                </div>
-                                
-                                <div class="flex flex-wrap items-center gap-3">
-                                    @if(!empty($lc['can_join_now']))
-                                        <a href="{{ $lc['link'] }}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-medium text-xs px-6 py-3 rounded-xl transition shadow-lg shadow-green-500/15">
-                                            Join Sesi Live
-                                        </a>
-                                    @else
-                                        <button disabled class="bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 font-medium text-xs px-6 py-3 rounded-xl cursor-not-allowed">
-                                            Join Sesi Live
-                                        </button>
-                                    @endif
-
-                                    @if(!empty($lc['recording_url']))
-                                        <a href="{{ $lc['recording_url'] }}" target="_blank" class="border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 font-medium text-xs px-6 py-3 rounded-xl transition">
-                                            Lihat Rekaman
-                                        </a>
-                                    @endif
+                                    <h4 class="text-base font-bold text-gray-800 dark:text-gray-100 truncate">{{ $sesiTitle }}</h4>
+                                    <p class="text-xs text-gray-400">{{ $sesiStart->format('d M Y, H:i') }} - {{ $sesiEnd->format('H:i') }}</p>
                                 </div>
                             </div>
 
-                            @if(!empty($lc['is_ended']))
-                                <div class="border-t border-gray-100 dark:border-gray-700/50 pt-4 space-y-3">
-                                    <div class="flex items-center justify-between gap-3">
-                                        <h5 class="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                            Bukti Kehadiran
-                                        </h5>
-                                        @if($attendanceStatus === 'verified')
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Terverifikasi
+                            <div class="flex flex-wrap items-center gap-2">
+                                @php $joinUrl = $sesiLinkZoom ?: $sesiLinkMeet; @endphp
+                                @if($isJoinable && $joinUrl)
+                                    @if($sesiId > 0 && !$sesiIsLegacy)
+                                    <form method="POST" action="{{ route('mahasiswa.bootcamp.sesi.join', ['courseId' => $course->id_course, 'sesiId' => $sesiId]) }}" class="inline-block">
+                                        @csrf
+                                        <button type="submit" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition shadow-lg shadow-rose-500/20 inline-flex items-center gap-2">
+                                            <span class="relative flex h-2 w-2">
+                                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                                <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                                             </span>
-                                        @elseif($attendanceStatus === 'pending')
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Menunggu Review
-                                            </span>
-                                        @elseif($attendanceStatus === 'rejected')
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Ditolak — perlu re-upload
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-50 text-gray-600 border border-gray-200">
-                                                Belum Diunggah
-                                            </span>
-                                        @endif
-                                    </div>
-
-                                    @if($attendance)
-                                        @if($attendance->proof_file)
-                                            <a href="{{ asset('storage/' . $attendance->proof_file) }}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                                Lihat bukti yang diunggah
-                                            </a>
-                                        @endif
-                                        @if($attendance->catatan_reviewer)
-                                            <p class="text-xs text-gray-600 dark:text-gray-300 italic">Catatan reviewer: "{{ $attendance->catatan_reviewer }}"</p>
-                                        @endif
+                                            {{ $sesiStatus === 'live' ? 'Join Live Class' : 'Join Sesi (Belum Dimulai)' }}
+                                        </button>
+                                    </form>
+                                    @else
+                                    <a href="{{ $joinUrl }}" target="_blank" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition shadow-lg shadow-rose-500/20 inline-flex items-center gap-2">
+                                        <span class="relative flex h-2 w-2">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                        </span>
+                                        Join Sesi Live
+                                    </a>
                                     @endif
+                                @else
+                                    <button disabled class="bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 font-medium text-xs px-5 py-2.5 rounded-xl cursor-not-allowed">
+                                        @if($sesiStatus === 'upcoming')Join Sesi (Belum Dimuka)
+                                        @elseif(!$joinUrl)Join Sesi (Tanpa Link)@else Join Closed @endif
+                                    </button>
+                                @endif
 
-                                    @if($attendanceStatus !== 'verified')
-                                        <form method="POST" action="{{ route('mahasiswa.bootcamp.attendance.store', ['id' => $course->id_course]) }}" enctype="multipart/form-data" class="space-y-3">
-                                            @csrf
-                                            <input type="hidden" name="session_key" value="{{ $sessionKey }}">
-                                            <div class="border-2 border-dashed border-gray-200 dark:border-gray-700 p-4 rounded-2xl text-center space-y-2">
-                                                <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.pdf" required class="mx-auto block text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                                                <p class="text-[10px] text-gray-400">Format: JPG, PNG, WEBP, atau PDF (Maks 5 MB)</p>
-                                            </div>
-                                            <textarea name="catatan" rows="2" placeholder="Catatan untuk reviewer (opsional)..." class="w-full text-xs border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"></textarea>
-                                            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition shadow-lg shadow-blue-500/15">
-                                                {{ $attendanceStatus === 'rejected' ? 'Unggah Ulang Bukti' : 'Kirim Bukti Kehadiran' }}
-                                            </button>
-                                        </form>
+                                @if($sesiRecording)
+                                <a href="{{ $sesiRecording }}" target="_blank" class="border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 font-medium text-xs px-5 py-2.5 rounded-xl transition inline-flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    Lihat Rekaman
+                                </a>
+                                @endif
+
+                                @if($sesiMateriUrl)
+                                <a href="{{ $sesiMateriUrl }}" target="_blank" class="border border-emerald-500 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 font-medium text-xs px-5 py-2.5 rounded-xl transition inline-flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    Download Materi
+                                </a>
+                                @endif
+                            </div>
+
+                            <div class="border-t border-gray-100 dark:border-gray-700/50 pt-4">
+                                <div class="flex items-center justify-between gap-3 mb-3">
+                                    <h5 class="text-sm font-bold text-gray-800 dark:text-gray-100">Kehadiran</h5>
+                                    @if($attendanceStatus === 'verified')
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Hadir
+                                        </span>
+                                    @elseif($sesiStatus === 'ended' && in_array($attendanceStatus, ['pending', 'rejected'], true))
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Menunggu Verifikasi
+                                        </span>
+                                    @elseif($sesiStatus === 'ended')
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Belum Hadir
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-50 text-gray-500 border border-gray-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>Belum Dimulai
+                                        </span>
                                     @endif
                                 </div>
-                            @else
-                                <p class="border-t border-gray-100 dark:border-gray-700/50 pt-4 text-xs text-gray-400">
-                                    Bukti kehadiran akan tersedia untuk diunggah setelah sesi live class berakhir.
-                                </p>
-                            @endif
+
+                                @if($sesiStatus === 'ended' && $attendanceStatus !== 'verified')
+                                <form method="POST" action="{{ route('mahasiswa.bootcamp.attendance.store', ['id' => $course->id_course]) }}" enctype="multipart/form-data" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                    @csrf
+                                    <input type="hidden" name="session_key" value="{{ $sesiKey }}">
+                                    <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.pdf" required class="flex-1 text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition shadow-lg shadow-blue-500/15">
+                                        {{ $attendanceStatus === 'rejected' ? 'Unggah Ulang' : 'Kirim Bukti' }}
+                                    </button>
+                                </form>
+                                @elseif($sesiStatus !== 'ended')
+                                <p class="text-xs text-gray-400">Bukti kehadiran tersedia setelah sesi berakhir.</p>
+                                @endif
+
+                                {{-- Post-session paham/belum feedback (real BootcampSession only) --}}
+                                @if($sesiStatus === 'ended' && !$sesiIsLegacy && $sesiId > 0)
+                                    @php
+                                        $sesiFeedback = isset($sesiTimeline) ? collect($sesiTimeline)->firstWhere('session_key', $sesiKey) : null;
+                                        $currentFeedback = $sesiFeedback['feedback'] ?? null;
+                                    @endphp
+                                    <div class="border-t border-gray-100 dark:border-gray-700/50 pt-4 mt-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">Apakah materi sudah dipahami?</span>
+                                            <form method="POST" action="{{ route('mahasiswa.bootcamp.sesi.feedback', ['courseId' => $course->id_course, 'sesiId' => $sesiId]) }}" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="feedback" value="paham">
+                                                <button type="submit" class="text-xs px-3 py-1.5 rounded-lg font-semibold transition {{ $currentFeedback === 'paham' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400' }}">
+                                                    Paham
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ route('mahasiswa.bootcamp.sesi.feedback', ['courseId' => $course->id_course, 'sesiId' => $sesiId]) }}" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="feedback" value="belum">
+                                                <button type="submit" class="text-xs px-3 py-1.5 rounded-lg font-semibold transition {{ $currentFeedback === 'belum' ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400' }}">
+                                                    Belum
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     @endforeach
                 </div>
+                @endif
             </div>
 
             {{-- 5. QUIZ TAB --}}
@@ -797,10 +915,13 @@
                     </div>
                 @else
                     @if(!$finalProject['prerequisites_met'])
-                        <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm text-center space-y-4">
-                            <svg class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">Proyek Akhir Masih Terkunci</h4>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">Selesaikan seluruh aktivitas materi modul pembelajaran prasyarat terlebih dahulu untuk membuka akses unggah proyek akhir.</p>
+                        @php
+                            $gateReason = isset($capabilities) ? $capabilities->lockedReasonFor(\App\Support\Bootcamp\BootcampTransition::ACCESS_FINAL_PROJECT) : null;
+                        @endphp
+                        <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl border-2 border-amber-200 dark:border-amber-500/30 shadow-sm space-y-4">
+                            <svg class="w-12 h-12 text-amber-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            <h4 class="text-base font-bold text-gray-800 dark:text-gray-100 text-center">Final Project Terkunci</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 text-center max-w-md mx-auto">{{ $gateReason ?: 'Selesaikan prasyarat terlebih dahulu.' }}</p>
                         </div>
                     @else
                         <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm space-y-6">

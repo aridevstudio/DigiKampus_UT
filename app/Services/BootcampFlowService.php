@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\Bootcamp\BootcampFlowException;
 use App\Models\BootcampLiveClassAttendance;
+use App\Models\BootcampSession;
 use App\Models\Course;
 use App\Models\CourseMaterial;
 use App\Models\CourseModule;
@@ -17,6 +18,7 @@ use App\Support\Bootcamp\BootcampProgression;
 use App\Support\Bootcamp\BootcampState;
 use App\Support\Bootcamp\BootcampTransition;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * SINGLE SOURCE OF TRUTH for all bootcamp gating decisions.
@@ -435,7 +437,14 @@ class BootcampFlowService
 
     /**
      * Single forward-compatible source for live-class session_key strings.
-     * Reading from Course webinar date + CourseModule ordered list.
+     *
+     * Returns the union of:
+     *   - sesi_* keys dari {@see BootcampSession} (new session-based engine)
+     *   - 'primary' jika course masih pakai legacy tanggal_webinar tanpa baris sesi
+     *   - qa_* keys dari legacy CourseModule schedule (preserved untuk backward compat)
+     *
+     * Backward compat penuh: course lama tanpa sesi baru masih menghasilkan
+     * key list yang sama dengan sebelumnya.
      */
     public function collectLiveClassSessionKeys(Course $course): array
     {
@@ -444,33 +453,58 @@ class BootcampFlowService
         }
 
         $keys = [];
-        if ($course->tanggal_webinar) {
-            $keys[] = 'primary';
-        }
 
-        $modules = CourseModule::where('id_course', $course->id_course)
-            ->orderBy('urutan')
-            ->get();
-
-        $start = $course->tanggal_webinar
-            ? Carbon::parse($course->tanggal_webinar->format('Y-m-d') . ' ' . ($course->jam_mulai_webinar ?: '08:00:00'))
-            : null;
-
-        $index = 0;
-        foreach ($modules as $module) {
-            $slot = $start?->copy()->addMinutes(90 * $index);
-            if (!$slot) {
-                break;
+        // 1) Sesi baru (bootcamp_sessions BootcampSession models).
+        $sesiList = $this->resolveActiveSesi($course);
+        $hasRealSesi = false;
+        foreach ($sesiList as $sesi) {
+            if ($sesi instanceof BootcampSession) {
+                $keys[] = $sesi->sessionKey();   // 'sesi_<id>'
+                $hasRealSesi = true;
+            } else {
+                // legacy virtual stdClass dari resolveActiveSesi (session_key='primary')
+                $legacy = (string) ($sesi->session_key ?? '');
+                if ($legacy !== '') {
+                    $keys[] = $legacy;
+                }
             }
-            $keys[] = 'qa_' . (int) $module->id_module . '_' . $slot->format('Y-m-d\TH:i');
-            $index++;
         }
 
-        return $keys;
+        // 2) Kalau course legacy (tidak ada sesi baru), synthesize primary + qa_* schedule.
+        if (!$hasRealSesi && $course->tanggal_webinar) {
+            if (!in_array('primary', $keys, true)) {
+                $keys[] = 'primary';
+            }
+
+            $modules = CourseModule::where('id_course', $course->id_course)
+                ->orderBy('urutan')
+                ->get();
+
+            $start = Carbon::parse(
+                $course->tanggal_webinar->format('Y-m-d') . ' ' . ($course->jam_mulai_webinar ?: '08:00:00')
+            );
+
+            $index = 0;
+            foreach ($modules as $module) {
+                $slot = $start->copy()->addMinutes(90 * $index);
+                $keys[] = 'qa_' . (int) $module->id_module . '_' . $slot->format('Y-m-d\TH:i');
+                $index++;
+            }
+        }
+
+        return array_values(array_unique($keys));
     }
 
     public function resolveLiveClassEndTime(Course $course, string $sessionKey): ?Carbon
     {
+        // New session-based engine: 'sesi_<id>' lookup ke BootcampSession::end_at
+        if (preg_match('/^sesi_(\d+)$/', $sessionKey, $m) === 1) {
+            $sesi = BootcampSession::where('id_course', $course->id_course)
+                ->where('id_bootcamp_session', (int) $m[1])
+                ->first();
+            return $sesi ? $sesi->end_at : null;
+        }
+
         if (!$course->tanggal_webinar) {
             return null;
         }
@@ -529,6 +563,382 @@ class BootcampFlowService
     {
         return $course !== null
             && strtolower((string) ($course->kategori ?? '')) === 'tiket';
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // SESI BOOTCAMP — session-based event support (with backward-compat)
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Resolve active sesi for a course in waktu-window (upcoming/live/ended).
+     *
+     * Backward compat: bila course belum punya baris di bootcamp_sessions
+     * TAPI memiliki `tanggal_webinar` (legacy field), bangun 1 sesi virtual
+     * dari tanggal/jam lama. Return struktur SesiLike dengan method² sama
+     * seperti model BootcampSession agar downstream tidak perlu bifurcate.
+     *
+     * Tipe data setiap entry adalah anonymous object dengan public props:
+     *   id_bootcamp_session (int|null), judul_sesi, tanggal_sesi, jam_mulai,
+     *   jam_selesai, link_zoom, link_meet, link_rekaman, materi_file,
+     *   materi_url, deskripsi_sesi, urutan, is_active, session_key,
+     *   start_at (Carbon), end_at (Carbon), status(), joinUrl(), materiUrl()
+     */
+    public function resolveActiveSesi(Course $course): array
+    {
+        $real = $course->sessions()->get();
+        if ($real->isNotEmpty()) {
+            return $real->all();
+        }
+
+        // Legacy fallback: kursus lama dengan tanggal_webinar set
+        if ($course->tanggal_webinar) {
+            $startTime = $course->jam_mulai_webinar ?: '08:00:00';
+            $endTime   = $course->jam_selesai_webinar ?: '23:59:59';
+            $virtual = new \stdClass();
+            $virtual->id_bootcamp_session = null;
+            $virtual->judul_sesi = 'Sesi Utama (Legacy)';
+            $virtual->tanggal_sesi = $course->tanggal_webinar;
+            $virtual->jam_mulai = $startTime;
+            $virtual->jam_selesai = $endTime;
+            $virtual->link_zoom = null;
+            $virtual->link_meet = null;
+            $virtual->link_rekaman = null;
+            $virtual->materi_file = null;
+            $virtual->materi_url = null;
+            $virtual->deskripsi_sesi = 'Sesi utama bootcamp (sebelum migrasi sesi-based).';
+            $virtual->urutan = 1;
+            $virtual->is_active = true;
+            $virtual->session_key = 'primary';
+            $virtual->isLegacy = true;
+            $virtual->getStartAtAttribute = fn () => \Illuminate\Support\Carbon::parse(
+                $course->tanggal_webinar->format('Y-m-d') . ' ' . $startTime
+            );
+            $virtual->getEndAtAttribute = fn () => \Illuminate\Support\Carbon::parse(
+                $course->tanggal_webinar->format('Y-m-d') . ' ' . $endTime
+            );
+            $virtual->status = function () use ($virtual): string {
+                if (!(bool) $virtual->is_active) return 'inactive';
+                $start = ($virtual->getStartAtAttribute)();
+                $end = ($virtual->getEndAtAttribute)();
+                $now = \Illuminate\Support\Carbon::now();
+                if ($now->lessThan($start)) return 'upcoming';
+                if ($now->lessThanOrEqualTo($end)) return 'live';
+                return 'ended';
+            };
+            return [$virtual];
+        }
+        return [];
+    }
+
+    /**
+     * Berapa banyak attendance versi admin yang dibutuhkan agar final project
+     * terbuka untuk course ini. Untuk course dengan sesi real → required =
+     * total sesi aktif. Legacy (1 virtual) → 1.
+     */
+    public function requiredSesiAttendances(Course $course): int
+    {
+        $sesi = $this->resolveActiveSesi($course);
+        return max(0, count($sesi));
+    }
+
+    /**
+     * Hitung berapa sesi yang sudah VERIFIED (hadir & disetujui admin) untuk user.
+     * Memakai session_key dari setiap sesi yang di-resolve.
+     */
+    public function attendedSesiCount(User $user, Course $course): int
+    {
+        $sesiList = $this->resolveActiveSesi($course);
+        if (empty($sesiList)) {
+            return 0;
+        }
+        $keys = array_map(function ($s) {
+            if ($s instanceof BootcampSession) {
+                return $s->sessionKey();
+            }
+            return (string) ($s->session_key ?? '');
+        }, $sesiList);
+        $keys = array_filter($keys, fn ($k) => $k !== '');
+        if (empty($keys)) {
+            return 0;
+        }
+        return BootcampLiveClassAttendance::where('id_user', $user->id)
+            ->where('id_course', $course->id_course)
+            ->whereIn('session_key', $keys)
+            ->where('status', BootcampLiveClassAttendance::STATUS_VERIFIED)
+            ->count();
+    }
+
+    /**
+     * Helper untuk konsistensi with capabilities: berapa sesi yang harus
+     * attended dan berapa yang sudah attended. Digunakan di capabilities()
+     * untuk reason "Anda harus menghadiri minimal X sesi".
+     */
+    public function sesiAttendanceGap(User $user, Course $course): ?string
+    {
+        $required = $this->requiredSesiAttendances($course);
+        if ($required === 0) {
+            return null; // Tidak ada sesi yang dibutuhkan
+        }
+        $attended = $this->attendedSesiCount($user, $course);
+        if ($attended >= $required) {
+            return null;
+        }
+        return "Anda harus menghadiri minimal {$required} sesi (saat ini {$attended} sesi terverifikasi).";
+    }
+
+    /**
+     * Counter atomic utk slot_terisi. Return true jika increment berhasil.
+     */
+    public function incrementCapacity(Course $course): bool
+    {
+        if ((int) ($course->kapasitas_maksimal ?? 0) === 0) {
+            return true; // tanpa batas kapasitas, selalu sukses
+        }
+        $affected = Course::where('id_course', $course->id_course)
+            ->where(function ($q) use ($course) {
+                $q->whereNull('kapasitas_maksimal')
+                  ->orWhereColumn('slot_terisi', '<', 'kapasitas_maksimal');
+            })
+            ->update(['slot_terisi' => \Illuminate\Support\Facades\DB::raw('COALESCE(slot_terisi, 0) + 1')]);
+        return $affected > 0;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // EXPERIENCE LAYER — lifecycle, heartbeat, post-session feedback, timeline
+    // Tidak butuh migration: state disimpan via cache (volatile, 30 hari TTL)
+    // atau di-derive on-read dari attendance row + sesi row.
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Attendance window info untuk satu sesi. View consume ini untuk render
+     * countdown, valid-join badge, dan label "lewat X menit" pada ended card.
+     *
+     * @return array{
+     *   canJoin: bool,        // boleh klik JOIN sekarang
+     *   canJoinLate: bool,    // masih dalam window late-join (default 15 menit)
+     *   lateJoinMinutes: int, // configured allowance
+     *   windowEndsAt: ?Carbon, // end_at + late_join_minutes
+     *   isLive: bool,
+     *   isUpcoming: bool,
+     *   isEnded: bool,
+     *   minutesToStart: ?int, // null kalau sudah live / ended
+     *   minutesSinceEnd: ?int,// null kalau belum ended
+     * }
+     */
+    public function attendanceWindow($sesi, ?Carbon $now = null): array
+    {
+        $now = $now ?: Carbon::now();
+        $lateJoinMinutes = (int) config('bootcamp.late_join_minutes', 15);
+        $isReal = $sesi instanceof BootcampSession;
+        $isLegacyVirtual = !$isReal && isset($sesi->session_key);
+
+        $startAt = $isReal
+            ? $sesi->start_at
+            : (isset($sesi->getStartAtAttribute) ? ($sesi->getStartAtAttribute)() : null);
+        $endAt = $isReal
+            ? $sesi->end_at
+            : (isset($sesi->getEndAtAttribute) ? ($sesi->getEndAtAttribute)() : null);
+
+        if ($startAt === null || $endAt === null) {
+            return [
+                'canJoin' => false, 'canJoinLate' => false, 'lateJoinMinutes' => $lateJoinMinutes,
+                'windowEndsAt' => null, 'isLive' => false, 'isUpcoming' => false, 'isEnded' => false,
+                'minutesToStart' => null, 'minutesSinceEnd' => null,
+            ];
+        }
+
+        $windowEndsAt = $endAt->copy()->addMinutes($lateJoinMinutes);
+        $isUpcoming = $now->lessThan($startAt);
+        $isLive = !$isUpcoming && $now->lessThanOrEqualTo($endAt);
+        $isEnded = $now->greaterThan($endAt);
+        $canJoin = !$isUpcoming && $now->lessThanOrEqualTo($windowEndsAt);
+        $canJoinLate = $isEnded && $now->lessThanOrEqualTo($windowEndsAt);
+
+        return [
+            'canJoin' => $canJoin,
+            'canJoinLate' => $canJoinLate,
+            'lateJoinMinutes' => $lateJoinMinutes,
+            'windowEndsAt' => $windowEndsAt,
+            'isLive' => $isLive,
+            'isUpcoming' => $isUpcoming,
+            'isEnded' => $isEnded,
+            'minutesToStart' => $isUpcoming ? (int) ceil($now->diffInSeconds($startAt) / 60) : null,
+            'minutesSinceEnd' => $isEnded ? (int) floor($now->diffInSeconds($endAt) / 60) : null,
+        ];
+    }
+
+    /**
+     * Catat heartbeat aktivitas user di sesi live. Disimpan di cache dengan
+     * TTL 60 menit sehingga otomatis kadaluarsa jika user inactive. Tidak
+     * butuh tabel baru.
+     */
+    public function recordHeartbeat(int $userId, int $courseId, int $sesiId, ?Carbon $now = null): Carbon
+    {
+        $now = $now ?: Carbon::now();
+        Cache::put(
+            $this->heartbeatKey($userId, $courseId, $sesiId),
+            $now->toIso8601String(),
+            now()->addMinutes(60),
+        );
+        return $now;
+    }
+
+    public function lastHeartbeat(int $userId, int $courseId, int $sesiId): ?Carbon
+    {
+        $raw = Cache::get($this->heartbeatKey($userId, $courseId, $sesiId));
+        if (!$raw) {
+            return null;
+        }
+        try {
+            return Carbon::parse($raw);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public function isUserActiveInSesi(int $userId, int $courseId, int $sesiId, int $inactivityMinutes = 2): bool
+    {
+        $last = $this->lastHeartbeat($userId, $courseId, $sesiId);
+        return $last !== null && $last->greaterThan(Carbon::now()->subMinutes($inactivityMinutes));
+    }
+
+    /**
+     * Get/set self-reported user feedback ("paham" / "belum") untuk sesi.
+     * Disimpan di cache 30 hari. Self-reported, tidak menggugurkan gate
+     * final-project — hanya membantu dosen/dashboard baca sinyal pemahaman.
+     */
+    public function getUserFeedback(int $userId, int $courseId, int $sesiId): ?string
+    {
+        $val = Cache::get($this->feedbackKey($userId, $courseId, $sesiId));
+        if (in_array($val, ['paham', 'belum'], true)) {
+            return $val;
+        }
+        return null;
+    }
+
+    public function setUserFeedback(int $userId, int $courseId, int $sesiId, string $feedback): void
+    {
+        $feedback = in_array($feedback, ['paham', 'belum'], true) ? $feedback : 'belum';
+        Cache::put(
+            $this->feedbackKey($userId, $courseId, $sesiId),
+            $feedback,
+            now()->addDays(30),
+        );
+    }
+
+    /**
+     * Build learning-journey timeline: ordered list of sesi with state badges,
+     * attendance, dan self-feedback. Dipakai oleh Overview tab + Final Project
+     * gate untuk visualisasi X/Y progress.
+     *
+     * @return array<int,array{
+     *   urutan:int, session_key:string, judul_sesi:string, start_at:Carbon, end_at:Carbon,
+     *   state:string, // upcoming|live|ended
+     *   isLegacy:bool,
+     *   attendance: ?array{status:string, proof_file:?string, reviewed_at:?Carbon},
+     *   feedback: ?string, // paham|belum
+     *   window: array{canJoin:bool, minutesToStart:?int, minutesSinceEnd:?int},
+     * }>
+     */
+    public function learningJourneyTimeline(User $user, Course $course): array
+    {
+        $sesiList = $this->resolveActiveSesi($course);
+        $now = Carbon::now();
+        $out = [];
+        $i = 0;
+
+        // Pre-fetch attendance rows (one query) to avoid N+1.
+        $keys = array_map(function ($s) {
+            if ($s instanceof BootcampSession) {
+                return $s->sessionKey();
+            }
+            return (string) ($s->session_key ?? '');
+        }, $sesiList);
+        $keys = array_values(array_filter($keys, fn ($k) => $k !== ''));
+        $attendanceRows = empty($keys) ? collect() : BootcampLiveClassAttendance::where('id_user', $user->id)
+            ->where('id_course', $course->id_course)
+            ->whereIn('session_key', $keys)
+            ->get()
+            ->keyBy('session_key');
+
+        foreach ($sesiList as $sesi) {
+            $i++;
+            $isReal = $sesi instanceof BootcampSession;
+            $key = $isReal ? $sesi->sessionKey() : (string) ($sesi->session_key ?? '');
+            $startAt = $isReal ? $sesi->start_at : ($sesi->getStartAtAttribute ?? null)();
+            $endAt = $isReal ? $sesi->end_at : ($sesi->getEndAtAttribute ?? null)();
+            $state = $now->lessThan($startAt) ? 'upcoming'
+                : ($now->lessThanOrEqualTo($endAt) ? 'live' : 'ended');
+
+            $row = $attendanceRows->get($key);
+            $attendance = $row ? [
+                'status' => $row->status,
+                'proof_file' => $row->proof_file ?: null,
+                'reviewed_at' => $row->reviewed_at,
+            ] : null;
+
+            $feedback = $isReal
+                ? $this->getUserFeedback($user->id, $course->id_course, (int) $sesi->id_bootcamp_session)
+                : null;
+
+            $window = $this->attendanceWindow($sesi, $now);
+
+            $out[] = [
+                'urutan' => $isReal ? (int) ($sesi->urutan ?? $i) : $i,
+                'session_key' => $key,
+                'judul_sesi' => $isReal ? $sesi->judul_sesi : ($sesi->judul_sesi ?? 'Sesi Utama'),
+                'start_at' => $startAt,
+                'end_at' => $endAt,
+                'state' => $state,
+                'isLegacy' => !$isReal,
+                'sesiId' => $isReal ? (int) $sesi->id_bootcamp_session : 0,
+                'attendance' => $attendance,
+                'feedback' => $feedback,
+                'window' => $window,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Counter cepat X/Y: how many sesi verified + total, plus gap.
+     *
+     * @return array{required:int, attended:int, pending:int, percent:int, unlocked:bool, gap:?string}
+     */
+    public function attendanceProgress(User $user, Course $course): array
+    {
+        $required = $this->requiredSesiAttendances($course);
+        $attended = $this->attendedSesiCount($user, $course);
+        $pending = $this->resolveActiveSesi($course) ? 0 : 0;
+        // pending = sesi yg sudah lewat tapi belum di-verify
+        $sesiList = $this->resolveActiveSesi($course);
+        foreach ($sesiList as $sesi) {
+            $isReal = $sesi instanceof BootcampSession;
+            $key = $isReal ? $sesi->sessionKey() : (string) ($sesi->session_key ?? '');
+            $endAt = $isReal ? $sesi->end_at : (($sesi->getEndAtAttribute ?? null)());
+            $row = BootcampLiveClassAttendance::where('id_user', $user->id)
+                ->where('id_course', $course->id_course)
+                ->where('session_key', $key)
+                ->first();
+            if ($endAt && Carbon::now()->greaterThan($endAt) && (!$row || $row->status !== BootcampLiveClassAttendance::STATUS_VERIFIED)) {
+                $pending++;
+            }
+        }
+        $percent = $required > 0 ? (int) round(($attended / $required) * 100) : 100;
+        $unlocked = $required === 0 || $attended >= $required;
+        $gap = $unlocked ? null : "Anda harus menghadiri minimal {$required} sesi (saat ini {$attended}/{$required} sesi terverifikasi).";
+        return compact('required', 'attended', 'pending', 'percent', 'unlocked', 'gap');
+    }
+
+    private function heartbeatKey(int $userId, int $courseId, int $sesiId): string
+    {
+        return "bootcamp:hb:{$userId}:{$courseId}:{$sesiId}";
+    }
+
+    private function feedbackKey(int $userId, int $courseId, int $sesiId): string
+    {
+        return "bootcamp:fb:{$userId}:{$courseId}:{$sesiId}";
     }
 
     /**
@@ -721,7 +1131,8 @@ class BootcampFlowService
                         ->where('status', BootcampLiveClassAttendance::STATUS_VERIFIED)
                         ->count();
                     if ($verifiedCount < count($sessionKeys)) {
-                        $reasonParts[] = 'belum semua kehadiran live class terverifikasi';
+                        $required = count($sessionKeys);
+                        $reasonParts[] = "anda harus menghadiri minimal {$required} sesi live class (saat ini {$verifiedCount}/{$required} sesi terverifikasi)";
                     }
                 }
             }

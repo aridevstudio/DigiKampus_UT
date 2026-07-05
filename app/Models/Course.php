@@ -41,7 +41,15 @@ class Course extends Model
         'sertifikat',
         'certificate_template_id',
         'akses_publik',
-        'diskon'
+        'diskon',
+        // Sesi bootcamp: kolom additive utk struktur event-based.
+        'tipe_event',
+        'mode_event',
+        'lokasi_event',
+        'peta_event',
+        'kapasitas_maksimal',
+        'slot_terisi',
+        'checkin_required',
     ];
 
     protected $casts = [
@@ -53,6 +61,9 @@ class Course extends Model
         'approved_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'kapasitas_maksimal' => 'integer',
+        'slot_terisi' => 'integer',
+        'checkin_required' => 'boolean',
     ];
 
     /**
@@ -216,5 +227,71 @@ class Course extends Model
     public function certificateTemplate()
     {
         return $this->belongsTo(CertificateTemplate::class, 'certificate_template_id', 'id');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // BOOTCAMP SESSIONS — struktur event-based (bootcamp/webinar/workshop/seminar)
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Sesi bootcamp aktif (urutan ascending). Untuk legacy bootcamp yang
+     * dibuat sebelum migration bootcamp_sessions, lihat
+     * {@link \App\Services\BootcampFlowService::resolveActiveSessions()}
+     * untuk virtualisasi 1 sesi default.
+     */
+    public function sessions()
+    {
+        return $this->hasMany(BootcampSession::class, 'id_course', 'id_course')
+            ->where('is_active', true)
+            ->orderBy('urutan')
+            ->orderBy('tanggal_sesi')
+            ->orderBy('jam_mulai');
+    }
+
+    /**
+     * Semua sesi (termasuk non-aktif) untuk admin view.
+     */
+    public function allSessions()
+    {
+        return $this->hasMany(BootcampSession::class, 'id_course', 'id_course')
+            ->orderBy('urutan');
+    }
+
+    /** Accessor typed untuk tipe_event. */
+    public function getBootcampTypeAttribute(): \App\Support\Bootcamp\BootcampType
+    {
+        return \App\Support\Bootcamp\BootcampType::fromNullable($this->tipe_event);
+    }
+
+    /** Accessor typed untuk mode_event. */
+    public function getAccessModeAttribute(): \App\Support\Bootcamp\AccessMode
+    {
+        return \App\Support\Bootcamp\AccessMode::fromNullable($this->mode_event);
+    }
+
+    public function getSlotsRemainingAttribute(): int
+    {
+        $cap = (int) ($this->kapasitas_maksimal ?? 0);
+        if ($cap === 0) {
+            return PHP_INT_MAX;
+        }
+        return max(0, $cap - (int) ($this->slot_terisi ?? 0));
+    }
+
+    /**
+     * Scope bootcamp-style events: kategori=tiket OR tipe_event set.
+     * (Legacy pakai kategori; baru pakai tipe_event untuk granular type.)
+     */
+    public function scopeBootcampStyle($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('kategori', 'tiket')
+              ->orWhereIn('tipe_event', ['bootcamp', 'webinar', 'workshop', 'seminar']);
+        });
+    }
+
+    public function scopeOfTipeEvent($query, string $tipe)
+    {
+        return $query->where('tipe_event', $tipe);
     }
 }

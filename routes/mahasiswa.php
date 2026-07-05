@@ -10,6 +10,7 @@ use App\Http\Controllers\Mahasiswa\ForumController;
 use App\Http\Controllers\Mahasiswa\LearningGoalController;
 use App\Http\Controllers\Mahasiswa\AppsHubController;
 use App\Http\Controllers\Mahasiswa\SupportController;
+use App\Http\Controllers\Mahasiswa\BootcampSesiJoinController;
 use App\Http\Middleware\EnsureAuthenticatedMahasiswa;
 use App\Http\Middleware\RedirectIfAuthenticatedMahasiswa;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +63,9 @@ Route::prefix('mahasiswa')
         Route::get('/bootcamp-saya', [CourseController::class, 'bootcampMy'])->name('mahasiswa.bootcamp-saya');
         Route::post('/bootcamp/{id}/forum/topic', [CourseController::class, 'storeBootcampForumTopic'])->name('mahasiswa.bootcamp.forum.topic.store');
         Route::post('/bootcamp/{id}/attendance', [CourseController::class, 'storeLiveClassAttendance'])->name('mahasiswa.bootcamp.attendance.store');
+        Route::post('/bootcamp/{courseId}/sesi/{sesiId}/join', [BootcampSesiJoinController::class, 'joinSesi'])->name('mahasiswa.bootcamp.sesi.join');
+        Route::post('/bootcamp/{courseId}/sesi/{sesiId}/heartbeat', [BootcampSesiJoinController::class, 'recordHeartbeat'])->name('mahasiswa.bootcamp.sesi.heartbeat');
+        Route::post('/bootcamp/{courseId}/sesi/{sesiId}/feedback', [BootcampSesiJoinController::class, 'setSesiFeedback'])->name('mahasiswa.bootcamp.sesi.feedback');
         Route::post('/bootcamp/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.bootcamp.review');
         Route::post('/course/{courseId}/review', [CourseController::class, 'submitCourseReview'])->name('mahasiswa.course.review');
         Route::post('/course/material/{id}/complete', [CourseController::class, 'completeMaterial'])->name('mahasiswa.material.complete');
