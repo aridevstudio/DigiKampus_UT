@@ -39,15 +39,24 @@ class BootcampSesiController extends Controller
         $tipeOptions = collect(BootcampType::cases())
             ->mapWithKeys(fn (BootcampType $t) => [$t->value => $t->label()])
             ->all();
-        $modeOptions = collect(AccessMode::cases())
+        // HANYA user-facing cases (Online / Offline). JANGAN pakai AccessMode::cases()
+        // karena ONSITE/HYBRID deprecated label-nya collapse ke "Offline" → duplikat.
+        $modeOptions = collect(AccessMode::userCases())
             ->mapWithKeys(fn (AccessMode $m) => [$m->value => $m->label()])
             ->all();
+
+        // Normalize legacy 'onsite'/'hybrid' → 'offline' supaya dropdown preselect
+        // benar (lihat AccessMode::userCases() — hanya ada online|offline options).
+        // Tanpa normalisasi, mode_event='onsite' tidak match satupun option dan
+        // browser default ke option pertama (Online) — mismatch dengan realitas data.
+        $currentMode = AccessMode::fromNullable($course->mode_event)->value;
 
         return view('Auth.admin.kelola-sesi-bootcamp', [
             'course' => $course,
             'linkedBootcamp' => $linkedBootcamp,
             'tipeOptions' => $tipeOptions,
             'modeOptions' => $modeOptions,
+            'currentMode' => $currentMode,
             'sessions' => $course->allSessions,
         ]);
     }
@@ -55,31 +64,85 @@ class BootcampSesiController extends Controller
     /**
      * Update tipe_event / mode_event / lokasi / kapasitas course-level fields.
      * Dipakai untuk konfigurasi awal sebelum admin menambah sesi individual.
+     *
+     * Mode event binary (online|offline). Untuk online → wajib online_link.
+     * Untuk offline → wajib lokasi_event + kapasitas_maksimal. Mixed data
+     * ditolak dan field yang tidak relevan di-auto-null agar DB tetap bersih.
      */
     public function updateCourseSettings(Request $request, int $courseId): RedirectResponse
     {
         $course = Course::findOrFail($courseId);
 
-        $validated = $request->validate([
-            'tipe_event'    => ['nullable', Rule::in(['bootcamp','webinar','workshop','seminar'])],
-            'mode_event'    => ['nullable', Rule::in(['online','onsite','hybrid'])],
-            'lokasi_event'  => ['nullable', 'string', 'max:255'],
-            'peta_event'    => ['nullable', 'string', 'max:500'],
-            'kapasitas_maksimal' => ['nullable', 'integer', 'min:1', 'max:100000'],
-            'checkin_required' => ['nullable', 'boolean'],
-        ]);
+        // Normalize legacy 'onsite'/'hybrid' ke 'offline' supaya validasi konsisten.
+        $rawMode = (string) $request->input('mode_event', '');
+        $normalizedMode = in_array($rawMode, ['online', 'offline'], true)
+            ? $rawMode
+            : (in_array($rawMode, ['onsite', 'hybrid'], true) ? 'offline' : 'online');
+        $request->merge(['mode_event' => $normalizedMode]);
+
+        $rules = [
+            'tipe_event'          => ['nullable', Rule::in(['bootcamp','webinar','workshop','seminar'])],
+            'mode_event'          => ['required', 'in:online,offline'],
+            'lokasi_event'        => ['nullable', 'string', 'max:255', 'required_if:mode_event,offline'],
+            'peta_event'          => ['nullable', 'string', 'max:500', 'url'],
+            'kapasitas_maksimal'  => ['nullable', 'integer', 'min:1', 'max:100000', 'required_if:mode_event,offline'],
+            'checkin_required'    => ['nullable', 'boolean'],
+        ];
+
+        if ($normalizedMode === 'online') {
+            $rules['online_link'] = ['required', 'string', 'max:500', 'url'];
+        } else {
+            $rules['online_link'] = ['nullable', 'string', 'max:500', 'url'];
+        }
+
+        $messages = [
+            'mode_event.required' => 'Mode event wajib dipilih (online/offline).',
+            'mode_event.in' => 'Mode event harus bernilai online atau offline.',
+            'online_link.required' => 'Link meeting (Zoom / Google Meet) wajib diisi untuk event online.',
+            'online_link.url' => 'Link meeting harus berupa URL valid.',
+            'lokasi_event.required_if' => 'Lokasi event wajib diisi untuk event offline.',
+            'kapasitas_maksimal.required_if' => 'Kapasitas maksimal wajib diisi untuk event offline.',
+            'peta_event.url' => 'Link peta harus berupa URL valid.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        // Hard rejection of mixed data (defense in depth).
+        if ($normalizedMode === 'offline') {
+            if (!empty($validated['online_link'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'online_link' => 'Event offline tidak boleh memiliki link meeting. Kosongkan field link meeting.',
+                ]);
+            }
+        } else {
+            // mode = online
+            if (!empty($validated['lokasi_event']) || !empty($validated['peta_event']) || !empty($validated['kapasitas_maksimal'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'lokasi_event' => 'Event online tidak boleh memiliki lokasi/kapasitas. Kosongkan field lokasi dan kapasitas.',
+                ]);
+            }
+        }
+
+        // Auto-null: field yang tidak relevan untuk mode di-clear.
+        if ($normalizedMode === 'offline') {
+            $validated['online_link'] = null;
+        } else {
+            $validated['lokasi_event'] = null;
+            $validated['peta_event'] = null;
+            $validated['kapasitas_maksimal'] = null;
+            $validated['checkin_required'] = false;
+        }
 
         $payload = [];
-        if ($request->filled('tipe_event'))      $payload['tipe_event'] = $validated['tipe_event'];
-        if ($request->filled('mode_event'))      $payload['mode_event'] = $validated['mode_event'];
-        if ($request->has('lokasi_event'))       $payload['lokasi_event'] = $validated['lokasi_event'] ?? null;
-        if ($request->has('peta_event'))         $payload['peta_event'] = $validated['peta_event'] ?? null;
-        if ($request->filled('kapasitas_maksimal')) $payload['kapasitas_maksimal'] = (int) $validated['kapasitas_maksimal'];
-        $payload['checkin_required'] = (bool) ($validated['checkin_required'] ?? false);
+        $payload['tipe_event']         = $validated['tipe_event'] ?? $course->tipe_event;
+        $payload['mode_event']         = $validated['mode_event'];
+        $payload['lokasi_event']       = $validated['lokasi_event'] ?? null;
+        $payload['peta_event']         = $validated['peta_event'] ?? null;
+        $payload['kapasitas_maksimal'] = $validated['kapasitas_maksimal'] ?? null;
+        $payload['checkin_required']   = (bool) ($validated['checkin_required'] ?? false);
+        $payload['online_link']        = $validated['online_link'] ?? null;
 
-        if (!empty($payload)) {
-            $course->update($payload);
-        }
+        $course->update($payload);
 
         return back()->with('success', 'Pengaturan event berhasil diperbarui.');
     }

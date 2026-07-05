@@ -70,4 +70,16 @@ enum AccessMode: string
             default => self::ONLINE,
         };
     }
+
+    /**
+     * Hanya user-facing cases (dipakai untuk dropdown UI). Jangan pakai
+     * {@see cases()} di view karena akan include ONSITE/HYBRID deprecated
+     * yang label-nya collapse ke "Offline" — muncul duplikat.
+     *
+     * @return array<int, self>
+     */
+    public static function userCases(): array
+    {
+        return [self::ONLINE, self::OFFLINE];
+    }
 }

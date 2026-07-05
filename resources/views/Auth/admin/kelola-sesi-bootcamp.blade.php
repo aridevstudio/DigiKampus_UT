@@ -171,29 +171,45 @@
                         </label>
                         <label class="block">
                             <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mode Event</span>
-                            <select name="mode_event" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            <select name="mode_event" id="course_mode_event_select" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
                                 @foreach ($modeOptions as $value => $label)
-                                    <option value="{{ $value }}" @selected(old('mode_event', $course->mode_event) === $value)>{{ $label }}</option>
+                                    <option value="{{ $value }}" @selected(old('mode_event', $currentMode ?? 'online') === $value)>{{ $label }}</option>
                                 @endforeach
                             </select>
+                            <p class="mt-1 text-xs text-slate-500" id="course_mode_event_helper">Pilih mode untuk menentukan field event yang relevan.</p>
                         </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Lokasi Event (khusus onsite)</span>
-                            <input name="lokasi_event" type="text" maxlength="255" value="{{ old('lokasi_event', $course->lokasi_event) }}" placeholder="Gedung Rektorat Lt. 5, Jakarta" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Peta (opsional)</span>
-                            <input name="peta_event" type="url" maxlength="500" value="{{ old('peta_event', $course->peta_event) }}" placeholder="https://maps.app.goo.gl/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                        </label>
-                        <label class="block">
-                            <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Kapasitas Maksimal</span>
-                            <input name="kapasitas_maksimal" type="number" min="1" max="100000" value="{{ old('kapasitas_maksimal', $course->kapasitas_maksimal) }}" placeholder="40" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                        </label>
-                        <label class="flex items-center gap-3 self-end">
-                            <input type="hidden" name="checkin_required" value="0">
-                            <input type="checkbox" name="checkin_required" value="1" @checked(old('checkin_required', $course->checkin_required)) class="h-4 w-4 rounded border-slate-300">
-                            <span class="text-xs font-semibold text-slate-700">Wajib check-in onsite</span>
-                        </label>
+
+                        {{-- ONLINE-only fields: link meeting wajib. Wrapper pake `contents` (sama
+                             dgn offline_fields) supaya children jadi direct grid child → konsistensi
+                             layout antara mode online dan offline. --}}
+                        <div id="course_online_fields" class="contents hidden">
+                            <label class="block sm:col-span-2">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Meeting (Zoom / Google Meet)</span>
+                                <input name="online_link" type="url" maxlength="500" value="{{ old('online_link', $course->online_link) }}" placeholder="https://zoom.us/j/... atau https://meet.google.com/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                <span class="mt-1 block text-xs text-slate-500">Event online wajib memiliki link meeting.</span>
+                            </label>
+                        </div>
+
+                        {{-- OFFLINE-only fields: lokasi + kapasitas + check-in --}}
+                        <div id="course_offline_fields" class="contents">
+                            <label class="block">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Lokasi Event</span>
+                                <input name="lokasi_event" type="text" maxlength="255" value="{{ old('lokasi_event', $course->lokasi_event) }}" placeholder="Gedung Rektorat Lt. 5, Jakarta" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </label>
+                            <label class="block">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Link Peta (opsional)</span>
+                                <input name="peta_event" type="url" maxlength="500" value="{{ old('peta_event', $course->peta_event) }}" placeholder="https://maps.app.goo.gl/..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </label>
+                            <label class="block">
+                                <span class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Kapasitas Maksimal</span>
+                                <input name="kapasitas_maksimal" type="number" min="1" max="100000" value="{{ old('kapasitas_maksimal', $course->kapasitas_maksimal) }}" placeholder="40" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </label>
+                            <label class="flex items-center gap-3 self-end">
+                                <input type="hidden" name="checkin_required" value="0">
+                                <input type="checkbox" name="checkin_required" value="1" @checked(old('checkin_required', $course->checkin_required)) class="h-4 w-4 rounded border-slate-300">
+                                <span class="text-xs font-semibold text-slate-700">Wajib check-in onsite</span>
+                            </label>
+                        </div>
                     </div>
                     <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
                         <button type="button" data-modal-close="course-settings" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Batal</button>
@@ -448,6 +464,62 @@
                         setFieldMode('online');
                     }, 0);
                 });
+
+                // ─────────────────────────────────────────────────────
+                // COURSE-LEVEL Mode Event toggle (courseSettingsModal)
+                // Single source of truth: option value dari controller (modeOptions = ONLINE|OFFLINE).
+                // Initial state di-render sesuai $course->mode_event (dari backend); legacy 'onsite'/'hybrid'
+                // dinormalisasi ke 'offline' di controller sebelum sampai ke view.
+                // ─────────────────────────────────────────────────────
+                const courseModeSelect = document.getElementById('course_mode_event_select');
+                const courseOnlineFields = document.getElementById('course_online_fields');
+                const courseOfflineFields = document.getElementById('course_offline_fields');
+                const courseModeHelper = document.getElementById('course_mode_event_helper');
+                const courseForm = document.querySelector('#courseSettingsModal form');
+
+                const setCourseFieldMode = (mode) => {
+                    if (!courseModeSelect) return;
+                    const normalized = (mode === 'offline') ? 'offline' : 'online';
+                    // Sync the select UI (in case caller didn't already)
+                    courseModeSelect.value = normalized;
+                    if (normalized === 'online') {
+                        courseOnlineFields?.classList.remove('hidden');
+                        courseOfflineFields?.classList.add('hidden');
+                        if (courseModeHelper) courseModeHelper.textContent = 'Event online: wajib isi link meeting. Lokasi/kapasitas disembunyikan.';
+                        // Auto-clear offline-only fields to prevent mixed data on submit
+                        if (courseForm) {
+                            ['lokasi_event', 'peta_event', 'kapasitas_maksimal'].forEach((n) => {
+                                const el = courseForm.querySelector(`[name="${n}"]`);
+                                if (el) el.value = '';
+                            });
+                            const cb = courseForm.querySelector('[name="checkin_required"]');
+                            if (cb) cb.checked = false;
+                        }
+                    } else {
+                        courseOnlineFields?.classList.add('hidden');
+                        courseOfflineFields?.classList.remove('hidden');
+                        if (courseModeHelper) courseModeHelper.textContent = 'Event offline: wajib isi lokasi + kapasitas. Link meeting disembunyikan.';
+                        // Auto-clear online-only field to prevent mixed data on submit
+                        if (courseForm) {
+                            const ol = courseForm.querySelector('[name="online_link"]');
+                            if (ol) ol.value = '';
+                        }
+                    }
+                };
+
+                if (courseModeSelect) {
+                    courseModeSelect.addEventListener('change', (e) => setCourseFieldMode(e.target.value));
+                }
+
+                // Initialize on modal open dari backend state (single source of truth: option value).
+                // Legitimate nilai di sini hanya 'online' atau 'offline' karena modeOptions source dari
+                // AccessMode::userCases() (lihat controller show()). Default ke 'online' jika null/undefined.
+                document.querySelectorAll('[data-modal-open="course-settings"]').forEach((btn) => {
+                    btn.addEventListener('click', () => setCourseFieldMode(courseModeSelect?.value || 'online'));
+                });
+
+                // Inisiasi awal saat DOM ready (untuk mencegah FOUC ketika modal auto-open dari validation error)
+                setCourseFieldMode(courseModeSelect?.value || 'online');
             });
         </script>
     @endpush
