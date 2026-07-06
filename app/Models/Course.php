@@ -280,6 +280,16 @@ class Course extends Model
     }
 
     /**
+     * Daftar nilai tipe_event yang diperlakukan sebagai event (bukan kursus reguler).
+     *
+     * Dipakai sebagai single source of truth di mana pun sistem perlu membedakan
+     * event dari kursus — termasuk {@see Course::scopeBootcampStyle()},
+     * {@see \App\Http\Controllers\Mahasiswa\DashboardController::isEventCourse()},
+     * dan query builder untuk statistik dashboard.
+     */
+    public const EVENT_TIPE_VALUES = ['bootcamp', 'webinar', 'workshop', 'seminar'];
+
+    /**
      * Scope bootcamp-style events: kategori=tiket OR tipe_event set.
      * (Legacy pakai kategori; baru pakai tipe_event untuk granular type.)
      */
@@ -287,7 +297,7 @@ class Course extends Model
     {
         return $query->where(function ($q) {
             $q->where('kategori', 'tiket')
-              ->orWhereIn('tipe_event', ['bootcamp', 'webinar', 'workshop', 'seminar']);
+              ->orWhereIn('tipe_event', self::EVENT_TIPE_VALUES);
         });
     }
 

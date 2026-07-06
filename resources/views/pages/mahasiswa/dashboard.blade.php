@@ -21,7 +21,8 @@ $gradients = [
     'from-indigo-500 to-blue-400',
 ];
 
-// Build courses array from enrolledCourses (from controller)
+// Build courses array from enrolledCourses (from controller) — hanya kursus reguler
+// karena controller sudah memfilter berdasarkan kategori/tipe_event.
 $courses = [];
 if (isset($enrolledCourses) && count($enrolledCourses) > 0) {
     foreach ($enrolledCourses as $index => $enrollment) {
@@ -39,6 +40,47 @@ if (isset($enrolledCourses) && count($enrolledCourses) > 0) {
             'gradient' => $gradients[$index % count($gradients)],
             'dosen' => $course->dosen->name ?? 'Dosen',
             'thumbnail' => $course->thumbnail ?? null,
+        ];
+    }
+}
+
+// Build events array dari $eventEnrollments (bootcamp/webinar/workshop/seminar)
+// — terpisah dari $courses karena flow-nya berbeda (link SS Zoom/materi per sesi
+// vs modul kursus statis), dan progress dihitung via attendance verification.
+$events = [];
+if (isset($eventEnrollments) && count($eventEnrollments) > 0) {
+    foreach ($eventEnrollments as $index => $enrollment) {
+        $course = $enrollment->course;
+        $tipeEvent = strtoupper($course->tipe_event ?? 'BOOTCAMP');
+        $modeEvent = strtolower((string) ($course->mode_event ?? 'online'));
+        $modeLabel = match ($modeEvent) {
+            'offline' => 'Offline',
+            'hybrid' => 'Hybrid',
+            'onsite' => 'On-site',
+            default => 'Online',
+        };
+        $modeClass = match ($modeEvent) {
+            'offline', 'onsite' => 'bg-amber-100 text-amber-700 ring-amber-200',
+            'hybrid' => 'bg-violet-100 text-violet-700 ring-violet-200',
+            default => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+        };
+        $tipeClass = match (strtolower($course->tipe_event ?? 'bootcamp')) {
+            'webinar' => 'bg-sky-100 text-sky-700 ring-sky-200',
+            'workshop' => 'bg-pink-100 text-pink-700 ring-pink-200',
+            'seminar' => 'bg-orange-100 text-orange-700 ring-orange-200',
+            default => 'bg-indigo-100 text-indigo-700 ring-indigo-200',
+        };
+        $events[] = [
+            'id' => $course->id_course ?? $enrollment->id_course ?? null,
+            'name' => $course->nama_course ?? 'Event',
+            'code' => $course->kode_course ?? '',
+            'type' => $tipeEvent,
+            'mode_label' => $modeLabel,
+            'mode_class' => $modeClass,
+            'type_class' => $tipeClass,
+            'dosen' => $course->dosen->name ?? 'Dosen',
+            'thumbnail' => $course->thumbnail ?? null,
+            'gradient' => $gradients[$index % count($gradients)],
         ];
     }
 }
@@ -148,7 +190,7 @@ if (isset($agenda) && count($agenda) > 0) {
 {{-- Kursus yang Sedang Kamu Ikuti Section --}}
 <div class="mb-4 sm:mb-6 animate-fade-in-up delay-200">
     <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4">Kursus yang Sedang Kamu Ikuti</h2>
-    
+
     @if(count($courses) > 0)
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         @foreach($courses as $index => $course)
@@ -190,6 +232,56 @@ if (isset($agenda) && count($agenda) > 0) {
     </div>
     @endif
 </div>
+
+{{-- Event yang Sedang Kamu Ikuti Section (terpisah dari kursus) --}}
+{{-- Tipe: bootcamp / webinar / workshop / seminar; Mode: online / offline / hybrid. --}}
+@if(count($events) > 0)
+<div class="mb-4 sm:mb-6 animate-fade-in-up delay-250">
+    <div class="flex items-center justify-between mb-3 sm:mb-4">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">Event yang Sedang Kamu Ikuti</h2>
+        <a href="{{ route('mahasiswa.bootcamp-saya') }}" class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium transition hover-scale">Lihat Semua</a>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        @foreach($events as $index => $event)
+        <div class="bg-white dark:bg-[#1f2937] rounded-xl sm:rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700/50 hover-lift animate-scale-in" style="animation-delay: {{ ($index + 1) * 100 }}ms;">
+            <div class="h-32 sm:h-36 bg-gradient-to-br {{ $event['gradient'] }} relative flex items-center justify-center p-4">
+                @if($event['thumbnail'])
+                <img src="{{ asset('storage/' . $event['thumbnail']) }}" alt="{{ $event['name'] }}" class="w-full h-full object-cover">
+                @else
+                <div class="text-white text-center">
+                    <p class="text-base sm:text-lg font-bold">{{ $event['name'] }}</p>
+                    @if($event['code'])
+                    <p class="text-sm opacity-80">{{ $event['code'] }}</p>
+                    @endif
+                </div>
+                @endif
+                {{-- Tipe event chip pojok kiri-atas --}}
+                <span class="absolute top-3 left-3 inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ring-inset {{ $event['type_class'] }}">{{ $event['type'] }}</span>
+                {{-- Mode chip pojok kanan-atas --}}
+                <span class="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ring-inset {{ $event['mode_class'] }}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                        @if(strtolower($event['mode_label']) === 'Offline' || strtolower($event['mode_label']) === 'On-site')
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                        @else
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                        @endif
+                    </svg>
+                    {{ $event['mode_label'] }}
+                </span>
+            </div>
+            <div class="p-4">
+                <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-1 text-sm sm:text-base">{{ $event['name'] }}</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-3">Oleh {{ $event['dosen'] }}</p>
+                <a href="{{ !empty($event['id']) ? route('mahasiswa.bootcamp-learn', $event['id']) : route('mahasiswa.bootcamp-saya') }}" class="inline-flex items-center justify-center text-amber-600 hover:text-amber-700 text-xs sm:text-sm font-medium border border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition hover-scale">
+                    Buka Event
+                </a>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
 
 {{-- Bottom Section: News & Calendar --}}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 animate-fade-in-up delay-300">

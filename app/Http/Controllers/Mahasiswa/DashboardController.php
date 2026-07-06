@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\News;
 use App\Models\Agenda;
@@ -21,7 +22,14 @@ class DashboardController extends Controller
         $user = Auth::guard('mahasiswa')->user();
 
         // Get enrollments for progress calculation
-        $enrollments = Enrollment::where('id_mahasiswa', $user->id)->get();
+        // PENTING: Pisahkan kursus reguler (`kategori='kursus'`) dari event tiket
+        // (`kategori='tiket'` atau `tipe_event` IN bootcamp/webinar/workshop/seminar)
+        // karena kursus dan event mengikuti flow yang benar-benar berbeda dan jangan
+        // dirender jadi satu section di dashboard.
+        // Eager-load `course` agar filter isEventCourse() tidak menjadi N+1.
+        $enrollments = Enrollment::with('course')
+            ->where('id_mahasiswa', $user->id)
+            ->get();
 
         $activeStatuses = ['aktif', 'in_progress'];
         $activeEnrollments = $enrollments->filter(function ($enrollment) use ($activeStatuses) {
@@ -37,31 +45,80 @@ class DashboardController extends Controller
             ->values()
             ->all();
 
-        // Calculate progress statistics
-        $kursusAktif = $activeEnrollments->count();
-        $kursusSelesai = $completedEnrollments->count();
-        $kursusSedangDipelajari = $activeEnrollments->where('progress', '>', 0)->count();
-        $kursusTertunda = $activeEnrollments->where('progress', '<', 50)->count();
+        // Calculate progress statistics (kursus reguler saja — agar angka di donut
+        // chart konsisten dengan section "Kursus yang Sedang Kamu Ikuti" di bawah).
+        $kursusEnrollmentsForStats = $enrollments->filter(function ($enrollment) {
+            return !self::isEventCourse($enrollment->course);
+        });
+        $kursusActiveEnrollments = $kursusEnrollmentsForStats->filter(function ($enrollment) use ($activeStatuses) {
+            return in_array($enrollment->status, $activeStatuses, true)
+                && (float) $enrollment->progress < 100;
+        });
+        $kursusCompletedEnrollments = $kursusEnrollmentsForStats->filter(function ($enrollment) {
+            return $enrollment->status === 'selesai' || (float) $enrollment->progress >= 100;
+        });
+        $kursusAktif = $kursusActiveEnrollments->count();
+        $kursusSelesai = $kursusCompletedEnrollments->count();
+        $kursusSedangDipelajari = $kursusActiveEnrollments->where('progress', '>', 0)->count();
+        $kursusTertunda = $kursusActiveEnrollments->where('progress', '<', 50)->count();
 
-        // Calculate total progress (average of active enrollments)
-        $totalProgress = $activeEnrollments->count() > 0 
-            ? round($activeEnrollments->avg('progress'), 0) 
+        // Calculate total progress (average of active kursus enrollments — event
+        // style tidak dihitung ke progress karena completion-nya multi-sesi dan
+        // dihitung terpisah via BootcampFlowService → attendance verification).
+        $totalProgress = $kursusActiveEnrollments->count() > 0
+            ? round($kursusActiveEnrollments->avg('progress'), 0)
             : 0;
 
-        // Get enrolled courses with course and dosen info (limit 3 for dashboard)
-        $enrolledCourses = Enrollment::with(['course', 'course.dosen'])
+        // Get enrolled KURSUS (kategori='kursus' ATAU non-event) untuk section
+        // "Kursus yang Sedang Kamu Ikuti" — limit 3 untuk dashboard.
+        $kursusEnrollments = Enrollment::with(['course', 'course.dosen'])
             ->where('id_mahasiswa', $user->id)
             ->whereIn('status', $activeStatuses)
             ->where('progress', '<', 100)
+            ->whereDoesntHave('course', function ($q) {
+                $q->where(function ($qq) {
+                    $qq->where('kategori', 'tiket')
+                       ->orWhereIn('tipe_event', Course::EVENT_TIPE_VALUES);
+                });
+            })
             ->orderByRaw('CASE WHEN progress > 0 THEN 0 ELSE 1 END')
             ->orderByDesc('updated_at')
             ->take(3)
             ->get();
 
-        // Prefer course with existing progress for "continue learning" CTA.
-        $nextEnrollment = Enrollment::where('id_mahasiswa', $user->id)
+        // Get enrolled EVENT (bootcamp / webinar / workshop / seminar) untuk section
+        // "Event yang Sedang Kamu Ikuti" — limit 3 untuk dashboard.
+        $eventEnrollments = Enrollment::with(['course', 'course.dosen'])
+            ->where('id_mahasiswa', $user->id)
+            ->whereIn('status', $activeStatuses)
+            ->whereHas('course', function ($q) {
+                $q->where(function ($qq) {
+                    $qq->where('kategori', 'tiket')
+                       ->orWhereIn('tipe_event', Course::EVENT_TIPE_VALUES);
+                });
+            })
+            ->orderByRaw('CASE WHEN progress > 0 THEN 0 ELSE 1 END')
+            ->orderByDesc('updated_at')
+            ->take(3)
+            ->get();
+
+        // Backwards-compat alias — blade lama yang masih baca $enrolledCourses
+        // akan resolve ke kursus saja supaya tidak ndak-include event.
+        $enrolledCourses = $kursusEnrollments;
+
+        // Prefer kursus with existing progress for "continue learning" CTA.
+        // Pakai DB query langsung (bukan chained Collection sort yang fragile).
+        // Event punya CTA sendiri di section event (lihat blade).
+        $nextEnrollment = Enrollment::query()
+            ->where('id_mahasiswa', $user->id)
             ->whereIn('status', $activeStatuses)
             ->where('progress', '<', 100)
+            ->whereDoesntHave('course', function ($q) {
+                $q->where(function ($qq) {
+                    $qq->where('kategori', 'tiket')
+                       ->orWhereIn('tipe_event', Course::EVENT_TIPE_VALUES);
+                });
+            })
             ->orderByRaw('CASE WHEN progress > 0 THEN 0 ELSE 1 END')
             ->orderByDesc('updated_at')
             ->first();
@@ -272,6 +329,31 @@ class DashboardController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Cek apakah Course entry adalah event (bootcamp/webinar/workshop/seminar).
+     *
+     * - Legacy: pakai kolom `kategori='tiket'`.
+     * - Baru: pakai kolom `tipe_event` dengan nilai dalam {@see Course::EVENT_TIPE_VALUES}.
+     * - Nilai lain dari `kategori` (mis. 'kursus', 'webinar' legacy) bukan event.
+     *
+     * Dipakai oleh {@see DashboardController::index()} untuk memisahkan statistik
+     * kursus dari statistik event di dashboard mahasiswa — sehingga dua jenis
+     * konten tidak dicampur jadi satu section.
+     */
+    private static function isEventCourse(?Course $course): bool
+    {
+        if (!$course) {
+            return false;
+        }
+
+        $tipeEvent = trim((string) $course->tipe_event);
+        if (in_array($tipeEvent, Course::EVENT_TIPE_VALUES, true)) {
+            return true;
+        }
+
+        return $course->kategori === 'tiket';
     }
 
     /**
