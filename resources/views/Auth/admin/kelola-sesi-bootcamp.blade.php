@@ -22,6 +22,9 @@
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                         Setiap sesi bersifat individual: judul, jadwal, link meeting, materi. Status sesi otomatis terhitung dari tanggal & jam (upcoming / live / ended).
                     </p>
+                    <p class="mt-2 max-w-2xl text-xs leading-5 text-slate-500">
+                        Mode default sesi: <span class="font-semibold">{{ strtoupper($currentMode ?? 'online') }}</span> — diwariskan dari Pengaturan Event. Klik "Tambah Sesi" lalu gunakan dropdown Mode Sesi untuk override per-sesi bila diperlukan.
+                    </p>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-3 xl:w-[460px]">
                     <a href="{{ route('admin.bootcamp-tiket', [], false) }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white text-center">Kembali</a>
@@ -259,13 +262,10 @@
                         {{-- Mode Event dropdown — drives dynamic field rendering below --}}
                         <div class="sm:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                             <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <span class="block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mode Sesi</span>
-                                    <p class="mt-1 text-xs text-slate-500" id="mode-event-helper">Sesi akan menggunakan Zoom/Google Meet (link meeting wajib).</p>
-                                </div>
-                                <select name="mode_event" id="mode_event_select" required class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800">
-                                    <option value="online">Online</option>
-                                    <option value="offline">Offline</option>
+                                <span class="block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Mode Sesi</span>
+                                <select name="mode_event" id="mode_event_select" required data-default-mode="{{ $currentMode ?? 'online' }}" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800">
+                                    <option value="online" @selected(old('mode_event', $currentMode ?? 'online') === 'online')>Online</option>
+                                    <option value="offline" @selected(old('mode_event', $currentMode ?? 'online') === 'offline')>Offline</option>
                                 </select>
                             </div>
                         </div>
@@ -457,11 +457,16 @@
                     });
                 });
 
-                // When opening the modal in "Tambah Sesi" mode, reset to online default
+                // When opening the modal in "Tambah Sesi" mode, reset to Course.mode_event
+                // default (bukan hardcoded 'online'). Default di-bind via data-default-mode
+                // attribute yang nilainya dari $defaultSesiMode di controller. Mengikuti
+                // inheritance: kalau Course.mode_event = Offline, tambah sesi default = Offline.
+                // User tetap bisa override per-sesi via dropdown tanpa propagasi ke Course.
                 document.querySelector('[data-modal-open="new-sesi"]')?.addEventListener('click', () => {
                     setTimeout(() => {
-                        if (modeSelect) modeSelect.value = 'online';
-                        setFieldMode('online');
+                        const defaultMode = modeSelect?.dataset.defaultMode || 'online';
+                        if (modeSelect) modeSelect.value = defaultMode;
+                        setFieldMode(defaultMode);
                     }, 0);
                 });
 

@@ -49,6 +49,11 @@ class BootcampSesiController extends Controller
         // benar (lihat AccessMode::userCases() — hanya ada online|offline options).
         // Tanpa normalisasi, mode_event='onsite' tidak match satupun option dan
         // browser default ke option pertama (Online) — mismatch dengan realitas data.
+        //
+        // $currentMode dipakai di dua tempat:
+        //  1. Preselect dropdown modal "Pengaturan Event" (course-level).
+        //  2. Pre-fill dropdown modal "Tambah Sesi" (inherit dari Course, bisa override
+        //     per-sesi via dropdown sesi) — dahulu hardcoded 'online', sekarang inherit.
         $currentMode = AccessMode::fromNullable($course->mode_event)->value;
 
         return view('Auth.admin.kelola-sesi-bootcamp', [

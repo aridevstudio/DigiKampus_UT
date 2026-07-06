@@ -70,6 +70,51 @@
             $endTime = $course->jam_selesai_webinar ? substr((string) $course->jam_selesai_webinar, 0, 5) : null;
             $timeLabel = $startTime ? ($endTime ? $startTime . ' - ' . $endTime : $startTime) : 'Jam menyusul';
             $isEnrolled = in_array($course->id_course, $enrolledCourseIds);
+
+            // ── tipe_event differentiation (business rules) ──
+            // Tipe-event baru pakai kolom Course.tipe_event (lebih granular dari kategori='tiket' lama).
+            $tipeEventRaw = trim((string) ($course->tipe_event ?? ''));
+            if ($tipeEventRaw === '') {
+                // Legacy bootcamp tanpa tipe_event terisi → fallback ke kategori='tiket' = Bootcamp.
+                $tipeEventLabel = 'Bootcamp';
+                $isKategoriTiket = strtolower((string) ($course->kategori ?? '')) === 'tiket';
+                $effectiveTipeEvent = $isKategoriTiket ? 'bootcamp' : 'lain';
+            } else {
+                $effectiveTipeEvent = strtolower($tipeEventRaw);
+            }
+            $tipeEventLabel = match ($effectiveTipeEvent) {
+                'seminar' => 'Seminar',
+                'webinar' => 'Webinar',
+                'workshop' => 'Workshop',
+                'bootcamp' => 'Bootcamp',
+                default => 'Event',
+            };
+
+            // Mode_event badge
+            $modeEventRaw = strtolower((string) ($course->mode_event ?? ''));
+            $isOnlineEvent = in_array($modeEventRaw, ['online', ''], true)
+                && $effectiveTipeEvent !== 'seminar';
+            $isOfflineEvent = in_array($modeEventRaw, ['offline', 'onsite', 'hybrid'], true)
+                || $effectiveTipeEvent === 'seminar';
+            $modeBadgeLabel = $isOfflineEvent ? 'Offline' : 'Online';
+            $modeBadgeColor = $isOfflineEvent
+                ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
+                : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300';
+
+            // Sesi count (1 sesi untuk seminar/webinar/workshop; multi-sesi untuk bootcamp)
+            $isBootcampCard = $effectiveTipeEvent === 'bootcamp';
+            $sesiCountLabel = $isBootcampCard ? 'Multi-Sesi' : '1 Sesi';
+            $sesiCountBg = $isBootcampCard
+                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300'
+                : 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-300';
+
+            // Untuk seminar: tampilkan "Slot tersisa X/Y" bila kapasitas_maksimal diset
+            $kapasitasMax = (int) ($course->kapasitas_maksimal ?? 0);
+            $slotTerisiCounter = (int) ($course->slot_terisi ?? 0);
+            $slotsRemaining = $kapasitasMax > 0 ? max(0, $kapasitasMax - $slotTerisiCounter) : null;
+            $slotsLabel = $slotsRemaining !== null
+                ? "Slot: {$slotsRemaining}/{$kapasitasMax}"
+                : null;
         @endphp
 
         <article class="group overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl dark:border-gray-700/50 dark:bg-[#1f2937]">
@@ -82,6 +127,10 @@
                     @else
                         <span class="absolute left-4 top-4 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white">Open</span>
                     @endif
+                    {{-- Tipe-event chip (stack di kanan atas thumbnail) --}}
+                    <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full {{ $sesiCountBg }} px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] shadow-sm">
+                        {{ $tipeEventLabel }} &middot; {{ $sesiCountLabel }}
+                    </span>
                     <span class="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-800">{{ $course->kode_course }}</span>
                 </div>
             </a>

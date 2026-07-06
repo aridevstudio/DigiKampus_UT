@@ -689,6 +689,371 @@
                 </div>
             @endif
 
+            {{-- ═════════════════════════════════════════════════════════════════
+                BOOTCAMP LIVE CLASS TIMELINE
+                Dipakai oleh semua course dengan Course.kategori='tiket'.
+                Mengikuti single source of truth: BootcampFlowService::learningJourneyTimeline().
+                Per-sesi menampilkan: mode (online/offline), waktu, lokasi/maps, link Zoom/Meet,
+                tombol join (kalau live/upcoming & link tersedia), form upload bukti kehadiran
+                (kalau sesi sudah berakhir & belum verified), dan badge status admin (verified/pending/rejected).
+            ═════════════════════════════════════════════════════════════════ --}}
+            @if($isBootcamp && !empty($sesiTimeline) && is_array($sesiTimeline))
+                <section id="bootcamp-live-class-timeline" class="relative overflow-hidden rounded-[24px] border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-4 dark:border-indigo-700/40 dark:from-indigo-950/30 dark:via-gray-900 dark:to-blue-950/20 sm:rounded-[28px] sm:p-6">
+                    <div class="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-indigo-200/40 blur-3xl dark:bg-indigo-500/20"></div>
+                    <div class="absolute -left-10 bottom-0 h-24 w-24 rounded-full bg-blue-200/40 blur-3xl dark:bg-blue-500/20"></div>
+
+                    <div class="relative space-y-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 class="text-base font-bold leading-snug text-gray-900 sm:text-lg sm:text-xl dark:text-white">
+                                    <svg class="mr-2 inline h-5 w-5 align-[-2px] text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                    Sesi Live Class Bootcamp
+                                </h3>
+                                <p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">
+                                    @if(!empty($attendanceProgress))
+                                        {{ $attendanceProgress['attended'] }}/{{ $attendanceProgress['required'] }} sesi terverifikasi &mdash;
+                                        @if($attendanceProgress['unlocked'])
+                                            <span class="font-semibold text-emerald-600 dark:text-emerald-300">final project dibuka.</span>
+                                        @else
+                                            <span class="font-semibold text-amber-600 dark:text-amber-300">{{ $attendanceProgress['gap'] }}</span>
+                                        @endif
+                                    @else
+                                        Daftar sesi live class untuk bootcamp ini.
+                                    @endif
+                                </p>
+                            </div>
+                            @if(!empty($attendanceProgress) && $attendanceProgress['required'] > 0)
+                                <span class="inline-flex items-center gap-2 rounded-full {{ $attendanceProgress['unlocked'] ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' }} px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] sm:tracking-[0.16em]">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full {{ $attendanceProgress['unlocked'] ? 'bg-emerald-400 opacity-60' : 'bg-amber-400 opacity-60' }}"></span>
+                                        <span class="relative inline-flex h-2 w-2 rounded-full {{ $attendanceProgress['unlocked'] ? 'bg-emerald-500' : 'bg-amber-500' }}"></span>
+                                    </span>
+                                    {{ $attendanceProgress['percent'] }}% Hadir
+                                </span>
+                            @endif
+                        </div>
+
+                        @if(!empty($attendanceProgress))
+                            <div class="hidden h-2 w-full overflow-hidden rounded-full bg-white/70 shadow-inner sm:block dark:bg-gray-800/60">
+                                <div class="h-full rounded-full {{ $attendanceProgress['unlocked'] ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-amber-500 to-orange-500' }} transition-all" style="width: {{ (int) $attendanceProgress['percent'] }}%"></div>
+                            </div>
+                        @endif
+
+                        <ol class="space-y-3">
+                            @foreach($sesiTimeline as $node)
+                                @php
+                                    $modeEvent = $node['mode_event'] ?? 'online';
+                                    $isOffline = (bool) ($node['is_offline_sesi'] ?? false);
+                                    $attendance = $node['attendance'] ?? null;
+                                    $attendanceStatus = $attendance['status'] ?? null;
+                                    $state = $node['state'] ?? 'upcoming';
+                                    $window = $node['window'] ?? [];
+                                    $canJoin = (bool) ($window['canJoin'] ?? false);
+                                    $sesiId = (int) ($node['sesiId'] ?? 0);
+                                    $isRealSesi = $sesiId > 0 && !$node['isLegacy'];
+
+                                    // Object lookup for legacy primary sesi (mode_event falls back to course mode_event)
+                                    if ($isRealSesi && isset($sesiList)) {
+                                        $sesiObj = null;
+                                        foreach ($sesiList as $s) {
+                                            if ($s instanceof \App\Models\BootcampSession && (int) $s->id_bootcamp_session === $sesiId) {
+                                                $sesiObj = $s; break;
+                                            }
+                                        }
+                                        $joinUrl = $sesiObj?->link_zoom ?: $sesiObj?->link_meet;
+                                        $recordingUrl = $sesiObj?->link_rekaman;
+                                        $materiUrl = $sesiObj?->materi_url ?: (!empty($sesiObj?->materi_file) ? asset('storage/' . $sesiObj->materi_file) : null);
+                                        $lokasiText = $sesiObj?->lokasi_event;
+                                        $petaUrl = $sesiObj?->peta_event;
+                                    } else {
+                                        // legacy virtual primary: read from course
+                                        $joinUrl = $course->online_link;
+                                        $recordingUrl = null;
+                                        $materiUrl = null;
+                                        $lokasiText = $course->lokasi_event;
+                                        $petaUrl = $course->peta_event;
+                                    }
+                                @endphp
+                                <li class="relative flex flex-col gap-4 rounded-2xl border border-indigo-200/70 bg-white/85 p-4 shadow-sm dark:border-indigo-700/30 dark:bg-gray-900/60 sm:p-5">
+                                    <div class="flex flex-wrap items-start justify-between gap-3">
+                                        <div class="min-w-0 flex-1 space-y-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="inline-flex items-center gap-1 rounded-full {{ $isOffline ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300' }} px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em]">
+                                                    @if($isOffline)
+                                                        <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                        Offline
+                                                    @else
+                                                        <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                                        Online
+                                                    @endif
+                                                </span>
+                                                @if($state === 'live')
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                                                        <span class="relative flex h-1.5 w-1.5">
+                                                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                                                            <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-white"></span>
+                                                        </span>
+                                                        Sedang Berlangsung
+                                                    </span>
+                                                @elseif($state === 'upcoming')
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                                                        @if(!empty($window['minutesToStart']))
+                                                            Dimulai dalam {{ $window['minutesToStart'] }} menit
+                                                        @else
+                                                            Akan Datang
+                                                        @endif
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-600 dark:bg-gray-700/60 dark:text-gray-300">
+                                                        Selesai {{ !empty($window['minutesSinceEnd']) ? '(' . $window['minutesSinceEnd'] . 'm lalu)' : '' }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <h4 class="text-sm font-bold leading-snug text-gray-900 sm:text-base dark:text-gray-100">
+                                                {{ $node['judul_sesi'] }}
+                                            </h4>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                {{ $node['start_at']->format('d M Y, H:i') }} &ndash; {{ $node['end_at']->format('H:i') }} WIB
+                                            </p>
+                                        </div>
+
+                                        <div class="flex flex-col items-end gap-1 text-right">
+                                            @if($attendanceStatus === 'verified')
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-700/40">
+                                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                    Hadir Terverifikasi
+                                                </span>
+                                            @elseif($state === 'ended')
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-700/40">
+                                                    Bukti Belum Terverifikasi
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-gray-100 text-gray-600 border border-gray-200 dark:bg-gray-700/60 dark:text-gray-300 dark:border-gray-600">
+                                                    Belum Dimulai
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                        {{-- Lokasi / Link Card --}}
+                                        <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/70">
+                                            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">
+                                                {{ $isOffline ? 'Lokasi Sesi' : 'Meeting Link' }}
+                                            </p>
+                                            @if($isOffline)
+                                                <p class="mt-1 text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $lokasiText ?: 'Lokasi akan diumumkan mentor' }}</p>
+                                                @if($petaUrl)
+                                                    <a href="{{ $petaUrl }}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-300">
+                                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        Buka di Google Maps
+                                                    </a>
+                                                @endif
+                                            @else
+                                                @if($canJoin && $joinUrl)
+                                                    <a href="{{ $joinUrl }}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-2 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-rose-500/20 hover:bg-rose-600">
+                                                        <span class="relative flex h-2 w-2">
+                                                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                                                            <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+                                                        </span>
+                                                        {{ $state === 'live' ? 'Join Live Sekarang' : 'Tunggu & Join' }}
+                                                    </a>
+                                                @else
+                                                    <p class="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                                                        @if($state === 'upcoming')Link akan muncul sebelum sesi dimulai
+                                                        @elseif($state === 'ended' && empty($joinUrl))Tidak ada link meeting
+                                                        @else Sesi live class sudah berakhir
+                                                        @endif
+                                                    </p>
+                                                @endif
+                                                @if($recordingUrl)
+                                                    <a href="{{ $recordingUrl }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
+                                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                                        Lihat Rekaman
+                                                    </a>
+                                                @endif
+                                                @if($materiUrl)
+                                                    <a href="{{ $materiUrl }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:underline">
+                                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                        Download Materi Sesi
+                                                    </a>
+                                                @endif
+                                            @endif
+                                        </div>
+
+                                        {{-- Bukti Kehadiran Form Card (only when sesi ended + not verified) --}}
+                                        <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/70 sm:col-span-1">
+                                            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Bukti Kehadiran</p>
+                                            @if($state === 'ended' && $attendanceStatus !== 'verified')
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    Unggah screenshot/foto untuk diverifikasi mentor.
+                                                </p>
+                                                <form method="POST" action="{{ route('mahasiswa.bootcamp.attendance.store', ['id' => $course->id_course]) }}" enctype="multipart/form-data" class="mt-2 flex flex-col gap-2">
+                                                    @csrf
+                                                    <input type="hidden" name="session_key" value="{{ $node['session_key'] }}">
+                                                    <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.pdf" required class="block w-full text-[11px] text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                                    <button type="submit" class="inline-flex items-center justify-center gap-1 rounded-lg bg-blue-500 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-600">
+                                                        {{ $attendanceStatus === 'rejected' ? 'Unggah Ulang' : 'Kirim Bukti' }}
+                                                    </button>
+                                                </form>
+                                            @elseif($state === 'ended' && $attendanceStatus === 'verified')
+                                                <p class="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+                                                    Sudah diverifikasi mentor/admin.
+                                                </p>
+                                                @if(!empty($attendance['proof_file']))
+                                                    <a href="{{ asset('storage/' . $attendance['proof_file']) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline">
+                                                        Lihat bukti yang Anda kirim
+                                                    </a>
+                                                @endif
+                                            @else
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    Form akan tersedia setelah sesi berakhir.
+                                                </p>
+                                            @endif
+                                        </div>
+
+                                        {{-- Paham/Belum Self-feedback Card --}}
+                                        @if($isRealSesi && $state === 'ended')
+                                            <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/70">
+                                                <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Pemahaman Anda</p>
+                                                @php $currentFeedback = $node['feedback'] ?? null; @endphp
+                                                <div class="mt-2 flex items-center gap-2">
+                                                    <form method="POST" action="{{ route('mahasiswa.bootcamp.sesi.feedback', ['courseId' => $course->id_course, 'sesiId' => $sesiId]) }}" class="inline">
+                                                        @csrf
+                                                        <input type="hidden" name="feedback" value="paham">
+                                                        <button type="submit" class="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition {{ $currentFeedback === 'paham' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300' }}">
+                                                            Paham
+                                                        </button>
+                                                    </form>
+                                                    <form method="POST" action="{{ route('mahasiswa.bootcamp.sesi.feedback', ['courseId' => $course->id_course, 'sesiId' => $sesiId]) }}" class="inline">
+                                                        @csrf
+                                                        <input type="hidden" name="feedback" value="belum">
+                                                        <button type="submit" class="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition {{ $currentFeedback === 'belum' ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300' }}">
+                                                            Belum
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                                <p class="mt-2 text-[11px] text-gray-400">Self-report ke mentor (tidak mempengaruhi gate kelulusan).</p>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ol>
+                    </div>
+                </section>
+            @endif
+
+            {{-- ═════════════════════════════════════════════════════════════════
+                SINGLE-SESI INFO CARD — untuk Seminar / Webinar / Workshop
+                (Course.tipe_event in (seminar, webinar, workshop), bukan bootcamp).
+                - Seminar (mode_event=offline): tampilkan tanggal, lokasi, maps, kapasitas.
+                - Webinar/Workshop (mode_event=online): tampilkan tanggal, link Zoom/Meet.
+            ═════════════════════════════════════════════════════════════════ --}}
+            @if(!$isBootcamp && in_array($course->tipe_event ?? null, ['seminar', 'webinar', 'workshop'], true))
+                @php
+                    $tipeEventLabel = ['seminar' => 'Seminar', 'webinar' => 'Webinar', 'workshop' => 'Workshop'][$course->tipe_event] ?? 'Event';
+                    $isSeminar = $course->tipe_event === 'seminar';
+                    $isOfflineEvent = $isSeminar || in_array(($course->mode_event ?? 'online'), ['offline', 'onsite', 'hybrid'], true);
+                    $joinUrl = $course->online_link;
+                    $lokasiText = $course->lokasi_event;
+                    $petaUrl = $course->peta_event;
+                    $kapasitasMax = (int) ($course->kapasitas_maksimal ?? 0);
+                    $slotTerisi = (int) ($course->slot_terisi ?? 0);
+                    $slotsRemaining = $kapasitasMax > 0 ? max(0, $kapasitasMax - $slotTerisi) : null;
+                @endphp
+                <section id="single-sesi-info-card" class="relative overflow-hidden rounded-[24px] border {{ $isOfflineEvent ? 'border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:border-amber-700/40 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20' : 'border-blue-200/70 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:border-blue-700/40 dark:from-blue-950/30 dark:via-gray-900 dark:to-indigo-950/20' }} p-4 sm:rounded-[28px] sm:p-6">
+                    <div class="absolute -right-12 -top-12 h-32 w-32 rounded-full {{ $isOfflineEvent ? 'bg-amber-200/40 dark:bg-amber-500/20' : 'bg-blue-200/40 dark:bg-blue-500/20' }} blur-3xl"></div>
+                    <div class="absolute -left-10 bottom-0 h-24 w-24 rounded-full {{ $isOfflineEvent ? 'bg-orange-200/40 dark:bg-orange-500/20' : 'bg-indigo-200/40 dark:bg-indigo-500/20' }} blur-3xl"></div>
+
+                    <div class="relative space-y-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 class="text-base font-bold leading-snug text-gray-900 sm:text-lg sm:text-xl dark:text-white">
+                                    {{ $isOfflineEvent ? '🗓️ Detail ' . $tipeEventLabel : '📡 ' . $tipeEventLabel . ' Online' }}
+                                </h3>
+                                <p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">
+                                    {{ $isSeminar ? 'Hadiri secara onsite sesuai jadwal. Slot terbatas, pendaftaran dimonitoring real-time.' : ($course->tipe_event === 'workshop' ? 'Workshop interaktif online dengan kuis pretest untuk mengevaluasi pemahaman awal.' : 'Webinar online satu sesi. Hadiri sesuai jadwal untuk menonton dan berinteraksi.') }}
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="inline-flex items-center gap-1 rounded-full {{ $isOfflineEvent ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300' }} px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em]">
+                                    {{ $isOfflineEvent ? 'Offline / Onsite' : 'Online Meeting' }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-600 dark:bg-gray-700/60 dark:text-gray-300">
+                                    1 Sesi
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <div class="rounded-xl border border-gray-200 bg-white/80 p-3 dark:border-gray-700 dark:bg-gray-800/70">
+                                <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Tanggal &amp; Waktu</p>
+                                @if($course->tanggal_webinar)
+                                    <p class="mt-1 text-sm font-bold text-gray-800 dark:text-gray-100">{{ $course->tanggal_webinar->format('d M Y') }}</p>
+                                    @if($course->jam_mulai_webinar || $course->jam_selesai_webinar)
+                                        <p class="text-xs text-gray-600 dark:text-gray-400">
+                                            {{ $course->jam_mulai_webinar ? substr((string) $course->jam_mulai_webinar, 0, 5) : '??' }}
+                                            &ndash;
+                                            {{ $course->jam_selesai_webinar ? substr((string) $course->jam_selesai_webinar, 0, 5) : '??' }}
+                                            WIB
+                                        </p>
+                                    @else
+                                        <p class="text-xs text-gray-600 dark:text-gray-400">Jam akan diumumkan</p>
+                                    @endif
+                                @else
+                                    <p class="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">Jadwal menyusul</p>
+                                @endif
+                            </div>
+
+                            @if($isOfflineEvent)
+                                <div class="rounded-xl border border-gray-200 bg-white/80 p-3 dark:border-gray-700 dark:bg-gray-800/70">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Lokasi</p>
+                                    <p class="mt-1 text-sm font-bold text-gray-800 dark:text-gray-100">{{ $lokasiText ?: 'Lokasi akan diumumkan' }}</p>
+                                    @if($petaUrl)
+                                        <a href="{{ $petaUrl }}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-300">
+                                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            Buka di Maps
+                                        </a>
+                                    @endif
+                                </div>
+                                <div class="rounded-xl border border-gray-200 bg-white/80 p-3 dark:border-gray-700 dark:bg-gray-800/70">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Kapasitas</p>
+                                    @if($kapasitasMax > 0)
+                                        <p class="mt-1 text-sm font-bold text-gray-800 dark:text-gray-100">{{ $slotsRemaining }} / {{ $kapasitasMax }} slot tersisa</p>
+                                        <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                                            <div class="h-full rounded-full {{ $slotsRemaining === 0 ? 'bg-rose-500' : 'bg-emerald-500' }}" style="width: {{ $kapasitasMax > 0 ? min(100, ($slotTerisi / $kapasitasMax) * 100) : 0 }}%"></div>
+                                        </div>
+                                    @else
+                                        <p class="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">Tidak dibatasi</p>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="rounded-xl border border-gray-200 bg-white/80 p-3 dark:border-gray-700 dark:bg-gray-800/70 sm:col-span-2">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Link Meeting</p>
+                                    @if($joinUrl)
+                                        <a href="{{ $joinUrl }}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-rose-500/20 hover:bg-rose-600">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                            Gabung Meeting
+                                        </a>
+                                    @else
+                                        <p class="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">Link akan tersedia sebelum acara.</p>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                            @if($isSeminar)
+                                Bukti kehadiran dicatat langsung oleh mentor/admin di lokasi onsite (atau unduh sertifikat kelulusan di panel Sertifikat setelah event berakhir).
+                            @else
+                                {{ $course->tipe_event === 'workshop' ? 'Workshop' : 'Webinar' }} ini adalah satu sesi online. Hadiri sesuai jadwal untuk menerima sertifikat kelulusan otomatis dari sistem.
+                            @endif
+                        </p>
+                    </div>
+                </section>
+            @endif
+
             {{-- Dropdown Pre-test / Kuis Modul Ini --}}
             @php
                 $currentModuleQuizLinks = collect($modules[$currentModuleIndex]['quizzes'] ?? []);

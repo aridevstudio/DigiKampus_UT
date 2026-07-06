@@ -112,7 +112,7 @@ class CourseController extends Controller
             ->withCount('ratings as real_jumlah_ulasan')
             ->withAvg('ratings as real_rating', 'rating')
             ->aktif()
-            ->where('kategori', 'tiket')
+            ->bootcampStyle()
             ->search($search)
             ->when($filter === 'mine' && !empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
                 return $query->whereIn('id_course', $enrolledCourseIds);
@@ -633,8 +633,42 @@ class CourseController extends Controller
         $enrollment = $this->syncWebinarCompletionIfEligible($user, $course, $enrollment);
         $progressPercent = (int) round((float) ($enrollment->progress ?? $progressPercent));
         $issuedCertificate = $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, $progressPercent);
-        
+
         $isBootcamp = $this->isBootcamp($course);
+
+        // ─────────────────────────────────────────────────────────────────
+        // Bootcamp-specific timeline + attendance projection.
+        // Single source of truth = BootcampFlowService. Controller only projects
+        // it for the blade view (mirroring the bootcamp-detail flow contract).
+        // ─────────────────────────────────────────────────────────────────
+        $sesiTimeline = null;
+        $liveClassAttendances = null;
+        $attendanceProgress = null;
+        $bootcampCapabilities = null;
+        $sesiList = null;
+        if ($isBootcamp) {
+            $sesiTimeline = $this->bootcampFlow->learningJourneyTimeline($user, $course);
+            $sesiList = $this->bootcampFlow->resolveActiveSesi($course);
+            $bootcampCapabilities = $this->bootcampFlow->capabilities($user, $course);
+            $attendanceProgress = $this->bootcampFlow->attendanceProgress($user, $course);
+
+            // Build $liveClassAttendances map keyed by session_key for bukti-kehadiran form
+            // (mirrors bootcamp-detail pass-through). Only populate entries that have rows.
+            $liveClassAttendances = [];
+            foreach ($sesiTimeline as $node) {
+                if (!empty($node['attendance']) && !empty($node['attendance']['status'])) {
+                    $liveClassAttendances[$node['session_key']] = (object) [
+                        'id_bootcamp_live_class_attendance' => null,
+                        'session_key' => $node['session_key'],
+                        'status' => $node['attendance']['status'],
+                        'proof_file' => $node['attendance']['proof_file'] ?? null,
+                        'catatan_mahasiswa' => null,
+                        'catatan_reviewer' => null,
+                        'reviewed_at' => $node['attendance']['reviewed_at'] ?? null,
+                    ];
+                }
+            }
+        }
 
         return view('pages.mahasiswa.course-learn', [
             'course' => $course,
@@ -648,6 +682,11 @@ class CourseController extends Controller
             'issuedCertificate' => $issuedCertificate,
             'context' => $context,
             'isBootcamp' => $isBootcamp,
+            'sesiTimeline' => $sesiTimeline,
+            'sesiList' => $sesiList,
+            'liveClassAttendances' => $liveClassAttendances,
+            'attendanceProgress' => $attendanceProgress,
+            'bootcampCapabilities' => $bootcampCapabilities,
             'dosenNotes' => $course->instructorNotes->map(function (CourseInstructorNote $note) {
                 return [
                     'id' => $note->id_course_instructor_note,
