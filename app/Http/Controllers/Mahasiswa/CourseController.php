@@ -66,6 +66,7 @@ class CourseController extends Controller
             ->withCount('ratings as real_jumlah_ulasan')
             ->withAvg('ratings as real_rating', 'rating')
             ->aktif() // Only active courses
+            ->where('kategori', '!=', 'tiket')
             ->search($search) // Search by nama_course or deskripsi
             ->when($tipe && $tipe !== 'semua', function ($query) use ($tipe) {
                 return $query->where('kategori', $tipe);
@@ -112,7 +113,7 @@ class CourseController extends Controller
             ->withCount('ratings as real_jumlah_ulasan')
             ->withAvg('ratings as real_rating', 'rating')
             ->aktif()
-            ->bootcampStyle()
+            ->where('kategori', 'tiket')
             ->search($search)
             ->when($filter === 'mine' && !empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
                 return $query->whereIn('id_course', $enrolledCourseIds);
@@ -326,7 +327,10 @@ class CourseController extends Controller
         
         // Get user's enrollments with course data
         $query = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
-            ->with(['course.dosen', 'course.jurusan']);
+            ->with(['course.dosen', 'course.jurusan'])
+            ->whereHas('course', function ($q) {
+                $q->where('kategori', '!=', 'tiket');
+            });
         
         // Filter by course category
         if ($tipe && $tipe !== 'all') {
@@ -352,9 +356,15 @@ class CourseController extends Controller
         $enrollments = $query->paginate(4);
         
         // Get course type counts for filter badges
-        $allCount = \App\Models\Enrollment::where('id_mahasiswa', $user->id)->count();
+        $allCount = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->whereHas('course', function ($q) {
+                $q->where('kategori', '!=', 'tiket');
+            })
+            ->count();
+
         $typeCounts = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
             ->join('courses', 'enrollments.id_course', '=', 'courses.id_course')
+            ->where('courses.kategori', '!=', 'tiket')
             ->selectRaw('courses.kategori, COUNT(*) as count')
             ->groupBy('courses.kategori')
             ->pluck('count', 'kategori')

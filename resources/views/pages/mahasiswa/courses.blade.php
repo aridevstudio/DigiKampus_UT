@@ -42,7 +42,7 @@
                    class="px-4 py-2 rounded-full text-sm font-medium transition {{ $selectedTipe === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' }}">
                     All <span class="ml-1 px-1.5 py-0.5 rounded-full text-xs {{ $selectedTipe === 'all' ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-600' }}">{{ $allCount }}</span>
                 </a>
-                @foreach(['webinar' => 'Webinar', 'tiket' => 'Tiket', 'kursus' => 'Kursus'] as $key => $label)
+                @foreach(['webinar' => 'Webinar', 'kursus' => 'Kursus'] as $key => $label)
                 <a href="{{ route('mahasiswa.courses', ['tipe' => $key, 'sort' => $selectedSort]) }}"
                    class="px-4 py-2 rounded-full text-sm font-medium transition {{ $selectedTipe === $key ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' }}">
                     {{ $label }} <span class="ml-1 px-1.5 py-0.5 rounded-full text-xs {{ $selectedTipe === $key ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-600' }}">{{ $typeCounts[$key] ?? 0 }}</span>

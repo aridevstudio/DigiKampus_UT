@@ -71,7 +71,7 @@
 {{-- Page Header --}}
 <div class="mb-6 animate-fade-in-up">
     <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Get Courses</h1>
-    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Jelajahi berbagai kursus, webinar, dan tiket acara untuk meningkatkan keahlian Anda.</p>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Jelajahi berbagai kursus dan webinar untuk meningkatkan keahlian Anda.</p>
 </div>
 
 {{-- Filter & Search Section --}}
@@ -89,10 +89,6 @@
         <a href="{{ route('mahasiswa.get-courses', ['tipe' => 'webinar']) }}" 
            class="filter-tab whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'webinar' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
             Webinar
-        </a>
-        <a href="{{ route('mahasiswa.get-courses', ['tipe' => 'tiket']) }}" 
-           class="filter-tab whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'tiket' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
-            Tiket
         </a>
         <a href="{{ route('mahasiswa.get-courses', ['tipe' => 'kursus']) }}" 
            class="filter-tab whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition {{ $currentTipe === 'kursus' ? 'bg-blue-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">

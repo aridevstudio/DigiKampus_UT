@@ -76,10 +76,7 @@ class DashboardController extends Controller
             ->whereIn('status', $activeStatuses)
             ->where('progress', '<', 100)
             ->whereDoesntHave('course', function ($q) {
-                $q->where(function ($qq) {
-                    $qq->where('kategori', 'tiket')
-                       ->orWhereIn('tipe_event', Course::EVENT_TIPE_VALUES);
-                });
+                $q->where('kategori', 'tiket');
             })
             ->orderByRaw('CASE WHEN progress > 0 THEN 0 ELSE 1 END')
             ->orderByDesc('updated_at')
@@ -92,10 +89,7 @@ class DashboardController extends Controller
             ->where('id_mahasiswa', $user->id)
             ->whereIn('status', $activeStatuses)
             ->whereHas('course', function ($q) {
-                $q->where(function ($qq) {
-                    $qq->where('kategori', 'tiket')
-                       ->orWhereIn('tipe_event', Course::EVENT_TIPE_VALUES);
-                });
+                $q->where('kategori', 'tiket');
             })
             ->orderByRaw('CASE WHEN progress > 0 THEN 0 ELSE 1 END')
             ->orderByDesc('updated_at')
@@ -114,10 +108,7 @@ class DashboardController extends Controller
             ->whereIn('status', $activeStatuses)
             ->where('progress', '<', 100)
             ->whereDoesntHave('course', function ($q) {
-                $q->where(function ($qq) {
-                    $qq->where('kategori', 'tiket')
-                       ->orWhereIn('tipe_event', Course::EVENT_TIPE_VALUES);
-                });
+                $q->where('kategori', 'tiket');
             })
             ->orderByRaw('CASE WHEN progress > 0 THEN 0 ELSE 1 END')
             ->orderByDesc('updated_at')
@@ -346,11 +337,6 @@ class DashboardController extends Controller
     {
         if (!$course) {
             return false;
-        }
-
-        $tipeEvent = trim((string) $course->tipe_event);
-        if (in_array($tipeEvent, Course::EVENT_TIPE_VALUES, true)) {
-            return true;
         }
 
         return $course->kategori === 'tiket';
