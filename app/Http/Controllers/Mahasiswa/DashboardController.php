@@ -145,6 +145,7 @@ class DashboardController extends Controller
             'kursusTertunda' => $kursusTertunda,
             'continueLearningUrl' => $continueLearningUrl,
             'enrolledCourses' => $enrolledCourses,
+            'eventEnrollments' => $eventEnrollments,
             'news' => $news,
             'agenda' => $agenda,
             'dashboardNotifications' => $dashboardNotifications

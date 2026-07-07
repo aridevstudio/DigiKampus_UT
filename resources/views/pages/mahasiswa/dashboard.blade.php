@@ -106,11 +106,16 @@ if (isset($news) && count($news) > 0) {
     }
 }
 
-// Build events array from agenda (from controller)
-$events = [];
+// Build calendar events array from agenda (from controller)
+// PENTING: Pakai variabel $calendarEvents, BUKAN $events, supaya tidak menimpa
+// data bootcamp/event enrollment yang sudah dibangun di atas ($events dari
+// $eventEnrollments). Bug sebelumnya: $events di-overwrite oleh agenda →
+// section "Event yang Sedang Kamu Ikuti" merender data kalender (struktur
+// salah: day/label/color) alih-alih data bootcamp (id/name/type/mode_label).
+$calendarEvents = [];
 if (isset($agenda) && count($agenda) > 0) {
     foreach ($agenda as $item) {
-        $events[] = [
+        $calendarEvents[] = [
             'day' => $item->tanggal->day,
             'color' => match($item->tipe ?? 'webinar') {
                 'deadline' => 'rose',
@@ -346,7 +351,7 @@ if (isset($agenda) && count($agenda) > 0) {
                 $today = now()->day;
                 $daysInMonth = now()->daysInMonth;
                 $firstDayOfWeek = now()->startOfMonth()->dayOfWeek;
-                $eventDays = collect($events)->pluck('day')->toArray();
+                $eventDays = collect($calendarEvents)->pluck('day')->toArray();
             @endphp
             <div class="grid grid-cols-7 gap-1 text-center text-xs sm:text-sm">
                 {{-- Empty cells for days before month starts --}}
@@ -357,7 +362,7 @@ if (isset($agenda) && count($agenda) > 0) {
                 {{-- Days of the month --}}
                 @for($day = 1; $day <= $daysInMonth; $day++)
                     @php
-                        $event = collect($events)->firstWhere('day', $day);
+                        $event = collect($calendarEvents)->firstWhere('day', $day);
                     @endphp
                     <div class="py-1.5 rounded-lg cursor-pointer
                         @if($day === $today)
@@ -376,7 +381,7 @@ if (isset($agenda) && count($agenda) > 0) {
 
         {{-- Event Legend --}}
         <div class="flex flex-wrap gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/50">
-            @foreach($events as $event)
+            @foreach($calendarEvents as $event)
             <div class="flex items-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-{{ $event['color'] }}-500"></span>
                 <span class="text-xs text-gray-600 dark:text-gray-400">{{ $event['label'] }} ({{ $event['day'] }})</span>
@@ -458,7 +463,7 @@ if (isset($agenda) && count($agenda) > 0) {
                     
                     @for($day = 1; $day <= $calDaysInMonth; $day++)
                         @php
-                            $calEvent = collect($events)->firstWhere('day', $day);
+                            $calEvent = collect($calendarEvents)->firstWhere('day', $day);
                         @endphp
                         <div class="aspect-square p-1 sm:p-2 text-center relative hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-lg cursor-pointer {{ $day === $calToday ? 'bg-blue-50 dark:bg-blue-500/10' : '' }}">
                             <span class="text-sm {{ $day === $calToday ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300' }}">{{ $day }}</span>
@@ -495,7 +500,7 @@ if (isset($agenda) && count($agenda) > 0) {
             
             <div class="space-y-3">
                 {{-- First 3 events --}}
-                @foreach(collect($events)->take(3) as $event)
+                @foreach(collect($calendarEvents)->take(3) as $event)
                 <div class="p-3 rounded-xl bg-{{ $event['color'] }}-50 dark:bg-{{ $event['color'] }}-500/10 border border-{{ $event['color'] }}-100 dark:border-{{ $event['color'] }}-500/20">
                     <div class="flex items-start gap-3">
                         <span class="w-2.5 h-2.5 rounded-full bg-{{ $event['color'] }}-500 mt-1.5 flex-shrink-0"></span>
@@ -508,9 +513,9 @@ if (isset($agenda) && count($agenda) > 0) {
                 @endforeach
 
                 {{-- Extra events (hidden by default) --}}
-                @if(count($events) > 3)
+                @if(count($calendarEvents) > 3)
                 <div id="extra-calendar-events" class="hidden space-y-3">
-                    @foreach(collect($events)->skip(3) as $event)
+                    @foreach(collect($calendarEvents)->skip(3) as $event)
                     <div class="p-3 rounded-xl bg-{{ $event['color'] }}-50 dark:bg-{{ $event['color'] }}-500/10 border border-{{ $event['color'] }}-100 dark:border-{{ $event['color'] }}-500/20">
                         <div class="flex items-start gap-3">
                             <span class="w-2.5 h-2.5 rounded-full bg-{{ $event['color'] }}-500 mt-1.5 flex-shrink-0"></span>
@@ -525,7 +530,7 @@ if (isset($agenda) && count($agenda) > 0) {
                 @endif
             </div>
 
-            @if(count($events) > 3)
+            @if(count($calendarEvents) > 3)
             <button onclick="toggleExtraCalendarEvents()" id="toggle-extra-events-btn" class="block w-full text-center text-blue-500 hover:text-blue-600 text-sm font-medium mt-4 transition">
                 Lihat Semua
             </button>
