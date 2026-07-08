@@ -190,6 +190,35 @@ class DashboardController extends Controller
             'currentYear' => $year,
         ]);
     }
+    
+    /**
+     * Store personal agenda for mahasiswa
+     */
+    public function storePersonalAgenda(Request $request)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'tipe' => 'required|in:webinar,workshop,deadline,quiz',
+            'tanggal' => 'required|date',
+            'waktu_mulai' => 'required|string',
+        ]);
+        
+        Agenda::create([
+            'id_mahasiswa' => $user->id,
+            'id_dosen' => null,
+            'id_course' => null,
+            'judul' => $request->judul,
+            'deskripsi' => $request->deskripsi,
+            'tanggal' => $request->tanggal,
+            'waktu_mulai' => $request->waktu_mulai,
+            'tipe' => $request->tipe,
+            'warna' => Agenda::getColorByType($request->tipe),
+        ]);
+        
+        return back()->with('success', 'Jadwal pribadi berhasil ditambahkan!');
+    }
 
     /**
      * Show notification page

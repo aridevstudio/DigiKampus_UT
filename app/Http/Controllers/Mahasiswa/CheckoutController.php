@@ -636,6 +636,18 @@ class CheckoutController extends Controller
                         'tanggal_daftar' => now(),
                     ]);
 
+                    \App\Models\Agenda::create([
+                        'id_mahasiswa' => $transaction->id_mahasiswa,
+                        'id_dosen' => null,
+                        'id_course' => $item->id_course,
+                        'judul' => 'Mulai Belajar: ' . ($item->course->nama_course ?? 'Kursus'),
+                        'deskripsi' => 'Anda mulai terdaftar di kursus ini.',
+                        'tanggal' => now(),
+                        'waktu_mulai' => now()->format('H:i'),
+                        'tipe' => 'workshop', // Warna kuning
+                        'warna' => \App\Models\Agenda::getColorByType('workshop'),
+                    ]);
+
                     if ($item->course && $item->course->id_dosen) {
                         $mahasiswa = $transaction->mahasiswa;
                         DosenNotification::notifyDosen(

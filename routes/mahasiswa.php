@@ -41,6 +41,7 @@ Route::prefix('mahasiswa')
         // Dashboard & Calendar
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('mahasiswa.dashboard');
         Route::get('/calendar', [DashboardController::class, 'calendar'])->name('mahasiswa.calendar');
+        Route::post('/calendar/personal', [DashboardController::class, 'storePersonalAgenda'])->name('mahasiswa.calendar.store');
         Route::get('/notification', [DashboardController::class, 'notification'])->name('mahasiswa.notification');
         Route::post('/notification/{id}/read', [DashboardController::class, 'markNotificationRead'])->name('mahasiswa.notification.read');
         Route::post('/notification/read-all', [DashboardController::class, 'markAllNotificationsRead'])->name('mahasiswa.notification.read-all');
