@@ -97,7 +97,11 @@
                                         @case('teal') bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 @break
                                         @default bg-slate-100 text-slate-600 dark:bg-slate-700/40 dark:text-slate-300
                                     @endswitch">
-                                    @include('partials.apps._icon', ['icon' => $app->icon, 'class' => 'h-6 w-6'])
+                                    @if(isset($app->image_icon) && $app->image_icon)
+                                        <img src="{{ asset('storage/' . $app->image_icon) }}" alt="{{ $app->name }}" class="h-6 w-6 rounded object-contain">
+                                    @else
+                                        @include('partials.apps._icon', ['icon' => $app->icon, 'class' => 'h-6 w-6'])
+                                    @endif
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <h3 class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ $app->name }}</h3>

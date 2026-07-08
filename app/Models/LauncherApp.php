@@ -32,6 +32,7 @@ class LauncherApp extends Model
         'description',
         'url',
         'icon',
+        'image_icon',
         'is_active',
         'allowed_roles',
         'open_mode',

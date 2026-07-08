@@ -208,6 +208,11 @@ class AppRegistryService
             ? $icon
             : 'globe';
 
+        // Image Icon (opsional) - akan diisi oleh controller
+        if (array_key_exists('image_icon', $data)) {
+            $payload['image_icon'] = $data['image_icon'];
+        }
+
         // Open mode — whitelist (fallback ke 'new_tab' jika invalid)
         $openMode = isset($data['open_mode']) ? (string) $data['open_mode'] : 'new_tab';
         $payload['open_mode'] = in_array($openMode, self::OPEN_MODES, true)

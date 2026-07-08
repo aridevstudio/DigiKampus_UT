@@ -7,6 +7,7 @@ use App\Models\LauncherApp;
 use App\Services\AppRegistryService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Admin controller untuk Apps Hub — full CRUD.
@@ -71,6 +72,12 @@ class AdminAppsController extends Controller
     public function store(Request $request)
     {
         $data = $this->validatePayload($request, creating: true);
+        
+        if ($request->hasFile('image_icon')) {
+            $path = $request->file('image_icon')->store('apps/icons', 'public');
+            $data['image_icon'] = $path;
+        }
+
         $app = $this->registry->create($data);
 
         return redirect()
@@ -85,6 +92,15 @@ class AdminAppsController extends Controller
             abort(404);
         }
         $data = $this->validatePayload($request, creating: false, currentApp: $app);
+        
+        if ($request->hasFile('image_icon')) {
+            if ($app->image_icon && Storage::disk('public')->exists($app->image_icon)) {
+                Storage::disk('public')->delete($app->image_icon);
+            }
+            $path = $request->file('image_icon')->store('apps/icons', 'public');
+            $data['image_icon'] = $path;
+        }
+
         // Slug tidak di-update (immutable).
         unset($data['slug']);
         $this->registry->update($app, $data);
@@ -140,6 +156,7 @@ class AdminAppsController extends Controller
             // launcher card semantics and pose XSS risk via target=_blank href.
             'url' => ['nullable', 'string', 'max:2048', 'regex:#^https?://#i'],
             'icon' => ['required', 'string', Rule::in(LauncherApp::ALLOWED_ICONS)],
+            'image_icon' => ['nullable', 'image', 'mimes:webp', 'max:2048'],
             'open_mode' => ['required', 'string', Rule::in(AppRegistryService::OPEN_MODES)],
             'allowed_roles' => ['required', 'array', 'min:1'],
             'allowed_roles.*' => ['string', Rule::in(AppRegistryService::ROLES)],

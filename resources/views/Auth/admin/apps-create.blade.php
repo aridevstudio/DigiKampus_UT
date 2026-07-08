@@ -54,6 +54,7 @@
         <form
             action="{{ route('admin.apps.store') }}"
             method="POST"
+            enctype="multipart/form-data"
             class="space-y-5"
             x-data="{
                 descLength: {{ strlen((string) $description) }},
@@ -149,7 +150,7 @@
                         @error('url')<p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="icon" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Icon <span class="text-rose-600">*</span></label>
+                        <label for="icon" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Icon Default <span class="text-rose-600">*</span></label>
                         <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Theme color otomatis mengikuti icon.</p>
                         <select
                             id="icon"
@@ -162,6 +163,20 @@
                             @endforeach
                         </select>
                         @error('icon')<p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+                <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+                    <div class="lg:col-span-2">
+                        <label for="image_icon" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Icon Custom (Format WebP) <span class="ml-1 inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-700 dark:text-gray-300">Opsional</span></label>
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Jika diisi, icon ini akan menggantikan Icon Default. Maks 2MB, format .webp.</p>
+                        <input
+                            type="file"
+                            id="image_icon"
+                            name="image_icon"
+                            accept="image/webp"
+                            class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                        >
+                        @error('image_icon')<p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>@enderror
                     </div>
                 </div>
             </section>
