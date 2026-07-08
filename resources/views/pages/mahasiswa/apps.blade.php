@@ -124,7 +124,7 @@
                                     @default bg-slate-100 text-slate-600 dark:bg-slate-700/40 dark:text-slate-300
                                 @endswitch">
                                 @if(isset($app->image_icon) && $app->image_icon)
-                                    <img src="{{ asset('storage/' . $app->image_icon) }}" alt="{{ $app->name }}" class="h-6 w-6 rounded object-contain">
+                                    <img src="{{ asset('storage/' . $app->image_icon) }}" alt="{{ $app->name }}" class="h-full w-full rounded-lg object-cover">
                                 @else
                                     @include('partials.apps._icon', ['icon' => $app->icon, 'class' => 'h-6 w-6'])
                                 @endif

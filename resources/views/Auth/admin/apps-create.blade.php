@@ -168,7 +168,7 @@
                 <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
                     <div class="lg:col-span-2">
                         <label for="image_icon" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Icon Custom (Format WebP) <span class="ml-1 inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-700 dark:text-gray-300">Opsional</span></label>
-                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Jika diisi, icon ini akan menggantikan Icon Default. Maks 2MB, format .webp.</p>
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Jika diisi, icon ini menggantikan Icon Default. Maks 2MB, format .webp. <strong>Rekomendasi ukuran: 128x128 pixel (atau rasio 1:1)</strong>.</p>
                         <input
                             type="file"
                             id="image_icon"

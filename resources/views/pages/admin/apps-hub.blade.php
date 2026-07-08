@@ -87,7 +87,7 @@
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex h-11 w-11 items-center justify-center rounded-lg {{ $surfaceClass[$color] ?? $surfaceClass['slate'] }}">
                                 @if(isset($app->image_icon) && $app->image_icon)
-                                    <img src="{{ asset('storage/' . $app->image_icon) }}" alt="{{ $app->name }}" class="h-6 w-6 rounded object-contain">
+                                    <img src="{{ asset('storage/' . $app->image_icon) }}" alt="{{ $app->name }}" class="h-full w-full rounded-lg object-cover">
                                 @else
                                     @include('partials.apps._icon', ['icon' => $app->icon, 'class' => 'h-6 w-6'])
                                 @endif

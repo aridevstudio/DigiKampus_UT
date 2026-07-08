@@ -141,10 +141,10 @@
                 <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
                     <div class="lg:col-span-2">
                         <label for="image_icon" class="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">Icon Custom (Format WebP) <span class="ml-1 inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-700 dark:text-gray-300">Opsional</span></label>
-                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Jika diisi, icon ini akan menggantikan Icon Default. Maks 2MB, format .webp.</p>
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Jika diisi, icon ini menggantikan Icon Default. Maks 2MB, format .webp. <strong>Rekomendasi ukuran: 128x128 pixel (atau rasio 1:1)</strong>.</p>
                         @if(isset($app) && $app->image_icon)
                             <div class="mb-3 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-800/50">
-                                <img src="{{ asset('storage/' . $app->image_icon) }}" alt="Icon Custom" class="h-10 w-10 rounded object-contain">
+                                <img src="{{ asset('storage/' . $app->image_icon) }}" alt="Icon Custom" class="h-10 w-10 rounded object-cover">
                                 <span class="text-xs text-gray-500 dark:text-gray-400">Icon custom saat ini</span>
                             </div>
                         @endif
