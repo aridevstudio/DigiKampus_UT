@@ -644,6 +644,10 @@ class CourseController extends Controller
         $progressPercent = (int) round((float) ($enrollment->progress ?? $progressPercent));
         $issuedCertificate = $this->issueCertificateForEnrollmentIfEligible($user, $course, $enrollment, $progressPercent);
 
+        $isFavorited = \App\Models\Favorite::where('id_mahasiswa', $user->id)
+            ->where('id_course', $course->id_course)
+            ->exists();
+
         $isBootcamp = $this->isBootcamp($course);
 
         // ─────────────────────────────────────────────────────────────────
@@ -692,6 +696,7 @@ class CourseController extends Controller
             'issuedCertificate' => $issuedCertificate,
             'context' => $context,
             'isBootcamp' => $isBootcamp,
+            'isFavorited' => $isFavorited,
             'sesiTimeline' => $sesiTimeline,
             'sesiList' => $sesiList,
             'liveClassAttendances' => $liveClassAttendances,

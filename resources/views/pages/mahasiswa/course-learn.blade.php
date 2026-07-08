@@ -481,16 +481,29 @@
             
             {{-- Action Buttons --}}
             <div class="grid grid-cols-2 gap-2 sm:gap-3">
-                <form action="{{ route('mahasiswa.favorite.add') }}" method="POST" class="w-full min-w-0">
+                @if($isFavorited)
+                <form action="{{ route('mahasiswa.favorite.remove', $course->id_course) }}" method="POST" class="w-full min-w-0">
                     @csrf
-                    <input type="hidden" name="id_course" value="{{ $course->id_course }}">
-                    <button type="submit" aria-label="Tambahkan kursus ini ke favorit" class="flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl bg-rose-500 px-2 py-2 text-xs font-medium text-white transition hover:bg-rose-600 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm">
+                    @method('DELETE')
+                    <button type="submit" aria-label="Hapus kursus ini dari favorit" class="flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl bg-rose-50 px-2 py-2 text-xs font-medium text-rose-600 border border-rose-200 transition hover:bg-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/20 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm">
                         <svg class="h-4 w-4 shrink-0 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
                         </svg>
-                        <span class="truncate">Tambahkan ke Favorit</span>
+                        <span class="truncate">Hapus dari Favorit</span>
                     </button>
                 </form>
+                @else
+                <form action="{{ route('mahasiswa.favorite.add') }}" method="POST" class="w-full min-w-0">
+                    @csrf
+                    <input type="hidden" name="id_course" value="{{ $course->id_course }}">
+                    <button type="submit" aria-label="Tambahkan kursus ini ke favorit" class="flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl bg-gray-50 px-2 py-2 text-xs font-medium text-gray-700 border border-gray-200 transition hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm">
+                        <svg class="h-4 w-4 shrink-0 sm:h-5 sm:w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span class="truncate">Simpan ke Favorit</span>
+                    </button>
+                </form>
+                @endif
 
                 @if($currentMaterial)
                 <form action="{{ route('mahasiswa.material.complete', $currentMaterial['id']) }}" method="POST" class="w-full min-w-0">
