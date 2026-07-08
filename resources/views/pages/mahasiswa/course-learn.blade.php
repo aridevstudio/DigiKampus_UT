@@ -1129,7 +1129,9 @@
             <div class="flex border-b border-gray-200 dark:border-gray-700/50">
                 <button onclick="showTab('diskusi')" class="tab-btn flex-1 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 border-b-2 border-blue-500" data-tab="diskusi">Diskusi</button>
                 <button onclick="showTab('catatan')" class="tab-btn flex-1 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 border-b-2 border-transparent hover:text-gray-700" data-tab="catatan">Catatan</button>
+                @if(!$isFavorited)
                 <button onclick="showTab('favorit')" class="tab-btn flex-1 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 border-b-2 border-transparent hover:text-gray-700" data-tab="favorit">Favorit</button>
+                @endif
             </div>
             
             {{-- Diskusi Tab --}}
@@ -1198,6 +1200,7 @@
                 </div>
             </div>
             
+            @if(!$isFavorited)
             {{-- Favorit Tab --}}
             <div id="tab-favorit" class="tab-content hidden p-4">
                 <div class="h-[400px] flex flex-col items-center justify-center text-center px-4">
@@ -1214,12 +1217,16 @@
                     <form action="{{ route('mahasiswa.favorite.add') }}" method="POST">
                         @csrf
                         <input type="hidden" name="id_course" value="{{ $course->id_course }}">
-                        <button type="submit" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-sm font-medium transition-colors">
+                        <button type="submit" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
                             Favoritkan Kursus Ini
                         </button>
                     </form>
                 </div>
             </div>
+            @endif
         </div>
     </div>
 </div>
