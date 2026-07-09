@@ -323,12 +323,31 @@
                     <p class="text-sm">Belum ada materi</p>
                 </div>
                 @endforelse
+
+                {{-- Menu Sertifikat --}}
+                @if($certificateEnabled)
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700/50">
+                    <a href="{{ route($isBootcamp ? 'mahasiswa.bootcamp-learn' : 'mahasiswa.course-learn', ['id' => $course->id_course, 'view' => 'certificate']) }}" 
+                       class="flex items-center gap-3 p-3 rounded-xl transition {{ $viewCertificate ? 'bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-700/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 {{ $viewCertificate ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold {{ $viewCertificate ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300' }}">Sertifikat</p>
+                            <p class="text-xs {{ $viewCertificate ? 'text-emerald-600 dark:text-emerald-500' : 'text-gray-500 dark:text-gray-400' }}">Unduh sertifikat kelulusan</p>
+                        </div>
+                    </a>
+                </div>
+                @endif
             </div>
         </div>
     </div>
     
     {{-- CENTER: Content Area --}}
     <div class="course-content-center flex-1 min-w-0">
+        @if(!$viewCertificate)
         <div class="space-y-5 sm:space-y-4">
             {{-- Course Title --}}
             <div class="mb-2 sm:mb-3">
@@ -517,9 +536,18 @@
                 </form>
                 @endif
             </div>
+        </div>
+        @endif
 
-            {{-- Certificate Status --}}
-            @if($certificatePanelVisible)
+        @if($viewCertificate)
+            <div class="mb-4 sm:mb-6">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Sertifikat Kelulusan</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Halaman ini memuat informasi dan unduhan sertifikat Anda untuk kursus ini.</p>
+            </div>
+        @endif
+
+        {{-- Certificate Status --}}
+        @if($viewCertificate && $certificatePanelVisible)
             <div id="course-certificate-panel" class="relative overflow-hidden rounded-[24px] border {{ $certificateEligible ? 'border-emerald-200/80 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/30 dark:via-gray-900 dark:to-teal-950/20' : 'border-amber-200/80 dark:border-amber-700/40 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20' }} p-4 sm:rounded-[28px] sm:p-6">
                 <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full {{ $certificateEligible ? 'bg-emerald-200/40 dark:bg-emerald-500/20' : 'bg-amber-200/50 dark:bg-amber-500/20' }} blur-3xl"></div>
                 <div class="absolute -left-10 bottom-0 h-24 w-24 rounded-full {{ $certificateEligible ? 'bg-teal-200/40 dark:bg-teal-500/10' : 'bg-orange-200/40 dark:bg-orange-500/10' }} blur-3xl"></div>
@@ -609,8 +637,19 @@
                     @endif
                 </div>
             </div>
+            @elseif($viewCertificate && !$certificatePanelVisible)
+            <div class="flex flex-col items-center justify-center py-12 text-center bg-gray-50 dark:bg-[#1f2937]/50 rounded-2xl border border-gray-100 dark:border-gray-700/50">
+                <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">Sertifikat Belum Tersedia</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-sm">Anda harus menyelesaikan semua materi dan kuis (mencapai progress 100%) untuk membuka sertifikat ini.</p>
+            </div>
             @endif
 
+        @if(!$viewCertificate)
             {{-- Tujuan Pembelajaran (Learning Goals) dengan indikator achieved --}}
             @if($course->learningGoals && $course->learningGoals->count() > 0)
                 @php

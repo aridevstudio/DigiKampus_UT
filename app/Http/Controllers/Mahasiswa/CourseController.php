@@ -658,6 +658,8 @@ class CourseController extends Controller
         $sesiTimeline = null;
         $liveClassAttendances = null;
         $attendanceProgress = null;
+        
+        $viewCertificate = request('view') === 'certificate';
         $bootcampCapabilities = null;
         $sesiList = null;
         if ($isBootcamp) {
@@ -694,6 +696,7 @@ class CourseController extends Controller
             'completedMaterials' => $completedMaterials,
             'totalMaterials' => $totalMaterials,
             'issuedCertificate' => $issuedCertificate,
+            'viewCertificate' => $viewCertificate,
             'context' => $context,
             'isBootcamp' => $isBootcamp,
             'isFavorited' => $isFavorited,
