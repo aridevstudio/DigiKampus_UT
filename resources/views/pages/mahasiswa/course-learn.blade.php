@@ -1159,6 +1159,7 @@
             </div>
             @endif
         </div>
+        @endif
     </div>
     
     {{-- RIGHT SIDEBAR: Discussion/Notes/Favorites --}}

@@ -64,10 +64,23 @@
 {{-- Chart & Activities --}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6 lg:mb-8">
     {{-- Chart --}}
-    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-        <h2 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-2 sm:mb-4">Grafik Pendaftaran Kursus</h2>
-        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">Pendaftaran Kursus Minggu Ini ({{ now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('d M') }} - {{ now()->endOfWeek(\Carbon\Carbon::SUNDAY)->format('d M Y') }})</p>
-        <div class="relative mhs-chart-container" style="height: clamp(180px, 28vw, 260px);" id="chartContainer">
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-5 sm:p-6 border border-gray-100 dark:border-gray-700/60 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+            <div>
+                <h2 class="text-base sm:text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                    Tren Pendaftaran
+                </h2>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Pendaftaran Kursus ({{ now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('d M') }} - {{ now()->endOfWeek(\Carbon\Carbon::SUNDAY)->format('d M Y') }})</p>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 text-xs font-semibold self-start sm:self-auto border border-blue-100 dark:border-blue-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                Minggu Ini
+            </div>
+        </div>
+        <div class="relative mhs-chart-container w-full" style="height: clamp(220px, 30vw, 300px);" id="chartContainer">
             <canvas id="enrollmentChart"></canvas>
         </div>
     </div>
@@ -252,47 +265,101 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getChartConfig() {
         const isMobile = window.innerWidth < 640;
-        const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
+        const isDark = document.documentElement.classList.contains('dark');
+        
+        // Colors for Light / Dark Mode
+        const textColor = isDark ? '#9ca3af' : '#6b7280';
+        const gridColor = isDark ? '#374151' : '#f3f4f6';
+        const tooltipBg = isDark ? '#1f2937' : '#ffffff';
+        const tooltipTitle = isDark ? '#f3f4f6' : '#111827';
+        const tooltipText = isDark ? '#d1d5db' : '#4b5563';
+        const tooltipBorder = isDark ? '#374151' : '#e5e7eb';
+        const pointBgColor = isDark ? '#1f2937' : '#ffffff';
 
         // Responsive chart container height
         const chartContainer = document.getElementById('chartContainer');
         if (chartContainer) {
-            chartContainer.style.height = isMobile ? '180px' : '220px';
+            chartContainer.style.height = isMobile ? '220px' : '280px';
+        }
+
+        // Create Gradient Fill
+        let gradient = null;
+        if (ctx) {
+            gradient = ctx.createLinearGradient(0, 0, 0, isMobile ? 220 : 280);
+            gradient.addColorStop(0, isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.25)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
         }
 
         return {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
                 datasets: [{
-                    label: 'Pendaftaran',
+                    label: 'Pendaftaran Baru',
                     data: chartData,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: isMobile ? 4 : 6,
-                    barThickness: isMobile ? 16 : (isTablet ? 28 : 40)
+                    borderColor: '#3b82f6',
+                    backgroundColor: gradient || '#3b82f6',
+                    borderWidth: 3,
+                    pointBackgroundColor: pointBgColor,
+                    pointBorderColor: '#3b82f6',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: tooltipBg,
+                        titleColor: tooltipTitle,
+                        bodyColor: tooltipText,
+                        borderColor: tooltipBorder,
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' Pendaftaran';
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index',
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: '#e5e7eb' },
+                        grid: { 
+                            color: gridColor,
+                            drawBorder: false,
+                            borderDash: [4, 4]
+                        },
                         ticks: { 
-                            color: '#6b7280',
-                            font: { size: isMobile ? 10 : 12 }
-                        }
+                            color: textColor,
+                            font: { size: isMobile ? 10 : 11 },
+                            padding: 10,
+                            stepSize: 1
+                        },
+                        border: { display: false }
                     },
                     x: {
-                        grid: { display: false },
+                        grid: { display: false, drawBorder: false },
                         ticks: { 
-                            color: '#6b7280',
-                            font: { size: isMobile ? 10 : 12 }
-                        }
+                            color: textColor,
+                            font: { size: isMobile ? 10 : 12 },
+                            padding: 10
+                        },
+                        border: { display: false }
                     }
                 }
             }
