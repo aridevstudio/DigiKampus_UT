@@ -15,6 +15,7 @@ class Bootcamp extends Model
     protected $fillable = [
         'program_type',
         'title',
+        'thumbnail',
         'batch_label',
         'status',
         'mentor_label',

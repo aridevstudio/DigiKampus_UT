@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\Bootcamp;
 use App\Models\BootcampLiveClassAttendance;
 use App\Models\CourseMaterial;
 use App\Services\BootcampFlowService;
@@ -34,6 +35,14 @@ class BootcampLiveClassAttendanceTest extends TestCase
 
         $this->assertTrue($service->isFinalProjectMaterial($finalProject));
         $this->assertFalse($service->isFinalProjectMaterial($regularAssignment));
+    }
+
+    public function test_bootcamp_accepts_a_custom_thumbnail_path(): void
+    {
+        $bootcamp = new Bootcamp(['thumbnail' => 'bootcamp-thumbnails/data-analytics.webp']);
+
+        $this->assertTrue($bootcamp->isFillable('thumbnail'));
+        $this->assertSame('bootcamp-thumbnails/data-analytics.webp', $bootcamp->thumbnail);
     }
 
     public function test_manual_offline_check_in_is_immediately_verified(): void

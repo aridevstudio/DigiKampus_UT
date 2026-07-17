@@ -739,12 +739,16 @@ class AdminController extends Controller
 
         $price = $this->moneyToInteger($validated['price']);
         $seatCapacity = (int) $validated['seat_capacity'];
+        $thumbnailPath = $request->hasFile('thumbnail')
+            ? $request->file('thumbnail')->store('bootcamp-thumbnails', 'public')
+            : null;
         $scheduleLabel = $this->buildBootcampScheduleLabel($validated);
         $mentorLabel = $this->buildBootcampMentorLabel($mentorIds, $externalMentorIds);
 
         $bootcamp = Bootcamp::create([
             'program_type' => $validated['program_type'],
             'title' => $this->cleanTextInput($validated['title']),
+            'thumbnail' => $thumbnailPath,
             'batch_label' => $this->cleanTextInput($validated['batch']),
             'status' => 'draft',
             'mentor_label' => $mentorLabel,
@@ -813,6 +817,7 @@ class AdminController extends Controller
                 'archived',
             ])],
             'seat_capacity' => ['required', 'integer', 'min:1', 'max:100000'],
+            'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'risk' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -838,13 +843,27 @@ class AdminController extends Controller
             $update['published_at'] = $bootcamp->published_at ?? now();
         }
 
+        $oldThumbnailToDelete = null;
+        if ($request->hasFile('thumbnail')) {
+            $oldThumbnailToDelete = $bootcamp->thumbnail;
+            $update['thumbnail'] = $request->file('thumbnail')->store('bootcamp-thumbnails', 'public');
+        }
+
         $bootcamp->update($update);
+
+        if ($oldThumbnailToDelete && Storage::disk('public')->exists($oldThumbnailToDelete)) {
+            Storage::disk('public')->delete($oldThumbnailToDelete);
+        }
         $bootcamp->refresh();
 
         if (in_array($bootcamp->status, ['open_registration', 'published'], true)) {
             $this->syncBootcampToCheckoutCourse($bootcamp);
         } elseif ($bootcamp->status === 'registration_closed') {
             $this->closeLinkedBootcampCourse($bootcamp);
+        }
+
+        if (array_key_exists('thumbnail', $update) && $bootcamp->linkedCourse) {
+            $bootcamp->linkedCourse->update(['thumbnail' => $bootcamp->thumbnail]);
         }
 
         return redirect()
@@ -1089,6 +1108,7 @@ class AdminController extends Controller
         return $request->validate([
             'program_type' => ['required', Rule::in(['bootcamp', 'ticketed_event'])],
             'title' => ['required', 'string', 'max:255'],
+            'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'batch' => ['required', 'string', 'max:255'],
             'price' => ['required', 'string', 'max:50'],
             'seat_capacity' => ['required', 'integer', 'min:1', 'max:100000'],
@@ -1409,6 +1429,7 @@ class AdminController extends Controller
             'jam_selesai_webinar' => $this->timeForInput($bootcamp->end_time),
             'kuota_peserta' => $this->bootcampSeatCapacity($bootcamp),
             'harga' => $price,
+            'thumbnail' => $bootcamp->thumbnail,
             'estimasi_waktu' => 1,
             'durasi_satuan' => 'Event',
             'level' => 'Pemula',
