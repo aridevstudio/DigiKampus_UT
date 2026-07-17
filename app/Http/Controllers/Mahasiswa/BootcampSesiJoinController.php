@@ -51,22 +51,23 @@ class BootcampSesiJoinController extends Controller
             return back()->with('error', "Sesi ini bersifat Offline di {$lokasi}. Kehadiran akan dicatat oleh admin di lokasi, atau gunakan form Unggah Bukti Kehadiran setelah sesi berakhir.");
         }
 
-        // Gate 2 — sesi masih dalam rentang live, ATAU baru lewat (late-join default 15 menit)
+        // Gate 2 — JOIN hanya tersedia selama sesi benar-benar live. Late join
+        // setelah sesi berakhir bukan bukti kehadiran dan tidak boleh mengubah
+        // state attendance.
         $now = now();
-        $lateJoinAllowance = (int) config('bootcamp.late_join_minutes', 15);
-        $joinWindowEnd = $sesi->end_at->copy()->addMinutes($lateJoinAllowance);
         $joinable = $now->greaterThanOrEqualTo($sesi->start_at)
-            && $now->lessThanOrEqualTo($joinWindowEnd);
+            && $now->lessThanOrEqualTo($sesi->end_at);
         if (!$joinable) {
-            return back()->with('error', 'Sesi belum dimulai atau sudah berakhir lebih dari ' . $lateJoinAllowance . ' menit. Bukti kehadiran dapat diunggah lewat menu Live Class.');
+            return back()->with('error', 'Sesi belum dimulai atau sudah berakhir. Bukti kehadiran dapat diunggah lewat menu Live Class setelah sesi berakhir.');
         }
 
-        // Gate 3 — kapasitas tidak penuh (jika ada limit)
-        if (!$this->bootcampFlow->incrementCapacity($course)) {
-            return back()->with('error', 'Kapasitas sesi sudah penuh. Hubungi admin.');
+        $joinUrl = $sesi->joinUrl();
+        if (!$joinUrl) {
+            return back()->with('error', 'Link Zoom/Google Meet untuk sesi ini belum tersedia. Hubungi mentor atau admin.');
         }
 
-        // Insert/Update attendance row.
+        // Check-in adalah attendance pending, bukan approval. Jangan pernah
+        // mengubah verified/rejected row saat peserta menekan JOIN ulang.
         $sessionKey = $sesi->sessionKey();
         $row = BootcampLiveClassAttendance::firstOrNew([
             'id_course' => (int) $course->id_course,
@@ -74,21 +75,21 @@ class BootcampSesiJoinController extends Controller
             'session_key' => $sessionKey,
         ]);
 
-        $row->proof_file = $row->proof_file ?? '';
-        $row->catatan_mahasiswa = $row->catatan_mahasiswa ?? ('Auto-check-in via JOIN tombol pada ' . $now->format('d M Y H:i'));
-        $row->status = $now->greaterThan($sesi->end_at->copy()->addMinutes(5))
-            ? BootcampLiveClassAttendance::STATUS_VERIFIED
-            : BootcampLiveClassAttendance::STATUS_PENDING;
-        $row->save();
+        if (!$row->exists) {
+            $row->proof_file = '';
+            $row->catatan_mahasiswa = 'Check-in via tombol JOIN pada ' . $now->format('d M Y H:i');
+            $row->status = BootcampLiveClassAttendance::STATUS_PENDING;
+            $row->save();
+        }
 
         // Catat heartbeat langsung pada join — user aktif di sesi live.
         $this->bootcampFlow->recordHeartbeat((int) $user->id, (int) $course->id_course, (int) $sesiId, $now);
 
-        $msg = $row->isVerified()
-            ? 'Berhasil tercatat hadir untuk sesi ini (auto-verified).'
-            : 'Check-in tercatat. Unggah bukti kehadiran di tab Live Class agar admin dapat memverifikasi.';
-
-        return back()->with('success', $msg);
+        // Check-in lalu pindahkan peserta ke provider meeting. URL berasal dari
+        // data sesi yang dikelola mentor/admin, bukan dari request mahasiswa.
+        return redirect()->away($joinUrl)->with('success', $row->isVerified()
+            ? 'Kehadiran sesi ini sudah terverifikasi.'
+            : 'Check-in tercatat. Anda sedang diarahkan ke Live Class.');
     }
 
     /**
@@ -102,6 +103,17 @@ class BootcampSesiJoinController extends Controller
         if (!$user instanceof User) {
             return response()->json(['success' => false, 'message' => 'Sesi login tidak valid.'], 401);
         }
+        $course = Course::findOrFail($courseId);
+        $sesi = BootcampSession::where('id_course', $course->id_course)
+            ->where('id_bootcamp_session', $sesiId)
+            ->firstOrFail();
+        if (!$this->bootcampFlow->resolveAccessibleEnrollment($user, $course)) {
+            abort(403);
+        }
+        if (now()->lessThan($sesi->start_at) || now()->greaterThan($sesi->end_at)) {
+            return response()->json(['success' => false, 'message' => 'Heartbeat hanya dapat dicatat saat sesi berlangsung.'], 422);
+        }
+
         $ts = $this->bootcampFlow->recordHeartbeat((int) $user->id, $courseId, $sesiId);
         return response()->json(['success' => true, 'last_heartbeat' => $ts->toIso8601String()]);
     }
@@ -126,6 +138,9 @@ class BootcampSesiJoinController extends Controller
         if (!$this->bootcampFlow->resolveAccessibleEnrollment($user, $course)) {
             abort(403);
         }
+        BootcampSession::where('id_course', $course->id_course)
+            ->where('id_bootcamp_session', $sesiId)
+            ->firstOrFail();
         $this->bootcampFlow->setUserFeedback((int) $user->id, $courseId, $sesiId, $feedback);
         return back()->with('success', $feedback === 'paham'
             ? 'Terima kasih! Senang Anda memahami materi ini.'

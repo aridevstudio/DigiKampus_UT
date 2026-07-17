@@ -76,9 +76,30 @@ class BootcampLiveClassAttendance extends Model
         return $this->status === self::STATUS_VERIFIED;
     }
 
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
     public function isRejected(): bool
     {
         return $this->status === self::STATUS_REJECTED;
+    }
+
+    /**
+     * Payload standar untuk check-in fisik oleh panitia/admin. Attendance
+     * offline tidak menunggu unggahan bukti mahasiswa karena sumbernya adalah
+     * petugas yang hadir di lokasi.
+     */
+    public static function manualCheckInAttributes(?int $reviewerId, ?string $note = null, mixed $checkedInAt = null): array
+    {
+        return [
+            'proof_file' => '',
+            'status' => self::STATUS_VERIFIED,
+            'reviewed_by' => $reviewerId,
+            'reviewed_at' => $checkedInAt ?? now(),
+            'catatan_reviewer' => $note ?: 'Check-in manual oleh panitia di lokasi.',
+        ];
     }
 
     /**

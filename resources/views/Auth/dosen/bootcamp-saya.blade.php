@@ -368,6 +368,10 @@
                         <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Jam</span>
                         <input x-model="draftSchedule.time" type="time" class="min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
                     </label>
+                    <label class="grid min-w-0 gap-2">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-gray-200">Link Zoom / Google Meet</span>
+                        <input x-model="draftSchedule.meetingUrl" type="url" placeholder="https://meet.google.com/..." class="min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-200">
+                    </label>
                 </div>
 
                 <div class="mt-6 flex flex-wrap justify-end gap-3">
@@ -437,6 +441,7 @@
                     type: 'Live Review',
                     date: '',
                     time: '09:00',
+                    meetingUrl: '',
                 },
                 draftBroadcast: {
                     bootcampId: (config.bootcamps && config.bootcamps[0] ? config.bootcamps[0].id : ''),
@@ -465,14 +470,15 @@
                         type: 'Live Review',
                         date: '',
                         time: '09:00',
+                        meetingUrl: '',
                     };
                     this.showScheduleModal = true;
                 },
                 async submitSchedule() {
                     const bootcamp = this.bootcamps.find((item) => item.id === this.draftSchedule.bootcampId);
 
-                    if (!bootcamp || !this.draftSchedule.date || !this.draftSchedule.time) {
-                        this.notify('Lengkapi bootcamp, tanggal, dan jam sesi terlebih dulu.', 'warning', 'Form Belum Lengkap');
+                    if (!bootcamp || !this.draftSchedule.date || !this.draftSchedule.time || !this.draftSchedule.meetingUrl) {
+                        this.notify('Lengkapi bootcamp, tanggal, jam, dan link Zoom/Google Meet terlebih dulu.', 'warning', 'Form Belum Lengkap');
                         return;
                     }
 
@@ -494,6 +500,7 @@
                                 session_type: this.draftSchedule.type,
                                 date: this.draftSchedule.date,
                                 time: this.draftSchedule.time,
+                                meeting_url: this.draftSchedule.meetingUrl,
                             }),
                         });
 

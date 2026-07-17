@@ -2525,6 +2525,21 @@ class CourseController extends Controller
             return null;
         }
 
+        // Kursus reguler tetap memakai aturan completion lama. Untuk bootcamp,
+        // certificate wajib melewati service gate agar attendance dan review
+        // final project tidak dapat dibypass oleh progress material saja.
+        if ($this->bootcampFlow->isBootcamp($course)) {
+            try {
+                $this->bootcampFlow->assert(
+                    $mahasiswa,
+                    $course,
+                    BootcampTransition::ISSUE_CERTIFICATE,
+                );
+            } catch (BootcampFlowException) {
+                return null;
+            }
+        }
+
         $isCompleted = (($enrollment->status ?? null) === 'selesai') || $progressPercent >= 100;
         if (!$isCompleted) {
             return null;

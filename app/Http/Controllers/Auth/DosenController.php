@@ -7,6 +7,7 @@ use App\Models\Agenda;
 use App\Models\AdminNotification;
 use App\Models\AssignmentSubmission;
 use App\Models\BootcampMentor;
+use App\Models\BootcampSession;
 use App\Models\Course;
 use App\Models\CourseDiscussion;
 use App\Models\CourseGradeRecord;
@@ -452,6 +453,7 @@ class DosenController extends Controller
             'session_type' => ['required', 'string', Rule::in(['Live Review', 'Mentoring', 'Hands-on', 'Office Hour'])],
             'date' => ['required', 'date'],
             'time' => ['required', 'date_format:H:i'],
+            'meeting_url' => ['required', 'url', 'max:500'],
         ], [
             'id_bootcamp.required' => 'Bootcamp harus dipilih.',
             'session_type.required' => 'Jenis sesi harus dipilih.',
@@ -473,6 +475,13 @@ class DosenController extends Controller
         }
 
         $bootcamp = $assignment->bootcamp;
+        if (!$bootcamp->linked_course_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bootcamp belum terhubung ke course peserta. Minta admin membuka penjualan/publish batch terlebih dahulu.',
+            ], 422);
+        }
+
         $startAt = Carbon::createFromFormat('H:i', $validated['time']);
         $endAt = $startAt->copy()->addMinutes(90);
         $agendaType = $validated['session_type'] === 'Hands-on' ? 'workshop' : 'webinar';
@@ -484,6 +493,21 @@ class DosenController extends Controller
             'batch_label' => (string) $bootcamp->batch_label,
         ];
 
+        $nextOrder = ((int) BootcampSession::where('id_course', $bootcamp->linked_course_id)->max('urutan')) + 1;
+        $session = BootcampSession::create([
+            'id_course' => $bootcamp->linked_course_id,
+            'judul_sesi' => $validated['session_type'] . ' ' . $bootcamp->title,
+            'tanggal_sesi' => $validated['date'],
+            'jam_mulai' => $startAt->format('H:i:s'),
+            'jam_selesai' => $endAt->format('H:i:s'),
+            'mode_event' => 'online',
+            'link_zoom' => $validated['meeting_url'],
+            'urutan' => max(1, $nextOrder),
+            'is_active' => true,
+        ]);
+
+        // Agenda hanya mirror kalender dosen; BootcampSession adalah source of truth
+        // bagi mahasiswa, attendance, dan gate kelulusan.
         $agenda = Agenda::create([
             'id_mahasiswa' => null,
             'id_dosen' => $dosen->id,

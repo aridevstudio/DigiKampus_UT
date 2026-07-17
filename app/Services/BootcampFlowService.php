@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\Bootcamp\BootcampFlowException;
+use App\Models\AssignmentSubmission;
 use App\Models\BootcampLiveClassAttendance;
 use App\Models\BootcampSession;
 use App\Models\Course;
@@ -73,7 +74,7 @@ class BootcampFlowService
     /**
      * Final-project gate. Returns true ONLY if:
      *   - enrollment active for this course
-     *   - all non-quiz/assignment materials complete
+     *   - all prerequisite materials complete (final project excluded)
      *   - all non-pretest quizzes passed (>= passing_score)
      *   - for bootcamp courses: every live-class session_key has an attendance row in 'verified' status
      *
@@ -86,17 +87,15 @@ class BootcampFlowService
             return false;
         }
 
-        // 1) All material progress complete
-        $totalMaterials = $course->materials()->count();
-        if ($totalMaterials === 0) {
-            return false;
-        }
-
-        $completedMaterials = MaterialProgress::where('id_mahasiswa', $user->id)
-            ->whereIn('id_material', $course->materials()->pluck('id_material'))
-            ->where('is_completed', true)
-            ->count();
-        if ($completedMaterials < $totalMaterials) {
+        // Final project is the destination of this gate, never a prerequisite.
+        $prerequisiteMaterialIds = $this->prerequisiteMaterialIds($course);
+        $completedMaterials = $prerequisiteMaterialIds->isEmpty()
+            ? 0
+            : MaterialProgress::where('id_mahasiswa', $user->id)
+                ->whereIn('id_material', $prerequisiteMaterialIds)
+                ->where('is_completed', true)
+                ->count();
+        if ($completedMaterials < $prerequisiteMaterialIds->count()) {
             return false;
         }
 
@@ -154,7 +153,9 @@ class BootcampFlowService
         $completed = ((string) ($enrollment->status ?? '')) === 'selesai'
             || (float) ($enrollment->progress ?? 0) >= 100.0;
 
-        if ($completed) {
+        $completionVerified = !$this->isBootcamp($course)
+            || ($gateOpen && $this->hasReviewedFinalProject($user, $course));
+        if ($completed && $completionVerified) {
             return new BootcampProgression(BootcampState::COMPLETED, ['enrollment_status' => 'selesai'], []);
         }
 
@@ -419,6 +420,13 @@ class BootcampFlowService
                 403,
             );
         }
+        if (!$this->hasReviewedFinalProject($user, $course)) {
+            throw BootcampFlowException::forTransition(
+                BootcampTransition::ISSUE_CERTIFICATE,
+                'Proyek akhir masih menunggu persetujuan dosen.',
+                403,
+            );
+        }
         // Mirror capabilities() requirement: certificate only after full completion
         // (enrollment.status='selesai' OR progress>=100). Prevents early issue
         // when coursework has passed but enrollment book-keeping lags.
@@ -574,6 +582,52 @@ class BootcampFlowService
         };
     }
 
+    /**
+     * A final project is an assignment with an explicit managed JSON flag.
+     * Never infer this from its title because legacy assignments must retain
+     * their current behavior.
+     */
+    public function isFinalProjectMaterial(CourseMaterial $material): bool
+    {
+        if ($this->normalizeMaterialType($material->tipe) !== 'tugas') {
+            return false;
+        }
+
+        $payload = json_decode((string) $material->konten, true);
+
+        return is_array($payload) && (bool) ($payload['is_final_project'] ?? false);
+    }
+
+    /** @return \Illuminate\Support\Collection<int, int> */
+    private function prerequisiteMaterialIds(Course $course): \Illuminate\Support\Collection
+    {
+        return $course->materials()
+            ->get()
+            ->reject(fn (CourseMaterial $material) => $this->isFinalProjectMaterial($material))
+            ->pluck('id_material');
+    }
+
+    private function hasReviewedFinalProject(User $user, Course $course): bool
+    {
+        $finalProjectMaterialIds = $course->materials()
+            ->get()
+            ->filter(fn (CourseMaterial $material) => $this->isFinalProjectMaterial($material))
+            ->pluck('id_material');
+
+        if ($finalProjectMaterialIds->isEmpty()) {
+            return true;
+        }
+
+        $reviewedFinalProjects = AssignmentSubmission::query()
+            ->where('id_course', $course->id_course)
+            ->where('id_mahasiswa', $user->id)
+            ->whereIn('id_material', $finalProjectMaterialIds)
+            ->whereIn('status', ['reviewed', 'approved'])
+            ->count();
+
+        return $reviewedFinalProjects === $finalProjectMaterialIds->count();
+    }
+
     public function isBootcamp(?Course $course): bool
     {
         return $course !== null
@@ -699,23 +753,6 @@ class BootcampFlowService
             return null;
         }
         return "Anda harus menghadiri minimal {$required} sesi (saat ini {$attended} sesi terverifikasi).";
-    }
-
-    /**
-     * Counter atomic utk slot_terisi. Return true jika increment berhasil.
-     */
-    public function incrementCapacity(Course $course): bool
-    {
-        if ((int) ($course->kapasitas_maksimal ?? 0) === 0) {
-            return true; // tanpa batas kapasitas, selalu sukses
-        }
-        $affected = Course::where('id_course', $course->id_course)
-            ->where(function ($q) use ($course) {
-                $q->whereNull('kapasitas_maksimal')
-                  ->orWhereColumn('slot_terisi', '<', 'kapasitas_maksimal');
-            })
-            ->update(['slot_terisi' => \Illuminate\Support\Facades\DB::raw('COALESCE(slot_terisi, 0) + 1')]);
-        return $affected > 0;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -1118,17 +1155,15 @@ class BootcampFlowService
         $canAccessFinalProject = $this->finalProjectGate($user, $course);
         if (!$canAccessFinalProject) {
             $reasonParts = [];
-            $totalMaterials = $course->materials()->count();
-            if ($totalMaterials > 0) {
+            $prerequisiteMaterialIds = $this->prerequisiteMaterialIds($course);
+            if ($prerequisiteMaterialIds->isNotEmpty()) {
                 $completedMaterials = MaterialProgress::where('id_mahasiswa', $user->id)
-                    ->whereIn('id_material', $course->materials()->pluck('id_material'))
+                    ->whereIn('id_material', $prerequisiteMaterialIds)
                     ->where('is_completed', true)
                     ->count();
-                if ($completedMaterials < $totalMaterials) {
+                if ($completedMaterials < $prerequisiteMaterialIds->count()) {
                     $reasonParts[] = 'belum menyelesaikan semua materi';
                 }
-            } else {
-                $reasonParts[] = 'course belum memiliki materi';
             }
 
             $allQuizzesPassed = true;
@@ -1180,8 +1215,10 @@ class BootcampFlowService
         } elseif ($enrollment !== null) {
             $isCompleted = ((string) ($enrollment->status ?? '')) === 'selesai'
                 || (float) ($enrollment->progress ?? 0) >= 100.0;
-            if ($isCompleted) {
+            if ($isCompleted && $this->hasReviewedFinalProject($user, $course)) {
                 $canIssueCertificate = true;
+            } elseif ($isCompleted) {
+                $reasons[BootcampTransition::ISSUE_CERTIFICATE] = 'Proyek akhir masih menunggu persetujuan dosen.';
             } else {
                 $reasons[BootcampTransition::ISSUE_CERTIFICATE] = 'Progress belum 100% atau enrollment belum selesai.';
             }

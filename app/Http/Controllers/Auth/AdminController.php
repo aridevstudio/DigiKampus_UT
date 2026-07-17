@@ -7,6 +7,8 @@ use App\Models\AdminNotification;
 use App\Models\Bootcamp;
 use App\Models\BootcampLiveClassAttendance;
 use App\Models\BootcampMentor;
+use App\Models\BootcampSession;
+use App\Models\Enrollment;
 use App\Models\AutomaticCertificate;
 use App\Models\Category;
 use App\Models\CertificateTemplate;
@@ -455,6 +457,54 @@ class AdminController extends Controller
             'selectedStatus' => $status,
             'searchQuery' => $search,
         ]);
+    }
+
+    /**
+     * Check-in fisik peserta pada sesi offline oleh admin/panitia.
+     */
+    public function manualOfflineSessionCheckIn(Request $request, int $courseId, int $sesiId, int $userId): RedirectResponse
+    {
+        $admin = Auth::guard('admin')->user();
+        $course = Course::findOrFail($courseId);
+        $sesi = BootcampSession::where('id_course', $course->id_course)
+            ->where('id_bootcamp_session', $sesiId)
+            ->firstOrFail();
+
+        if (!$sesi->isOffline()) {
+            return back()->with('error', 'Check-in manual hanya tersedia untuk sesi offline.');
+        }
+
+        $enrolled = Enrollment::accessible()
+            ->where('id_course', $course->id_course)
+            ->where('id_mahasiswa', $userId)
+            ->exists();
+        if (!$enrolled) {
+            return back()->with('error', 'Mahasiswa tidak memiliki enrollment aktif pada bootcamp ini.');
+        }
+
+        $validated = $request->validate([
+            'catatan' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $attendance = BootcampLiveClassAttendance::updateOrCreate(
+            [
+                'id_course' => $course->id_course,
+                'id_user' => $userId,
+                'session_key' => $sesi->sessionKey(),
+            ],
+            BootcampLiveClassAttendance::manualCheckInAttributes($admin?->id, $validated['catatan'] ?? null)
+        );
+
+        Notification::notifyMahasiswa(
+            $userId,
+            'Kehadiran Offline Tercatat',
+            'Kehadiran Anda pada sesi "' . $sesi->judul_sesi . '" telah dicatat oleh panitia.',
+            'kursus_pembelajaran',
+            'attendance',
+            '#10B981'
+        );
+
+        return back()->with('success', 'Kehadiran offline berhasil dicatat untuk peserta.');
     }
 
     /**

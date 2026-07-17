@@ -139,6 +139,7 @@ Route::prefix('admin')
         Route::get('/bootcamp-tiket/attendance', [AdminController::class, 'showLiveClassAttendanceQueue'])->name('admin.bootcamp-tiket.attendance');
         Route::post('/bootcamp-live-class-attendance/{id}/verify', [AdminController::class, 'verifyLiveClassAttendance'])->name('admin.bootcamp.attendance.verify');
         Route::post('/bootcamp-live-class-attendance/{id}/reject', [AdminController::class, 'rejectLiveClassAttendance'])->name('admin.bootcamp.attendance.reject');
+        Route::post('/bootcamp/{courseId}/sesi/{sesiId}/peserta/{userId}/check-in', [AdminController::class, 'manualOfflineSessionCheckIn'])->name('admin.bootcamp.sesi.offline.check-in');
         Route::get('/bootcamp-tiket/export', [AdminController::class, 'exportBootcampBatch'])->name('admin.bootcamp-tiket.export');
         Route::post('/bootcamp-tiket/external-mentors', [AdminController::class, 'storeBootcampExternalMentor'])->name('admin.bootcamp-tiket.external-mentors.store');
         Route::post('/bootcamp-tiket', [AdminController::class, 'storeBootcamp'])->name('admin.bootcamp-tiket.store');
