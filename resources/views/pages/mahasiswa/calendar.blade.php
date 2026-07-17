@@ -75,6 +75,8 @@ $eventColors = [
     </div>
 </div>
 
+<x-agenda-desktop-notification-control :agenda="$upcomingAgenda" />
+
 {{-- Main Content --}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     {{-- Calendar Section --}}

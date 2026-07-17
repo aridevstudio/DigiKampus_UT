@@ -332,6 +332,8 @@ if (isset($agenda) && count($agenda) > 0) {
             <h2 class="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100">Agenda Kegiatan Kamu</h2>
             <a href="{{ route('mahasiswa.calendar') }}" class="text-blue-500 hover:text-blue-600 text-xs sm:text-sm font-medium transition hover-scale">Lihat Semua Jadwal</a>
         </div>
+
+        <x-agenda-desktop-notification-control :agenda="$agenda" />
         
         {{-- Mini Calendar (default view) --}}
         <div id="mini-calendar" class="mb-4">
