@@ -96,6 +96,12 @@ class Course extends Model
         return $this->hasMany(Enrollment::class, 'id_course', 'id_course');
     }
 
+    /** Temporary/confirmed checkout reservations for capacity-only events. */
+    public function eventSeatReservations()
+    {
+        return $this->hasMany(EventSeatReservation::class, 'id_course', 'id_course');
+    }
+
     /**
      * Get materials for the course.
      */

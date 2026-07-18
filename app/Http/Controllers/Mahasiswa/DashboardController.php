@@ -8,6 +8,7 @@ use App\Models\Enrollment;
 use App\Models\News;
 use App\Models\Agenda;
 use App\Models\Notification;
+use App\Services\MahasiswaAgendaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ class DashboardController extends Controller
     /**
      * Show mahasiswa dashboard
      */
-    public function index()
+    public function index(MahasiswaAgendaService $agendaService)
     {
         $user = Auth::guard('mahasiswa')->user();
 
@@ -39,7 +40,14 @@ class DashboardController extends Controller
         $completedEnrollments = $enrollments->filter(function ($enrollment) {
             return $enrollment->status === 'selesai' || (float) $enrollment->progress >= 100;
         });
-        $enrolledCourseIds = $enrollments->pluck('id_course')
+        $activeCourseIds = $activeEnrollments->pluck('id_course')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        $activeBootcampCourseIds = $activeEnrollments
+            ->filter(fn (Enrollment $enrollment) => $enrollment->course?->kategori === 'tiket')
+            ->pluck('id_course')
             ->filter()
             ->unique()
             ->values()
@@ -124,13 +132,16 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
-        // Get current month agenda
-        $agenda = Agenda::query()
-            ->visibleToMahasiswa($user->id, $enrolledCourseIds)
-            ->whereMonth('tanggal', now()->month)
-            ->whereYear('tanggal', now()->year)
-            ->orderBy('tanggal', 'asc')
-            ->get();
+        // Agenda mahasiswa: jadwal pribadi/course aktif + BootcampSession dari
+        // bootcamp yang sudah dibeli. Jangan membaca mirror Agenda dosen karena
+        // BootcampSession adalah source of truth untuk peserta.
+        $agenda = $agendaService->forPeriod(
+            $user->id,
+            $activeCourseIds,
+            $activeBootcampCourseIds,
+            now()->startOfMonth(),
+            now()->endOfMonth(),
+        );
 
         $dashboardNotifications = Notification::where('id_mahasiswa', $user->id)
             ->orderByDesc('created_at')
@@ -158,27 +169,40 @@ class DashboardController extends Controller
     /**
      * Show calendar page with all agenda
      */
-    public function calendar()
+    public function calendar(MahasiswaAgendaService $agendaService)
     {
         $user = Auth::guard('mahasiswa')->user();
         
         // Get month and year from request or use current
         $month = request('month', now()->month);
         $year = request('year', now()->year);
-        $enrolledCourseIds = Enrollment::where('id_mahasiswa', $user->id)
+        $periodStart = now()->setYear((int) $year)->setMonth((int) $month)->startOfMonth();
+        $activeEnrollments = Enrollment::with('course')
+            ->where('id_mahasiswa', $user->id)
+            ->whereIn('status', ['aktif', 'in_progress'])
+            ->get();
+        $activeCourseIds = $activeEnrollments->pluck('id_course')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        $activeBootcampCourseIds = $activeEnrollments
+            ->filter(fn (Enrollment $enrollment) => $enrollment->course?->kategori === 'tiket')
             ->pluck('id_course')
             ->filter()
             ->unique()
             ->values()
             ->all();
         
-        // Get agenda for selected month (for calendar markers)
-        $agenda = Agenda::query()
-            ->visibleToMahasiswa($user->id, $enrolledCourseIds)
-            ->whereMonth('tanggal', $month)
-            ->whereYear('tanggal', $year)
-            ->orderBy('tanggal', 'asc')
-            ->get();
+        // BootcampSession adalah jadwal peserta yang authoritative. Agenda dosen
+        // hanya dipakai sebagai mirror internal dan sengaja tidak ditampilkan.
+        $agenda = $agendaService->forPeriod(
+            $user->id,
+            $activeCourseIds,
+            $activeBootcampCourseIds,
+            $periodStart,
+            $periodStart->copy()->endOfMonth(),
+        );
         
         // Get same agenda for sidebar list (all events for the month, same as dashboard)
         $upcomingAgenda = $agenda;

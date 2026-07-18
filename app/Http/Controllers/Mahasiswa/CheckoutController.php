@@ -14,6 +14,7 @@ use App\Models\PlatformSetting;
 use App\Models\Voucher;
 use App\Models\VoucherUsage;
 use App\Services\MidtransSnapService;
+use App\Services\EventCapacityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,8 @@ use Illuminate\Support\Str;
 class CheckoutController extends Controller
 {
     public function __construct(
-        private readonly MidtransSnapService $midtransSnapService
+        private readonly MidtransSnapService $midtransSnapService,
+        private readonly EventCapacityService $eventCapacityService,
     ) {
     }
 
@@ -154,6 +156,7 @@ class CheckoutController extends Controller
         $discountAmount = $this->calculateVoucherDiscount($voucher, $subtotal);
         $grossAmount = max(0, $subtotal + $serviceFee - $discountAmount);
         $orderId = $this->generateOrderId();
+        $transaction = null;
 
         try {
             $transaction = DB::transaction(function () use (
@@ -186,6 +189,12 @@ class CheckoutController extends Controller
                         'course_name' => $item->course->nama_course ?? 'Kursus',
                         'price' => $item->course->harga ?? 0,
                     ]);
+
+                    $this->eventCapacityService->reserveForPayment(
+                        (int) $item->id_course,
+                        (int) $user->id,
+                        (int) $paymentTransaction->id_payment_transaction,
+                    );
                 }
 
                 if ($voucher && $discountAmount > 0) {
@@ -252,6 +261,9 @@ class CheckoutController extends Controller
                 ->withErrors($e->errors())
                 ->with('error', collect($e->errors())->flatten()->first() ?: 'Voucher tidak dapat digunakan.');
         } catch (\Throwable $e) {
+            if ($transaction instanceof PaymentTransaction) {
+                $this->eventCapacityService->releaseForTransaction((int) $transaction->id_payment_transaction);
+            }
             report($e);
 
             if ($request->expectsJson() || $request->ajax()) {
@@ -423,6 +435,14 @@ class CheckoutController extends Controller
 
     private function validateBootcampTicketAvailability(int $courseId): array
     {
+        $course = \App\Models\Course::find($courseId);
+        if ($course && $this->eventCapacityService->isCapacityOnlyEvent($course)) {
+            $availability = $this->eventCapacityService->availabilityFor($course);
+            if ($availability['is_full']) {
+                return ['ok' => false, 'message' => 'Slot ' . ucfirst((string) $course->tipe_event) . ' sudah penuh.'];
+            }
+        }
+
         if (!Schema::hasColumn('bootcamps', 'linked_course_id')) {
             return ['ok' => true, 'message' => null];
         }
@@ -614,6 +634,7 @@ class CheckoutController extends Controller
             $this->finalizeSuccessfulTransaction($transaction->fresh(['items.course', 'voucher']));
         } elseif (in_array($status, ['deny', 'cancel', 'expire', 'failure'], true)) {
             $this->releaseVoucherUsage($transaction);
+            $this->eventCapacityService->releaseForTransaction((int) $transaction->id_payment_transaction);
         }
     }
 
@@ -635,6 +656,12 @@ class CheckoutController extends Controller
                         'progress' => 0,
                         'tanggal_daftar' => now(),
                     ]);
+
+                    $this->eventCapacityService->confirmForEnrollment(
+                        (int) $item->id_course,
+                        (int) $transaction->id_mahasiswa,
+                        (int) $transaction->id_payment_transaction,
+                    );
 
                     \App\Models\Agenda::create([
                         'id_mahasiswa' => $transaction->id_mahasiswa,

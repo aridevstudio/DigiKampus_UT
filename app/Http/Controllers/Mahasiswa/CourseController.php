@@ -112,6 +112,12 @@ class CourseController extends Controller
         $bootcampCourses = Course::with(['dosen', 'jurusan'])
             ->withCount('ratings as real_jumlah_ulasan')
             ->withAvg('ratings as real_rating', 'rating')
+            ->withCount([
+                'enrollments as active_enrollments_count' => fn ($query) => $query->whereIn('status', ['aktif', 'in_progress', 'selesai']),
+                'eventSeatReservations as active_seat_reservations_count' => fn ($query) => $query
+                    ->where('status', 'reserved')
+                    ->where('expires_at', '>', now()),
+            ])
             ->aktif()
             ->where('kategori', 'tiket')
             ->search($search)
@@ -148,7 +154,14 @@ class CourseController extends Controller
             'ratings.mahasiswa.profile',
             'learningGoals',
             'instructorNotes' => fn ($query) => $query->where('is_active', true)->latest(),
-        ])->findOrFail($id);
+        ])
+            ->withCount([
+                'enrollments as active_enrollments_count' => fn ($query) => $query->whereIn('status', ['aktif', 'in_progress', 'selesai']),
+                'eventSeatReservations as active_seat_reservations_count' => fn ($query) => $query
+                    ->where('status', 'reserved')
+                    ->where('expires_at', '>', now()),
+            ])
+            ->findOrFail($id);
 
         $user = Auth::guard('mahasiswa')->user();
         $isEnrolled = false;

@@ -108,13 +108,21 @@
                 ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300'
                 : 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-300';
 
-            // Untuk seminar: tampilkan "Slot tersisa X/Y" bila kapasitas_maksimal diset
+            // Seminar/webinar hanya menjual daya tampung peserta. Enrollment
+            // aktif dan reservasi checkout yang belum expired sama-sama memakai slot.
+            $isCapacityOnlyEvent = in_array($effectiveTipeEvent, ['seminar', 'webinar'], true);
             $kapasitasMax = (int) ($course->kapasitas_maksimal ?? 0);
-            $slotTerisiCounter = (int) ($course->slot_terisi ?? 0);
+            if ($kapasitasMax <= 0 && $isCapacityOnlyEvent) {
+                $kapasitasMax = (int) ($course->kuota_peserta ?? 0);
+            }
+            $slotTerisiCounter = $isCapacityOnlyEvent
+                ? (int) (($course->active_enrollments_count ?? 0) + ($course->active_seat_reservations_count ?? 0))
+                : (int) ($course->slot_terisi ?? 0);
             $slotsRemaining = $kapasitasMax > 0 ? max(0, $kapasitasMax - $slotTerisiCounter) : null;
+            $isSoldOut = $isCapacityOnlyEvent && $slotsRemaining === 0;
             $slotsLabel = $slotsRemaining !== null
-                ? "Slot: {$slotsRemaining}/{$kapasitasMax}"
-                : null;
+                ? "{$slotsRemaining} dari {$kapasitasMax} slot tersisa"
+                : 'Tidak dibatasi';
         @endphp
 
         <article class="group overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl dark:border-gray-700/50 dark:bg-[#1f2937]">
@@ -153,8 +161,8 @@
                         <p class="mt-1 font-semibold text-gray-800 dark:text-gray-100">{{ $timeLabel }}</p>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-3 dark:bg-gray-800/70">
-                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">Kuota</p>
-                        <p class="mt-1 font-semibold text-gray-800 dark:text-gray-100">{{ $course->kuota_peserta ? number_format($course->kuota_peserta) . ' kursi' : 'Terbatas' }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">{{ $isCapacityOnlyEvent ? 'Slot tersisa' : 'Kuota' }}</p>
+                        <p class="mt-1 font-semibold {{ $isSoldOut ? 'text-rose-600 dark:text-rose-300' : 'text-gray-800 dark:text-gray-100' }}">{{ $isCapacityOnlyEvent ? $slotsLabel : ($course->kuota_peserta ? number_format($course->kuota_peserta) . ' kursi' : 'Terbatas') }}</p>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-3 dark:bg-gray-800/70">
                         <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">Mentor</p>
@@ -177,6 +185,10 @@
                             <a href="{{ route('mahasiswa.bootcamp-learn', $course->id_course) }}" class="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">
                                 Mulai
                             </a>
+                        @elseif($isSoldOut)
+                            <button type="button" disabled aria-disabled="true" class="cursor-not-allowed rounded-2xl bg-slate-300 px-4 py-3 text-sm font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                Penuh
+                            </button>
                         @else
                             <form action="{{ route('mahasiswa.cart.add') }}" method="POST">
                                 @csrf

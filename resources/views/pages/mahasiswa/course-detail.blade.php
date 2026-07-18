@@ -825,6 +825,28 @@
                         </div>
                     @endif
                 @else
+                    @php
+                        $isCapacityOnlyEvent = strtolower((string) $course->kategori) === 'webinar'
+                            || in_array(strtolower((string) $course->tipe_event), ['seminar', 'webinar'], true);
+                        $eventCapacity = (int) ($course->kapasitas_maksimal ?? 0);
+                        if ($eventCapacity <= 0 && $isCapacityOnlyEvent) {
+                            $eventCapacity = (int) ($course->kuota_peserta ?? 0);
+                        }
+                        $eventSlotsRemaining = $eventCapacity > 0
+                            ? max(0, $eventCapacity - (int) (($course->active_enrollments_count ?? 0) + ($course->active_seat_reservations_count ?? 0)))
+                            : null;
+                        $eventSoldOut = $isCapacityOnlyEvent && $eventSlotsRemaining === 0;
+                    @endphp
+                    @if($isCapacityOnlyEvent)
+                        <p class="mb-3 rounded-xl px-3 py-2 text-center text-sm font-semibold {{ $eventSoldOut ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300' : 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' }}">
+                            {{ $eventSoldOut ? 'Slot peserta sudah penuh' : ($eventSlotsRemaining === null ? 'Slot peserta tidak dibatasi' : $eventSlotsRemaining . ' slot peserta tersisa') }}
+                        </p>
+                    @endif
+                    @if($eventSoldOut)
+                        <button type="button" disabled aria-disabled="true" class="mb-3 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-300 py-3 font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                            Slot Penuh
+                        </button>
+                    @else
                     <form action="{{ route('mahasiswa.cart.add') }}" method="POST" class="mb-3">
                         @csrf
                         <input type="hidden" name="course_id" value="{{ $course->id_course }}">
@@ -835,6 +857,7 @@
                             Tambah ke Keranjang
                         </button>
                     </form>
+                    @endif
                 @endif
                 
                 @if($isFavorited)
