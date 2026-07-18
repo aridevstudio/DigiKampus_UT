@@ -12,6 +12,7 @@ use App\Models\CourseModule;
 use App\Models\DosenNotification;
 use App\Models\CourseRating;
 use App\Models\CourseDiscussion;
+use App\Models\ForumTopic;
 use App\Models\CourseInstructorNote;
 use App\Models\CourseMaterial;
 use App\Models\Assignment;
