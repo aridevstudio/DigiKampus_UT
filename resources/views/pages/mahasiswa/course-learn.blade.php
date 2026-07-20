@@ -54,6 +54,13 @@
         ->values()
         ->all();
 
+    $hasLearningMaterials = collect($modules ?? [])->contains(
+        fn ($module) => !empty($module['materials'])
+            || !empty($module['quizzes'])
+            || !empty($module['quiz'])
+            || !empty($module['assignment'])
+    );
+
     $isPlaylistMode = request('play') === 'pack';
     $certificateEnabled = (bool) ($course->sertifikat ?? false);
     $courseCompletedForCertificate = (($enrollment->status ?? null) === 'selesai' || (int) ($progressPercent ?? 0) >= 100);
@@ -371,7 +378,7 @@
             </div>
             
             {{-- Video/Content Area --}}
-            <div id="video-protected-player" tabindex="0" class="bg-gray-900 rounded-2xl overflow-hidden relative focus:outline-none" style="aspect-ratio: 16/9;">
+            <div id="video-protected-player" tabindex="0" class="{{ $currentMaterial ? 'bg-gray-900' : 'border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:border-blue-900/50 dark:from-blue-950/30 dark:via-gray-900 dark:to-indigo-950/20' }} rounded-2xl overflow-hidden relative focus:outline-none" style="{{ $currentMaterial ? 'aspect-ratio: 16/9;' : 'min-height: 220px;' }}">
                 @if($currentMaterial)
                     @if($currentMaterial['type'] == 'video' && !empty($currentMaterial['video_url']))
                         @php
@@ -458,12 +465,17 @@
                         </div>
                     @endif
                 @else
-                <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
-                    <div class="text-center">
-                        <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        <p>Pilih materi untuk memulai</p>
+                <div class="absolute inset-0 flex items-center justify-center px-6 text-center text-gray-600 dark:text-gray-300">
+                    <div>
+                        <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 00-2-2V8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <p class="font-semibold text-gray-800 dark:text-gray-100">{{ $hasLearningMaterials ? 'Pilih materi untuk memulai' : 'Materi bootcamp sedang disiapkan' }}</p>
+                        @if(!$hasLearningMaterials)
+                            <p class="mt-1 max-w-md text-sm text-gray-500 dark:text-gray-400">Belum ada materi mandiri yang dipublikasikan. Pantau jadwal sesi live class di bawah untuk mengikuti bootcamp ini.</p>
+                        @endif
                     </div>
                 </div>
                 @endif
@@ -1977,6 +1989,21 @@
 
 {{-- Mobile responsive style override --}}
 <style>
+    @media (min-width: 1024px) {
+        .course-learn-layout {
+            display: grid !important;
+            grid-template-columns: 250px minmax(0, 1fr) 280px;
+            align-items: start;
+        }
+
+        .course-sidebar-left,
+        .course-sidebar-right,
+        .course-content-center {
+            width: auto !important;
+            min-width: 0 !important;
+        }
+    }
+
     @media (max-width: 1023px) {
         .course-learn-layout {
             flex-direction: column !important;
