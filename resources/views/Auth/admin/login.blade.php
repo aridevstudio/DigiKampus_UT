@@ -75,6 +75,7 @@
                     {{-- Password Input --}}
                     <div class="relative animate-hidden animate-fade-in-up stagger-2" x-data="{ show: false }">
                         <input 
+                            type="password"
                             :type="show ? 'text' : 'password'" 
                             name="password" 
                             required 
@@ -181,6 +182,7 @@
                 {{-- Password Input --}}
                 <div class="relative" x-data="{ show: false }">
                     <input 
+                        type="password"
                         :type="show ? 'text' : 'password'" 
                         name="password" 
                         required 
