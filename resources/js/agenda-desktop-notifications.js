@@ -73,30 +73,38 @@ class AgendaDesktopNotifier {
         this.status.dataset.tone = tone;
     }
 
+    setControlVisible(control, visible) {
+        if (!control) return;
+
+        control.hidden = !visible;
+        control.style.display = visible ? 'inline-flex' : 'none';
+        control.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    }
+
     refreshControls() {
         if (!this.supported()) {
-            this.enableButton?.setAttribute('hidden', 'hidden');
-            this.testButton?.setAttribute('hidden', 'hidden');
+            this.setControlVisible(this.enableButton, false);
+            this.setControlVisible(this.testButton, false);
             this.setStatus('Browser ini belum mendukung notifikasi desktop.', 'warning');
             return;
         }
 
         if (Notification.permission === 'granted') {
-            this.enableButton?.setAttribute('hidden', 'hidden');
-            this.testButton?.removeAttribute('hidden');
+            this.setControlVisible(this.enableButton, false);
+            this.setControlVisible(this.testButton, true);
             this.setStatus('Notifikasi desktop aktif. Pengingat dikirim 15 menit sebelum agenda dimulai.', 'success');
             return;
         }
 
-        this.testButton?.setAttribute('hidden', 'hidden');
+        this.setControlVisible(this.testButton, false);
 
         if (Notification.permission === 'denied') {
-            this.enableButton?.setAttribute('hidden', 'hidden');
+            this.setControlVisible(this.enableButton, false);
             this.setStatus('Notifikasi diblokir di Chrome. Klik ikon kunci di address bar, buka Izin situs, lalu izinkan Notifikasi.', 'warning');
             return;
         }
 
-        this.enableButton?.removeAttribute('hidden');
+        this.setControlVisible(this.enableButton, true);
         this.setStatus('Aktifkan agar pengingat agenda muncul sebagai notifikasi desktop Chrome.', 'neutral');
     }
 
@@ -116,17 +124,38 @@ class AgendaDesktopNotifier {
     }
 
     showTestNotification() {
-        if (!this.supported() || Notification.permission !== 'granted') return;
+        if (!this.supported()) {
+            this.setStatus('Browser ini tidak mendukung notifikasi desktop.', 'warning');
+            return;
+        }
 
-        const notification = new Notification('DigiKampus UT', {
-            body: 'Notifikasi desktop aktif. Pengingat agenda akan muncul 15 menit sebelum kegiatan dimulai.',
-            tag: 'digikampus-agenda-permission-test',
-        });
+        if (Notification.permission !== 'granted') {
+            this.setStatus('Izin notifikasi belum aktif. Klik Aktifkan notifikasi terlebih dahulu.', 'warning');
+            this.refreshControls();
+            return;
+        }
 
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-        };
+        try {
+            const notification = new Notification('DigiKampus UT', {
+                body: 'Tes berhasil. Pengingat agenda akan muncul 15 menit sebelum kegiatan dimulai.',
+                icon: '/favicon.ico',
+                tag: `digikampus-agenda-permission-test-${Date.now()}`,
+                requireInteraction: true,
+            });
+
+            notification.onclick = () => {
+                window.focus();
+                notification.close();
+            };
+
+            notification.onerror = () => {
+                this.setStatus('Chrome mengizinkan notifikasi, tetapi Windows gagal menampilkannya. Periksa Settings > System > Notifications > Google Chrome.', 'warning');
+            };
+
+            this.setStatus('Notifikasi tes sudah dikirim. Jika tidak terlihat, periksa Notification Center dan pengaturan notifikasi Windows untuk Chrome.', 'success');
+        } catch (error) {
+            this.setStatus(`Notifikasi gagal dikirim: ${error?.message || 'kesalahan browser tidak diketahui'}.`, 'warning');
+        }
     }
 
     notify(event) {
