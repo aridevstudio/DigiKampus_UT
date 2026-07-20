@@ -644,6 +644,14 @@ class DosenController extends Controller
         $perPage = 6;
 
         $query = \App\Models\Course::where('id_dosen', $dosen->id)
+            // Bootcamp/ticket dibuka melalui panel Bootcamp Saya. Admin
+            // menyinkronkannya sebagai course berkategori tiket agar bisa
+            // masuk katalog dan checkout mahasiswa, bukan agar tampil ganda
+            // di daftar kursus yang dikelola dosen.
+            ->where(function ($courseQuery) {
+                $courseQuery->whereNull('kategori')
+                    ->orWhere('kategori', '!=', 'tiket');
+            })
             ->with(['enrollments', 'jurusan', 'modules' => function ($q) {
                 $q->orderBy('urutan');
             }, 'modules.materials' => function ($q) {
@@ -685,6 +693,7 @@ class DosenController extends Controller
                 $query->orderBy('created_at', 'desc');
         }
 
+        $totalCourses = (clone $query)->count();
         $coursesPaginated = $query->paginate($perPage)->withQueryString();
 
         $coursesData = $coursesPaginated->map(function($course) {
@@ -739,7 +748,7 @@ class DosenController extends Controller
             'dosen' => $dosen,
             'coursesData' => $coursesData,
             'coursesPaginated' => $coursesPaginated,
-            'totalCourses' => \App\Models\Course::where('id_dosen', $dosen->id)->count(),
+            'totalCourses' => $totalCourses,
             'search' => $search,
             'statusFilter' => $statusFilter,
             'sortBy' => $sortBy,

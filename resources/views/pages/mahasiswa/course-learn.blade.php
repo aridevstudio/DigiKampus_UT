@@ -109,7 +109,7 @@
 </nav>
 
 {{-- Back Link & Title Row (desktop only) --}}
-<div class="hidden flex-wrap items-center justify-between gap-4 mb-6 animate-fade-in-up sm:flex">
+<div class="course-learning-header hidden flex-wrap items-center justify-between gap-4 mb-6 animate-fade-in-up sm:flex">
     <div class="flex items-center gap-4">
         <a href="{{ route($backListRoute) }}" class="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,11 +133,11 @@
 </div>
 
 {{-- Main 3-Column Layout --}}
-<div class="course-learn-layout flex flex-col lg:flex-row gap-6">
+<div class="course-learn-layout {{ $isBootcamp ? 'bootcamp-learning-layout' : '' }} flex flex-col lg:flex-row gap-6">
     
     {{-- LEFT SIDEBAR: Module List --}}
     <div class="course-sidebar-left w-full lg:w-[250px] lg:min-w-[250px] lg:flex-shrink-0">
-        <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sticky top-24">
+        <div class="course-module-panel bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sticky top-24">
             <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-2">{{ $moduleLabel }}</h2>
             
             {{-- Progress Bar --}}
@@ -372,7 +372,7 @@
                     <span class="hidden sm:inline">{{ $modules[$currentModuleIndex]['title'] ?? 'Materi' }} - {{ $materialTypeLabel[$currentMaterial['type']] ?? 'Materi' }}: {{ $currentMaterial['title'] }}</span>
                     <span class="sm:hidden">{{ $materialTypeLabel[$currentMaterial['type']] ?? 'Materi' }}</span>
                     @else
-                    Pilih materi untuk memulai
+                    {{ $hasLearningMaterials ? 'Pilih materi untuk memulai' : 'Materi bootcamp sedang disiapkan' }}
                     @endif
                 </p>
             </div>
@@ -1176,7 +1176,7 @@
     
     {{-- RIGHT SIDEBAR: Discussion/Notes/Favorites --}}
     <div class="course-sidebar-right w-full lg:w-[280px] lg:min-w-[280px] lg:flex-shrink-0">
-        <div class="bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden sticky top-24">
+        <div class="course-community-panel bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden sticky top-24">
             {{-- Tabs --}}
             <div class="flex border-b border-gray-200 dark:border-gray-700/50">
                 <button onclick="showTab('diskusi')" class="tab-btn flex-1 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 border-b-2 border-blue-500" data-tab="diskusi">Diskusi</button>
@@ -1284,7 +1284,7 @@
 </div>
 
 {{-- Bottom Navigation --}}
-<div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1f2937] border-t border-gray-200 dark:border-gray-700/50 px-4 sm:px-6 py-3 sm:py-4 z-40">
+<div class="course-bottom-navigation fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1f2937] border-t border-gray-200 dark:border-gray-700/50 px-4 sm:px-6 py-3 sm:py-4 z-40">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
         <button class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 transition text-sm sm:text-base">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1989,6 +1989,41 @@
 
 {{-- Mobile responsive style override --}}
 <style>
+    /* Learning page styles are intentionally scoped to the Bootcamp variant. */
+    .bootcamp-learning-layout {
+        --bootcamp-accent: #2563eb;
+        gap: 1.25rem;
+    }
+
+    .bootcamp-learning-layout .course-module-panel,
+    .bootcamp-learning-layout .course-community-panel {
+        border-color: rgba(203, 213, 225, .72);
+        box-shadow: 0 12px 32px -24px rgba(15, 23, 42, .38);
+    }
+
+    .bootcamp-learning-layout .course-community-panel {
+        max-height: calc(100vh - 8rem);
+    }
+
+    .bootcamp-learning-layout .tab-btn {
+        min-height: 3.25rem;
+        transition: color .2s ease, background-color .2s ease, border-color .2s ease;
+    }
+
+    .bootcamp-learning-layout .tab-btn:hover {
+        background: rgba(239, 246, 255, .72);
+    }
+
+    .course-bottom-navigation {
+        box-shadow: 0 -12px 32px -26px rgba(15, 23, 42, .55);
+        backdrop-filter: blur(14px);
+        background-color: rgba(255, 255, 255, .94);
+    }
+
+    .dark .course-bottom-navigation {
+        background-color: rgba(31, 41, 55, .94);
+    }
+
     @media (min-width: 1024px) {
         .course-learn-layout {
             display: grid !important;
@@ -2002,6 +2037,37 @@
             width: auto !important;
             min-width: 0 !important;
         }
+
+        .bootcamp-learning-layout {
+            grid-template-columns: 240px minmax(0, 1fr) !important;
+        }
+
+        .bootcamp-learning-layout .course-sidebar-right {
+            grid-column: 1 / -1;
+        }
+
+        .bootcamp-learning-layout .course-community-panel {
+            position: static;
+        }
+
+        .course-bottom-navigation {
+            left: 16rem;
+        }
+    }
+
+    @media (min-width: 1440px) {
+        .bootcamp-learning-layout {
+            grid-template-columns: 250px minmax(520px, 1fr) 300px !important;
+            gap: 1.5rem;
+        }
+
+        .bootcamp-learning-layout .course-sidebar-right {
+            grid-column: auto;
+        }
+
+        .bootcamp-learning-layout .course-community-panel {
+            position: sticky;
+        }
     }
 
     @media (max-width: 1023px) {
@@ -2013,6 +2079,32 @@
         .course-content-center {
             width: 100% !important;
             min-width: 100% !important;
+        }
+
+        .bootcamp-learning-layout .course-module-panel,
+        .bootcamp-learning-layout .course-community-panel {
+            position: static;
+            max-height: none;
+        }
+
+        .course-bottom-navigation {
+            padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+        }
+    }
+
+    @media (max-width: 639px) {
+        .bootcamp-learning-layout {
+            gap: 1rem;
+        }
+
+        .bootcamp-learning-layout .course-module-panel,
+        .bootcamp-learning-layout .course-community-panel {
+            border-radius: 1rem;
+        }
+
+        .course-bottom-navigation button {
+            min-height: 2.75rem;
+            padding-inline: .5rem;
         }
     }
 </style>
