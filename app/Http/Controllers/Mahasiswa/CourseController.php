@@ -451,6 +451,7 @@ class CourseController extends Controller
         ])
             ->findOrFail($id);
         $courseId = $course->id_course;
+        $isBootcamp = $this->isBootcamp($course);
         
         // Check if user is enrolled
         $enrollment = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
@@ -532,7 +533,7 @@ class CourseController extends Controller
                 ->where('is_completed', true)
                 ->exists();
 
-            $modules[$moduleNum]['materials'][] = [
+            $materialData = [
                 'id' => $material->id_material,
                 'title' => $materialTitle,
                 'type' => $materialType,
@@ -542,6 +543,12 @@ class CourseController extends Controller
                 'video_url' => $material->video_url,
                 'quiz_id' => $materialType === 'kuis' ? ($materialQuiz?->id_quiz) : null,
             ];
+
+            // A session assignment has its own card and submission flow. Avoid
+            // rendering it a second time as ordinary Bootcamp material.
+            if (!$isBootcamp || $materialType !== 'tugas') {
+                $modules[$moduleNum]['materials'][] = $materialData;
+            }
 
             if ($materialType === 'kuis' && $materialQuiz) {
                 $materialQuizAttempt = $completedQuizAttempts->get($materialQuiz->id_quiz)?->first();
@@ -597,6 +604,14 @@ class CourseController extends Controller
         foreach ($modules as $moduleNum => &$module) {
             $assignmentKey = $courseId . '_' . $moduleNum;
             $module['assignment_completed'] = in_array($assignmentKey, $completedAssignments);
+            $requiredSessionMaterials = collect($module['materials']);
+            $module['assignment_required_materials'] = $requiredSessionMaterials->count();
+            $module['assignment_incomplete_materials'] = $requiredSessionMaterials
+                ->where('is_completed', false)
+                ->count();
+            $module['assignment_locked'] = $isBootcamp
+                && !empty($module['assignment'])
+                && $module['assignment_incomplete_materials'] > 0;
         }
         unset($module); // Break reference
         
@@ -1244,6 +1259,11 @@ class CourseController extends Controller
                 ->with('info', 'Modul ini tidak memiliki tugas akhir (opsional oleh dosen).');
         }
 
+        if (!$this->canAccessSessionAssignment($user, $course, $assignmentMaterial)) {
+            return redirect()->route('mahasiswa.bootcamp-learn', $courseId)
+                ->with('info', 'Selesaikan seluruh materi pada sesi ini sebelum membuka tugas akhir.');
+        }
+
         $assignment = $this->buildAssignmentViewData($assignmentMaterial);
         
         return view('pages.mahasiswa.assignment-detail', [
@@ -1278,6 +1298,11 @@ class CourseController extends Controller
         if (!$assignmentMaterial) {
             return redirect()->route('mahasiswa.course-learn', $courseId)
                 ->with('info', 'Modul ini tidak memiliki tugas akhir (opsional oleh dosen).');
+        }
+
+        if (!$this->canAccessSessionAssignment($user, $course, $assignmentMaterial)) {
+            return redirect()->route('mahasiswa.bootcamp-learn', $courseId)
+                ->with('info', 'Selesaikan seluruh materi pada sesi ini sebelum mengumpulkan tugas akhir.');
         }
 
         $assignment = $this->buildAssignmentViewData($assignmentMaterial);
@@ -1450,6 +1475,14 @@ class CourseController extends Controller
             ], 422);
         }
 
+        $course = Course::findOrFail((int) $courseId);
+        if (!$this->canAccessSessionAssignment($user, $course, $assignmentMaterial)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selesaikan seluruh materi pada sesi ini sebelum mengumpulkan tugas akhir.',
+            ], 403);
+        }
+
         // R2 refactor: server-side deadline + final-project gating moved to
         // BootcampFlowService::assertSubmitAssignment (single source of truth).
         // BootcampFlowException is rendered to 4xx JSON / back()->error by
@@ -1457,7 +1490,7 @@ class CourseController extends Controller
         $assignmentPayload = $this->parseAssignmentPayload($assignmentMaterial->konten);
         $this->bootcampFlow->assert(
             $user,
-            Course::find((int) $courseId),
+            $course,
             BootcampTransition::SUBMIT_ASSIGNMENT,
             ['material' => $assignmentMaterial, 'payload' => $assignmentPayload],
         );
@@ -2205,6 +2238,41 @@ class CourseController extends Controller
         }
 
         return $this->normalizeMaterialType($material->tipe) === 'tugas' ? $material : null;
+    }
+
+    /**
+     * Bootcamp assignments are unlocked only after every other material in
+     * the same session/module has been completed. Courses keep their existing
+     * assignment behaviour, and a session without prerequisites is unlocked.
+     */
+    private function canAccessSessionAssignment(User $user, Course $course, CourseMaterial $assignment): bool
+    {
+        if (!$this->isBootcamp($course)) {
+            return true;
+        }
+
+        $moduleId = $assignment->id_module;
+        if (empty($moduleId)) {
+            return true;
+        }
+
+        $prerequisiteIds = CourseMaterial::where('id_course', $course->id_course)
+            ->where('id_module', $moduleId)
+            ->get()
+            ->reject(fn (CourseMaterial $material) => $this->normalizeMaterialType($material->tipe) === 'tugas')
+            ->pluck('id_material');
+
+        if ($prerequisiteIds->isEmpty()) {
+            return true;
+        }
+
+        $completedCount = \App\Models\MaterialProgress::where('id_mahasiswa', $user->id)
+            ->whereIn('id_material', $prerequisiteIds)
+            ->where('is_completed', true)
+            ->distinct('id_material')
+            ->count('id_material');
+
+        return $completedCount >= $prerequisiteIds->count();
     }
 
     private function buildAssignmentViewData(CourseMaterial $assignmentMaterial): array

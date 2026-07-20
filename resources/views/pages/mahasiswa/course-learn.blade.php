@@ -278,6 +278,24 @@
                         
                         {{-- Assignment Link --}}
                         @if(!empty($module['assignment']))
+                        @if($module['assignment_locked'] ?? false)
+                        <div class="flex cursor-not-allowed items-center gap-3 border-t border-slate-200 bg-slate-50 p-3 opacity-90 dark:border-slate-700 dark:bg-slate-800/60"
+                             role="status"
+                             title="Selesaikan seluruh materi sesi untuk membuka tugas akhir">
+                            <div class="relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{{ $module['assignment']['title'] ?? 'Tugas Akhir Sesi' }}</p>
+                                <p class="mt-0.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                                    Terkunci · selesaikan {{ $module['assignment_incomplete_materials'] }} materi sesi terlebih dahulu
+                                </p>
+                            </div>
+                            <span class="rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">Terkunci</span>
+                        </div>
+                        @else
                         <a href="{{ route('mahasiswa.assignment-detail', ['courseId' => $course->id_course, 'assignmentId' => $module['assignment']['id']]) }}" 
                            class="flex items-center gap-3 p-3 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition bg-orange-50/50 dark:bg-orange-500/5 border-t border-orange-200 dark:border-orange-700/30">
                             <div class="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0 relative">
@@ -295,7 +313,7 @@
                                     @if($module['assignment_completed'] ?? false)
                                         Selesai
                                     @else
-                                        Opsional (boleh dikumpulkan)
+                                        Materi sesi selesai · tugas siap dikerjakan
                                     @endif
                                 </p>
                             </div>
@@ -303,6 +321,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                         </a>
+                        @endif
                         @endif
                         
                         {{-- Feedback & Nilai Link - hanya untuk kuiz yang sudah benar-benar dikerjakan --}}
