@@ -46,6 +46,7 @@
             position: absolute; inset: 0;
             background: linear-gradient(135deg, var(--c-hero-start) 0%, #DBEAFE 35%, var(--c-hero-end) 70%, #FFF7ED 100%);
             z-index: 0;
+            pointer-events: none;
         }
         .hero-blob {
             position: absolute;
@@ -59,6 +60,11 @@
         .hero-blob-3 { width: 300px; height: 300px; background: rgba(147,197,253,0.2); top: 40%; left: 30%; }
 
         /* ————— Navbar ————— */
+        #navbar {
+            position: fixed;
+            inset: 0 0 auto;
+            z-index: 50;
+        }
         .nav-glass {
             background: rgba(255,255,255,0.75);
             backdrop-filter: blur(16px);
@@ -404,12 +410,19 @@
                 <a href="#portal" style="font-size:14px;color:var(--c-text-muted);text-decoration:none;font-weight:500;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Portal</a>
                 <a href="#testimoni" style="font-size:14px;color:var(--c-text-muted);text-decoration:none;font-weight:500;transition:color 0.2s" onmouseover="this.style.color='var(--c-primary)'" onmouseout="this.style.color='var(--c-text-muted)'">Testimoni</a>
             </div>
-            <div class="relative shrink-0" x-data="{ open: false }">
-                <button @click="open = !open" @click.away="open = false" class="btn-primary whitespace-nowrap" style="padding:9px 14px;font-size:13px;border-radius:10px; display:inline-flex; align-items:center; gap:6px;">
+            <div class="relative shrink-0">
+                <button
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="login-menu"
+                    onclick="const menu = document.getElementById('login-menu'); const willOpen = menu.hidden; menu.hidden = !willOpen; this.setAttribute('aria-expanded', String(willOpen)); this.querySelector('[data-login-chevron]').classList.toggle('rotate-180', willOpen);"
+                    class="btn-primary whitespace-nowrap"
+                    style="padding:9px 14px;font-size:13px;border-radius:10px; display:inline-flex; align-items:center; gap:6px;"
+                >
                     Masuk
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" :class="{'rotate-180': open}" style="transition: transform 0.2s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                    <svg data-login-chevron width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" class="transition-transform duration-200"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                 </button>
-                <div x-show="open" x-transition.opacity.scale.95 style="display: none;" class="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-56 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
+                <div id="login-menu" hidden class="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-56 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
                     <a href="{{ route('mahasiswa.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Mahasiswa</a>
                     <a href="{{ route('dosen.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Dosen</a>
                     <a href="{{ route('admin.login') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors" style="text-decoration:none; font-weight:500;">Masuk sebagai Admin</a>
