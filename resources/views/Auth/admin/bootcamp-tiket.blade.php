@@ -29,9 +29,13 @@
                         Kelola program, batch/event, publish, kuota, mentor, dan export operasional dari data backend. Tiket atau bootcamp dapat dibuka untuk penjualan setelah statusnya Open Registration atau Published.
                     </p>
                 </div>
-                <div class="grid gap-3 sm:grid-cols-3 xl:w-[460px]">
+                <div class="grid gap-3 sm:grid-cols-2 xl:w-[620px]">
                     <button type="button" data-modal-open="create" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">+ Buat Bootcamp</button>
                     <button type="button" data-focus-ticket class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">Atur Tiket</button>
+                    <a href="{{ route('admin.bootcamp-tiket.attendance') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition hover:bg-amber-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+                        <svg aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                        Verifikasi Kehadiran
+                    </a>
                     <a href="{{ route('admin.bootcamp-tiket.export', [], false) }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white">Export Batch</a>
                 </div>
             </div>
