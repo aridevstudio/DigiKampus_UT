@@ -137,7 +137,7 @@
     
     {{-- LEFT SIDEBAR: Module List --}}
     <div class="course-sidebar-left w-full lg:w-[250px] lg:min-w-[250px] lg:flex-shrink-0">
-        <div class="course-module-panel bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 sticky top-24">
+        <div class="course-module-panel bg-white dark:bg-[#1f2937] rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700/50 p-4 sticky top-24">
             <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-2">{{ $moduleLabel }}</h2>
             
             {{-- Progress Bar --}}
@@ -345,8 +345,12 @@
                     </div>
                 </div>
                 @empty
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <p class="text-sm">Belum ada materi</p>
+                <div class="rounded-xl bg-gray-50 px-3 py-5 text-center text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
+                    <svg class="mx-auto mb-2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Materi belum tersedia</p>
+                    @if($isBootcamp && !empty($sesiTimeline))
+                        <a href="#bootcamp-live-class-timeline" class="mt-2 inline-flex text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">Lihat jadwal live class</a>
+                    @endif
                 </div>
                 @endforelse
 
@@ -485,7 +489,7 @@
                     @endif
                 @else
                 <div class="absolute inset-0 flex items-center justify-center px-6 text-center text-gray-600 dark:text-gray-300">
-                    <div>
+                    <div class="max-w-lg">
                         <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 00-2-2V8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -493,7 +497,13 @@
                         </div>
                         <p class="font-semibold text-gray-800 dark:text-gray-100">{{ $hasLearningMaterials ? 'Pilih materi untuk memulai' : 'Materi bootcamp sedang disiapkan' }}</p>
                         @if(!$hasLearningMaterials)
-                            <p class="mt-1 max-w-md text-sm text-gray-500 dark:text-gray-400">Belum ada materi mandiri yang dipublikasikan. Pantau jadwal sesi live class di bawah untuk mengikuti bootcamp ini.</p>
+                            <p class="mt-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400">Belum ada materi mandiri. Untuk sekarang, lanjutkan dengan melihat jadwal dan status kehadiran live class.</p>
+                            @if($isBootcamp && !empty($sesiTimeline))
+                                <a href="#bootcamp-live-class-timeline" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                    Lihat jadwal live class
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </a>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -530,7 +540,7 @@
             @endif
             
             {{-- Action Buttons --}}
-            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+            <div class="grid {{ $currentMaterial ? 'grid-cols-2' : 'grid-cols-1' }} gap-2 sm:gap-3">
                 @if($isFavorited)
                 <form action="{{ route('mahasiswa.favorite.remove', $course->id_course) }}" method="POST" class="w-full min-w-0">
                     @csrf
@@ -817,8 +827,21 @@
                         </div>
 
                         @if(!empty($attendanceProgress))
-                            <div class="hidden h-2 w-full overflow-hidden rounded-full bg-white/70 shadow-inner sm:block dark:bg-gray-800/60">
+                            <div class="h-2 w-full overflow-hidden rounded-full bg-white/70 shadow-inner dark:bg-gray-800/60" role="progressbar" aria-label="Progress kehadiran" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ (int) $attendanceProgress['percent'] }}">
                                 <div class="h-full rounded-full {{ $attendanceProgress['unlocked'] ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-amber-500 to-orange-500' }} transition-all" style="width: {{ (int) $attendanceProgress['percent'] }}%"></div>
+                            </div>
+                            <div class="flex items-start gap-3 rounded-2xl border {{ $attendanceProgress['unlocked'] ? 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30' : 'border-blue-200 bg-blue-50/80 dark:border-blue-800 dark:bg-blue-950/30' }} p-3.5">
+                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {{ $attendanceProgress['unlocked'] ? 'bg-emerald-600' : 'bg-blue-600' }} text-white">
+                                    @if($attendanceProgress['unlocked'])
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                                    @else
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    @endif
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $attendanceProgress['unlocked'] ? 'Syarat kehadiran terpenuhi' : 'Yang perlu Anda lakukan' }}</p>
+                                    <p class="mt-0.5 text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">{{ $attendanceProgress['unlocked'] ? 'Anda dapat melanjutkan ke final project.' : 'Buka sesi di bawah. Jika sesi sudah selesai, unggah bukti kehadiran lalu tunggu verifikasi mentor.' }}</p>
+                                </div>
                             </div>
                         @endif
 
@@ -974,8 +997,13 @@
                                                 <form method="POST" action="{{ route('mahasiswa.bootcamp.attendance.store', ['id' => $course->id_course]) }}" enctype="multipart/form-data" class="mt-2 flex flex-col gap-2">
                                                     @csrf
                                                     <input type="hidden" name="session_key" value="{{ $node['session_key'] }}">
-                                                    <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.pdf" required class="block w-full text-[11px] text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                                                    <button type="submit" class="inline-flex items-center justify-center gap-1 rounded-lg bg-blue-500 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-600">
+                                                    <label class="flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-500 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5.002 5.002 0 0115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3" /></svg>
+                                                        <span data-file-label>Pilih foto atau PDF</span>
+                                                        <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.pdf" required class="sr-only" onchange="this.closest('label').querySelector('[data-file-label]').textContent = this.files[0]?.name || 'Pilih foto atau PDF'">
+                                                    </label>
+                                                    <p class="text-[10px] text-gray-400">JPG, PNG, WEBP, atau PDF</p>
+                                                    <button type="submit" class="inline-flex min-h-10 items-center justify-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                                         {{ $attendanceStatus === 'rejected' ? 'Unggah Ulang' : 'Kirim Bukti' }}
                                                     </button>
                                                 </form>
