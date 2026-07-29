@@ -177,7 +177,7 @@ class DashboardController extends Controller
         $month = request('month', now()->month);
         $year = request('year', now()->year);
         $periodStart = now()->setYear((int) $year)->setMonth((int) $month)->startOfMonth();
-        $activeEnrollments = Enrollment::with('course')
+        $activeEnrollments = Enrollment::with(['course.dosen'])
             ->where('id_mahasiswa', $user->id)
             ->whereIn('status', ['aktif', 'in_progress', 'selesai'])
             ->get();
@@ -202,12 +202,38 @@ class DashboardController extends Controller
             $periodStart->copy()->endOfMonth(),
         );
         
-        // Get same agenda for sidebar list (all events for the month, same as dashboard)
-        $upcomingAgenda = $agenda;
-        
+        // Course Timeline: courses in progress
+        $courseTimeline = $activeEnrollments
+            ->filter(fn ($e) => ($e->status ?? '') !== 'selesai' && (float)$e->progress < 100 && $e->course !== null)
+            ->map(function ($e) {
+                $isBootcamp = strtolower((string) ($e->course?->kategori ?? '')) === 'tiket' || !empty($e->course?->tipe_event);
+                return [
+                    'id_course' => $e->id_course,
+                    'nama_course' => $e->course?->nama_course ?? 'Kursus',
+                    'progress' => (int) $e->progress,
+                    'is_bootcamp' => $isBootcamp,
+                    'dosen_name' => $e->course?->dosen?->name ?? 'Pengajar',
+                    'learn_url' => $isBootcamp 
+                        ? route('mahasiswa.bootcamp-learn', $e->id_course)
+                        : route('mahasiswa.course-learn', $e->id_course),
+                ];
+            })
+            ->values();
+
+        // Urgent Deadlines & Reminders within 7 days
+        $upcomingReminders = $agenda
+            ->filter(function ($item) {
+                return $item->tanggal->isAfter(now()->subDay()) && $item->tanggal->isBefore(now()->addDays(7));
+            })
+            ->sortBy('tanggal')
+            ->take(5)
+            ->values();
+
         return view('pages.mahasiswa.calendar', [
             'agenda' => $agenda,
-            'upcomingAgenda' => $upcomingAgenda,
+            'upcomingAgenda' => $agenda,
+            'courseTimeline' => $courseTimeline,
+            'upcomingReminders' => $upcomingReminders,
             'currentMonth' => $month,
             'currentYear' => $year,
         ]);

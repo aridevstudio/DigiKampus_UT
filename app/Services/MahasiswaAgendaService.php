@@ -6,16 +6,18 @@ use App\Models\Agenda;
 use App\Models\Assignment;
 use App\Models\BootcampSession;
 use App\Models\Course;
+use App\Models\Quiz;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Menyatukan agenda mahasiswa dari empat sumber data nyata sistem:
- * 1. Agenda pribadi / jadwal mengajar dosen (Model Agenda)
- * 2. Sesi bootcamp / live class aktif (Model BootcampSession)
+ * Menyatukan agenda & aktivitas pembelajaran mahasiswa dari lima sumber data nyata sistem:
+ * 1. Agenda pribadi & master jadwal mengajar dosen (Model Agenda)
+ * 2. Sesi bootcamp / live class (Model BootcampSession)
  * 3. Jadwal webinar / event tunggal (Model Course)
  * 4. Deadline tugas perkuliahan & bootcamp (Model Assignment)
+ * 5. Jadwal & deadline kuis modul (Model Quiz)
  */
 class MahasiswaAgendaService
 {
@@ -63,7 +65,7 @@ class MahasiswaAgendaService
                 ->get()
                 ->map(fn (BootcampSession $session) => $this->mapBootcampSession($session));
 
-        // 3. Single-Session Webinar / Event Dates (Fallback if no BootcampSession rows exist)
+        // 3. Single-Session Webinar / Event Dates
         $courseWebinarItems = empty($activeBootcampCourseIds)
             ? collect()
             : Course::query()
@@ -77,7 +79,7 @@ class MahasiswaAgendaService
                 })
                 ->map(fn (Course $course) => $this->mapCourseWebinar($course));
 
-        // 4. Assignment Deadlines for Enrolled Courses & Bootcamps
+        // 4. Assignment Deadlines
         $assignmentItems = empty($allEnrolledCourseIds)
             ? collect()
             : Assignment::query()
@@ -90,11 +92,25 @@ class MahasiswaAgendaService
                 ->get()
                 ->map(fn (Assignment $assignment) => $this->mapAssignmentDeadline($assignment));
 
-        // Gabungkan semua item dan lakukan deduplikasi berdasarkan kombinasi course + tanggal + judul
+        // 5. Quizzes
+        $quizItems = empty($allEnrolledCourseIds)
+            ? collect()
+            : Quiz::query()
+                ->with('course')
+                ->whereIn('id_course', $allEnrolledCourseIds)
+                ->where('is_active', true)
+                ->where(function ($q) use ($from, $until) {
+                    $q->whereBetween('created_at', [$from, $until]);
+                })
+                ->get()
+                ->map(fn (Quiz $quiz) => $this->mapQuizItem($quiz));
+
+        // Combine and deduplicate
         return $agendaItems
             ->concat($bootcampItems)
             ->concat($courseWebinarItems)
             ->concat($assignmentItems)
+            ->concat($quizItems)
             ->unique(function (object $item) {
                 $courseKey = $item->id_course ?? '0';
                 $dateKey = $item->tanggal->format('Y-m-d');
@@ -108,7 +124,7 @@ class MahasiswaAgendaService
     public function mapBootcampSession(BootcampSession $session): object
     {
         $isOffline = $session->isOffline();
-        $type = $isOffline ? 'workshop' : 'webinar';
+        $type = $isOffline ? 'workshop' : 'bootcamp';
 
         return (object) [
             'id_agenda' => 'bootcamp-session-' . $session->id_bootcamp_session,
@@ -120,7 +136,7 @@ class MahasiswaAgendaService
             'waktu_mulai' => $session->jam_mulai ? Carbon::parse($session->jam_mulai)->format('H:i') : null,
             'waktu_selesai' => $session->jam_selesai ? Carbon::parse($session->jam_selesai)->format('H:i') : null,
             'tipe' => $type,
-            'warna' => Agenda::getColorByType($type),
+            'warna' => Agenda::getColorByType('workshop'),
             'source' => 'bootcamp_session',
             'link' => route('mahasiswa.bootcamp-learn', $session->id_course),
         ];
@@ -137,7 +153,7 @@ class MahasiswaAgendaService
             'tanggal' => $course->tanggal_webinar->copy(),
             'waktu_mulai' => $course->jam_mulai_webinar ? Carbon::parse($course->jam_mulai_webinar)->format('H:i') : null,
             'waktu_selesai' => $course->jam_selesai_webinar ? Carbon::parse($course->jam_selesai_webinar)->format('H:i') : null,
-            'tipe' => 'webinar',
+            'tipe' => 'event',
             'warna' => Agenda::getColorByType('webinar'),
             'source' => 'course_webinar',
             'link' => route('mahasiswa.bootcamp-learn', $course->id_course),
@@ -156,14 +172,40 @@ class MahasiswaAgendaService
             'waktu_mulai' => $assignment->deadline->format('H:i'),
             'waktu_selesai' => null,
             'tipe' => 'deadline',
-            'warna' => Agenda::getColorByType('deadline'),
-            'source' => 'assignment',
+            'warna' => '#EF4444',
+            'source' => 'assignment_tugas',
             'link' => route('mahasiswa.assignment-detail', ['courseId' => $assignment->id_course, 'assignmentId' => $assignment->id_assignment]),
+        ];
+    }
+
+    private function mapQuizItem(Quiz $quiz): object
+    {
+        return (object) [
+            'id_agenda' => 'quiz-item-' . $quiz->id_quiz,
+            'id_course' => (int) $quiz->id_course,
+            'nama_course' => $quiz->course?->nama_course,
+            'judul' => 'Quiz: ' . $quiz->judul,
+            'deskripsi' => $quiz->deskripsi ?? 'Kuis evaluasi modul perkuliahan (Durasi: ' . ($quiz->durasi_menit ?? 30) . ' menit)',
+            'tanggal' => $quiz->created_at->copy(),
+            'waktu_mulai' => '08:00',
+            'waktu_selesai' => null,
+            'tipe' => 'quiz',
+            'warna' => '#F59E0B',
+            'source' => 'quiz_evaluasi',
+            'link' => route('mahasiswa.course-learn', $quiz->id_course),
         ];
     }
 
     private function mapAgenda(Agenda $agenda): object
     {
+        $type = match($agenda->tipe) {
+            'deadline' => 'deadline',
+            'quiz' => 'quiz',
+            'workshop', 'bootcamp' => 'bootcamp',
+            'webinar' => 'event',
+            default => 'akademik',
+        };
+
         return (object) [
             'id_agenda' => (string) $agenda->id_agenda,
             'id_course' => $agenda->id_course,
@@ -173,9 +215,9 @@ class MahasiswaAgendaService
             'tanggal' => $agenda->tanggal->copy(),
             'waktu_mulai' => $agenda->waktu_mulai ? Carbon::parse($agenda->waktu_mulai)->format('H:i') : null,
             'waktu_selesai' => $agenda->waktu_selesai ? Carbon::parse($agenda->waktu_selesai)->format('H:i') : null,
-            'tipe' => $agenda->tipe ?? 'webinar',
+            'tipe' => $type,
             'warna' => $agenda->warna ?? Agenda::getColorByType($agenda->tipe ?? 'webinar'),
-            'source' => 'agenda',
+            'source' => 'agenda_pribadi',
             'link' => $agenda->id_course ? route('mahasiswa.course-detail', $agenda->id_course) : null,
         ];
     }
