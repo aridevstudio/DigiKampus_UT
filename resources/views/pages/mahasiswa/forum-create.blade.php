@@ -1,5 +1,5 @@
 <x-layouts.dashboard :active="'forum'">
-<div class="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-5 lg:py-8 space-y-6">
+<div class="w-full space-y-6">
 
     {{-- Breadcrumb & Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -31,7 +31,7 @@
         </div>
     @endif
 
-    {{-- Main Form Card (Dashboard Professional Structure) --}}
+    {{-- Main Form Card (100% Full Width Content Area) --}}
     <form method="POST" action="{{ route('mahasiswa.forum.store') }}" class="w-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm overflow-hidden" x-data="{ selectedCat: '{{ old('category_id') }}', charCount: {{ strlen(old('isi', '')) }} }">
         @csrf
 
@@ -41,12 +41,12 @@
             {{-- BAGIAN 1: Grid 2 Kolom (Kategori & Judul Topik) --}}
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {{-- Kolom Kiri: Kategori Topik --}}
-                <div class="lg:col-span-5 space-y-2">
+                <div class="lg:col-span-4 xl:col-span-4 space-y-2">
                     <label for="category_id" class="block text-sm font-bold text-gray-800 dark:text-gray-200">
                         Kategori Topik <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <select id="category_id" name="category_id" x-model="selectedCat" required class="w-full px-4 py-3 text-sm rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none cursor-pointer">
+                        <select id="category_id" name="category_id" x-model="selectedCat" required class="w-full px-4 py-3 text-sm sm:text-base rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none cursor-pointer">
                             <option value="" disabled selected>-- Pilih Kategori Diskusi --</option>
                             @foreach($kategoriList as $cat)
                                 <option value="{{ $cat->id_forum_category }}" {{ old('category_id') == $cat->id_forum_category ? 'selected' : '' }}>
@@ -63,7 +63,7 @@
                 </div>
 
                 {{-- Kolom Kanan: Judul Topik --}}
-                <div class="lg:col-span-7 space-y-2">
+                <div class="lg:col-span-8 xl:col-span-8 space-y-2">
                     <label for="judul" class="block text-sm font-bold text-gray-800 dark:text-gray-200">
                         Judul Topik <span class="text-red-500">*</span>
                     </label>
@@ -76,7 +76,7 @@
                 </div>
             </div>
 
-            {{-- BAGIAN 2: Editor Isi Diskusi (Besar & Memenuhi Lebar Card) --}}
+            {{-- BAGIAN 2: Editor Isi Diskusi (FULL WIDTH MEMENUHI DEKSTOP CARD) --}}
             <div class="space-y-2 pt-2">
                 <div class="flex items-center justify-between">
                     <label for="isi" class="block text-sm font-bold text-gray-800 dark:text-gray-200">
@@ -84,15 +84,15 @@
                     </label>
                     {{-- Format Toolbar Helper --}}
                     <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                        <button type="button" onclick="insertFormatting('**', '**')" class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition font-bold" title="Cetak Tebal">B</button>
-                        <button type="button" onclick="insertFormatting('*', '*')" class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition italic" title="Cetak Miring">I</button>
-                        <button type="button" onclick="insertFormatting('`', '`')" class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition font-mono" title="Kode Inline">&lt;/&gt;</button>
-                        <button type="button" onclick="insertFormatting('- ', '')" class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Daftar Bullet">• List</button>
-                        <button type="button" onclick="insertFormatting('> ', '')" class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Kutipan">“ Quote</button>
+                        <button type="button" onclick="insertFormatting('**', '**')" class="px-2.5 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition font-bold" title="Cetak Tebal">B</button>
+                        <button type="button" onclick="insertFormatting('*', '*')" class="px-2.5 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition italic" title="Cetak Miring">I</button>
+                        <button type="button" onclick="insertFormatting('`', '`')" class="px-2.5 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition font-mono" title="Kode Inline">&lt;/&gt;</button>
+                        <button type="button" onclick="insertFormatting('- ', '')" class="px-2.5 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Daftar Bullet">• List</button>
+                        <button type="button" onclick="insertFormatting('> ', '')" class="px-2.5 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Kutipan">“ Quote</button>
                     </div>
                 </div>
 
-                <textarea id="isi" name="isi" rows="12" maxlength="8000" required x-on:input="charCount = $el.value.length" placeholder="Jelaskan secara rinci konteks masalah, pertanyaan, atau ide diskusi Anda. Anda dapat menggunakan format text di atas..." class="w-full px-4 py-3.5 text-sm sm:text-base rounded-2xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y min-h-[300px] lg:min-h-[380px] transition font-sans leading-relaxed">{{ old('isi') }}</textarea>
+                <textarea id="isi" name="isi" rows="14" maxlength="8000" required x-on:input="charCount = $el.value.length" placeholder="Jelaskan secara rinci konteks masalah, pertanyaan, atau ide diskusi Anda. Anda dapat menggunakan format text di atas..." class="w-full px-4 py-3.5 text-sm sm:text-base rounded-2xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y min-h-[320px] lg:min-h-[400px] transition font-sans leading-relaxed">{{ old('isi') }}</textarea>
                 
                 <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-1">
                     <span>💡 Tips: Diskusi dengan penjelasan lengkap mendapatkan 3x lebih banyak tanggapan dari rekan mahasiswa.</span>
@@ -101,7 +101,7 @@
                 @error('isi')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
             </div>
 
-            {{-- BAGIAN 3: Fitur & Opsi Tambahan (Grid Cards Horizontal) --}}
+            {{-- BAGIAN 3: Fitur & Opsi Tambahan (Horizontal Cards) --}}
             <div class="pt-4 border-t border-gray-100 dark:border-gray-700/50 space-y-3">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-400">Opsi & Pengaturan Tambahan</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -142,7 +142,7 @@
 
         </div>
 
-        {{-- BAGIAN 4: Footer Action Bar (Sticky / Right Alignment) --}}
+        {{-- BAGIAN 4: Footer Action Bar --}}
         <div class="px-5 sm:px-7 lg:px-8 py-4 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-100 dark:border-gray-700/50 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
             <p class="text-xs text-gray-500 dark:text-gray-400 text-center sm:text-left">
                 Pastikan kolom bernoda <span class="text-red-500">*</span> terisi sebelum memposting.
