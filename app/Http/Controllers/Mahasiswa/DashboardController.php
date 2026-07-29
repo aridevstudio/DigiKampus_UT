@@ -179,7 +179,7 @@ class DashboardController extends Controller
         $periodStart = now()->setYear((int) $year)->setMonth((int) $month)->startOfMonth();
         $activeEnrollments = Enrollment::with('course')
             ->where('id_mahasiswa', $user->id)
-            ->whereIn('status', ['aktif', 'in_progress'])
+            ->whereIn('status', ['aktif', 'in_progress', 'selesai'])
             ->get();
         $activeCourseIds = $activeEnrollments->pluck('id_course')
             ->filter()
@@ -187,15 +187,13 @@ class DashboardController extends Controller
             ->values()
             ->all();
         $activeBootcampCourseIds = $activeEnrollments
-            ->filter(fn (Enrollment $enrollment) => $enrollment->course?->kategori === 'tiket')
+            ->filter(fn (Enrollment $enrollment) => $enrollment->course?->kategori === 'tiket' || !empty($enrollment->course?->tipe_event))
             ->pluck('id_course')
             ->filter()
             ->unique()
             ->values()
             ->all();
         
-        // BootcampSession adalah jadwal peserta yang authoritative. Agenda dosen
-        // hanya dipakai sebagai mirror internal dan sengaja tidak ditampilkan.
         $agenda = $agendaService->forPeriod(
             $user->id,
             $activeCourseIds,
