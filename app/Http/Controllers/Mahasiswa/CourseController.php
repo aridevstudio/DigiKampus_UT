@@ -97,6 +97,7 @@ class CourseController extends Controller
 
     /**
      * Dedicated bootcamp and ticket event catalog for mahasiswa.
+     * Shows only active bootcamps/events that the logged-in user HAS NOT BOUGHT yet.
      */
     public function bootcampCatalog()
     {
@@ -104,9 +105,11 @@ class CourseController extends Controller
         $filter = request('filter', 'semua');
         $user = Auth::guard('mahasiswa')->user();
 
+        // Get IDs of active/paid enrolled courses for the logged-in user
         $enrolledCourseIds = [];
         if ($user) {
             $enrolledCourseIds = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+                ->whereIn('status', ['aktif', 'in_progress', 'selesai'])
                 ->pluck('id_course')
                 ->toArray();
         }
@@ -121,13 +124,17 @@ class CourseController extends Controller
                     ->where('expires_at', '>', now()),
             ])
             ->aktif()
-            ->where('kategori', 'tiket')
+            ->scopeBootcampStyle()
             ->search($search)
-            ->when($filter === 'mine' && !empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
-                return $query->whereIn('id_course', $enrolledCourseIds);
-            })
-            ->when($filter === 'available' && !empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
+            ->when(!empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
+                // ALWAYS exclude bootcamps that the user already owns
                 return $query->whereNotIn('id_course', $enrolledCourseIds);
+            })
+            ->when($filter && $filter !== 'semua', function ($query) use ($filter) {
+                return $query->where(function ($q) use ($filter) {
+                    $q->where('tipe_event', $filter)
+                      ->orWhere('kategori', $filter);
+                });
             })
             ->orderByRaw('tanggal_webinar IS NULL, tanggal_webinar ASC')
             ->orderBy('created_at', 'desc')
@@ -232,6 +239,7 @@ class CourseController extends Controller
 
     /**
      * Show user's enrolled bootcamps (Bootcamp Saya).
+     * Displays only bootcamps owned by the logged-in user with active/paid status.
      */
     public function bootcampMy()
     {
@@ -239,9 +247,10 @@ class CourseController extends Controller
         $sort = request('sort', 'terbaru');
 
         $query = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+            ->whereIn('enrollments.status', ['aktif', 'in_progress', 'selesai'])
             ->with(['course.dosen', 'course.jurusan'])
             ->whereHas('course', function ($q) {
-                $q->where('kategori', 'tiket');
+                $q->scopeBootcampStyle();
             });
 
         switch ($sort) {
@@ -254,10 +263,10 @@ class CourseController extends Controller
                       ->select('enrollments.*');
                 break;
             default:
-                $query->orderBy('created_at', 'desc');
+                $query->orderBy('enrollments.created_at', 'desc');
         }
 
-        $enrollments = $query->paginate(4);
+        $enrollments = $query->paginate(6);
 
         return view('pages.mahasiswa.bootcamp-saya', [
             'enrollments' => $enrollments,

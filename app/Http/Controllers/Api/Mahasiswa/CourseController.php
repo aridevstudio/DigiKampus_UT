@@ -72,9 +72,10 @@ class CourseController extends Controller
     }
 
     /**
-     * Get Tiket Courses
+     * Get Tiket Courses (Bootcamp & Event Catalog)
      * 
-     * Endpoint untuk mendapatkan kursus dengan tipe tiket (event).
+     * Endpoint untuk mendapatkan kursus dengan tipe tiket (event/bootcamp).
+     * Otomatis memfilter bootcamp yang sudah dimiliki oleh user yang sedang login.
      * 
      * @security BearerToken
      * @queryParam search string Optional. Search keyword for course name or description.
@@ -84,11 +85,23 @@ class CourseController extends Controller
     public function tiket(Request $request): JsonResponse
     {
         $search = $request->query('search');
+        $user = $request->user();
+
+        $enrolledCourseIds = [];
+        if ($user) {
+            $enrolledCourseIds = \App\Models\Enrollment::where('id_mahasiswa', $user->id)
+                ->whereIn('status', ['aktif', 'in_progress', 'selesai'])
+                ->pluck('id_course')
+                ->toArray();
+        }
 
         $courses = Course::with(['dosen', 'jurusan'])
             ->aktif()
-            ->byKategori('tiket')
+            ->scopeBootcampStyle()
             ->search($search)
+            ->when(!empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
+                return $query->whereNotIn('id_course', $enrolledCourseIds);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 

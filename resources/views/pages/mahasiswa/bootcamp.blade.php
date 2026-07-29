@@ -6,9 +6,10 @@
     $enrolledCourseIds = $enrolledCourseIds ?? [];
 
     $filterTabs = [
-        ['key' => 'semua', 'label' => 'Semua'],
-        ['key' => 'available', 'label' => 'Belum Dibeli'],
-        ['key' => 'mine', 'label' => 'Bootcamp Saya'],
+        ['key' => 'semua', 'label' => 'Semua Event'],
+        ['key' => 'bootcamp', 'label' => 'Bootcamp'],
+        ['key' => 'webinar', 'label' => 'Webinar'],
+        ['key' => 'workshop', 'label' => 'Workshop'],
     ];
 @endphp
 
@@ -205,22 +206,12 @@
     @empty
         <div class="col-span-full rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center dark:border-gray-700 dark:bg-[#1f2937]">
             <p class="text-lg font-bold text-gray-900 dark:text-gray-100">
-                @if($selectedFilter === 'mine')
-                    Anda belum terdaftar di bootcamp manapun
-                @elseif($selectedFilter === 'available')
-                    Tidak ada bootcamp baru yang tersedia
-                @else
-                    Belum ada bootcamp atau tiket aktif
-                @endif
+                Belum ada bootcamp atau tiket event yang tersedia untuk dibeli
             </p>
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                @if($selectedFilter === 'mine')
-                    Jelajahi katalog bootcamp untuk mulai belajar.
-                @else
-                    Coba ubah kata kunci pencarian atau cek lagi setelah admin membuka penjualan.
-                @endif
+                Semua event yang tersedia mungkin sudah Anda ikuti, atau coba ubah kata kunci pencarian Anda.
             </p>
-            <a href="{{ route('mahasiswa.bootcamp') }}" class="mt-5 inline-flex rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white">Lihat semua bootcamp</a>
+            <a href="{{ route('mahasiswa.bootcamp-saya') }}" class="mt-5 inline-flex rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white">Lihat Bootcamp Saya</a>
         </div>
     @endforelse
 </div>
