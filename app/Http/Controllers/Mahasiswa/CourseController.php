@@ -124,7 +124,7 @@ class CourseController extends Controller
                     ->where('expires_at', '>', now()),
             ])
             ->aktif()
-            ->scopeBootcampStyle()
+            ->bootcampStyle()
             ->search($search)
             ->when(!empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
                 // ALWAYS exclude bootcamps that the user already owns
@@ -250,7 +250,7 @@ class CourseController extends Controller
             ->whereIn('enrollments.status', ['aktif', 'in_progress', 'selesai'])
             ->with(['course.dosen', 'course.jurusan'])
             ->whereHas('course', function ($q) {
-                $q->scopeBootcampStyle();
+                $q->bootcampStyle();
             });
 
         switch ($sort) {

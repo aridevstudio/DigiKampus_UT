@@ -97,7 +97,7 @@ class CourseController extends Controller
 
         $courses = Course::with(['dosen', 'jurusan'])
             ->aktif()
-            ->scopeBootcampStyle()
+            ->bootcampStyle()
             ->search($search)
             ->when(!empty($enrolledCourseIds), function ($query) use ($enrolledCourseIds) {
                 return $query->whereNotIn('id_course', $enrolledCourseIds);
