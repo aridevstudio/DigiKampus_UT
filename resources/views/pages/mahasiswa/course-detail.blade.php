@@ -228,9 +228,9 @@
         'tiket' => 'bg-rose-500',
     ];
 
-    $certificateEligible = (bool) ($course->sertifikat ?? false)
-        && $isEnrolled
-        && (($enrollment->status ?? null) === 'selesai' || (int) ($enrollment->progress ?? 0) >= 100);
+    // Unified certificate eligibility: issueCertificateForEnrollmentIfEligible() is the single
+    // source of truth. If it returned non-null, the certificate is legitimately issued.
+    $certificateEligible = !empty($issuedCertificate);
 
     $learningGoals = $course->relationLoaded('learningGoals')
         ? $course->learningGoals

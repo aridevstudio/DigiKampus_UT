@@ -64,9 +64,10 @@
     $isPlaylistMode = request('play') === 'pack';
     $certificateEnabled = (bool) ($course->sertifikat ?? false);
     $courseCompletedForCertificate = (($enrollment->status ?? null) === 'selesai' || (int) ($progressPercent ?? 0) >= 100);
-    // PM spec §7: sertifikat mensyaratkan tujuan pembelajaran tersedia.
-    $hasLearningGoals = (bool) ($course->learningGoals && $course->learningGoals->count() > 0);
-    $certificateEligible = $certificateEnabled && $courseCompletedForCertificate && !empty($issuedCertificate) && $hasLearningGoals;
+    // Single source of truth: issueCertificateForEnrollmentIfEligible() already validates
+    // all requirements (sertifikat flag, completion, bootcamp gate, template availability).
+    // If it returned non-null, the certificate is legitimately issued and downloadable.
+    $certificateEligible = !empty($issuedCertificate);
     $issuedCertificateNumber = $issuedCertificate['number'] ?? null;
     $issuedCertificateDate = $issuedCertificate['issued_date'] ?? now()->format('d F Y');
     $issuedCertificateTemplate = $issuedCertificate['template'] ?? null;
@@ -86,9 +87,6 @@
     } elseif (!$courseCompletedForCertificate) {
         $certificateStatusTitle = 'Selesaikan ' . $labelEntityLower . ' untuk membuka sertifikat';
         $certificateStatusMessage = 'Progress harus 100% atau status enrollment sudah selesai sebelum sertifikat bisa diunduh.';
-    } elseif (!$hasLearningGoals) {
-        $certificateStatusTitle = 'Tambahkan tujuan pembelajaran untuk membuka sertifikat';
-        $certificateStatusMessage = 'Course ini belum memiliki tujuan pembelajaran yang dipublikasikan. Sertifikat baru tersedia setelah dosen/admin menambahkan tujuan pembelajaran untuk course ini.';
     } else {
         $certificateStatusTitle = 'Template sertifikat belum siap';
         $certificateStatusMessage = 'Sertifikasi course sudah aktif, tetapi blangko/template sertifikat admin belum valid atau belum tersedia.';
