@@ -176,7 +176,7 @@
                                     <div class="min-w-0">
                                         <div class="flex items-center gap-2 mb-1 flex-wrap">
                                             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                                {{ $row['is_bootcamp'] ? 'Bootcamp' : 'Kursus' }}
+                                                {{ $row['type_label'] }}
                                             </span>
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full {{ $badgeMeta['bgClass'] }} text-[11px] font-bold">
                                                 <span class="w-1.5 h-1.5 rounded-full {{ $badgeMeta['dotClass'] }}"></span>
@@ -312,10 +312,13 @@
         {{-- TAB 4: Sertifikat Kelulusan --}}
         <div x-show="activeTab === 'certificates'" class="space-y-4">
             @php
-                $completedCourses = $courseGoals->where('status_badge', 'selesai');
+                $certifiedCourses = $courseGoals->where('has_certificate', true);
             @endphp
-            @forelse($completedCourses as $item)
-                @php $course = $item['course']; @endphp
+            @forelse($certifiedCourses as $item)
+                @php
+                    $course = $item['course'];
+                    $certDetailRoute = $item['is_bootcamp'] ? 'mahasiswa.bootcamp-detail' : 'mahasiswa.course-detail';
+                @endphp
                 <div class="w-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div class="flex items-center gap-3.5">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xl shadow-xs">
@@ -323,11 +326,11 @@
                         </div>
                         <div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ $course->nama_course }}</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Sertifikat Kelulusan Resmi DigiKampus</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Sertifikat Kelulusan Resmi DigiKampus • {{ $item['type_label'] }}</p>
                         </div>
                     </div>
 
-                    <a href="{{ route('mahasiswa.course-detail', $course->id_course) }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold shadow-md shadow-amber-500/20 transition">
+                    <a href="{{ route($certDetailRoute, $course->id_course) }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold shadow-md shadow-amber-500/20 transition">
                         🎓 Lihat / Download Sertifikat
                     </a>
                 </div>

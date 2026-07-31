@@ -63,7 +63,7 @@ class CheckoutController extends Controller
         $courseId = (int) request('course_id');
 
         $course = \App\Models\Course::find($courseId);
-        $isBootcamp = $course && strtolower((string) ($course->kategori ?? '')) === 'tiket';
+        $isBootcamp = $course && $course->isBootcamp();
         $entityLabel = $isBootcamp ? 'Bootcamp' : 'Kursus';
         $entityLabelLower = $isBootcamp ? 'bootcamp' : 'kursus';
 

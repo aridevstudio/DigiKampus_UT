@@ -2397,8 +2397,7 @@ class CourseController extends Controller
      */
     private function isBootcamp(?Course $course): bool
     {
-        return $course !== null
-            && strtolower((string) ($course->kategori ?? '')) === 'tiket';
+        return $course !== null && $course->isBootcamp();
     }
 
     /**

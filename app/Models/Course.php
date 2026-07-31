@@ -285,6 +285,45 @@ class Course extends Model
         return max(0, $cap - (int) ($this->slot_terisi ?? 0));
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // TYPE DETERMINATION — Single Source of Truth
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Determine whether this course is a bootcamp/event (kategori = 'tiket').
+     *
+     * This is the SINGLE SOURCE OF TRUTH for bootcamp detection across the
+     * entire application. All controllers, services, and views MUST delegate
+     * here instead of re-implementing the check.
+     *
+     * Used by: BootcampFlowService, CourseController, DashboardController,
+     * LearningGoalController, and Blade views.
+     */
+    public function isBootcamp(): bool
+    {
+        return strtolower((string) ($this->kategori ?? '')) === 'tiket';
+    }
+
+    /**
+     * Human-readable type label for UI display.
+     *
+     * Returns: 'Bootcamp', 'Webinar', 'Workshop', 'Seminar', or 'Kursus'.
+     * Uses tipe_event when available; falls back to kategori-based detection.
+     */
+    public function getTypeLabelAttribute(): string
+    {
+        if ($this->isBootcamp()) {
+            return 'Bootcamp';
+        }
+
+        $tipe = strtolower((string) ($this->tipe_event ?? ''));
+        if ($tipe !== '' && in_array($tipe, self::EVENT_TIPE_VALUES, true)) {
+            return ucfirst($tipe);
+        }
+
+        return 'Kursus';
+    }
+
     /**
      * Daftar nilai tipe_event yang diperlakukan sebagai event (bukan kursus reguler).
      *

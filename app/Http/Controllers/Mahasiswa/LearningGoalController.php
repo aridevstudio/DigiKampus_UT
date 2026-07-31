@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\AssignmentSubmission;
+use App\Models\AutomaticCertificate;
 use App\Models\Enrollment;
 use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
@@ -44,10 +45,16 @@ class LearningGoalController extends Controller
             ->orderByDesc('submitted_at')
             ->get();
 
-        // 4. Calculate Detailed Course Achievements & Competencies
+        // 4. Fetch REAL issued certificates from database (single source of truth)
+        $issuedCertificateCourseIds = AutomaticCertificate::where('id_mahasiswa', $user->id)
+            ->pluck('id_course')
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
+
+        // 5. Calculate Detailed Course Achievements & Competencies
         $courseGoals = $enrollments
             ->filter(fn (Enrollment $enrollment) => $enrollment->course !== null)
-            ->map(function (Enrollment $enrollment) use ($quizAttempts, $assignmentSubmissions) {
+            ->map(function (Enrollment $enrollment) use ($quizAttempts, $assignmentSubmissions, $issuedCertificateCourseIds) {
                 $course = $enrollment->course;
                 $goals = $course->learningGoals;
 
@@ -59,12 +66,19 @@ class LearningGoalController extends Controller
                     ? ($enrollmentCompleted ? $totalGoals : intdiv($safeProgress * $totalGoals, 100))
                     : 0;
 
-                $isBootcamp = strtolower((string) ($course->kategori ?? '')) === 'tiket' || !empty($course->tipe_event);
+                // Use Course model's single source of truth for type detection
+                $isBootcamp = $course->isBootcamp();
+                $typeLabel = $course->type_label;
+
                 $statusBadge = match (true) {
                     $enrollmentCompleted => 'selesai',
                     $safeProgress === 0 => 'belum_mulai',
                     default => 'sedang_berjalan',
                 };
+
+                // Certificate: only if actually issued in database AND course has sertifikat enabled
+                $hasCertificate = in_array((int) $course->id_course, $issuedCertificateCourseIds, true)
+                    && (bool) ($course->sertifikat ?? false);
 
                 // Filter quizzes & assignments for this course
                 $courseQuizzes = $quizAttempts->filter(fn ($attempt) => $attempt->quiz?->id_course === $course->id_course);
@@ -80,8 +94,10 @@ class LearningGoalController extends Controller
                     'achieved_count' => $achievedCount,
                     'all_achieved' => $enrollmentCompleted || ($totalGoals > 0 && $achievedCount >= $totalGoals),
                     'is_bootcamp' => $isBootcamp,
+                    'type_label' => $typeLabel,
                     'status_badge' => $statusBadge,
                     'has_goals' => $totalGoals > 0,
+                    'has_certificate' => $hasCertificate,
                     'avg_quiz_score' => $avgQuizScore,
                     'quizzes_count' => $courseQuizzes->count(),
                     'submissions_count' => $courseSubmissions->count(),
@@ -105,7 +121,7 @@ class LearningGoalController extends Controller
             ])
             ->values();
 
-        // 5. Aggregate Global Summary Statistics
+        // 6. Aggregate Global Summary Statistics
         $coursesRunning = $courseGoals->whereIn('status_badge', ['sedang_berjalan', 'belum_mulai'])->count();
         $coursesCompleted = $courseGoals->where('status_badge', 'selesai')->count();
         $overallProgressAvg = $totalEnrollments > 0 ? (int) round($courseGoals->avg('progress_percent')) : 0;
@@ -114,7 +130,8 @@ class LearningGoalController extends Controller
         $overallQuizScoreAvg = $allQuizScores->count() > 0 ? round($allQuizScores->avg(), 1) : null;
 
         $totalAchievedCompetencies = $courseGoals->sum('achieved_count');
-        $earnedCertificatesCount = $courseGoals->where('status_badge', 'selesai')->count();
+        // Certificate count based on REAL issued certificates, not enrollment status
+        $earnedCertificatesCount = $courseGoals->where('has_certificate', true)->count();
 
         $summary = [
             'total_enrollments' => $totalEnrollments,

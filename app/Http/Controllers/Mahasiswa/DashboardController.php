@@ -46,7 +46,7 @@ class DashboardController extends Controller
             ->values()
             ->all();
         $activeBootcampCourseIds = $activeEnrollments
-            ->filter(fn (Enrollment $enrollment) => $enrollment->course?->kategori === 'tiket')
+            ->filter(fn (Enrollment $enrollment) => $enrollment->course?->isBootcamp())
             ->pluck('id_course')
             ->filter()
             ->unique()
@@ -187,7 +187,7 @@ class DashboardController extends Controller
             ->values()
             ->all();
         $activeBootcampCourseIds = $activeEnrollments
-            ->filter(fn (Enrollment $enrollment) => $enrollment->course?->kategori === 'tiket' || !empty($enrollment->course?->tipe_event))
+            ->filter(fn (Enrollment $enrollment) => $enrollment->course?->isBootcamp())
             ->pluck('id_course')
             ->filter()
             ->unique()
@@ -206,7 +206,7 @@ class DashboardController extends Controller
         $courseTimeline = $activeEnrollments
             ->filter(fn ($e) => ($e->status ?? '') !== 'selesai' && (float)$e->progress < 100 && $e->course !== null)
             ->map(function ($e) {
-                $isBootcamp = strtolower((string) ($e->course?->kategori ?? '')) === 'tiket' || !empty($e->course?->tipe_event);
+                $isBootcamp = $e->course?->isBootcamp() ?? false;
                 return [
                     'id_course' => $e->id_course,
                     'nama_course' => $e->course?->nama_course ?? 'Kursus',
@@ -413,11 +413,7 @@ class DashboardController extends Controller
      */
     private static function isEventCourse(?Course $course): bool
     {
-        if (!$course) {
-            return false;
-        }
-
-        return $course->kategori === 'tiket';
+        return $course !== null && $course->isBootcamp();
     }
 
     /**
