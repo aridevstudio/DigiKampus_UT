@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\AdminForumCommentController;
 use App\Http\Controllers\Auth\AdminForumTopicController;
 use App\Http\Controllers\Auth\AdminAppsController;
 use App\Http\Controllers\Auth\AdminAppsHubController;
+use App\Http\Controllers\Auth\AdminSystemLogController;
 use App\Http\Controllers\Auth\Admin\BootcampSesiController;
 use App\Http\Middleware\EnsureAuthenticatedAdmin;
 use App\Http\Middleware\RedirectIfAuthenticatedAdmin;
@@ -180,6 +181,11 @@ Route::prefix('admin')
         Route::get('/finance-report', [AdminController::class, 'showFinanceReport'])->name('admin.finance-report');
         Route::get('/finance-report/export', [AdminController::class, 'exportFinanceReportExcel'])->name('admin.finance-report.export');
         Route::post('/finance-report/service-fee', [AdminController::class, 'updateFinanceServiceFee'])->name('admin.finance-report.service-fee.update');
+
+        // System Logs Viewer
+        Route::get('/system-logs', [AdminSystemLogController::class, 'index'])->name('admin.system-logs');
+        Route::post('/system-logs/clear', [AdminSystemLogController::class, 'clear'])->name('admin.system-logs.clear');
+        Route::get('/system-logs/download', [AdminSystemLogController::class, 'download'])->name('admin.system-logs.download');
         Route::get('/voucher', [AdminController::class, 'showVoucher'])->name('admin.voucher');
         Route::post('/voucher', [AdminController::class, 'storeVoucher'])->name('admin.voucher.store');
         Route::get('/voucher/{id}', [AdminController::class, 'getVoucher'])->name('admin.voucher.get');
