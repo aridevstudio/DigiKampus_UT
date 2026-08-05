@@ -7,7 +7,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE enrollments MODIFY status ENUM('pending', 'aktif', 'in_progress', 'selesai') NOT NULL DEFAULT 'aktif'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE enrollments MODIFY status ENUM('pending', 'aktif', 'in_progress', 'selesai') NOT NULL DEFAULT 'aktif'");
+        }
     }
 
     public function down(): void
@@ -16,6 +18,8 @@ return new class extends Migration
             ->whereIn('status', ['pending', 'in_progress'])
             ->update(['status' => 'aktif']);
 
-        DB::statement("ALTER TABLE enrollments MODIFY status ENUM('aktif', 'selesai') NOT NULL DEFAULT 'aktif'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE enrollments MODIFY status ENUM('aktif', 'selesai') NOT NULL DEFAULT 'aktif'");
+        }
     }
 };

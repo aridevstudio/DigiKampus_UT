@@ -11,6 +11,10 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE courses MODIFY COLUMN tipe ENUM('webinar', 'tiket', 'kursus', 'gratis', 'berbayar') DEFAULT 'kursus'");
     }
 
@@ -20,6 +24,10 @@ return new class extends Migration {
      */
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE courses MODIFY COLUMN tipe ENUM('webinar', 'tiket', 'kursus') DEFAULT 'kursus'");
     }
 };

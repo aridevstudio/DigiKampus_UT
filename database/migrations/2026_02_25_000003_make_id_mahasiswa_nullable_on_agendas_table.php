@@ -10,6 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE agendas MODIFY id_mahasiswa BIGINT UNSIGNED NULL');
     }
 
@@ -24,7 +28,9 @@ return new class extends Migration
             ->whereNull('id_mahasiswa')
             ->update(['id_mahasiswa' => $fallbackUserId]);
 
-        DB::statement('ALTER TABLE agendas MODIFY id_mahasiswa BIGINT UNSIGNED NOT NULL');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE agendas MODIFY id_mahasiswa BIGINT UNSIGNED NOT NULL');
+        }
     }
 };
 

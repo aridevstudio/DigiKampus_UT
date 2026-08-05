@@ -26,8 +26,10 @@ return new class extends Migration {
         // 3. Convert those rows' tipe to pricing: if harga > 0 → berbayar, else → gratis
         DB::statement("UPDATE courses SET tipe = CASE WHEN harga > 0 THEN 'berbayar' ELSE 'gratis' END WHERE tipe IN ('webinar', 'tiket', 'kursus')");
 
-        // 4. Shrink tipe enum to just pricing values
-        DB::statement("ALTER TABLE courses MODIFY COLUMN tipe ENUM('gratis', 'berbayar') DEFAULT 'gratis'");
+        // 4. Shrink tipe enum to just pricing values on MySQL.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE courses MODIFY COLUMN tipe ENUM('gratis', 'berbayar') DEFAULT 'gratis'");
+        }
     }
 
     /**
@@ -35,8 +37,10 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        // Expand tipe enum back
-        DB::statement("ALTER TABLE courses MODIFY COLUMN tipe ENUM('webinar', 'tiket', 'kursus', 'gratis', 'berbayar') DEFAULT 'kursus'");
+        // Expand tipe enum back on MySQL.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE courses MODIFY COLUMN tipe ENUM('webinar', 'tiket', 'kursus', 'gratis', 'berbayar') DEFAULT 'kursus'");
+        }
 
         // Restore: copy kategori back to tipe for courses that were originally webinar/tiket/kursus
         DB::statement("UPDATE courses SET tipe = kategori WHERE kategori IN ('webinar', 'tiket', 'kursus')");
