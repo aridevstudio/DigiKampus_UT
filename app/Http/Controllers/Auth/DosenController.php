@@ -26,10 +26,12 @@ use App\Models\QuizAttempt;
 use App\Models\QuizAnswer;
 use App\Models\User;
 use App\Services\DeviceSessionLimitService;
+use App\Services\PrivateFileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -1105,8 +1107,9 @@ class DosenController extends Controller
             'is_structured_content' => $displayMeta['is_structured'],
             'structured_hint' => $displayMeta['hint'],
             'video_url' => $material->video_url,
-            'lampiran_path' => $material->lampiran_path,
-            'lampiran_url' => $material->lampiran_path ? asset('storage/' . $material->lampiran_path) : null,
+            'lampiran_url' => $material->lampiran_path
+                ? route('dosen.material-attachment.download', ['courseId' => $courseId, 'materialId' => $material->id_material])
+                : null,
             'sumber_referensi' => $material->sumber_referensi ?? [],
             'urutan' => $material->urutan,
             'durasi' => $material->durasi,
@@ -2391,6 +2394,26 @@ class DosenController extends Controller
         ]);
     }
 
+    public function downloadMaterialAttachment(int $courseId, int $materialId)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        $material = CourseMaterial::where('id_course', $courseId)
+            ->where('id_material', $materialId)
+            ->whereHas('course', fn ($query) => $query->where('id_dosen', $dosen->id))
+            ->whereNotNull('lampiran_path')
+            ->first();
+
+        if (!$material) {
+            abort(404);
+        }
+
+        Gate::forUser($dosen)->authorize('view', $material->course);
+        return app(PrivateFileService::class)->download(
+            (string) $material->lampiran_path,
+            basename((string) $material->lampiran_path),
+        );
+    }
+
     public function previewAssignmentSubmission(int $submissionId)
     {
         $dosen = Auth::guard('dosen')->user();
@@ -2400,11 +2423,13 @@ class DosenController extends Controller
             abort(404);
         }
 
-        if (!$submission->file_path || !Storage::disk('public')->exists($submission->file_path)) {
+        Gate::forUser($dosen)->authorize('view', $submission);
+
+        if (!$submission->file_path) {
             return back()->with('error', 'Berkas tugas tidak ditemukan di penyimpanan.');
         }
 
-        return response()->file(Storage::disk('public')->path($submission->file_path));
+        return response()->file(app(PrivateFileService::class)->path($submission->file_path));
     }
 
     public function downloadAssignmentSubmission(int $submissionId)
@@ -2416,13 +2441,16 @@ class DosenController extends Controller
             abort(404);
         }
 
-        if (!$submission->file_path || !Storage::disk('public')->exists($submission->file_path)) {
+        Gate::forUser($dosen)->authorize('view', $submission);
+
+        if (!$submission->file_path) {
             return back()->with('error', 'Berkas tugas tidak ditemukan di penyimpanan.');
         }
 
-        $downloadName = $submission->original_file_name ?: basename($submission->file_path);
-
-        return response()->download(Storage::disk('public')->path($submission->file_path), $downloadName);
+        return app(PrivateFileService::class)->download(
+            $submission->file_path,
+            $submission->original_file_name ?: basename($submission->file_path),
+        );
     }
 
     /**

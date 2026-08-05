@@ -16,7 +16,8 @@ class EnsureAuthenticatedDosen
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::guard('dosen')->check()) {
+        $user = Auth::guard('dosen')->user();
+        if (!$user || $user->role !== 'dosen') {
             if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,

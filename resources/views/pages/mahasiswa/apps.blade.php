@@ -152,7 +152,9 @@
                             @if($launchUrl)
                                 <a
                                     href="{{ $launchUrl }}"
-                                    {!! $linkAttrs !!}
+                                    @if($isNewTab)
+                                        target="_blank" rel="noopener noreferrer"
+                                    @endif
                                     data-app-launcher
                                     class="inline-flex items-center gap-1.5 font-semibold text-blue-600 transition group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-300"
                                     aria-label="Buka {{ $app->name }}{{ $isNewTab ? ' di tab baru' : '' }}"

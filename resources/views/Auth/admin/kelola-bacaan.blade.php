@@ -148,7 +148,7 @@
                         
                         {{-- Preview Content --}}
                         <div class="p-4">
-                            <div class="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400" x-html="form.konten ? form.konten.substring(0, 200) + '...' : 'Konten bacaan akan muncul di sini...'"></div>
+                            <div class="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 whitespace-pre-wrap" x-text="form.konten ? form.konten.substring(0, 200) + '...' : 'Konten bacaan akan muncul di sini...'"></div>
                         </div>
 
                         <div class="px-4 pb-4 space-y-2">

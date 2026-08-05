@@ -86,6 +86,7 @@ Route::prefix('dosen')
             
             // Material/Content Management
             Route::get('/{id}/material/{materialId}', [DosenController::class, 'getMaterialDetail'])->name('dosen.material.detail');
+            Route::get('/{id}/material/{materialId}/attachment', [DosenController::class, 'downloadMaterialAttachment'])->name('dosen.material-attachment.download');
             Route::post('/{id}/material', [DosenController::class, 'storeMaterial'])->name('dosen.material.store');
             Route::put('/{id}/material/reorder', [DosenController::class, 'reorderMaterials'])->name('dosen.material.reorder');
             Route::put('/{id}/material/{materialId}', [DosenController::class, 'updateMaterial'])->name('dosen.material.update');

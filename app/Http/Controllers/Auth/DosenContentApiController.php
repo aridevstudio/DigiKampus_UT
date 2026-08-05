@@ -525,7 +525,7 @@ class DosenContentApiController extends Controller
 
         if ($normalizedType === 'bacaan') {
             if ($request->hasFile('lampiran_file')) {
-                $lampiranPath = $request->file('lampiran_file')->store('bacaan-lampiran', 'public');
+                $lampiranPath = $request->file('lampiran_file')->store('bacaan-lampiran', 'local');
             }
 
             $sumberReferensi = collect($validated['sumber_referensi'] ?? [])
@@ -583,7 +583,9 @@ class DosenContentApiController extends Controller
                 'id_module' => $courseModule->id_module,
                 'judul' => $module->judul_material,
                 'urutan' => $module->urutan,
-                'lampiran_url' => $module->lampiran_path ? asset('storage/' . $module->lampiran_path) : null,
+                'lampiran_url' => $module->lampiran_path
+                    ? route('dosen.material-attachment.download', ['courseId' => $courseId, 'materialId' => $module->id_material])
+                    : null,
                 'sumber_referensi' => $module->sumber_referensi ?? [],
             ],
         ], 201);
@@ -681,16 +683,16 @@ class DosenContentApiController extends Controller
 
             if ($request->hasFile('lampiran_file')) {
                 if ($lampiranPath) {
-                    Storage::disk('public')->delete($lampiranPath);
+                    Storage::disk('local')->delete($lampiranPath);
                 }
-                $lampiranPath = $request->file('lampiran_file')->store('bacaan-lampiran', 'public');
+                $lampiranPath = $request->file('lampiran_file')->store('bacaan-lampiran', 'local');
             } elseif ($shouldRemoveLampiran && $lampiranPath) {
-                Storage::disk('public')->delete($lampiranPath);
+                Storage::disk('local')->delete($lampiranPath);
                 $lampiranPath = null;
             }
         } else {
             if ($lampiranPath) {
-                Storage::disk('public')->delete($lampiranPath);
+                Storage::disk('local')->delete($lampiranPath);
             }
             $lampiranPath = null;
             $sumberReferensi = [];
@@ -730,7 +732,9 @@ class DosenContentApiController extends Controller
                 'id_module' => $material->id_module,
                 'judul' => $material->judul_material,
                 'tipe' => $material->tipe,
-                'lampiran_url' => $material->lampiran_path ? asset('storage/' . $material->lampiran_path) : null,
+                'lampiran_url' => $material->lampiran_path
+                    ? route('dosen.material-attachment.download', ['courseId' => $courseId, 'materialId' => $material->id_material])
+                    : null,
                 'sumber_referensi' => $material->sumber_referensi ?? [],
             ],
         ]);

@@ -98,7 +98,7 @@
                         <img :src="selectedNews.thumbnail_url" :alt="selectedNews.judul" class="w-full aspect-video object-cover rounded-xl mb-4">
                     </template>
                     <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4" x-text="selectedNews?.judul"></h2>
-                    <div class="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300" x-html="selectedNews?.konten"></div>
+                    <div class="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-gray-600 dark:text-gray-300" x-text="selectedNews?.konten"></div>
                 </div>
             </div>
         </div>

@@ -21,7 +21,6 @@ class AdminResource extends JsonResource
             'email' => $this->email,
             'role' => $this->role,
             'status' => $this->status,
-            'provider' => $this->provider,
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),

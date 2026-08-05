@@ -285,8 +285,7 @@ class MahasiswaAuthController extends Controller
 
             // Store new photo
             $photo = $request->file('photo');
-            $filename = time() . '_' . $user->id . '.' . $photo->getClientOriginalExtension();
-            $path = $photo->storeAs('profile_photos', $filename, 'public');
+            $path = $photo->store('profile_photos', 'public');
 
             $profileData['foto_profile'] = $path;
         }

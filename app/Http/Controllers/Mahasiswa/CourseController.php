@@ -15,6 +15,7 @@ use App\Models\CourseDiscussion;
 use App\Models\ForumTopic;
 use App\Models\CourseInstructorNote;
 use App\Models\CourseMaterial;
+use App\Models\Enrollment;
 use App\Models\Assignment;
 use App\Models\BootcampLiveClassAttendance;
 use App\Models\Notification;
@@ -24,10 +25,12 @@ use App\Models\QuizAttempt;
 use App\Models\QuizQuestion;
 use App\Models\User;
 use App\Services\BootcampFlowService;
+use App\Services\PrivateFileService;
 use App\Support\Bootcamp\BootcampTransition;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -1328,6 +1331,120 @@ class CourseController extends Controller
         ]);
     }
     
+    public function downloadAssignmentSubmission($courseId, $assignmentId)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        $enrollment = Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->first();
+
+        if (!$enrollment || !in_array($enrollment->status, ['aktif', 'in_progress', 'selesai'], true)) {
+            abort(404);
+        }
+
+        $material = $this->resolveAssignmentMaterial((int) $courseId, (int) $assignmentId);
+        if (!$material) {
+            abort(404);
+        }
+
+        $submission = AssignmentSubmission::where('id_material', $material->id_material)
+            ->where('id_mahasiswa', $user->id)
+            ->first();
+
+        if (!$submission?->file_path) {
+            abort(404);
+        }
+
+        Gate::forUser($user)->authorize('view', $submission);
+
+        return app(PrivateFileService::class)->download(
+            $submission->file_path,
+            $submission->original_file_name ?: basename($submission->file_path),
+        );
+    }
+
+    public function downloadMaterialAttachment(int $courseId, int $materialId)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        $enrollment = Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->whereIn('status', ['aktif', 'in_progress', 'selesai'])
+            ->exists();
+
+        if (!$enrollment) {
+            abort(404);
+        }
+
+        $material = CourseMaterial::where('id_course', $courseId)
+            ->where('id_material', $materialId)
+            ->whereNotNull('lampiran_path')
+            ->first();
+
+        if (!$material) {
+            abort(404);
+        }
+
+        Gate::forUser($user)->authorize('viewContent', $material->course);
+        return app(PrivateFileService::class)->download(
+            (string) $material->lampiran_path,
+            basename((string) $material->lampiran_path),
+        );
+    }
+
+    public function downloadBootcampSessionMaterial(int $courseId, int $sessionId)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        $enrollment = Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->whereIn('status', ['aktif', 'in_progress', 'selesai'])
+            ->exists();
+
+        if (!$enrollment) {
+            abort(404);
+        }
+
+        $session = \App\Models\BootcampSession::where('id_course', $courseId)
+            ->where('id_bootcamp_session', $sessionId)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$session?->materi_file) {
+            abort(404);
+        }
+
+        Gate::forUser($user)->authorize('viewContent', $session->course);
+        return app(PrivateFileService::class)->download(
+            (string) $session->materi_file,
+            basename((string) $session->materi_file),
+        );
+    }
+
+    public function downloadAttendanceProof(int $courseId, string $sessionKey)
+    {
+        $user = Auth::guard('mahasiswa')->user();
+        $course = Course::find($courseId);
+        if (!$course || !Enrollment::where('id_mahasiswa', $user->id)
+            ->where('id_course', $courseId)
+            ->whereIn('status', ['aktif', 'in_progress', 'selesai'])
+            ->exists()) {
+            abort(404);
+        }
+
+        $attendance = BootcampLiveClassAttendance::where('id_user', $user->id)
+            ->where('id_course', $courseId)
+            ->where('session_key', $sessionKey)
+            ->where('status', BootcampLiveClassAttendance::STATUS_VERIFIED)
+            ->first();
+
+        if (!$attendance?->proof_file) {
+            abort(404);
+        }
+
+        Gate::forUser($user)->authorize('view', $attendance);
+
+        return app(PrivateFileService::class)->download($attendance->proof_file);
+    }
+
     /**
      * Show assignment status after submission
      */
@@ -1519,14 +1636,16 @@ class CourseController extends Controller
 
         $file = $request->file('file');
         $userId = $user->id;
-        $fileName = "assignment_{$courseId}_{$assignmentId}_{$userId}_" . time() . '.' . $file->getClientOriginalExtension();
-        $filePath = $file->storeAs('assignments', $fileName, 'public');
+        // Laravel's store() generates a random filename and keeps the original
+        // filename only as display metadata; submissions remain private.
+        $filePath = $file->store('assignments', 'local');
 
         $submission = AssignmentSubmission::where('id_material', $assignmentMaterial->id_material)
             ->where('id_mahasiswa', $user->id)
             ->first();
 
         if ($submission?->file_path) {
+            Storage::disk('local')->delete($submission->file_path);
             Storage::disk('public')->delete($submission->file_path);
         }
 
@@ -2501,8 +2620,9 @@ class CourseController extends Controller
         }
 
         $file = $request->file('proof_file');
-        $fileName = 'att_' . $courseId . '_' . $user->id . '_' . substr(sha1($sessionKey), 0, 8) . '_' . time() . '.' . $file->getClientOriginalExtension();
-        $filePath = $file->storeAs('attendance', $fileName, 'public');
+        // Use Laravel's random generated filename; the session/user identifiers
+        // are not needed in a path and must not be user-controlled metadata.
+        $filePath = $file->store('attendance', 'local');
 
         // SECURITY: jangan izinkan re-upload setelah bukti terverifikasi;
         // kalau dibiarkan, final-project gate akan bisa dibalik ke pending.
@@ -2521,6 +2641,7 @@ class CourseController extends Controller
         $attendance = $existing;
 
         if ($attendance?->proof_file) {
+            Storage::disk('local')->delete($attendance->proof_file);
             Storage::disk('public')->delete($attendance->proof_file);
         }
 

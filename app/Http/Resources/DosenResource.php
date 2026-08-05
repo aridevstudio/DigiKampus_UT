@@ -15,8 +15,6 @@ class DosenResource extends JsonResource
             'nomor_induk' => $this->profile?->nomor_induk,
             'email' => $this->email,
             'role' => $this->role,
-            'google_id' => $this->google_id,
-            'provider' => $this->provider,
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
         ];

@@ -71,6 +71,7 @@ Route::prefix('admin')
         
         // Material/Content Management
         Route::get('/kursus/{id}/material/{materialId}', [AdminController::class, 'getMaterialDetail'])->name('admin.material.detail');
+        Route::get('/kursus/{courseId}/material/{materialId}/attachment', [AdminController::class, 'downloadMaterialAttachment'])->name('admin.material-attachment.download');
         Route::post('/kursus/{id}/material', [AdminController::class, 'storeMaterial'])->name('admin.material.store');
         Route::put('/kursus/{id}/material/reorder', [AdminController::class, 'reorderMaterials'])->name('admin.material.reorder');
         Route::put('/kursus/{id}/material/{materialId}', [AdminController::class, 'updateMaterial'])->name('admin.material.update');
@@ -137,6 +138,7 @@ Route::prefix('admin')
         // Bootcamp & Ticket Ops
         Route::get('/bootcamp-tiket', [AdminController::class, 'showBootcampTiket'])->name('admin.bootcamp-tiket');
         Route::get('/bootcamp-tiket/attendance', [AdminController::class, 'showLiveClassAttendanceQueue'])->name('admin.bootcamp-tiket.attendance');
+        Route::get('/bootcamp-live-class-attendance/{id}/download', [AdminController::class, 'downloadLiveClassAttendanceProof'])->name('admin.bootcamp.attendance.download');
         Route::post('/bootcamp-live-class-attendance/{id}/verify', [AdminController::class, 'verifyLiveClassAttendance'])->name('admin.bootcamp.attendance.verify');
         Route::post('/bootcamp-live-class-attendance/{id}/reject', [AdminController::class, 'rejectLiveClassAttendance'])->name('admin.bootcamp.attendance.reject');
         Route::post('/bootcamp/{courseId}/sesi/{sesiId}/peserta/{userId}/check-in', [AdminController::class, 'manualOfflineSessionCheckIn'])->name('admin.bootcamp.sesi.offline.check-in');

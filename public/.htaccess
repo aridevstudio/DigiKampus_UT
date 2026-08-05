@@ -5,6 +5,10 @@
 
     RewriteEngine On
 
+    # Private legacy storage prefixes must never be served through the public symlink.
+    # Public assets such as profiles and thumbnails remain available via the normal rule.
+    RewriteRule ^storage/(assignments|attendance|bootcamp-sesi-materi|bacaan-lampiran)(/|$) - [R=404,L,NC]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

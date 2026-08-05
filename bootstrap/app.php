@@ -34,7 +34,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'auth.custom' => \App\Http\Middleware\Authenticate::class,
+            'role' => \App\Http\Middleware\EnsureUserRole::class,
         ]);
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\App\Exceptions\Bootcamp\BootcampFlowException $e, $request) {

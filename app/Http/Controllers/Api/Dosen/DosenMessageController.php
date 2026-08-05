@@ -139,6 +139,15 @@ class DosenMessageController extends Controller
             ], 404);
         }
 
+        // Resource-level authorization: a dosen may only inspect a student
+        // enrolled in one of their courses or an existing direct thread.
+        if (!$this->canAccessStudent($dosenId, $studentId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mahasiswa tidak dapat diakses.'
+            ], 403);
+        }
+
         // Get messages
         $messages = Message::conversation($dosenId, $studentId)
             ->orderBy('created_at', 'desc')
@@ -237,6 +246,14 @@ class DosenMessageController extends Controller
                 'success' => false,
                 'message' => 'Mahasiswa tidak ditemukan.'
             ], 404);
+        }
+
+        // Keep the recipient scoped to the dosen's own students/threads.
+        if (!$this->canAccessStudent($dosenId, (int) $validated['student_id'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses untuk menghubungi mahasiswa ini.'
+            ], 403);
         }
 
         $message = Message::create([
@@ -340,6 +357,22 @@ class DosenMessageController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    private function canAccessStudent(int $dosenId, int $studentId): bool
+    {
+        $courseIds = Course::where('id_dosen', $dosenId)->pluck('id_course');
+
+        return Enrollment::where('id_mahasiswa', $studentId)
+            ->whereIn('id_course', $courseIds)
+            ->exists()
+            || Message::where(function ($query) use ($dosenId, $studentId) {
+                $query->where(function ($query) use ($dosenId, $studentId) {
+                    $query->where('id_sender', $dosenId)->where('id_receiver', $studentId);
+                })->orWhere(function ($query) use ($dosenId, $studentId) {
+                    $query->where('id_sender', $studentId)->where('id_receiver', $dosenId);
+                });
+            })->exists();
+    }
+
     public function unreadCount(Request $request): JsonResponse
     {
         $dosenId = $request->user()->id;

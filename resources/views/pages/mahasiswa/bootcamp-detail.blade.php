@@ -433,7 +433,7 @@
 
                             {{-- File Attachment from Mentor --}}
                             @if($a['lampiran_path'])
-                                <a href="{{ asset('storage/' . $a['lampiran_path']) }}" download class="inline-flex items-center gap-2 text-xs font-bold text-blue-500 hover:underline">
+                                <a href="{{ route('mahasiswa.material-attachment.download', ['courseId' => $course->id_course, 'materialId' => $a['material_id']]) }}" download class="inline-flex items-center gap-2 text-xs font-bold text-blue-500 hover:underline">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                     Unduh Dokumen Pendukung
                                 </a>
@@ -445,7 +445,7 @@
                                     <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                         <div class="min-w-0">
                                             <span class="text-xs text-gray-400 block">Tugas yang Anda Kumpulkan:</span>
-                                            <a href="{{ asset('storage/' . $a['submission']->file_path) }}" download class="text-sm font-semibold text-blue-500 hover:underline truncate block">
+                                            <a href="{{ route('mahasiswa.assignment-download', ['courseId' => $course->id_course, 'assignmentId' => $a['material_id']]) }}" download class="text-sm font-semibold text-blue-500 hover:underline truncate block">
                                                 {{ $a['submission']->original_file_name ?: 'File Tugas' }}
                                             </a>
                                             <span class="text-[10px] text-gray-400">Diupload pada: {{ $a['submission']->submitted_at->format('d M Y, H:i') }}</span>
@@ -543,7 +543,7 @@
                                 $sesiLinkZoom = $sesi->link_zoom;
                                 $sesiLinkMeet = $sesi->link_meet;
                                 $sesiRecording = $sesi->link_rekaman;
-                                $sesiMateriUrl = $sesi->materi_url ?: (!empty($sesi->materi_file) ? asset('storage/' . $sesi->materi_file) : null);
+                                $sesiMateriUrl = $sesi->materi_url ?: (!empty($sesi->materi_file) ? route('mahasiswa.bootcamp.session-material.download', ['courseId' => $course->id_course, 'sessionId' => $sesi->id_bootcamp_session]) : null);
                                 $sesiIsLegacy = false;
                                 $sesiIsOffline = $sesi->isOffline();
                                 $sesiLokasi = $sesi->lokasi_event;
@@ -983,7 +983,7 @@
                                     <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                         <div class="min-w-0">
                                             <span class="text-xs text-gray-400 block">Proyek yang Anda Kumpulkan:</span>
-                                            <a href="{{ asset('storage/' . $finalProject['submission']->file_path) }}" download class="text-sm font-semibold text-blue-500 hover:underline truncate block">
+                                            <a href="{{ route('mahasiswa.assignment-download', ['courseId' => $course->id_course, 'assignmentId' => $finalProject['material_id']]) }}" download class="text-sm font-semibold text-blue-500 hover:underline truncate block">
                                                 {{ $finalProject['submission']->original_file_name ?: 'File Proyek Akhir' }}
                                             </a>
                                             <span class="text-[10px] text-gray-400">Diupload pada: {{ $finalProject['submission']->submitted_at->format('d M Y, H:i') }}</span>

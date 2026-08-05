@@ -16,7 +16,8 @@ class EnsureAuthenticatedAdmin
      */
     public function handle(Request $request, Closure $next)
     {
-        if (!Auth::guard('admin')->check()) {
+        $user = Auth::guard('admin')->user();
+        if (!$user || $user->role !== 'admin') {
             return redirect()->route('admin.login')->withErrors([
                 'login' => 'Silakan login terlebih dahulu untuk mengakses halaman ini.',
             ]);

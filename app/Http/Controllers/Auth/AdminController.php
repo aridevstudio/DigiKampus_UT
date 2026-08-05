@@ -37,7 +37,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use App\Services\PrivateFileService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -505,6 +507,38 @@ class AdminController extends Controller
         );
 
         return back()->with('success', 'Kehadiran offline berhasil dicatat untuk peserta.');
+    }
+
+    public function downloadMaterialAttachment(int $courseId, int $materialId)
+    {
+        $material = \App\Models\CourseMaterial::where('id_course', $courseId)
+            ->where('id_material', $materialId)
+            ->whereNotNull('lampiran_path')
+            ->first();
+
+        if (!$material) {
+            abort(404);
+        }
+
+        return app(PrivateFileService::class)->download(
+            (string) $material->lampiran_path,
+            basename((string) $material->lampiran_path),
+        );
+    }
+
+    public function downloadLiveClassAttendanceProof(int $id)
+    {
+        $attendance = BootcampLiveClassAttendance::findOrFail($id);
+        Gate::forUser(Auth::guard('admin')->user())->authorize('view', $attendance);
+
+        if (!$attendance->proof_file) {
+            abort(404);
+        }
+
+        return app(PrivateFileService::class)->download(
+            $attendance->proof_file,
+            basename($attendance->proof_file),
+        );
     }
 
     /**

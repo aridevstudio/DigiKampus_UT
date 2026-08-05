@@ -866,7 +866,7 @@
                                         }
                                         $joinUrl = $sesiObj?->link_zoom ?: $sesiObj?->link_meet;
                                         $recordingUrl = $sesiObj?->link_rekaman;
-                                        $materiUrl = $sesiObj?->materi_url ?: (!empty($sesiObj?->materi_file) ? asset('storage/' . $sesiObj->materi_file) : null);
+                                        $materiUrl = $sesiObj?->materi_url ?: (!empty($sesiObj?->materi_file) ? route('mahasiswa.bootcamp.session-material.download', ['courseId' => $course->id_course, 'sessionId' => $sesiObj->id_bootcamp_session]) : null);
                                         $lokasiText = $sesiObj?->lokasi_event;
                                         $petaUrl = $sesiObj?->peta_event;
                                     } else {
@@ -1010,7 +1010,7 @@
                                                     Sudah diverifikasi mentor/admin.
                                                 </p>
                                                 @if(!empty($attendance['proof_file']))
-                                                    <a href="{{ asset('storage/' . $attendance['proof_file']) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline">
+                                                    <a href="{{ route('mahasiswa.bootcamp.attendance.download', ['courseId' => $course->id_course, 'sessionKey' => $sessionKey]) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline">
                                                         Lihat bukti yang Anda kirim
                                                     </a>
                                                 @endif

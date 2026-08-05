@@ -240,8 +240,8 @@ class BootcampSesiController extends Controller
             ->where('id_bootcamp_session', $sesiId)
             ->firstOrFail();
         // Cleanup materi file
-        if ($sesi->materi_file && Storage::disk('public')->exists($sesi->materi_file)) {
-            Storage::disk('public')->delete($sesi->materi_file);
+        if ($sesi->materi_file && Storage::disk('local')->exists($sesi->materi_file)) {
+            Storage::disk('local')->delete($sesi->materi_file);
         }
         $sesi->delete();
 
@@ -383,11 +383,10 @@ class BootcampSesiController extends Controller
         if (!$request->hasFile($field)) {
             return $oldPath;
         }
-        if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+        if ($oldPath) {
+            Storage::disk('local')->delete($oldPath);
             Storage::disk('public')->delete($oldPath);
         }
-        $file = $request->file($field);
-        $filename = 'sesi_' . $courseId . '_' . time() . '_' . preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
-        return $file->storeAs('bootcamp-sesi-materi', $filename, 'public');
+        return $request->file($field)->store('bootcamp-sesi-materi', 'local');
     }
 }

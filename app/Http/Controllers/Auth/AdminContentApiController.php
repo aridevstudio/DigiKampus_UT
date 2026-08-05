@@ -516,7 +516,7 @@ class AdminContentApiController extends Controller
 
         if ($normalizedType === 'bacaan') {
             if ($request->hasFile('lampiran_file')) {
-                $lampiranPath = $request->file('lampiran_file')->store('bacaan-lampiran', 'public');
+                $lampiranPath = $request->file('lampiran_file')->store('bacaan-lampiran', 'local');
             }
 
             $sumberReferensi = collect($validated['sumber_referensi'] ?? [])
@@ -560,7 +560,9 @@ class AdminContentApiController extends Controller
                 'id_module' => $courseModule->id_module,
                 'judul' => $module->judul_material,
                 'urutan' => $module->urutan,
-                'lampiran_url' => $module->lampiran_path ? asset('storage/' . $module->lampiran_path) : null,
+                'lampiran_url' => $module->lampiran_path
+                    ? route('admin.material-attachment.download', ['courseId' => $courseId, 'materialId' => $module->id_material])
+                    : null,
                 'sumber_referensi' => $module->sumber_referensi ?? [],
             ],
         ], 201);

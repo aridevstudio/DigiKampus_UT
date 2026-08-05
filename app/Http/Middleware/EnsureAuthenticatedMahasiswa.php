@@ -16,7 +16,8 @@ class EnsureAuthenticatedMahasiswa
      */
     public function handle(Request $request, Closure $next)
     {
-        if (!Auth::guard('mahasiswa')->check()) {
+        $user = Auth::guard('mahasiswa')->user();
+        if (!$user || $user->role !== 'mahasiswa') {
             if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,

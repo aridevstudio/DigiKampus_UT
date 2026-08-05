@@ -64,6 +64,9 @@ Route::prefix('mahasiswa')
         Route::get('/bootcamp-saya', [CourseController::class, 'bootcampMy'])->name('mahasiswa.bootcamp-saya');
         Route::post('/bootcamp/{id}/forum/topic', [CourseController::class, 'storeBootcampForumTopic'])->name('mahasiswa.bootcamp.forum.topic.store');
         Route::post('/bootcamp/{id}/attendance', [CourseController::class, 'storeLiveClassAttendance'])->name('mahasiswa.bootcamp.attendance.store');
+        Route::get('/bootcamp/{courseId}/attendance/{sessionKey}/download', [CourseController::class, 'downloadAttendanceProof'])->name('mahasiswa.bootcamp.attendance.download');
+        Route::get('/bootcamp/{courseId}/session/{sessionId}/material/download', [CourseController::class, 'downloadBootcampSessionMaterial'])->name('mahasiswa.bootcamp.session-material.download');
+        Route::get('/course/{courseId}/material/{materialId}/attachment', [CourseController::class, 'downloadMaterialAttachment'])->name('mahasiswa.material-attachment.download');
         Route::post('/bootcamp/{courseId}/sesi/{sesiId}/join', [BootcampSesiJoinController::class, 'joinSesi'])->name('mahasiswa.bootcamp.sesi.join');
         Route::post('/bootcamp/{courseId}/sesi/{sesiId}/heartbeat', [BootcampSesiJoinController::class, 'recordHeartbeat'])->name('mahasiswa.bootcamp.sesi.heartbeat');
         Route::post('/bootcamp/{courseId}/sesi/{sesiId}/feedback', [BootcampSesiJoinController::class, 'setSesiFeedback'])->name('mahasiswa.bootcamp.sesi.feedback');
@@ -81,6 +84,7 @@ Route::prefix('mahasiswa')
         Route::get('/course/{courseId}/assignment/{assignmentId}', [CourseController::class, 'assignmentDetail'])->name('mahasiswa.assignment-detail');
         Route::get('/course/{courseId}/assignment/{assignmentId}/submit', [CourseController::class, 'assignmentSubmission'])->name('mahasiswa.assignment-submission');
         Route::get('/course/{courseId}/assignment/{assignmentId}/status', [CourseController::class, 'assignmentStatus'])->name('mahasiswa.assignment-status');
+        Route::get('/course/{courseId}/assignment/{assignmentId}/download', [CourseController::class, 'downloadAssignmentSubmission'])->name('mahasiswa.assignment-download');
         Route::post('/course/{courseId}/assignment/{assignmentId}/submit', [CourseController::class, 'submitAssignment'])->name('mahasiswa.submit-assignment');
         Route::get('/course/{courseId}/module/{moduleId}/feedback', [CourseController::class, 'moduleFeedback'])->name('mahasiswa.module-feedback');
         

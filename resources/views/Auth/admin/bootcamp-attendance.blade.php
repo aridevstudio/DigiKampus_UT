@@ -79,7 +79,9 @@
                                 'rejected' => ['bg-rose-50 text-rose-700 border-rose-200', 'Rejected'],
                                 default => ['bg-amber-50 text-amber-700 border-amber-200', 'Pending'],
                             };
-                            $proofUrl = $row->proof_file ? asset('storage/' . $row->proof_file) : null;
+                            $proofUrl = $row->proof_file
+                                ? route('admin.bootcamp.attendance.download', ['id' => $row->id_bootcamp_live_class_attendance])
+                                : null;
                         @endphp
                         <tr>
                             <td class="px-4 py-3 align-top">

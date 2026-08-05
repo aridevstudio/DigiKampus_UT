@@ -2,6 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\AssignmentSubmission;
+use App\Models\BootcampLiveClassAttendance;
+use App\Models\Course;
+use App\Policies\AssignmentSubmissionPolicy;
+use App\Policies\BootcampLiveClassAttendancePolicy;
+use App\Policies\CoursePolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Course::class, CoursePolicy::class);
+        Gate::policy(AssignmentSubmission::class, AssignmentSubmissionPolicy::class);
+        Gate::policy(BootcampLiveClassAttendance::class, BootcampLiveClassAttendancePolicy::class);
+
         // Force HTTPS scheme in any non-local environment so generated URLs
         // (asset(), url(), route() without the `false` flag) never produce
         // http:// endpoints that browsers block as Mixed Content.

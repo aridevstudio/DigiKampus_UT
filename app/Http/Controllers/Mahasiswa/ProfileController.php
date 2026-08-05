@@ -170,8 +170,7 @@ class ProfileController extends Controller
             }
 
             $file = $request->file('foto_profile');
-            $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('profiles', $filename, 'public');
+            $path = $file->store('profiles', 'public');
             $profileData['foto_profile'] = $path;
         }
 

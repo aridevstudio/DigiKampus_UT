@@ -43,7 +43,7 @@ Route::prefix('auth/mahasiswa')->group(function () {
 
 // Protected routes (requires authentication)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::prefix('mahasiswa')->group(function () {
+    Route::middleware('role:mahasiswa')->prefix('mahasiswa')->group(function () {
         Route::get('/profile', [MahasiswaAuthController::class, 'profile']);
         Route::put('/profile', [MahasiswaAuthController::class, 'updateProfile']);
         Route::put('/change-password', [MahasiswaAuthController::class, 'changePassword']);
@@ -100,7 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/status/heartbeat', [StatusController::class, 'heartbeat']);
     });
 
-    Route::prefix('dosen')->group(function () {
+    Route::middleware('role:dosen')->prefix('dosen')->group(function () {
         // Auth routes
         Route::get('/profile', [DosenAuthController::class, 'profile']);
         Route::post('/logout', [DosenAuthController::class, 'logout']);
@@ -162,7 +162,7 @@ Route::prefix('auth/admin')->group(function () {
 });
 
 // Admin protected routes
-Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/profile', [AdminAuthController::class, 'profile']);
     Route::post('/logout', [AdminAuthController::class, 'logout']);
 });

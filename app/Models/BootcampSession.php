@@ -178,17 +178,6 @@ class BootcampSession extends Model
 
     public function materiUrl(): ?string
     {
-        // Prefer storage-url when materi_file looks like a stored path;
-        // fallback ke raw URL.
-        if ($this->materi_url) {
-            return $this->materi_url;
-        }
-        if ($this->materi_file) {
-            $path = ltrim($this->materi_file, '/');
-            return \Illuminate\Support\Facades\Storage::disk('public')->exists($path)
-                ? \Illuminate\Support\Facades\Storage::url($path)
-                : null;
-        }
-        return null;
+        return $this->materi_url ?: null;
     }
 }
